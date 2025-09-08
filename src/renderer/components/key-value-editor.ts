@@ -45,16 +45,12 @@ export class KeyValueEditor {
     const container = document.getElementById(this.containerId);
     if (!container) return;
 
+    const title = this.containerId === 'paramsEditor' ? 'Parameters' : 'Headers';
+
     container.innerHTML = `
-      <div class="key-value-editor">
-        <div class="key-value-header">
-          <span></span>
-          <span>Key</span>
-          <span>Value</span>
-          <span></span>
-        </div>
+      <div class="key-value-section">
         <div class="key-value-rows" id="${this.containerId}-rows"></div>
-        <button class="add-row-btn" id="${this.containerId}-add">+ Add Row</button>
+        <button class="add-parameter-btn" id="${this.containerId}-add">+ Add ${this.containerId === 'paramsEditor' ? 'Parameter' : 'Header'}</button>
       </div>
     `;
 
@@ -70,9 +66,9 @@ export class KeyValueEditor {
 
     this.pairs.forEach((pair, index) => {
       const row = document.createElement('div');
-      row.className = `key-value-row ${!pair.enabled ? 'disabled' : ''}`;
+      row.className = `key-value-row-original ${!pair.enabled ? 'disabled' : ''}`;
       row.innerHTML = `
-        <div class="checkbox-wrapper">
+        <div class="row-checkbox">
           <input 
             type="checkbox" 
             ${pair.enabled ? 'checked' : ''} 
@@ -94,9 +90,7 @@ export class KeyValueEditor {
           data-id="${pair.id}"
           class="pair-value ${!pair.enabled ? 'disabled' : ''}"
         />
-        <button class="delete-btn" data-id="${pair.id}" title="Delete">
-          <span>×</span>
-        </button>
+        <button class="delete-btn-original" data-id="${pair.id}" title="Delete">×</button>
       `;
 
       rowsContainer.appendChild(row);
@@ -156,9 +150,8 @@ export class KeyValueEditor {
 
     rowsContainer.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if (target.classList.contains('delete-btn') || target.parentElement?.classList.contains('delete-btn')) {
-        const btn = target.classList.contains('delete-btn') ? target : target.parentElement;
-        const id = btn?.getAttribute('data-id');
+      if (target.classList.contains('delete-btn-original')) {
+        const id = target.getAttribute('data-id');
         if (id) {
           this.deletePair(id);
         }

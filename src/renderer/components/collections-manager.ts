@@ -5,6 +5,7 @@ import { Modal } from '../utils/modal';
 export class CollectionsManager {
   private collections: Collection[] = [];
   private selectedRequest: Request | null = null;
+  private expandedFolders: Set<string> = new Set();
 
   constructor(private eventBus: EventBus) {}
 
@@ -94,11 +95,16 @@ export class CollectionsManager {
       parentId
     };
 
+    // Expand parent if creating inside a folder
     if (parentId) {
+      this.expandedFolders.add(parentId);
       this.addToParent(folder, parentId);
     } else {
       this.collections.push(folder);
     }
+
+    // Expand the new folder by default
+    this.expandedFolders.add(folder.id);
 
     this.renderCollections();
     await this.saveCollection(folder);
@@ -117,7 +123,9 @@ export class CollectionsManager {
       parentId
     };
 
+    // Expand parent if creating inside a folder
     if (parentId) {
+      this.expandedFolders.add(parentId);
       this.addRequestToParent(request, parentId);
     } else {
       // Create a default collection if none exists
@@ -125,6 +133,7 @@ export class CollectionsManager {
         await this.createNewCollection();
       }
       if (this.collections.length > 0) {
+        this.expandedFolders.add(this.collections[0].id);
         this.addRequestToParent(request, this.collections[0].id);
       }
     }
@@ -204,24 +213,20 @@ export class CollectionsManager {
       const requestId = item.getAttribute('data-request-id');
       if (requestId) {
         // Single click to select request
-        let clickCount = 0;
         item.addEventListener('click', () => {
           const request = this.findRequestById(requestId);
           if (!request) return;
           
-          clickCount++;
-          if (clickCount === 1) {
-            setTimeout(() => {
-              if (clickCount === 1) {
-                // Single click - select request
-                this.eventBus.emit('request:selected', request);
-              } else if (clickCount === 2) {
-                // Double click - rename request
-                this.startInlineEdit(request.id, 'request');
-              }
-              clickCount = 0;
-            }, 300);
-          }
+          // Immediate selection for better performance
+          this.eventBus.emit('request:selected', request);
+        });
+
+        // Double click to rename
+        item.addEventListener('dblclick', () => {
+          const request = this.findRequestById(requestId);
+          if (!request) return;
+          
+          this.startInlineEdit(request.id, 'request');
         });
 
         // Hover effects for actions
@@ -310,24 +315,26 @@ export class CollectionsManager {
   }
 
   private async duplicateRequest(request: Request): Promise<void> {
-    const newName = await Modal.prompt('Enter name for duplicate:', `${request.name} Copy`);
-    if (newName && newName.trim()) {
-      const duplicate: Request = {
-        ...JSON.parse(JSON.stringify(request)),
-        id: this.generateId(),
-        name: newName.trim()
-      };
+    const duplicate: Request = {
+      ...JSON.parse(JSON.stringify(request)),
+      id: this.generateId(),
+      name: `${request.name} Copy`
+    };
 
-      // Add to the same parent
-      if (request.parentId) {
-        this.addRequestToParent(duplicate, request.parentId);
-      } else if (request.collectionId) {
-        this.addRequestToParent(duplicate, request.collectionId);
-      }
-
-      this.renderCollections();
-      await this.saveRequest(duplicate);
+    // Add to the same parent and expand parent folder
+    if (request.parentId) {
+      this.expandedFolders.add(request.parentId);
+      this.addRequestToParent(duplicate, request.parentId);
+    } else if (request.collectionId) {
+      this.expandedFolders.add(request.collectionId);
+      this.addRequestToParent(duplicate, request.collectionId);
     }
+
+    this.renderCollections();
+    await this.saveRequest(duplicate);
+    
+    // Start inline editing immediately
+    setTimeout(() => this.startInlineEdit(duplicate.id, 'request'), 100);
   }
 
   private async deleteRequest(id: string): Promise<void> {
@@ -385,17 +392,18 @@ export class CollectionsManager {
     div.style.marginLeft = `${depth * 16}px`;
 
     const icon = collection.type === 'collection' ? '📁' : '📂';
+    const isExpanded = this.expandedFolders.has(collection.id);
     
     div.innerHTML = `
       <div class="collection-header" data-id="${collection.id}">
-        <span class="collection-toggle" style="margin-right: 4px; cursor: pointer; font-size: 12px; color: var(--text-secondary);">▶</span>
+        <span class="collection-toggle" style="margin-right: 4px; cursor: pointer; font-size: 12px; color: var(--text-secondary);">${isExpanded ? '▼' : '▶'}</span>
         <span class="collection-icon" style="margin-right: 8px;">${icon}</span>
         <span class="collection-name" style="flex: 1; font-size: 13px;">${collection.name}</span>
         <div class="collection-actions" style="opacity: 0; transition: opacity 0.2s;">
           <button class="action-btn" data-action="menu" data-id="${collection.id}" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 2px; font-size: 12px;">⋯</button>
         </div>
       </div>
-      <div class="collection-children" style="display: none;">
+      <div class="collection-children" style="display: ${isExpanded ? 'block' : 'none'};">
         ${this.renderCollectionContent(collection, depth + 1)}
       </div>
     `;
@@ -415,9 +423,16 @@ export class CollectionsManager {
     // Single click to expand/collapse
     if (toggle && children) {
       const toggleChildren = () => {
-        const isExpanded = children.style.display !== 'none';
-        children.style.display = isExpanded ? 'none' : 'block';
-        toggle.textContent = isExpanded ? '▶' : '▼';
+        const isExpanded = this.expandedFolders.has(collection.id);
+        if (isExpanded) {
+          this.expandedFolders.delete(collection.id);
+          children.style.display = 'none';
+          toggle.textContent = '▶';
+        } else {
+          this.expandedFolders.add(collection.id);
+          children.style.display = 'block';
+          toggle.textContent = '▼';
+        }
       };
 
       // Single click on header expands/collapses
@@ -431,22 +446,12 @@ export class CollectionsManager {
       });
 
       // Double click on header renames
-      let clickCount = 0;
-      header.addEventListener('click', (e) => {
+      header.addEventListener('dblclick', (e) => {
         if (e.target === actionBtn || actionBtn.contains(e.target as Node)) {
           return;
         }
-        
-        clickCount++;
-        if (clickCount === 1) {
-          setTimeout(() => {
-            if (clickCount === 2) {
-              e.stopPropagation();
-              this.startInlineEdit(collection.id, 'collection');
-            }
-            clickCount = 0;
-          }, 300);
-        }
+        e.stopPropagation();
+        this.startInlineEdit(collection.id, 'collection');
       });
     }
 
@@ -519,8 +524,7 @@ export class CollectionsManager {
     // Render child collections/folders
     if (collection.children && collection.children.length > 0) {
       collection.children.forEach(child => {
-        const childElement = this.createCollectionElement(child, depth);
-        html += childElement.outerHTML;
+        html += this.createCollectionElement(child, depth).outerHTML;
       });
     }
 
@@ -529,9 +533,10 @@ export class CollectionsManager {
       collection.requests.forEach(request => {
         const isSelected = this.selectedRequest?.id === request.id;
         html += `
-          <div class="request-item ${isSelected ? 'active' : ''}" 
+          <div class="request-item ${isSelected ? 'selected' : ''}" 
                data-request-id="${request.id}" 
-               style="margin-left: ${depth * 16}px; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: background-color 0.2s; display: flex; align-items: center;">
+               style="margin-left: ${depth * 16}px; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: background-color 0.2s; display: flex; align-items: center; position: relative;">
+            ${isSelected ? '<div class="request-selection-indicator"></div>' : ''}
             <span class="request-method method-${request.method.toLowerCase()}" 
                   style="display: inline-block; width: 40px; font-weight: 600; font-size: 10px; text-transform: uppercase; margin-right: 8px;">
               ${request.method}
@@ -559,22 +564,26 @@ export class CollectionsManager {
   }
 
   private async duplicateCollection(collection: Collection): Promise<void> {
-    const newName = await Modal.prompt('Enter name for duplicate:', `${collection.name} Copy`);
-    if (newName && newName.trim()) {
-      const duplicate: Collection = {
-        ...JSON.parse(JSON.stringify(collection)),
-        id: this.generateId(),
-        name: newName.trim(),
-        type: collection.type || 'collection'
-      };
+    const duplicate: Collection = {
+      ...JSON.parse(JSON.stringify(collection)),
+      id: this.generateId(),
+      name: `${collection.name} Copy`,
+      type: collection.type || 'collection'
+    };
 
-      // Generate new IDs for all children and requests
-      this.regenerateIds(duplicate);
+    // Generate new IDs for all children and requests
+    this.regenerateIds(duplicate);
 
-      this.collections.push(duplicate);
-      this.renderCollections();
-      await this.saveCollection(duplicate);
-    }
+    this.collections.push(duplicate);
+    
+    // Expand the duplicated collection
+    this.expandedFolders.add(duplicate.id);
+    
+    this.renderCollections();
+    await this.saveCollection(duplicate);
+    
+    // Start inline editing immediately
+    setTimeout(() => this.startInlineEdit(duplicate.id, 'collection'), 100);
   }
 
   private regenerateIds(collection: Collection): void {
@@ -595,13 +604,22 @@ export class CollectionsManager {
   private highlightSelectedRequest(request: Request): void {
     // Remove previous selection
     document.querySelectorAll('.request-item').forEach(item => {
-      item.classList.remove('active');
+      item.classList.remove('selected');
+      const indicator = item.querySelector('.request-selection-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
     });
 
     // Highlight selected request
     const requestElement = document.querySelector(`[data-request-id="${request.id}"]`);
     if (requestElement) {
-      requestElement.classList.add('active');
+      requestElement.classList.add('selected');
+      
+      // Add selection indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'request-selection-indicator';
+      requestElement.insertBefore(indicator, requestElement.firstChild);
     }
   }
 

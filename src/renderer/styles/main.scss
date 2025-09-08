@@ -539,6 +539,200 @@ body {
   }
 }
 
+// Simpler key-value editor
+.key-value-editor-simple {
+  .key-value-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .key-value-row-simple {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    &.disabled {
+      opacity: 0.5;
+
+      input {
+        color: var(--text-secondary);
+        background: var(--surface);
+      }
+    }
+
+    .row-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 60px;
+
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+      }
+
+      .delete-btn-simple {
+        width: 20px;
+        height: 20px;
+        border: none;
+        background: transparent;
+        color: var(--error);
+        cursor: pointer;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+
+        &:hover {
+          background-color: var(--error);
+          color: white;
+        }
+      }
+    }
+
+    .row-inputs {
+      display: flex;
+      gap: 12px;
+      flex: 1;
+
+      input {
+        flex: 1;
+        padding: 6px 8px;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 13px;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
+
+        &.disabled {
+          color: var(--text-secondary);
+          background: var(--surface);
+        }
+      }
+    }
+  }
+
+  .add-parameter-btn {
+    padding: 6px 12px;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+
+    &:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+  }
+}
+
+// Original key-value editor style
+.key-value-section {
+  .key-value-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .key-value-row-original {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+
+    &.disabled {
+      opacity: 0.6;
+
+      input {
+        color: var(--text-secondary);
+        background: var(--surface);
+      }
+    }
+
+    .row-checkbox {
+      display: flex;
+      align-items: center;
+      width: 20px;
+
+      input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--primary);
+      }
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 4px 6px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-size: 12px;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      &.disabled {
+        color: var(--text-secondary);
+        background: var(--surface);
+      }
+    }
+
+    .delete-btn-original {
+      width: 18px;
+      height: 18px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+
+      &:hover {
+        background-color: var(--error);
+        color: white;
+      }
+    }
+  }
+
+  .add-parameter-btn {
+    padding: 4px 8px;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 11px;
+
+    &:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+  }
+}
+
 // Body editor
 .body-type-selector {
   display: flex;
@@ -780,14 +974,24 @@ body {
     display: flex;
     align-items: center;
     user-select: none;
+    position: relative;
 
     &:hover {
       background-color: var(--surface-elevated);
     }
 
-    &.active {
+    &.selected {
+      background-color: transparent; // No full background highlight
+    }
+
+    .request-selection-indicator {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
       background-color: var(--primary);
-      color: white;
+      border-radius: 0 2px 2px 0;
     }
 
     .request-method {

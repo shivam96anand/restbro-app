@@ -22,6 +22,15 @@ export class RequestManager {
       this.populateRequestForm(request);
     });
 
+    this.eventBus.on('request:display', (request: Request | null) => {
+      if (request) {
+        this.currentRequest = request;
+        this.populateRequestForm(request);
+      } else {
+        this.clearRequestForm();
+      }
+    });
+
     this.eventBus.on('request:new', () => {
       this.createNewRequest();
     });
@@ -172,6 +181,53 @@ export class RequestManager {
       }
       this.updateAuthConfig(request.auth.type);
     }
+  }
+
+  private clearRequestForm(): void {
+    // Method
+    const methodSelect = document.getElementById('requestMethod') as HTMLSelectElement;
+    if (methodSelect) {
+      methodSelect.value = 'GET';
+    }
+
+    // URL
+    const urlInput = document.getElementById('requestUrl') as HTMLInputElement;
+    if (urlInput) {
+      urlInput.value = '';
+    }
+
+    // Params
+    const paramsEditor = this.keyValueEditors.get('params');
+    if (paramsEditor) {
+      paramsEditor.setData({});
+    }
+
+    // Headers
+    const headersEditor = this.keyValueEditors.get('headers');
+    if (headersEditor) {
+      headersEditor.setData({});
+    }
+
+    // Body
+    const bodyContent = document.getElementById('bodyContent') as HTMLTextAreaElement;
+    if (bodyContent) {
+      bodyContent.value = '';
+    }
+
+    // Clear body type radio
+    const jsonRadio = document.querySelector('input[name="bodyType"][value="json"]') as HTMLInputElement;
+    if (jsonRadio) {
+      jsonRadio.checked = true;
+    }
+
+    // Auth
+    const authSelect = document.getElementById('authType') as HTMLSelectElement;
+    if (authSelect) {
+      authSelect.value = 'none';
+    }
+    this.updateAuthConfig('none');
+    
+    this.currentRequest = null;
   }
 
   private updateAuthConfig(authType: AuthType): void {

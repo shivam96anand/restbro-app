@@ -24,6 +24,20 @@ export class ResponseManager {
     this.eventBus.on('request:error', (error: any) => {
       this.showErrorState(error);
     });
+
+    this.eventBus.on('request:display', (request: any) => {
+      // Clear response when switching to a different request
+      if (request) {
+        this.resetResponseUI();
+      }
+    });
+
+    this.eventBus.on('request:selected', (request: any) => {
+      // Clear response when selecting a different request
+      if (request) {
+        this.resetResponseUI();
+      }
+    });
   }
 
   private displayResponse(response: Response): void {
