@@ -645,22 +645,32 @@ body {
   .key-value-rows {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 12px;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .key-value-row-original {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 0;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
     &.disabled {
       opacity: 0.6;
+      background: var(--surface);
 
       input {
         color: var(--text-secondary);
-        background: var(--surface);
+        background: transparent;
       }
     }
 
@@ -670,65 +680,94 @@ body {
       width: 20px;
 
       input[type="checkbox"] {
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         accent-color: var(--primary);
+        cursor: pointer;
       }
     }
 
     input[type="text"] {
       flex: 1;
-      padding: 4px 6px;
+      padding: 8px 12px;
       background: var(--surface);
       color: var(--text);
       border: 1px solid var(--border);
-      border-radius: 2px;
-      font-size: 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      transition: all 0.2s;
 
       &:focus {
         outline: none;
         border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+      }
+
+      &:first-of-type {
+        font-weight: 500;
       }
 
       &.disabled {
         color: var(--text-secondary);
-        background: var(--surface);
+        background: transparent;
+        border-color: transparent;
+      }
+
+      &::placeholder {
+        color: var(--text-secondary);
+        font-style: italic;
       }
     }
 
     .delete-btn-original {
-      width: 18px;
-      height: 18px;
+      width: 24px;
+      height: 24px;
       border: none;
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      border-radius: 2px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 14px;
+      transition: all 0.2s;
 
       &:hover {
         background-color: var(--error);
         color: white;
+        transform: scale(1.1);
       }
     }
   }
 
   .add-parameter-btn {
-    padding: 4px 8px;
+    padding: 10px 16px;
     background: transparent;
     color: var(--primary);
-    border: 1px solid var(--primary);
-    border-radius: 2px;
+    border: 2px dashed var(--primary);
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 
     &:hover {
       background-color: var(--primary);
       color: white;
+      border-style: solid;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    &:before {
+      content: '+';
+      font-size: 16px;
+      font-weight: bold;
     }
   }
 }

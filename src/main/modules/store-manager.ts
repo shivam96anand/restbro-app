@@ -64,18 +64,78 @@ export class StoreManager {
   }
 
   getCollections(): Collection[] {
-    return this.db.data?.collections || [];
+    const collections = this.db.data?.collections || [];
+    const requests = this.db.data?.requests || [];
+    
+    // Merge requests into their parent collections
+    const mergeRequests = (collections: Collection[]): Collection[] => {
+      return collections.map(collection => {
+        // Find requests for this collection
+        const collectionRequests = requests.filter(r => r.collectionId === collection.id);
+        
+        // Process child collections recursively
+        const processedChildren = collection.children ? mergeRequests(collection.children) : [];
+        
+        return {
+          ...collection,
+          requests: collectionRequests,
+          children: processedChildren
+        };
+      });
+    };
+    
+    return mergeRequests(collections);
   }
 
   async saveCollection(collection: Collection): Promise<void> {
     if (!this.db.data) return;
 
+    // Extract requests from the collection and its children
+    const extractRequests = (col: Collection): Request[] => {
+      let requests: Request[] = [];
+      
+      // Add requests from this collection
+      if (col.requests) {
+        requests.push(...col.requests.map(r => ({ ...r, collectionId: col.id })));
+      }
+      
+      // Add requests from child collections recursively
+      if (col.children) {
+        col.children.forEach(child => {
+          requests.push(...extractRequests(child));
+        });
+      }
+      
+      return requests;
+    };
+
+    // Extract all requests from this collection tree
+    const collectionRequests = extractRequests(collection);
+    
+    // Save requests separately
+    collectionRequests.forEach(request => {
+      const existingIndex = this.db.data!.requests.findIndex(r => r.id === request.id);
+      if (existingIndex >= 0) {
+        this.db.data!.requests[existingIndex] = request;
+      } else {
+        this.db.data!.requests.push(request);
+      }
+    });
+
+    // Save collection without embedded requests (clean structure)
+    const cleanCollection = (col: Collection): Collection => ({
+      ...col,
+      requests: [], // Don't store requests in collection structure
+      children: col.children ? col.children.map(cleanCollection) : []
+    });
+
     const existingIndex = this.db.data.collections.findIndex(c => c.id === collection.id);
+    const cleanCol = cleanCollection(collection);
     
     if (existingIndex >= 0) {
-      this.db.data.collections[existingIndex] = collection;
+      this.db.data.collections[existingIndex] = cleanCol;
     } else {
-      this.db.data.collections.push(collection);
+      this.db.data.collections.push(cleanCol);
     }
 
     await this.db.write();

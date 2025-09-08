@@ -25,18 +25,24 @@ export class ResponseManager {
       this.showErrorState(error);
     });
 
+    this.eventBus.on('response:restore', (response: Response) => {
+      this.currentResponse = response;
+      this.displayResponse(response);
+    });
+
+    this.eventBus.on('response:clear', () => {
+      this.currentResponse = null;
+      this.resetResponseUI();
+    });
+
     this.eventBus.on('request:display', (request: any) => {
-      // Clear response when switching to a different request
-      if (request) {
-        this.resetResponseUI();
-      }
+      // Don't clear response automatically when switching tabs
+      // Let tabs manager handle response restoration
     });
 
     this.eventBus.on('request:selected', (request: any) => {
-      // Clear response when selecting a different request
-      if (request) {
-        this.resetResponseUI();
-      }
+      // Don't clear response automatically when selecting requests
+      // Let tabs manager handle response restoration
     });
   }
 

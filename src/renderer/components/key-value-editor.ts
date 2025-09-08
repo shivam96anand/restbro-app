@@ -50,7 +50,7 @@ export class KeyValueEditor {
     container.innerHTML = `
       <div class="key-value-section">
         <div class="key-value-rows" id="${this.containerId}-rows"></div>
-        <button class="add-parameter-btn" id="${this.containerId}-add">+ Add ${this.containerId === 'paramsEditor' ? 'Parameter' : 'Header'}</button>
+        <button class="add-parameter-btn" id="${this.containerId}-add">Add ${this.containerId === 'paramsEditor' ? 'Parameter' : 'Header'}</button>
       </div>
     `;
 

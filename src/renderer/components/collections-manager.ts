@@ -204,16 +204,52 @@ export class CollectionsManager {
       container.appendChild(element);
     });
 
+    // Clear any existing data attributes to ensure fresh event listener attachment
+    container.querySelectorAll('[data-listeners-attached]').forEach(el => {
+      el.removeAttribute('data-listeners-attached');
+    });
+
     // Add event listeners for request items after rendering
     this.attachRequestEventListeners();
+    // Also attach event listeners for all collection items (including subfolders)
+    this.attachCollectionEventListeners();
+  }
+
+  private attachCollectionEventListeners(): void {
+    // Re-attach event listeners for all collection headers (including children)
+    document.querySelectorAll('.collection-header').forEach(header => {
+      const collectionId = header.getAttribute('data-id');
+      if (!collectionId) return;
+
+      const collection = this.findCollectionById(collectionId);
+      if (!collection) return;
+
+      const parentElement = header.parentElement;
+      if (parentElement && !parentElement.hasAttribute('data-listeners-attached')) {
+        // Mark as having listeners to avoid duplicate attachment
+        parentElement.setAttribute('data-listeners-attached', 'true');
+        
+        // Setup fresh event listeners without cloning
+        this.setupCollectionEvents(parentElement, collection);
+      }
+    });
   }
 
   private attachRequestEventListeners(): void {
     document.querySelectorAll('.request-item').forEach(item => {
       const requestId = item.getAttribute('data-request-id');
-      if (requestId) {
+      if (requestId && !item.hasAttribute('data-listeners-attached')) {
+        // Mark as having listeners to avoid duplicate attachment
+        item.setAttribute('data-listeners-attached', 'true');
+        
         // Single click to select request
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+          // Don't trigger if clicking on action button
+          const actionBtn = item.querySelector('[data-action="request-menu"]');
+          if (e.target === actionBtn || (actionBtn && actionBtn.contains(e.target as Node))) {
+            return;
+          }
+          
           const request = this.findRequestById(requestId);
           if (!request) return;
           
@@ -222,7 +258,13 @@ export class CollectionsManager {
         });
 
         // Double click to rename
-        item.addEventListener('dblclick', () => {
+        item.addEventListener('dblclick', (e) => {
+          // Don't trigger if clicking on action button
+          const actionBtn = item.querySelector('[data-action="request-menu"]');
+          if (e.target === actionBtn || (actionBtn && actionBtn.contains(e.target as Node))) {
+            return;
+          }
+          
           const request = this.findRequestById(requestId);
           if (!request) return;
           
@@ -242,7 +284,8 @@ export class CollectionsManager {
 
         // Context menu for requests
         const actionBtn = item.querySelector('[data-action="request-menu"]') as HTMLElement;
-        if (actionBtn) {
+        if (actionBtn && !actionBtn.hasAttribute('data-listeners-attached')) {
+          actionBtn.setAttribute('data-listeners-attached', 'true');
           actionBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const request = this.findRequestById(requestId);
@@ -420,65 +463,71 @@ export class CollectionsManager {
     const children = element.querySelector('.collection-children') as HTMLElement;
     const actionBtn = element.querySelector('[data-action="menu"]') as HTMLElement;
 
-    // Single click to expand/collapse
-    if (toggle && children) {
-      const toggleChildren = () => {
-        const isExpanded = this.expandedFolders.has(collection.id);
-        if (isExpanded) {
-          this.expandedFolders.delete(collection.id);
-          children.style.display = 'none';
-          toggle.textContent = '▶';
-        } else {
-          this.expandedFolders.add(collection.id);
-          children.style.display = 'block';
-          toggle.textContent = '▼';
-        }
-      };
+    // Only attach if not already attached
+    if (header && !header.hasAttribute('data-listeners-attached')) {
+      header.setAttribute('data-listeners-attached', 'true');
+      
+      // Single click to expand/collapse
+      if (toggle && children) {
+        const toggleChildren = () => {
+          const isExpanded = this.expandedFolders.has(collection.id);
+          if (isExpanded) {
+            this.expandedFolders.delete(collection.id);
+            children.style.display = 'none';
+            toggle.textContent = '▶';
+          } else {
+            this.expandedFolders.add(collection.id);
+            children.style.display = 'block';
+            toggle.textContent = '▼';
+          }
+        };
 
-      // Single click on header expands/collapses
-      header.addEventListener('click', (e) => {
-        // Don't trigger if clicking on action button
-        if (e.target === actionBtn || actionBtn.contains(e.target as Node)) {
-          return;
-        }
-        e.stopPropagation();
-        toggleChildren();
+        // Single click on header expands/collapses
+        header.addEventListener('click', (e) => {
+          // Don't trigger if clicking on action button
+          if (e.target === actionBtn || (actionBtn && actionBtn.contains(e.target as Node))) {
+            return;
+          }
+          e.stopPropagation();
+          toggleChildren();
+        });
+
+        // Double click on header renames
+        header.addEventListener('dblclick', (e) => {
+          if (e.target === actionBtn || (actionBtn && actionBtn.contains(e.target as Node))) {
+            return;
+          }
+          e.stopPropagation();
+          this.startInlineEdit(collection.id, 'collection');
+        });
+      }
+
+      // Show/hide actions on hover
+      header.addEventListener('mouseenter', () => {
+        const actions = element.querySelector('.collection-actions') as HTMLElement;
+        if (actions) actions.style.opacity = '1';
       });
 
-      // Double click on header renames
-      header.addEventListener('dblclick', (e) => {
-        if (e.target === actionBtn || actionBtn.contains(e.target as Node)) {
-          return;
-        }
-        e.stopPropagation();
-        this.startInlineEdit(collection.id, 'collection');
+      header.addEventListener('mouseleave', () => {
+        const actions = element.querySelector('.collection-actions') as HTMLElement;
+        if (actions) actions.style.opacity = '0';
+      });
+
+      // Right-click context menu
+      header.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        this.showContextMenu(e, collection);
       });
     }
 
-    // Show/hide actions on hover
-    header.addEventListener('mouseenter', () => {
-      const actions = element.querySelector('.collection-actions') as HTMLElement;
-      if (actions) actions.style.opacity = '1';
-    });
-
-    header.addEventListener('mouseleave', () => {
-      const actions = element.querySelector('.collection-actions') as HTMLElement;
-      if (actions) actions.style.opacity = '0';
-    });
-
-    // Context menu
-    if (actionBtn) {
+    // Context menu button
+    if (actionBtn && !actionBtn.hasAttribute('data-listeners-attached')) {
+      actionBtn.setAttribute('data-listeners-attached', 'true');
       actionBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.showContextMenu(e, collection);
       });
     }
-
-    // Right-click context menu
-    header.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      this.showContextMenu(e, collection);
-    });
   }
 
   private showContextMenu(event: MouseEvent, collection: Collection): void {
@@ -521,10 +570,11 @@ export class CollectionsManager {
   private renderCollectionContent(collection: Collection, depth: number): string {
     let html = '';
 
-    // Render child collections/folders
+    // Render child collections/folders first
     if (collection.children && collection.children.length > 0) {
       collection.children.forEach(child => {
-        html += this.createCollectionElement(child, depth).outerHTML;
+        const childElement = this.createCollectionElement(child, depth);
+        html += childElement.outerHTML;
       });
     }
 
@@ -535,7 +585,7 @@ export class CollectionsManager {
         html += `
           <div class="request-item ${isSelected ? 'selected' : ''}" 
                data-request-id="${request.id}" 
-               style="margin-left: ${depth * 16}px; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: background-color 0.2s; display: flex; align-items: center; position: relative;">
+               style="margin-left: ${depth * 16}px; padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; position: relative;">
             ${isSelected ? '<div class="request-selection-indicator"></div>' : ''}
             <span class="request-method method-${request.method.toLowerCase()}" 
                   style="display: inline-block; width: 40px; font-weight: 600; font-size: 10px; text-transform: uppercase; margin-right: 8px;">
@@ -544,7 +594,7 @@ export class CollectionsManager {
             <span class="request-name" style="flex: 1;">${request.name}</span>
             <div class="request-actions" style="opacity: 0; transition: opacity 0.2s;">
               <button class="action-btn" data-action="request-menu" data-id="${request.id}" 
-                      style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px; border-radius: 2px; font-size: 10px;">⋯</button>
+                      style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 6px; border-radius: 2px; font-size: 12px; display: flex; align-items: center; justify-content: center;">⋯</button>
             </div>
           </div>
         `;

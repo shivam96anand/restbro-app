@@ -1,11 +1,12 @@
 import { EventBus } from '../utils/event-bus';
-import { Request } from '../../shared/types';
+import { Request, Response } from '../../shared/types';
 
 export interface Tab {
   id: string;
   request: Request;
   isActive: boolean;
   isDirty: boolean;
+  response?: Response | null;
 }
 
 export class TabsManager {
@@ -31,6 +32,17 @@ export class TabsManager {
     this.eventBus.on('tab:activate', (tabId: string) => {
       this.activateTab(tabId);
     });
+
+    this.eventBus.on('response:received', (response: Response) => {
+      this.storeResponseForActiveTab(response);
+    });
+  }
+
+  private storeResponseForActiveTab(response: Response): void {
+    const activeTab = this.getActiveTab();
+    if (activeTab) {
+      activeTab.response = response;
+    }
   }
 
   openTab(request: Request): void {
@@ -99,6 +111,13 @@ export class TabsManager {
 
     this.renderTabs();
     this.eventBus.emit('request:display', tab.request);
+    
+    // Restore response if available
+    if (tab.response) {
+      this.eventBus.emit('response:restore', tab.response);
+    } else {
+      this.eventBus.emit('response:clear');
+    }
   }
 
   markTabDirty(tabId: string, isDirty: boolean = true): void {
