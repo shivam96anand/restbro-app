@@ -127,3 +127,4 @@ packages/
 *.sqlite
 *.sqlite3
 app-data.json
+api-courier-db.json

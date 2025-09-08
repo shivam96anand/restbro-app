@@ -1,67 +1,46 @@
-import { app, BrowserWindow } from 'electron';
-import * as path from 'path';
-import { WindowManager } from './windows/window-manager';
-import { PersistenceManager } from './persistence/persistence-manager';
-import { IPCManager } from './ipc/ipc-manager';
-import { NetworkManager } from './networking/network-manager';
+import { app } from 'electron';
+import { WindowManager } from './modules/window-manager';
+import { IPCManager } from './modules/ipc-manager';
+import { StoreManager } from './modules/store-manager';
+import { RequestManager } from './modules/request-manager';
 
-/**
- * Main entry point for the Electron application
- */
-class APIController {
-  private windowManager!: WindowManager;
-  private persistenceManager!: PersistenceManager;
-  private ipcManager!: IPCManager;
-  private networkManager!: NetworkManager;
-  private isDev: boolean;
+class ApiCourierApp {
+  private windowManager: WindowManager;
+  private ipcManager: IPCManager;
+  private storeManager: StoreManager;
+  private requestManager: RequestManager;
 
   constructor() {
-    this.isDev = process.argv.includes('--dev');
-    this.init();
+    this.storeManager = new StoreManager();
+    this.requestManager = new RequestManager();
+    this.windowManager = new WindowManager();
+    this.ipcManager = new IPCManager(this.storeManager, this.requestManager);
+    
+    this.setupApp();
   }
 
-  private async init(): Promise<void> {
-    // Initialize core managers
-    this.persistenceManager = new PersistenceManager();
-    this.networkManager = new NetworkManager();
-    this.windowManager = new WindowManager(this.isDev);
-    
-    // Initialize IPC with dependencies
-    this.ipcManager = new IPCManager(this.persistenceManager, this.networkManager);
+  private setupApp(): void {
+    app.whenReady().then(() => {
+      this.windowManager.createMainWindow();
+      
+      app.on('activate', () => {
+        if (this.windowManager.getAllWindows().length === 0) {
+          this.windowManager.createMainWindow();
+        }
+      });
+    });
 
-    // Wait for Electron to be ready
-    await app.whenReady();
-    
-    // Initialize persistence
-    await this.persistenceManager.initialize();
-    
-    // Setup IPC handlers
-    this.ipcManager.setupHandlers();
-    
-    // Create main window
-    this.windowManager.createMainWindow();
-
-    this.setupAppEventHandlers();
-  }
-
-  private setupAppEventHandlers(): void {
     app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
         app.quit();
       }
     });
 
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        this.windowManager.createMainWindow();
-      }
-    });
-
     app.on('before-quit', async () => {
-      await this.persistenceManager.flush();
+      await this.storeManager.flush();
     });
   }
 }
 
 // Initialize the application
-new APIController();
+new ApiCourierApp();

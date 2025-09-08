@@ -1,168 +1,181 @@
 # API Courier
 
-A professional API testing tool built with Electron and TypeScript. Compete with Insomnia/Postman in quality and features.
-
-![API Courier Screenshot](screenshot.png)
+A professional API testing tool built with Electron and TypeScript - like Postman/Insomnia.
 
 ## Features
 
-### Current Features (v1.0)
-- **Professional Dark Theme UI** - Sleek, modern interface with light/dark theme toggle
-- **API Testing** - Full HTTP request testing with all methods (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
-- **Collections Management** - Organize requests in folders and sub-collections
-- **Request Builder** - Complete request configuration with params, headers, body, and auth
-- **Response Viewer** - Pretty JSON formatting, raw view, and headers inspection
-- **Environment Variables** - Manage different environments and variables
-- **Request History** - Keep track of recent requests
-- **Import Collections** - Import from Postman/Insomnia JSON files
+### Current Implementation
+- **Multi-tab Interface**: API, JSON Viewer, JSON Compare, Load Testing, and Ask AI tabs
+- **Professional Dark Theme**: With 4 theme options (Dark, Light, Purple, Blue)
+- **3-Panel Layout** for API tab:
+  - **Collections Panel**: Import/export collections, organize requests in folders
+  - **Request Panel**: Full-featured request builder
+  - **Response Panel**: Detailed response viewer with syntax highlighting
+- **Request Builder**:
+  - Multiple HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
+  - Tabs for Params, Body, Headers, and Auth
+  - Multiple body types (JSON, Raw, Form Data, URL Encoded)
+  - Authentication support (None, Basic, Bearer Token, API Key, OAuth 1.0/2.0)
+- **Response Viewer**:
+  - Status code, response time, and size display
+  - Formatted JSON and other content types
+  - Response headers viewer
+- **Collection Management**:
+  - Import/export collections as JSON
+  - Nested folder structure support
+  - Persistent storage with LowDB
 
-### Planned Features (Coming Soon)
-- **JSON Viewer** - Standalone JSON formatting and viewing tool
-- **JSON Compare** - Compare two JSON objects with diff highlighting
-- **Load Testing** - Performance testing with multiple concurrent requests  
-- **Ask AI** - AI-powered API documentation and testing assistance
-
-## Architecture
-
-The application follows a modular architecture with clear separation between processes:
-
-### Main Process (`src/main/`)
-- **`index.ts`** - Application entry point and initialization
-- **`windows/window-manager.ts`** - Window creation and management
-- **`persistence/persistence-manager.ts`** - Data storage using LowDB
-- **`networking/network-manager.ts`** - HTTP request execution
-- **`ipc/ipc-manager.ts`** - Inter-process communication handlers
-
-### Preload Script (`src/preload/`)
-- **`preload.ts`** - Secure API bridge between main and renderer processes
-
-### Renderer Process (`src/renderer/`)
-- **`index.html`** - Main application HTML structure
-- **`js/main.ts`** - Frontend application logic and UI management
-- **`styles/main.css`** - Professional styling with CSS variables for theming
+### Architecture
+- **Electron**: Multi-process architecture with main, preload, and renderer processes
+- **TypeScript**: Full type safety throughout the codebase
+- **Webpack**: Modern build system with hot reloading
+- **SCSS**: Professional styling with CSS variables for theming
+- **Event-driven**: Decoupled architecture using EventBus pattern
+- **Modular**: Clean separation of concerns with multiple managers
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm
+- Node.js 18+ 
+- npm or yarn
 
 ### Installation
-
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone https://github.com/shivam96anand/api-courier2.0.git
-cd api-courier2.0
-```
+cd api-courier-2
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Build the application:
-```bash
+# Build and run in development mode
+npm run dev
+
+# Or build for production
 npm run build
-```
-
-4. Run the application:
-```bash
 npm start
 ```
 
-### Development
-
-For development with hot reload:
-
-```bash
-# Start TypeScript watchers
-npm run watch
-
-# In another terminal, run the app in dev mode
-npm run dev
-```
+### Available Scripts
+- `npm run build:dev` - Build in development mode
+- `npm run build:watch` - Build and watch for changes
+- `npm run dev` - Build and run in development mode
+- `npm start` - Build and run in production mode
 
 ## Project Structure
 
 ```
-api-courier2.0/
-├── src/
-│   ├── main/                 # Main process (Electron backend)
-│   │   ├── index.ts         # Application entry point
-│   │   ├── windows/         # Window management
-│   │   ├── persistence/     # Data storage
-│   │   ├── networking/      # HTTP requests
-│   │   └── ipc/            # Inter-process communication
-│   ├── preload/            # Preload script (secure bridge)
-│   │   └── preload.ts      # API exposure to renderer
-│   └── renderer/           # Renderer process (frontend)
-│       ├── index.html      # Main HTML
-│       ├── js/            # TypeScript frontend code
-│       └── styles/        # CSS styling
-├── dist/                   # Compiled output
-├── package.json           # Dependencies and scripts
-└── tsconfig.*.json       # TypeScript configurations
+src/
+├── main/                   # Electron main process
+│   ├── modules/           
+│   │   ├── window-manager.ts    # Window management
+│   │   ├── ipc-manager.ts       # Inter-process communication
+│   │   ├── store-manager.ts     # Data persistence
+│   │   └── request-manager.ts   # HTTP request handling
+│   └── index.ts           # Main process entry point
+├── preload/               # Preload scripts
+│   └── index.ts          # IPC API exposure
+├── renderer/              # Renderer process (UI)
+│   ├── components/        # UI components
+│   │   ├── ui-manager.ts        # General UI management
+│   │   ├── collections-manager.ts # Collection handling
+│   │   ├── request-manager.ts   # Request form management
+│   │   └── response-manager.ts  # Response display
+│   ├── styles/           # SCSS stylesheets
+│   │   └── main.scss     # Main stylesheet with theming
+│   ├── utils/            # Utility classes
+│   │   ├── event-bus.ts  # Event communication
+│   │   └── theme-manager.ts # Theme handling
+│   ├── index.ts          # Renderer entry point
+│   └── index.html        # HTML template
+└── shared/               # Shared types and interfaces
+    ├── types.ts          # Type definitions
+    └── ipc.ts           # IPC channel definitions
 ```
 
-## Usage
+## Key Features Implemented
 
-### Making HTTP Requests
+### 1. Multi-Theme Support
+The application supports 4 professional themes:
+- Dark (default)
+- Light  
+- Purple
+- Blue
 
-1. **Select Method**: Choose HTTP method from the dropdown (GET, POST, PUT, etc.)
-2. **Enter URL**: Type the request URL in the input field
-3. **Add Parameters**: Switch to the "Params" tab to add query parameters
-4. **Set Headers**: Use the "Headers" tab to add custom headers
-5. **Configure Body**: For POST/PUT requests, use the "Body" tab to set request body
-6. **Set Authentication**: Configure auth in the "Auth" tab (Basic, Bearer, API Key, OAuth2)
-7. **Send Request**: Click the "Send" button to execute the request
+Themes can be changed via the dropdown in the top-right corner.
 
-### Managing Collections
+### 2. Resizable Panels
+The main API interface has 3 resizable panels:
+- Collections (left): 200-500px width
+- Request (middle): Flexible
+- Response (right): 300-600px width
 
-- Use the Collections panel on the left to organize your requests
-- Create folders to group related requests
-- Import existing collections from Postman or Insomnia JSON files
-- Click on any collection item to load it into the request panel
+### 3. Collection Management
+- Import JSON collections from file
+- Export collections to JSON
+- Create new collections
+- Nested folder support
+- Persistent storage
 
-### Response Inspection
+### 4. Request Builder
+- URL and method selection
+- Parameter editor with key-value pairs
+- Request body with multiple formats
+- Header management
+- Authentication configuration
 
-The response panel provides three views:
-- **Pretty**: Formatted JSON with syntax highlighting and collapsible trees
-- **Raw**: Raw response text
-- **Headers**: Response headers in key-value format
+### 5. Response Handling
+- Real-time status, timing, and size display
+- Formatted response body
+- Response headers viewer
+- Error handling and display
 
-### Environment Variables
+## Technical Highlights
 
-- Manage multiple environments (Development, Staging, Production)
-- Set variables that can be used across requests
-- Switch between environments easily
-
-## Security
-
-API Courier follows Electron security best practices:
+### Security
 - Context isolation enabled
-- Node.js integration disabled in renderer
-- Sandbox mode enabled
-- Content Security Policy implemented
-- Secure IPC communication patterns
+- Node integration disabled
+- Sandbox mode compatible
+- Secure IPC communication
+
+### Performance  
+- Webpack optimized builds
+- Efficient event system
+- Minimal memory footprint
+- Fast startup time
+
+### Development Experience
+- TypeScript throughout
+- Source maps for debugging
+- Hot reloading in development
+- Comprehensive error handling
+
+## Next Steps
+
+The following features are planned for future releases:
+- JSON Viewer tab implementation
+- JSON Compare functionality  
+- Load testing capabilities
+- AI-powered API assistance
+- Request history
+- Environment variables
+- Code generation
+- API documentation
+- Team collaboration features
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+This project follows clean architecture principles:
+1. **Separation of Concerns**: Each module has a single responsibility
+2. **Event-Driven**: Loose coupling between components
+3. **Type Safety**: Full TypeScript coverage
+4. **Testable**: Modular design for easy testing
+5. **Scalable**: Easy to add new features
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file for details.
 
-## Acknowledgments
+---
 
-- Built with [Electron](https://www.electronjs.org/)
-- TypeScript for type safety
-- LowDB for local data persistence
-- Modern CSS with CSS Variables for theming
-- Inspired by Postman and Insomnia
+**API Courier** - Making API testing professional and efficient! 🚀

@@ -1,57 +1,52 @@
 {
   "name": "api-courier",
   "version": "1.0.0",
-  "description": "Professional API testing tool built with Electron",
+  "description": "Professional API testing tool - like Postman/Insomnia",
   "main": "dist/main/index.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "npm run build && electron . --dev",
-    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
-    "build:main": "tsc -p tsconfig.main.json",
-    "build:preload": "tsc -p tsconfig.preload.json",
-    "build:renderer": "tsc -p tsconfig.renderer.json && cp -r src/renderer/*.html src/renderer/styles src/renderer/js/*.js dist/renderer/ && cp -r src/renderer/js dist/renderer/ || true",
-    "watch": "npm run watch:main & npm run watch:preload & npm run watch:renderer",
-    "watch:main": "tsc -p tsconfig.main.json -w",
-    "watch:preload": "tsc -p tsconfig.preload.json -w",
-    "watch:renderer": "tsc -p tsconfig.renderer.json -w",
-    "clean": "rm -rf dist",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "format": "prettier --write src/**/*.{ts,tsx,json}",
-    "prepare": "husky install"
+    "build": "webpack --config webpack.config.js",
+    "build:dev": "webpack --config webpack.config.js --mode development",
+    "build:watch": "webpack --config webpack.config.js --mode development --watch",
+    "start": "npm run build && electron .",
+    "dev": "npm run build:dev && electron .",
+    "test": "echo \"No test specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivam96anand/api-courier2.0.git"
   },
   "keywords": [
     "api",
     "testing",
-    "http",
     "electron",
-    "typescript"
+    "postman",
+    "insomnia"
   ],
-  "author": "API Courier Team",
+  "author": "Shivam Anand",
   "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "electron": "^26.0.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^5.0.0",
-    "husky": "^8.0.3",
-    "lint-staged": "^13.2.3",
-    "prettier": "^3.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^0.34.0"
+  "bugs": {
+    "url": "https://github.com/shivam96anand/api-courier2.0/issues"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
+  "homepage": "https://github.com/shivam96anand/api-courier2.0#readme",
+  "dependencies": {
+    "lowdb": "^7.0.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.2",
+    "electron": "^38.0.0",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.4",
+    "mini-css-extract-plugin": "^2.9.4",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.0",
+    "sass": "^1.92.1",
+    "sass-loader": "^16.0.5",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
   }
 }
