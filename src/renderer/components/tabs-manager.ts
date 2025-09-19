@@ -1,254 +1,267 @@
-import { EventBus } from '../utils/event-bus';
-import { Request, Response } from '../../shared/types';
-
-export interface Tab {
-  id: string;
-  request: Request;
-  isActive: boolean;
-  isDirty: boolean;
-  response?: Response | null;
-}
+import { RequestTab, ApiRequest } from '../../shared/types';
 
 export class TabsManager {
-  private tabs: Tab[] = [];
-  private activeTabId: string | null = null;
-
-  constructor(private eventBus: EventBus) {}
+  private tabs: RequestTab[] = [];
+  private activeTabId?: string;
 
   initialize(): void {
+    this.setupTabEvents();
     this.setupEventListeners();
     this.renderTabs();
   }
 
-  private setupEventListeners(): void {
-    this.eventBus.on('request:selected', (request: Request) => {
-      this.openTab(request).catch(console.error);
-    });
+  private setupTabEvents(): void {
+    const tabList = document.getElementById('request-tab-list');
+    if (!tabList) return;
 
-    this.eventBus.on('tab:close', (tabId: string) => {
-      this.closeTab(tabId);
-    });
+    tabList.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
 
-    this.eventBus.on('tab:activate', (tabId: string) => {
-      this.activateTab(tabId);
-    });
-
-    this.eventBus.on('response:received', (response: Response) => {
-      this.storeResponseForActiveTab(response);
-    });
-
-    // Close tab when request is deleted
-    this.eventBus.on('request:deleted', (requestId: string) => {
-      this.closeTabByRequestId(requestId);
-    });
-  }
-
-  private storeResponseForActiveTab(response: Response): void {
-    const activeTab = this.getActiveTab();
-    if (activeTab) {
-      activeTab.response = response;
-      // Persist response to disk
-      this.saveResponseToDisk(activeTab.request.id, response);
-    }
-  }
-
-  private async saveResponseToDisk(requestId: string, response: Response): Promise<void> {
-    try {
-      await window.electronAPI.saveResponse(requestId, response);
-    } catch (error) {
-      console.error('Failed to save response:', error);
-    }
-  }
-
-  private async loadResponseFromDisk(requestId: string): Promise<Response | null> {
-    try {
-      return await window.electronAPI.getResponse(requestId);
-    } catch (error) {
-      console.error('Failed to load response:', error);
-      return null;
-    }
-  }
-
-  async openTab(request: Request): Promise<void> {
-    // Check if tab already exists
-    let existingTab = this.tabs.find(tab => tab.request.id === request.id);
-    
-    if (existingTab) {
-      // Update the request data and activate
-      existingTab.request = request;
-      this.activateTab(existingTab.id);
-    } else {
-      // Create new tab and load any existing response
-      const savedResponse = await this.loadResponseFromDisk(request.id);
-      
-      const tab: Tab = {
-        id: `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        request: request,
-        isActive: true,
-        isDirty: false,
-        response: savedResponse // Load existing response if available
-      };
-
-      // Deactivate all other tabs
-      this.tabs.forEach(t => t.isActive = false);
-      
-      this.tabs.push(tab);
-      this.activeTabId = tab.id;
-      
-      this.eventBus.emit('tab:opened', tab);
-      
-      // Display response if available, otherwise clear
-      if (savedResponse) {
-        this.eventBus.emit('response:restore', savedResponse);
-      } else {
-        this.eventBus.emit('response:clear');
+      // Handle close button clicks first (highest priority)
+      if (target.classList.contains('tab-close')) {
+        const tabId = target.dataset.tabId;
+        if (tabId) {
+          this.closeTab(tabId);
+        }
+        return; // Don't proceed with tab switching if close button was clicked
       }
-    }
 
-    this.renderTabs();
-    this.eventBus.emit('request:display', request);
+      // Find the closest parent element with 'request-tab' class
+      const tabElement = target.closest('.request-tab') as HTMLElement;
+      if (tabElement) {
+        const tabId = tabElement.dataset.tabId;
+
+        if (tabId === 'new') {
+          this.createNewTab();
+        } else if (tabId) {
+          this.switchToTab(tabId);
+        }
+      }
+    });
   }
 
-  closeTab(tabId: string): void {
+  private setupEventListeners(): void {
+    // Listen for request updates to save them to the active tab
+    document.addEventListener('request-updated', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const updatedRequest = customEvent.detail.request;
+      if (this.activeTabId && updatedRequest) {
+        this.updateActiveTab({ request: updatedRequest }, true); // Mark as modified for user changes
+      }
+    });
+
+    // Listen for responses to save them to the active tab
+    document.addEventListener('response-received', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const response = customEvent.detail.response;
+      if (this.activeTabId && response) {
+        this.updateActiveTab({ response }, false); // Don't mark as modified for responses
+      }
+    });
+
+    // Listen for request deletions to close corresponding tabs
+    document.addEventListener('request-deleted', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const requestId = customEvent.detail.requestId;
+      if (requestId) {
+        this.closeTabsByRequestId(requestId);
+      }
+    });
+  }
+
+  private createNewTab(): void {
+    const tabNumber = this.tabs.length + 1;
+    const newRequest: ApiRequest = {
+      id: this.generateId(),
+      name: `Untitled Request ${tabNumber}`,
+      method: 'GET',
+      url: '',
+      params: {},
+      headers: {},
+    };
+
+    const newTab: RequestTab = {
+      id: this.generateId(),
+      name: newRequest.name,
+      request: newRequest,
+      isModified: false,
+    };
+
+    this.tabs.push(newTab);
+    this.activeTabId = newTab.id;
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
+  }
+
+  private switchToTab(tabId: string): void {
+    this.activeTabId = tabId;
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
+  }
+
+  private closeTab(tabId: string): void {
     const tabIndex = this.tabs.findIndex(tab => tab.id === tabId);
     if (tabIndex === -1) return;
 
-    const closingTab = this.tabs[tabIndex];
-    const wasActive = closingTab.isActive;
-
     this.tabs.splice(tabIndex, 1);
 
-    // If we closed the active tab, activate another one
-    if (wasActive && this.tabs.length > 0) {
-      // Activate the tab to the right, or the last tab if we closed the rightmost
-      const newActiveIndex = Math.min(tabIndex, this.tabs.length - 1);
-      this.activateTab(this.tabs[newActiveIndex].id);
-    } else if (this.tabs.length === 0) {
-      this.activeTabId = null;
-      this.eventBus.emit('request:display', null);
-      this.eventBus.emit('response:clear');
+    if (this.activeTabId === tabId) {
+      if (this.tabs.length > 0) {
+        const newActiveIndex = Math.min(tabIndex, this.tabs.length - 1);
+        this.activeTabId = this.tabs[newActiveIndex].id;
+      } else {
+        this.activeTabId = undefined;
+      }
     }
 
     this.renderTabs();
-    this.eventBus.emit('tab:closed', tabId);
-  }
-
-  closeTabByRequestId(requestId: string): void {
-    const tab = this.tabs.find(tab => tab.request.id === requestId);
-    if (tab) {
-      this.closeTab(tab.id);
-    }
-  }
-
-  activateTab(tabId: string): void {
-    const tab = this.tabs.find(t => t.id === tabId);
-    if (!tab) return;
-
-    // Deactivate all tabs
-    this.tabs.forEach(t => t.isActive = false);
-    
-    // Activate the selected tab
-    tab.isActive = true;
-    this.activeTabId = tabId;
-
-    this.renderTabs();
-    this.eventBus.emit('request:display', tab.request);
-    
-    // Restore response if available
-    if (tab.response) {
-      this.eventBus.emit('response:restore', tab.response);
-    } else {
-      this.eventBus.emit('response:clear');
-    }
-  }
-
-  markTabDirty(tabId: string, isDirty: boolean = true): void {
-    const tab = this.tabs.find(t => t.id === tabId);
-    if (tab) {
-      tab.isDirty = isDirty;
-      this.renderTabs();
-    }
-  }
-
-  getActiveTab(): Tab | null {
-    return this.tabs.find(tab => tab.isActive) || null;
-  }
-
-  getAllTabs(): Tab[] {
-    return [...this.tabs];
+    this.notifyTabChange();
+    this.saveState();
   }
 
   private renderTabs(): void {
-    const container = document.getElementById('requestTabs');
-    const requestPanel = document.querySelector('.request-panel') as HTMLElement;
-    
-    if (!container) return;
+    const tabList = document.getElementById('request-tab-list');
+    if (!tabList) return;
 
-    container.innerHTML = '';
+    tabList.innerHTML = '';
 
-    if (this.tabs.length === 0) {
-      container.innerHTML = `
-        <div class="no-tabs-message">
-          <span>Select a request from the collection to open it in a tab</span>
-        </div>
-      `;
-      
-      // Hide the request panel content when no tabs
-      if (requestPanel) {
-        const panelHeader = requestPanel.querySelector('.panel-header') as HTMLElement;
-        const panelContent = requestPanel.querySelector('.panel-content') as HTMLElement;
-        
-        if (panelHeader) panelHeader.style.display = 'none';
-        if (panelContent) panelContent.style.display = 'none';
-      }
-      
-      return;
-    }
+    // Add "New Request" button first (fixed position on left)
+    const newTabButton = document.createElement('button');
+    newTabButton.className = 'request-tab new-tab-button';
+    newTabButton.dataset.tabId = 'new';
+    newTabButton.textContent = '+ New Request';
+    newTabButton.title = 'Create new request';
+    tabList.appendChild(newTabButton);
 
-    // Show the request panel content when tabs exist
-    if (requestPanel) {
-      const panelHeader = requestPanel.querySelector('.panel-header') as HTMLElement;
-      const panelContent = requestPanel.querySelector('.panel-content') as HTMLElement;
-      
-      if (panelHeader) panelHeader.style.display = '';
-      if (panelContent) panelContent.style.display = '';
-    }
-
+    // Render existing tabs after the "New Request" button (to the right)
     this.tabs.forEach(tab => {
-      const tabElement = this.createTabElement(tab);
-      container.appendChild(tabElement);
+      const tabElement = document.createElement('button');
+      tabElement.className = `request-tab ${tab.id === this.activeTabId ? 'active' : ''}`;
+      tabElement.dataset.tabId = tab.id;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = tab.name + (tab.isModified ? ' •' : '');
+      nameSpan.className = 'tab-name';
+
+      const closeButton = document.createElement('span');
+      closeButton.className = 'tab-close';
+      closeButton.dataset.tabId = tab.id;
+      closeButton.textContent = '×';
+      closeButton.title = 'Close tab';
+
+      tabElement.appendChild(nameSpan);
+      tabElement.appendChild(closeButton);
+      tabList.appendChild(tabElement);
     });
   }
 
-  private createTabElement(tab: Tab): HTMLElement {
-    const div = document.createElement('div');
-    div.className = `request-tab ${tab.isActive ? 'active' : ''}`;
-    div.setAttribute('data-tab-id', tab.id);
+  private notifyTabChange(): void {
+    const activeTab = this.getActiveTab();
+    const event = new CustomEvent('tab-changed', {
+      detail: { activeTab }
+    });
+    document.dispatchEvent(event);
+  }
 
-    div.innerHTML = `
-      <div class="tab-content">
-        <span class="tab-method method-${tab.request.method.toLowerCase()}">${tab.request.method}</span>
-        <span class="tab-name" title="${tab.request.name}">${tab.request.name}</span>
-        ${tab.isDirty ? '<span class="tab-dirty">•</span>' : ''}
-        <button class="tab-close" title="Close tab">×</button>
-      </div>
-    `;
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
 
-    // Add event listeners
-    const tabContent = div.querySelector('.tab-content') as HTMLElement;
-    const closeBtn = div.querySelector('.tab-close') as HTMLElement;
+  setTabs(tabs: RequestTab[], activeTabId?: string): void {
+    this.tabs = tabs;
+    this.activeTabId = activeTabId;
+    this.renderTabs();
+  }
 
-    tabContent.addEventListener('click', (e) => {
-      if (e.target !== closeBtn) {
-        this.activateTab(tab.id);
+  getTabs(): RequestTab[] {
+    return this.tabs;
+  }
+
+  getActiveTab(): RequestTab | undefined {
+    return this.tabs.find(tab => tab.id === this.activeTabId);
+  }
+
+  getActiveTabId(): string | undefined {
+    return this.activeTabId;
+  }
+
+  updateActiveTab(updates: Partial<RequestTab>, markAsModified: boolean = true): void {
+    if (!this.activeTabId) return;
+
+    const tabIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    if (tabIndex !== -1) {
+      const currentTab = this.tabs[tabIndex];
+      this.tabs[tabIndex] = {
+        ...currentTab,
+        ...updates,
+        isModified: markAsModified ? true : currentTab.isModified
+      };
+      this.renderTabs();
+      this.saveState();
+    }
+  }
+
+  private saveState(): void {
+    // Trigger a state save by dispatching an event
+    const event = new CustomEvent('tabs-changed', {
+      detail: {
+        tabs: this.tabs,
+        activeTabId: this.activeTabId
       }
     });
+    document.dispatchEvent(event);
+  }
 
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.closeTab(tab.id);
-    });
+  openRequestInTab(request: ApiRequest): void {
+    // Check if request is already open in a tab
+    const existingTab = this.tabs.find(tab => tab.request.id === request.id);
 
-    return div;
+    if (existingTab) {
+      // Switch to existing tab
+      this.activeTabId = existingTab.id;
+      this.renderTabs();
+      this.notifyTabChange();
+      this.saveState();
+    } else {
+      // Create new tab for this request
+      const newTab: RequestTab = {
+        id: this.generateId(),
+        name: request.name,
+        request: { ...request }, // Clone the request
+        isModified: false,
+      };
+
+      this.tabs.push(newTab);
+      this.activeTabId = newTab.id;
+      this.renderTabs();
+      this.notifyTabChange();
+      this.saveState();
+    }
+  }
+
+  closeTabsByRequestId(requestId: string): void {
+    // Find all tabs with this request ID
+    const tabsToClose = this.tabs.filter(tab => tab.request.id === requestId);
+
+    if (tabsToClose.length === 0) return;
+
+    // Remove all matching tabs
+    this.tabs = this.tabs.filter(tab => tab.request.id !== requestId);
+
+    // If the active tab was one of the closed tabs, update the active tab
+    const wasActiveTabClosed = tabsToClose.some(tab => tab.id === this.activeTabId);
+    if (wasActiveTabClosed) {
+      if (this.tabs.length > 0) {
+        this.activeTabId = this.tabs[0].id;
+      } else {
+        this.activeTabId = undefined;
+      }
+    }
+
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
   }
 }

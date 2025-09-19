@@ -1,46 +1,63 @@
-import { app } from 'electron';
-import { WindowManager } from './modules/window-manager';
-import { IPCManager } from './modules/ipc-manager';
-import { StoreManager } from './modules/store-manager';
-import { RequestManager } from './modules/request-manager';
+import { app, BrowserWindow } from 'electron';
+import { windowManager } from './modules/window-manager';
+import { storeManager } from './modules/store-manager';
+import { ipcManager } from './modules/ipc-manager';
 
 class ApiCourierApp {
-  private windowManager: WindowManager;
-  private ipcManager: IPCManager;
-  private storeManager: StoreManager;
-  private requestManager: RequestManager;
+  private isQuitting = false;
 
-  constructor() {
-    this.storeManager = new StoreManager();
-    this.requestManager = new RequestManager();
-    this.windowManager = new WindowManager();
-    this.ipcManager = new IPCManager(this.storeManager, this.requestManager);
-    
-    this.setupApp();
+  async initialize(): Promise<void> {
+    await app.whenReady();
+    await storeManager.initialize();
+    ipcManager.initialize();
+    this.createWindow();
+    this.setupEventHandlers();
   }
 
-  private setupApp(): void {
-    app.whenReady().then(() => {
-      this.windowManager.createMainWindow();
-      
-      app.on('activate', () => {
-        if (this.windowManager.getAllWindows().length === 0) {
-          this.windowManager.createMainWindow();
-        }
-      });
-    });
+  private createWindow(): void {
+    windowManager.createMainWindow();
+  }
 
+  private setupEventHandlers(): void {
     app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
-        app.quit();
+        this.quit();
       }
     });
 
-    app.on('before-quit', async () => {
-      await this.storeManager.flush();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        this.createWindow();
+      }
     });
+
+    app.on('before-quit', () => {
+      this.isQuitting = true;
+    });
+
+    app.on('will-quit', async (event) => {
+      if (!this.isQuitting) {
+        event.preventDefault();
+        await this.gracefulShutdown();
+        this.isQuitting = true;
+        app.quit();
+      }
+    });
+  }
+
+  private async gracefulShutdown(): Promise<void> {
+    await storeManager.flush();
+    windowManager.closeAllWindows();
+  }
+
+  private quit(): void {
+    this.isQuitting = true;
+    app.quit();
   }
 }
 
-// Initialize the application
-new ApiCourierApp();
+const apiCourierApp = new ApiCourierApp();
+
+if (require.main === module) {
+  apiCourierApp.initialize().catch(console.error);
+}

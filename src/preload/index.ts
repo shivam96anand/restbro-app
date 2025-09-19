@@ -1,71 +1,77 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { Collection, Request, Response, AppSettings } from '../shared/types';
 
-// Define the API that will be exposed to the renderer process
-const electronAPI = {
-  // Store methods
-  getCollections: (): Promise<Collection[]> => 
-    ipcRenderer.invoke('store:get-collections'),
-  
-  saveCollection: (collection: Collection): Promise<void> => 
-    ipcRenderer.invoke('store:save-collection', collection),
-  
-  deleteCollection: (id: string): Promise<void> => 
-    ipcRenderer.invoke('store:delete-collection', id),
+// Inline IPC channels to avoid module resolution issues in sandbox
+const IPC_CHANNELS = {
+  STORE_GET: 'store:get',
+  STORE_SET: 'store:set',
+  REQUEST_SEND: 'request:send',
+  COLLECTION_CREATE: 'collection:create',
+  COLLECTION_UPDATE: 'collection:update',
+  COLLECTION_DELETE: 'collection:delete',
+} as const;
 
-  saveRequest: (request: Request): Promise<void> => 
-    ipcRenderer.invoke('store:save-request', request),
+// Define types inline to avoid import issues
+interface ApiRequest {
+  id: string;
+  name: string;
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+  url: string;
+  headers: Record<string, string>;
+  body?: {
+    type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
+    content: string;
+  };
+  auth?: {
+    type: 'none' | 'basic' | 'bearer' | 'api-key';
+    config: Record<string, string>;
+  };
+}
 
-  deleteRequest: (id: string): Promise<void> => 
-    ipcRenderer.invoke('store:delete-request', id),
-  
-  getSettings: (): Promise<AppSettings> => 
-    ipcRenderer.invoke('store:get-settings'),
-  
-  saveSettings: (settings: Partial<AppSettings>): Promise<void> => 
-    ipcRenderer.invoke('store:save-settings', settings),
+interface Collection {
+  id: string;
+  name: string;
+  type: 'folder' | 'request';
+  parentId?: string;
+  children?: Collection[];
+  request?: ApiRequest;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  // Response methods
-  saveResponse: (requestId: string, response: Response): Promise<void> => 
-    ipcRenderer.invoke('store:save-response', requestId, response),
-  
-  getResponse: (requestId: string): Promise<Response | null> => 
-    ipcRenderer.invoke('store:get-response', requestId),
-  
-  deleteResponse: (requestId: string): Promise<void> => 
-    ipcRenderer.invoke('store:delete-response', requestId),
+interface AppTheme {
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+}
 
-  // File methods
-  importCollection: (): Promise<Collection | null> => 
-    ipcRenderer.invoke('file:import-collection'),
-  
-  exportCollection: (collection: Collection): Promise<boolean> => 
-    ipcRenderer.invoke('file:export-collection', collection),
+interface AppState {
+  collections: Collection[];
+  openTabs: any[];
+  activeTabId?: string;
+  selectedCollectionId?: string;
+  theme: AppTheme;
+}
 
-  // Request methods
-  sendRequest: (request: Request): Promise<Response> => 
-    ipcRenderer.invoke('request:send', request),
-  
-  cancelRequest: (requestId: string): Promise<void> => 
-    ipcRenderer.invoke('request:cancel', requestId),
+const apiCourierAPI = {
+  store: {
+    get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
+    set: (updates: Partial<AppState>): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.STORE_SET, updates),
+  },
 
-  // Window methods
-  minimizeWindow: (): Promise<void> => 
-    ipcRenderer.invoke('window:minimize'),
-  
-  maximizeWindow: (): Promise<void> => 
-    ipcRenderer.invoke('window:maximize'),
-  
-  closeWindow: (): Promise<void> => 
-    ipcRenderer.invoke('window:close'),
+  request: {
+    send: (request: ApiRequest) => ipcRenderer.invoke(IPC_CHANNELS.REQUEST_SEND, request),
+  },
+
+  collection: {
+    create: (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>): Promise<Collection> =>
+      ipcRenderer.invoke(IPC_CHANNELS.COLLECTION_CREATE, collection),
+    update: (id: string, updates: Partial<Collection>): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.COLLECTION_UPDATE, id, updates),
+    delete: (id: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.COLLECTION_DELETE, id),
+  },
 };
 
-// Expose the API to the renderer process
-contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+contextBridge.exposeInMainWorld('apiCourier', apiCourierAPI);
 
-// Type declaration for the global window object
-declare global {
-  interface Window {
-    electronAPI: typeof electronAPI;
-  }
-}
+export type ApiCourierAPI = typeof apiCourierAPI;

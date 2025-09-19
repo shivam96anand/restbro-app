@@ -9,80 +9,56 @@
 <body>
     <div id="app">
         <header class="app-header">
-            <div class="header-left">
-                <h1 class="app-title">API Courier</h1>
-            </div>
-            <div class="header-right">
-                <div class="theme-selector">
-                    <select id="themeSelect">
-                        <option value="dark">🎨 Default Blue</option>
-                        <option value="blue">🔷 Blue</option>
-                        <option value="green">🟢 Green</option>
-                        <option value="purple">🟣 Purple</option>
-                        <option value="orange">🟠 Orange</option>
-                        <option value="red">🔴 Red</option>
-                        <option value="teal">🔸 Teal</option>
-                    </select>
-                </div>
+            <div class="app-title">API Courier</div>
+            <div class="theme-selector">
+                <select id="theme-dropdown">
+                    <option value="blue">Blue</option>
+                    <option value="green">Green</option>
+                    <option value="purple">Purple</option>
+                    <option value="orange">Orange</option>
+                    <option value="red">Red</option>
+                </select>
             </div>
         </header>
 
-        <div class="app-body">
+        <div class="main-container">
             <nav class="sidebar">
-                <div class="tab-list">
-                    <button class="tab-btn active" data-tab="api">
-                        <span class="tab-icon">🔌</span>
-                        API
-                    </button>
-                    <button class="tab-btn" data-tab="json-viewer">
-                        <span class="tab-icon">📄</span>
-                        JSON Viewer
-                    </button>
-                    <button class="tab-btn" data-tab="json-compare">
-                        <span class="tab-icon">🔍</span>
-                        JSON Compare
-                    </button>
-                    <button class="tab-btn" data-tab="load-testing">
-                        <span class="tab-icon">⚡</span>
-                        Load Testing
-                    </button>
-                    <button class="tab-btn" data-tab="ask-ai">
-                        <span class="tab-icon">🤖</span>
-                        Ask AI
-                    </button>
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-tab="api">API</button>
+                    <button class="nav-tab" data-tab="json-viewer">JSON Viewer</button>
+                    <button class="nav-tab" data-tab="json-compare">JSON Compare</button>
+                    <button class="nav-tab" data-tab="load-testing">Load Testing</button>
+                    <button class="nav-tab" data-tab="ask-ai">Ask AI</button>
                 </div>
             </nav>
 
-            <main class="main-content">
-                <!-- API Tab Content -->
+            <main class="content">
                 <div id="api-tab" class="tab-content active">
+                    <div class="request-tabs">
+                        <div class="tab-list" id="request-tab-list">
+                            <button class="request-tab" data-tab-id="new">+ New Request</button>
+                        </div>
+                    </div>
+
                     <div class="api-layout">
-                        <div class="collections-panel resizable-panel">
+                        <div class="collections-panel">
                             <div class="panel-header">
                                 <h3>Collections</h3>
-                                <div class="panel-actions">
-                                    <button id="importBtn" class="btn btn-sm">Import</button>
-                                    <button id="newCollectionBtn" class="btn btn-sm btn-primary">New</button>
-                                </div>
+                                <button class="btn-add" id="add-collection">+</button>
                             </div>
-                            <div class="panel-content">
-                                <div id="collectionsTree" class="collections-tree">
-                                    <!-- Collections will be rendered here -->
-                                </div>
+                            <div class="collections-tree" id="collections-tree">
+                                <div class="empty-state">No collections yet. Click + to create one.</div>
                             </div>
+                            <div class="resize-handle" data-panel="collections"></div>
                         </div>
 
-                        <div class="resize-handle vertical" data-resize="collections"></div>
-
-                        <div class="request-panel resizable-panel">
-                            <!-- Request Tabs -->
-                            <div id="requestTabs" class="request-tabs">
-                                <!-- Tabs will be rendered here by TabsManager -->
-                            </div>
-                            
+                        <div class="request-panel">
                             <div class="panel-header">
-                                <div class="request-url-bar">
-                                    <select id="requestMethod" class="method-select">
+                                <h3>Request</h3>
+                            </div>
+                            <div class="request-form">
+                                <div class="request-line">
+                                    <select id="request-method" class="method-select">
                                         <option value="GET">GET</option>
                                         <option value="POST">POST</option>
                                         <option value="PUT">PUT</option>
@@ -91,119 +67,87 @@
                                         <option value="HEAD">HEAD</option>
                                         <option value="OPTIONS">OPTIONS</option>
                                     </select>
-                                    <input id="requestUrl" type="text" class="url-input" placeholder="Enter request URL">
-                                    <button id="sendBtn" class="btn btn-primary">Send</button>
-                                </div>
-                            </div>
-                            <div class="panel-content">
-                                <div class="request-config-tabs">
-                                    <button class="request-tab active" data-tab="params">Params</button>
-                                    <button class="request-tab" data-tab="body">Body</button>
-                                    <button class="request-tab" data-tab="headers">Headers</button>
-                                    <button class="request-tab" data-tab="auth">Auth</button>
+                                    <input type="text" id="request-url" class="url-input" placeholder="Enter request URL">
+                                    <button id="send-request" class="send-btn">Send</button>
                                 </div>
 
-                                <div class="request-tab-content">
-                                    <!-- Params Tab -->
-                                    <div id="params-tab" class="request-tab-pane active">
-                                        <div id="paramsEditor"></div>
+                                <div class="request-details">
+                                    <div class="tabs">
+                                        <button class="tab active" data-section="params">Params</button>
+                                        <button class="tab" data-section="body">Body</button>
+                                        <button class="tab" data-section="auth">Auth</button>
+                                        <button class="tab" data-section="headers">Headers</button>
                                     </div>
 
-                                    <!-- Body Tab -->
-                                    <div id="body-tab" class="request-tab-pane">
+                                    <div id="params-section" class="section active">
+                                        <div class="key-value-editor" id="params-editor">
+                                            <div class="kv-row">
+                                                <input type="text" placeholder="Key" class="key-input">
+                                                <input type="text" placeholder="Value" class="value-input">
+                                                <button class="remove-btn">×</button>
+                                            </div>
+                                        </div>
+                                        <button class="add-param-btn">Add Parameter</button>
+                                    </div>
+
+                                    <div id="body-section" class="section">
                                         <div class="body-type-selector">
-                                            <label>
-                                                <input type="radio" name="bodyType" value="json" checked>
-                                                JSON
-                                            </label>
-                                            <label>
-                                                <input type="radio" name="bodyType" value="raw">
-                                                Raw
-                                            </label>
-                                            <label>
-                                                <input type="radio" name="bodyType" value="form-data">
-                                                Form Data
-                                            </label>
-                                            <label>
-                                                <input type="radio" name="bodyType" value="x-www-form-urlencoded">
-                                                URL Encoded
-                                            </label>
+                                            <label><input type="radio" name="body-type" value="none" checked> None</label>
+                                            <label><input type="radio" name="body-type" value="json"> JSON</label>
+                                            <label><input type="radio" name="body-type" value="raw"> Raw</label>
+                                            <label><input type="radio" name="body-type" value="form-urlencoded"> Form URL Encoded</label>
                                         </div>
-                                        <div class="body-editor">
-                                            <textarea id="bodyContent" class="code-editor" placeholder="Enter request body"></textarea>
-                                        </div>
+                                        <textarea id="request-body" class="body-editor" placeholder="Request body"></textarea>
                                     </div>
 
-                                    <!-- Headers Tab -->
-                                    <div id="headers-tab" class="request-tab-pane">
-                                        <div id="headersEditor"></div>
+                                    <div id="auth-section" class="section">
+                                        <select id="auth-type">
+                                            <option value="none">No Auth</option>
+                                            <option value="basic">Basic Auth</option>
+                                            <option value="bearer">Bearer Token</option>
+                                            <option value="api-key">API Key</option>
+                                        </select>
+                                        <div id="auth-config" class="auth-config"></div>
                                     </div>
 
-                                    <!-- Auth Tab -->
-                                    <div id="auth-tab" class="request-tab-pane">
-                                        <div class="auth-type-selector">
-                                            <label>Auth Type:</label>
-                                            <select id="authType">
-                                                <option value="none">None</option>
-                                                <option value="basic">Basic</option>
-                                                <option value="bearer">Bearer Token</option>
-                                                <option value="oauth1">OAuth 1.0</option>
-                                                <option value="oauth2">OAuth 2.0</option>
-                                                <option value="api-key">API Key</option>
-                                            </select>
+                                    <div id="headers-section" class="section">
+                                        <div class="key-value-editor" id="headers-editor">
+                                            <div class="kv-row">
+                                                <input type="text" placeholder="Key" class="key-input">
+                                                <input type="text" placeholder="Value" class="value-input">
+                                                <button class="remove-btn">×</button>
+                                            </div>
                                         </div>
-                                        <div id="authConfig" class="auth-config">
-                                            <!-- Auth configuration will be shown here -->
-                                        </div>
+                                        <button class="add-header-btn">Add Header</button>
                                     </div>
                                 </div>
                             </div>
+                            <div class="resize-handle" data-panel="request"></div>
                         </div>
 
-                        <div class="resize-handle vertical" data-resize="response"></div>
-
-                        <div class="response-panel resizable-panel">
+                        <div class="response-panel">
                             <div class="panel-header">
-                                <div class="response-info">
-                                    <span id="responseStatus" class="status-badge">Ready</span>
-                                    <span id="responseTime" class="response-meta">0ms</span>
-                                    <span id="responseSize" class="response-meta">0 B</span>
-                                </div>
+                                <h3>Response</h3>
+                                <div class="response-meta" id="response-meta"></div>
                             </div>
-                            <div class="panel-content">
+                            <div class="response-content">
                                 <div class="response-tabs">
-                                    <button class="response-tab active" data-tab="response">Response</button>
-                                    <button class="response-tab" data-tab="response-headers">Headers</button>
+                                    <button class="tab active" data-section="body">Body</button>
+                                    <button class="tab" data-section="headers">Headers</button>
                                 </div>
-
-                                <div class="response-tab-content">
-                                    <div id="response-tab" class="response-tab-pane active">
-                                        <pre id="responseBody" class="response-viewer">
-                                            <div class="empty-state">
-                                                <span>👋</span>
-                                                <p>Send a request to see the response</p>
-                                            </div>
-                                        </pre>
-                                    </div>
-
-                                    <div id="response-headers-tab" class="response-tab-pane">
-                                        <div id="responseHeaders" class="headers-viewer">
-                                            <div class="empty-state">
-                                                <span>📋</span>
-                                                <p>Response headers will appear here</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div id="response-body" class="response-section active">
+                                    <div class="response-placeholder">Send a request to see the response here</div>
+                                </div>
+                                <div id="response-headers" class="response-section">
+                                    <div class="response-placeholder">No response headers</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Coming Soon Tabs -->
                 <div id="json-viewer-tab" class="tab-content">
                     <div class="coming-soon">
-                        <span class="coming-soon-icon">🚧</span>
                         <h2>JSON Viewer</h2>
                         <p>Coming Soon...</p>
                     </div>
@@ -211,7 +155,6 @@
 
                 <div id="json-compare-tab" class="tab-content">
                     <div class="coming-soon">
-                        <span class="coming-soon-icon">🚧</span>
                         <h2>JSON Compare</h2>
                         <p>Coming Soon...</p>
                     </div>
@@ -219,7 +162,6 @@
 
                 <div id="load-testing-tab" class="tab-content">
                     <div class="coming-soon">
-                        <span class="coming-soon-icon">🚧</span>
                         <h2>Load Testing</h2>
                         <p>Coming Soon...</p>
                     </div>
@@ -227,7 +169,6 @@
 
                 <div id="ask-ai-tab" class="tab-content">
                     <div class="coming-soon">
-                        <span class="coming-soon-icon">🚧</span>
                         <h2>Ask AI</h2>
                         <p>Coming Soon...</p>
                     </div>

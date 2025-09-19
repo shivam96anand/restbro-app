@@ -1,256 +1,154 @@
 export class Modal {
-  private overlay!: HTMLElement;
-  private modal!: HTMLElement;
+  private modal: HTMLElement | null = null;
 
-  constructor() {
-    this.createModal();
+  show(title: string, placeholder: string = ''): Promise<string | null> {
+    return new Promise((resolve) => {
+      this.createModal(title, placeholder, resolve);
+    });
   }
 
-  private createModal(): void {
-    // Create overlay
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'modal-overlay';
-    this.overlay.style.cssText = `
+  private createModal(title: string, placeholder: string, resolve: (value: string | null) => void): void {
+    // Remove existing modal if any
+    this.hide();
+
+    // Create modal overlay
+    this.modal = document.createElement('div');
+    this.modal.className = 'modal-overlay';
+    this.modal.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      z-index: 1000;
-      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
     `;
 
-    // Create modal
-    this.modal = document.createElement('div');
-    this.modal.className = 'modal';
-    this.modal.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    modalContent.style.cssText = `
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 24px;
-      min-width: 400px;
-      max-width: 600px;
-      z-index: 1001;
-      box-shadow: 0 10px 30px var(--shadow);
+      min-width: 300px;
+      max-width: 500px;
     `;
 
-    this.overlay.appendChild(this.modal);
-    document.body.appendChild(this.overlay);
+    // Create title
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = title;
+    modalTitle.style.cssText = `
+      margin: 0 0 16px 0;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+    `;
 
-    // Close on overlay click
-    this.overlay.addEventListener('click', (e) => {
-      if (e.target === this.overlay) {
-        this.close();
-      }
-    });
-
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen()) {
-        this.close();
-      }
-    });
-  }
-
-  show(content: string): void {
-    this.modal.innerHTML = content;
-    this.overlay.style.display = 'block';
-  }
-
-  close(): void {
-    this.overlay.style.display = 'none';
-    this.modal.innerHTML = '';
-  }
-
-  isOpen(): boolean {
-    return this.overlay.style.display === 'block';
-  }
-
-  static prompt(title: string, placeholder: string = ''): Promise<string | null> {
-    return new Promise((resolve) => {
-      const modal = new Modal();
-      const inputId = `input-${Date.now()}`;
-      
-      const content = `
-        <div class="modal-header">
-          <h3 style="margin-bottom: 16px; color: var(--text);">${title}</h3>
-        </div>
-        <div class="modal-body">
-          <input 
-            type="text" 
-            id="${inputId}"
-            placeholder="${placeholder}"
-            style="
-              width: 100%;
-              padding: 12px;
-              background: var(--surface);
-              color: var(--text);
-              border: 1px solid var(--border);
-              border-radius: 4px;
-              font-size: 14px;
-              margin-bottom: 16px;
-            "
-          />
-        </div>
-        <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button id="cancel-btn" class="btn">Cancel</button>
-          <button id="ok-btn" class="btn btn-primary">OK</button>
-        </div>
-      `;
-
-      modal.show(content);
-
-      const input = document.getElementById(inputId) as HTMLInputElement;
-      const cancelBtn = document.getElementById('cancel-btn');
-      const okBtn = document.getElementById('ok-btn');
-
-      input.focus();
-
-      const handleOk = () => {
-        const value = input.value.trim();
-        modal.close();
-        resolve(value || null);
-      };
-
-      const handleCancel = () => {
-        modal.close();
-        resolve(null);
-      };
-
-      okBtn?.addEventListener('click', handleOk);
-      cancelBtn?.addEventListener('click', handleCancel);
-      
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          handleOk();
-        } else if (e.key === 'Escape') {
-          handleCancel();
-        }
-      });
-    });
-  }
-
-  static confirm(title: string, message: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const modal = new Modal();
-      
-      const content = `
-        <div class="modal-header">
-          <h3 style="margin-bottom: 16px; color: var(--text);">${title}</h3>
-        </div>
-        <div class="modal-body">
-          <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">${message}</p>
-        </div>
-        <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button id="cancel-btn" class="btn">Cancel</button>
-          <button id="confirm-btn" class="btn btn-primary">Confirm</button>
-        </div>
-      `;
-
-      modal.show(content);
-
-      const cancelBtn = document.getElementById('cancel-btn');
-      const confirmBtn = document.getElementById('confirm-btn');
-
-      const handleConfirm = () => {
-        modal.close();
-        resolve(true);
-      };
-
-      const handleCancel = () => {
-        modal.close();
-        resolve(false);
-      };
-
-      confirmBtn?.addEventListener('click', handleConfirm);
-      cancelBtn?.addEventListener('click', handleCancel);
-    });
-  }
-
-  static showMenu(x: number, y: number, items: Array<{label: string, action: () => void, icon?: string}>): void {
-    // Remove existing menu
-    const existingMenu = document.querySelector('.context-menu');
-    if (existingMenu) {
-      existingMenu.remove();
-    }
-
-    const menu = document.createElement('div');
-    menu.className = 'context-menu';
-    menu.style.cssText = `
-      position: fixed;
-      top: ${y}px;
-      left: ${x}px;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
+    // Create input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.style.cssText = `
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
       border-radius: 4px;
-      box-shadow: 0 4px 12px var(--shadow);
-      z-index: 1002;
-      min-width: 150px;
-      padding: 4px 0;
+      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 16px;
     `;
 
-    items.forEach(item => {
-      const menuItem = document.createElement('div');
-      menuItem.className = 'context-menu-item';
-      menuItem.style.cssText = `
-        padding: 8px 12px;
-        cursor: pointer;
-        font-size: 13px;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background-color 0.2s;
-      `;
+    // Create buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.cssText = `
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    `;
 
-      menuItem.innerHTML = `
-        ${item.icon ? `<span style="font-size: 12px;">${item.icon}</span>` : ''}
-        <span>${item.label}</span>
-      `;
+    // Create cancel button
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.style.cssText = `
+      padding: 8px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+    `;
 
-      menuItem.addEventListener('mouseenter', () => {
-        menuItem.style.backgroundColor = 'var(--surface)';
-      });
+    // Create OK button
+    const okButton = document.createElement('button');
+    okButton.textContent = 'OK';
+    okButton.style.cssText = `
+      padding: 8px 16px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    `;
 
-      menuItem.addEventListener('mouseleave', () => {
-        menuItem.style.backgroundColor = 'transparent';
-      });
+    // Add event listeners
+    const handleCancel = () => {
+      this.hide();
+      resolve(null);
+    };
 
-      menuItem.addEventListener('click', () => {
-        item.action();
-        menu.remove();
-      });
-
-      menu.appendChild(menuItem);
-    });
-
-    document.body.appendChild(menu);
-
-    // Position menu if it goes off screen
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      menu.style.left = `${x - rect.width}px`;
-    }
-    if (rect.bottom > window.innerHeight) {
-      menu.style.top = `${y - rect.height}px`;
-    }
-
-    // Remove menu on click outside
-    const removeMenu = (e: MouseEvent) => {
-      if (!menu.contains(e.target as Node)) {
-        menu.remove();
-        document.removeEventListener('click', removeMenu);
+    const handleOk = () => {
+      const value = input.value.trim();
+      if (value) {
+        this.hide();
+        resolve(value);
       }
     };
 
-    setTimeout(() => {
-      document.addEventListener('click', removeMenu);
-    }, 0);
+    cancelButton.addEventListener('click', handleCancel);
+    okButton.addEventListener('click', handleOk);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleOk();
+      } else if (e.key === 'Escape') {
+        handleCancel();
+      }
+    });
+
+    // Close on overlay click
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) {
+        handleCancel();
+      }
+    });
+
+    // Assemble modal
+    buttonsContainer.appendChild(cancelButton);
+    buttonsContainer.appendChild(okButton);
+    modalContent.appendChild(modalTitle);
+    modalContent.appendChild(input);
+    modalContent.appendChild(buttonsContainer);
+    this.modal.appendChild(modalContent);
+
+    // Add to DOM and focus input
+    document.body.appendChild(this.modal);
+    input.focus();
+  }
+
+  hide(): void {
+    if (this.modal) {
+      document.body.removeChild(this.modal);
+      this.modal = null;
+    }
   }
 }
+
+export const modal = new Modal();

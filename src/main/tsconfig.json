@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/main",
+    "rootDir": "../",
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"]
+  },
+  "include": [".", "../shared/**/*"],
+  "exclude": ["../../node_modules", "../../dist"]
+}

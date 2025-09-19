@@ -1,143 +1,66 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
-import { StoreManager } from './store-manager';
-import { RequestManager } from './request-manager';
-import { Collection, Request, Response, AppSettings } from '../../shared/types';
-import fs from 'fs';
-import path from 'path';
+import { ipcMain } from 'electron';
+import { IPC_CHANNELS } from '../../shared/ipc';
+import { storeManager } from './store-manager';
+import { requestManager } from './request-manager';
+import { Collection, ApiRequest, AppState } from '../../shared/types';
+import { randomUUID } from 'crypto';
 
-export class IPCManager {
-  constructor(
-    private storeManager: StoreManager,
-    private requestManager: RequestManager
-  ) {
-    this.setupHandlers();
-  }
-
-  private setupHandlers(): void {
-    // Store handlers
-    ipcMain.handle('store:get-collections', () => {
-      return this.storeManager.getCollections();
+class IpcManager {
+  initialize(): void {
+    ipcMain.handle(IPC_CHANNELS.STORE_GET, (): AppState => {
+      return storeManager.getState();
     });
 
-    ipcMain.handle('store:save-collection', (_, collection: Collection) => {
-      return this.storeManager.saveCollection(collection);
+    ipcMain.handle(IPC_CHANNELS.STORE_SET, (_, updates: Partial<AppState>): void => {
+      storeManager.setState(updates);
     });
 
-    ipcMain.handle('store:delete-collection', (_, id: string) => {
-      return this.storeManager.deleteCollection(id);
+    ipcMain.handle(IPC_CHANNELS.REQUEST_SEND, async (_, request: ApiRequest) => {
+      return await requestManager.sendRequest(request);
     });
 
-    ipcMain.handle('store:save-request', (_, request: Request) => {
-      return this.storeManager.saveRequest(request);
-    });
+    ipcMain.handle(IPC_CHANNELS.COLLECTION_CREATE, (_, collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>): Collection => {
+      const newCollection: Collection = {
+        ...collection,
+        id: randomUUID(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    ipcMain.handle('store:delete-request', (_, id: string) => {
-      return this.storeManager.deleteRequest(id);
-    });
-
-    ipcMain.handle('store:get-settings', () => {
-      return this.storeManager.getSettings();
-    });
-
-    ipcMain.handle('store:save-settings', (_, settings: Partial<AppSettings>) => {
-      return this.storeManager.saveSettings(settings);
-    });
-
-    // Response handlers
-    ipcMain.handle('store:save-response', (_, requestId: string, response: Response) => {
-      return this.storeManager.saveResponse(requestId, response);
-    });
-
-    ipcMain.handle('store:get-response', (_, requestId: string) => {
-      return this.storeManager.getResponse(requestId);
-    });
-
-    ipcMain.handle('store:delete-response', (_, requestId: string) => {
-      return this.storeManager.deleteResponse(requestId);
-    });
-
-    // File handlers
-    ipcMain.handle('file:import-collection', async () => {
-      try {
-        const result = await dialog.showOpenDialog({
-          title: 'Import Collection',
-          filters: [
-            { name: 'JSON Files', extensions: ['json'] },
-            { name: 'All Files', extensions: ['*'] }
-          ],
-          properties: ['openFile']
-        });
-
-        if (result.canceled || !result.filePaths.length) {
-          return null;
-        }
-
-        const filePath = result.filePaths[0];
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const collection: Collection = JSON.parse(content);
-        
-        // Validate collection structure
-        if (!collection.id || !collection.name) {
-          throw new Error('Invalid collection format');
-        }
-
-        return collection;
-      } catch (error) {
-        console.error('Failed to import collection:', error);
-        return null;
+      // If this is a request collection, create a default ApiRequest
+      if (collection.type === 'request') {
+        const defaultRequest: ApiRequest = {
+          id: randomUUID(),
+          name: collection.name,
+          method: 'GET',
+          url: '',
+          params: {},
+          headers: {},
+        };
+        newCollection.request = defaultRequest;
       }
+
+      const state = storeManager.getState();
+      const updatedCollections = [...state.collections, newCollection];
+      storeManager.setState({ collections: updatedCollections });
+
+      return newCollection;
     });
 
-    ipcMain.handle('file:export-collection', async (_, collection: Collection) => {
-      try {
-        const result = await dialog.showSaveDialog({
-          title: 'Export Collection',
-          defaultPath: `${collection.name}.json`,
-          filters: [
-            { name: 'JSON Files', extensions: ['json'] },
-            { name: 'All Files', extensions: ['*'] }
-          ]
-        });
-
-        if (result.canceled || !result.filePath) {
-          return false;
-        }
-
-        fs.writeFileSync(result.filePath, JSON.stringify(collection, null, 2));
-        return true;
-      } catch (error) {
-        console.error('Failed to export collection:', error);
-        return false;
-      }
+    ipcMain.handle(IPC_CHANNELS.COLLECTION_UPDATE, (_, id: string, updates: Partial<Collection>): void => {
+      const state = storeManager.getState();
+      const updatedCollections = state.collections.map(col =>
+        col.id === id ? { ...col, ...updates, updatedAt: new Date() } : col
+      );
+      storeManager.setState({ collections: updatedCollections });
     });
 
-    // Request handlers
-    ipcMain.handle('request:send', async (_, request: Request): Promise<Response> => {
-      return await this.requestManager.sendRequest(request);
-    });
-
-    ipcMain.handle('request:cancel', (_, requestId: string) => {
-      this.requestManager.cancelRequest(requestId);
-    });
-
-    // Window handlers
-    ipcMain.handle('window:minimize', (event) => {
-      const window = BrowserWindow.fromWebContents(event.sender);
-      window?.minimize();
-    });
-
-    ipcMain.handle('window:maximize', (event) => {
-      const window = BrowserWindow.fromWebContents(event.sender);
-      if (window?.isMaximized()) {
-        window.unmaximize();
-      } else {
-        window?.maximize();
-      }
-    });
-
-    ipcMain.handle('window:close', (event) => {
-      const window = BrowserWindow.fromWebContents(event.sender);
-      window?.close();
+    ipcMain.handle(IPC_CHANNELS.COLLECTION_DELETE, (_, id: string): void => {
+      const state = storeManager.getState();
+      const updatedCollections = state.collections.filter(col => col.id !== id);
+      storeManager.setState({ collections: updatedCollections });
     });
   }
 }
+
+export const ipcManager = new IpcManager();

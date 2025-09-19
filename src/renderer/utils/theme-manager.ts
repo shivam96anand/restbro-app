@@ -1,184 +1,94 @@
-import { Theme } from '../../shared/types';
-
-const themes: Record<string, Theme> = {
-  dark: {
-    id: 'dark',
-    name: 'Default Blue',
-    colors: {
-      primary: '#007acc',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#0e639c',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  blue: {
-    id: 'blue',
-    name: 'Blue',
-    colors: {
-      primary: '#2196f3',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#1976d2',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  green: {
-    id: 'green',
-    name: 'Green',
-    colors: {
-      primary: '#4caf50',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#388e3c',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  purple: {
-    id: 'purple',
-    name: 'Purple',
-    colors: {
-      primary: '#9c27b0',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#7b1fa2',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  orange: {
-    id: 'orange',
-    name: 'Orange',
-    colors: {
-      primary: '#ff9800',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#f57c00',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  red: {
-    id: 'red',
-    name: 'Red',
-    colors: {
-      primary: '#f44336',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#d32f2f',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  },
-  teal: {
-    id: 'teal',
-    name: 'Teal',
-    colors: {
-      primary: '#009688',
-      secondary: '#6c757d',
-      background: '#1e1e1e',
-      surface: '#252526',
-      accent: '#00796b',
-      text: '#cccccc',
-      textSecondary: '#9d9d9d',
-      border: '#3c3c3c',
-      success: '#4caf50',
-      warning: '#ff9800',
-      error: '#f44336'
-    }
-  }
-};
+import { AppTheme } from '../../shared/types';
 
 export class ThemeManager {
-  private currentTheme: string = 'dark';
+  private themes: AppTheme[] = [
+    { name: 'blue', primaryColor: '#2563eb', accentColor: '#1d4ed8' },
+    { name: 'green', primaryColor: '#10b981', accentColor: '#059669' },
+    { name: 'purple', primaryColor: '#8b5cf6', accentColor: '#7c3aed' },
+    { name: 'orange', primaryColor: '#f59e0b', accentColor: '#d97706' },
+    { name: 'red', primaryColor: '#ef4444', accentColor: '#dc2626' },
+  ];
 
-  async initialize(): Promise<void> {
-    try {
-      const settings = await window.electronAPI.getSettings();
-      this.setTheme(settings.theme || 'dark');
-    } catch (error) {
-      console.warn('Failed to load theme settings, using default:', error);
-      this.setTheme('dark');
-    }
+  private currentTheme: AppTheme;
 
-    this.setupThemeSelector();
+  constructor() {
+    this.currentTheme = this.themes[0]; // Default to blue
   }
 
-  setTheme(themeId: string): void {
-    if (!themes[themeId]) {
-      console.warn(`Theme ${themeId} not found, using dark theme`);
-      themeId = 'dark';
-    }
-
-    this.currentTheme = themeId;
-    document.documentElement.setAttribute('data-theme', themeId);
-    
-    // Update theme selector
-    const themeSelect = document.getElementById('themeSelect') as HTMLSelectElement;
-    if (themeSelect) {
-      themeSelect.value = themeId;
-    }
-
-    // Save theme preference
-    this.saveThemePreference(themeId);
+  initialize(): void {
+    this.setupThemeDropdown();
+    this.applyTheme(this.currentTheme);
   }
 
-  getCurrentTheme(): Theme {
-    return themes[this.currentTheme];
+  private setupThemeDropdown(): void {
+    const dropdown = document.getElementById('theme-dropdown') as HTMLSelectElement;
+    if (!dropdown) return;
+
+    dropdown.addEventListener('change', () => {
+      const selectedTheme = this.themes.find(theme => theme.name === dropdown.value);
+      if (selectedTheme) {
+        this.setTheme(selectedTheme);
+      }
+    });
+
+    // Set initial value
+    dropdown.value = this.currentTheme.name;
   }
 
-  getAvailableThemes(): Theme[] {
-    return Object.values(themes);
+  setTheme(theme: AppTheme): void {
+    this.currentTheme = theme;
+    this.applyTheme(theme);
+    this.updateDropdown();
+    this.notifyThemeChange();
   }
 
-  private setupThemeSelector(): void {
-    const themeSelect = document.getElementById('themeSelect') as HTMLSelectElement;
-    if (themeSelect) {
-      themeSelect.addEventListener('change', (event) => {
-        const target = event.target as HTMLSelectElement;
-        this.setTheme(target.value);
-      });
+  private applyTheme(theme: AppTheme): void {
+    document.body.setAttribute('data-theme', theme.name);
+
+    // Update CSS custom properties
+    document.documentElement.style.setProperty('--primary-color', theme.primaryColor);
+    document.documentElement.style.setProperty('--primary-dark', theme.accentColor);
+
+    // Calculate lighter variant
+    const lightColor = this.lightenColor(theme.primaryColor, 20);
+    document.documentElement.style.setProperty('--primary-light', lightColor);
+  }
+
+  private lightenColor(color: string, percent: number): string {
+    // Simple color lightening - convert hex to RGB, lighten, convert back
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    const lighten = (color: number) => Math.min(255, Math.floor(color + (255 - color) * (percent / 100)));
+
+    const newR = lighten(r).toString(16).padStart(2, '0');
+    const newG = lighten(g).toString(16).padStart(2, '0');
+    const newB = lighten(b).toString(16).padStart(2, '0');
+
+    return `#${newR}${newG}${newB}`;
+  }
+
+  private updateDropdown(): void {
+    const dropdown = document.getElementById('theme-dropdown') as HTMLSelectElement;
+    if (dropdown) {
+      dropdown.value = this.currentTheme.name;
     }
   }
 
-  private async saveThemePreference(themeId: string): Promise<void> {
-    try {
-      await window.electronAPI.saveSettings({ theme: themeId });
-    } catch (error) {
-      console.warn('Failed to save theme preference:', error);
-    }
+  private notifyThemeChange(): void {
+    const event = new CustomEvent('theme-changed', {
+      detail: { theme: this.currentTheme }
+    });
+    document.dispatchEvent(event);
+  }
+
+  getCurrentTheme(): AppTheme {
+    return this.currentTheme;
+  }
+
+  getAvailableThemes(): AppTheme[] {
+    return [...this.themes];
   }
 }

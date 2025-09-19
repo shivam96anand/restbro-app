@@ -1,560 +1,583 @@
-import { EventBus } from '../utils/event-bus';
-import { Request, HttpMethod, AuthType } from '../../shared/types';
+import { ApiRequest } from '../../shared/types';
 
 export class RequestManager {
-  private currentRequest: Request | null = null;
-  private keyValueEditors: Map<string, KeyValueEditor> = new Map();
-
-  constructor(private eventBus: EventBus) {}
+  private currentRequest: ApiRequest | null = null;
 
   initialize(): void {
-    this.setupEventListeners();
+    this.setupRequestForm();
+    this.setupRequestTabs();
     this.setupSendButton();
-    this.setupMethodSelector();
-    this.setupUrlInput();
-    this.setupAuthSelector();
-    this.initializeKeyValueEditors();
+    this.listenToTabChanges();
+    this.showEmptyState(); // Show empty state initially
   }
 
-  private setupEventListeners(): void {
-    this.eventBus.on('request:selected', (request: Request) => {
-      this.currentRequest = request;
-      this.populateRequestForm(request);
-    });
+  private setupRequestForm(): void {
+    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
-    this.eventBus.on('request:display', (request: Request | null) => {
-      if (request) {
-        this.currentRequest = request;
-        this.populateRequestForm(request);
-      } else {
-        this.clearRequestForm();
-      }
-    });
-
-    this.eventBus.on('request:new', () => {
-      this.createNewRequest();
-    });
-  }
-
-  private setupSendButton(): void {
-    const sendBtn = document.getElementById('sendBtn');
-    if (sendBtn) {
-      sendBtn.addEventListener('click', async () => {
-        if (this.currentRequest) {
-          await this.sendRequest();
-        }
-      });
-    }
-  }
-
-  private setupMethodSelector(): void {
-    const methodSelect = document.getElementById('requestMethod') as HTMLSelectElement;
     if (methodSelect) {
       methodSelect.addEventListener('change', () => {
-        if (this.currentRequest) {
-          this.currentRequest.method = methodSelect.value as HttpMethod;
-          this.eventBus.emit('request:changed', this.currentRequest);
-        }
+        this.updateCurrentRequest({ method: methodSelect.value as any });
       });
     }
-  }
 
-  private setupUrlInput(): void {
-    const urlInput = document.getElementById('requestUrl') as HTMLInputElement;
     if (urlInput) {
       urlInput.addEventListener('input', () => {
-        if (this.currentRequest) {
-          this.currentRequest.url = urlInput.value;
-          this.eventBus.emit('request:changed', this.currentRequest);
-        }
+        this.updateCurrentRequest({ url: urlInput.value });
       });
     }
   }
 
-  private setupAuthSelector(): void {
-    const authSelect = document.getElementById('authType') as HTMLSelectElement;
-    if (authSelect) {
-      authSelect.addEventListener('change', () => {
-        this.updateAuthConfig(authSelect.value as AuthType);
-      });
-    }
-  }
+  private setupRequestTabs(): void {
+    const tabs = document.querySelectorAll('.request-details .tab');
+    const sections = document.querySelectorAll('.request-details .section');
 
-  private initializeKeyValueEditors(): void {
-    // Initialize params editor
-    const paramsEditor = new KeyValueEditor('paramsEditor', 'params');
-    this.keyValueEditors.set('params', paramsEditor);
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const sectionName = (tab as HTMLElement).dataset.section;
 
-    // Initialize headers editor
-    const headersEditor = new KeyValueEditor('headersEditor', 'headers');
-    this.keyValueEditors.set('headers', headersEditor);
+        tabs.forEach(t => t.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
 
-    // Setup body type selector
-    this.setupBodyTypeSelector();
-  }
-
-  private setupBodyTypeSelector(): void {
-    const bodyTypeRadios = document.querySelectorAll('input[name="bodyType"]');
-    bodyTypeRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        if (this.currentRequest && this.currentRequest.body) {
-          this.currentRequest.body.type = target.value as any;
-          this.eventBus.emit('request:changed', this.currentRequest);
+        tab.classList.add('active');
+        const section = document.getElementById(`${sectionName}-section`);
+        if (section) {
+          section.classList.add('active');
         }
       });
     });
 
-    // Setup body content textarea
-    const bodyContent = document.getElementById('bodyContent') as HTMLTextAreaElement;
-    if (bodyContent) {
-      bodyContent.addEventListener('input', () => {
-        if (this.currentRequest) {
-          if (!this.currentRequest.body) {
-            this.currentRequest.body = { type: 'json', data: '' };
+    this.setupParamsEditor();
+    this.setupHeadersEditor();
+    this.setupBodyEditor();
+    this.setupAuthEditor();
+  }
+
+  private setupParamsEditor(): void {
+    const addParamBtn = document.querySelector('.add-param-btn');
+    const paramsEditor = document.getElementById('params-editor');
+
+    if (addParamBtn && paramsEditor) {
+      addParamBtn.addEventListener('click', () => {
+        this.addParamRow();
+      });
+
+      paramsEditor.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('remove-btn')) {
+          const row = target.closest('.kv-row');
+          if (row && paramsEditor.children.length > 1) {
+            row.remove();
+            this.updateParamsFromDOM();
           }
-          this.currentRequest.body.data = bodyContent.value;
-          this.eventBus.emit('request:changed', this.currentRequest);
         }
+      });
+
+      paramsEditor.addEventListener('input', () => {
+        this.updateParamsFromDOM();
       });
     }
   }
 
-  private createNewRequest(): void {
-    this.currentRequest = {
-      id: this.generateId(),
-      name: 'Untitled Request',
-      method: 'GET',
-      url: '',
-      headers: {},
-      params: {},
-      auth: { type: 'none', credentials: {} }
-    };
+  private addParamRow(): void {
+    const paramsEditor = document.getElementById('params-editor');
+    if (!paramsEditor) return;
 
-    this.populateRequestForm(this.currentRequest);
-    this.eventBus.emit('request:created', this.currentRequest);
+    const row = document.createElement('div');
+    row.className = 'kv-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Key" class="key-input">
+      <input type="text" placeholder="Value" class="value-input">
+      <button class="remove-btn">×</button>
+    `;
+
+    paramsEditor.appendChild(row);
   }
 
-  private populateRequestForm(request: Request): void {
-    // Method
-    const methodSelect = document.getElementById('requestMethod') as HTMLSelectElement;
-    if (methodSelect) {
-      methodSelect.value = request.method;
-    }
+  private updateParamsFromDOM(): void {
+    const paramsEditor = document.getElementById('params-editor');
+    if (!paramsEditor) return;
 
-    // URL
-    const urlInput = document.getElementById('requestUrl') as HTMLInputElement;
-    if (urlInput) {
-      urlInput.value = request.url;
-    }
+    const params: Record<string, string> = {};
+    const rows = paramsEditor.querySelectorAll('.kv-row');
 
-    // Params
-    const paramsEditor = this.keyValueEditors.get('params');
-    if (paramsEditor) {
-      paramsEditor.setData(request.params || {});
-    }
+    rows.forEach(row => {
+      const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+      const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-    // Headers
-    const headersEditor = this.keyValueEditors.get('headers');
-    if (headersEditor) {
-      headersEditor.setData(request.headers || {});
-    }
-
-    // Body
-    if (request.body) {
-      const bodyTypeRadio = document.querySelector(`input[name="bodyType"][value="${request.body.type}"]`) as HTMLInputElement;
-      if (bodyTypeRadio) {
-        bodyTypeRadio.checked = true;
+      if (keyInput && valueInput && keyInput.value.trim()) {
+        params[keyInput.value.trim()] = valueInput.value.trim();
       }
+    });
 
-      const bodyContent = document.getElementById('bodyContent') as HTMLTextAreaElement;
-      if (bodyContent) {
-        bodyContent.value = typeof request.body.data === 'string' ? request.body.data : JSON.stringify(request.body.data, null, 2);
-      }
-    }
+    this.updateCurrentRequest({ params });
+  }
 
-    // Auth
-    if (request.auth) {
-      const authSelect = document.getElementById('authType') as HTMLSelectElement;
-      if (authSelect) {
-        authSelect.value = request.auth.type;
-      }
-      this.updateAuthConfig(request.auth.type);
+  private setupHeadersEditor(): void {
+    const addHeaderBtn = document.querySelector('.add-header-btn');
+    const headersEditor = document.getElementById('headers-editor');
+
+    if (addHeaderBtn && headersEditor) {
+      addHeaderBtn.addEventListener('click', () => {
+        this.addHeaderRow();
+      });
+
+      headersEditor.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('remove-btn')) {
+          const row = target.closest('.kv-row');
+          if (row && headersEditor.children.length > 1) {
+            row.remove();
+            this.updateHeadersFromDOM();
+          }
+        }
+      });
+
+      headersEditor.addEventListener('input', () => {
+        this.updateHeadersFromDOM();
+      });
     }
   }
 
-  private clearRequestForm(): void {
-    // Method
-    const methodSelect = document.getElementById('requestMethod') as HTMLSelectElement;
-    if (methodSelect) {
-      methodSelect.value = 'GET';
-    }
+  private addHeaderRow(): void {
+    const headersEditor = document.getElementById('headers-editor');
+    if (!headersEditor) return;
 
-    // URL
-    const urlInput = document.getElementById('requestUrl') as HTMLInputElement;
-    if (urlInput) {
-      urlInput.value = '';
-    }
+    const row = document.createElement('div');
+    row.className = 'kv-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Key" class="key-input">
+      <input type="text" placeholder="Value" class="value-input">
+      <button class="remove-btn">×</button>
+    `;
 
-    // Params
-    const paramsEditor = this.keyValueEditors.get('params');
-    if (paramsEditor) {
-      paramsEditor.setData({});
-    }
-
-    // Headers
-    const headersEditor = this.keyValueEditors.get('headers');
-    if (headersEditor) {
-      headersEditor.setData({});
-    }
-
-    // Body
-    const bodyContent = document.getElementById('bodyContent') as HTMLTextAreaElement;
-    if (bodyContent) {
-      bodyContent.value = '';
-    }
-
-    // Clear body type radio
-    const jsonRadio = document.querySelector('input[name="bodyType"][value="json"]') as HTMLInputElement;
-    if (jsonRadio) {
-      jsonRadio.checked = true;
-    }
-
-    // Auth
-    const authSelect = document.getElementById('authType') as HTMLSelectElement;
-    if (authSelect) {
-      authSelect.value = 'none';
-    }
-    this.updateAuthConfig('none');
-    
-    this.currentRequest = null;
+    headersEditor.appendChild(row);
   }
 
-  private updateAuthConfig(authType: AuthType): void {
-    const authConfig = document.getElementById('authConfig');
+  private updateHeadersFromDOM(): void {
+    const headersEditor = document.getElementById('headers-editor');
+    if (!headersEditor) return;
+
+    const headers: Record<string, string> = {};
+    const rows = headersEditor.querySelectorAll('.kv-row');
+
+    rows.forEach(row => {
+      const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+      const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+      if (keyInput && valueInput && keyInput.value.trim()) {
+        headers[keyInput.value.trim()] = valueInput.value.trim();
+      }
+    });
+
+    this.updateCurrentRequest({ headers });
+  }
+
+  private setupBodyEditor(): void {
+    const bodyTypeInputs = document.querySelectorAll('input[name="body-type"]');
+    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
+
+    bodyTypeInputs.forEach(input => {
+      input.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        const bodyType = target.value;
+
+        if (bodyEditor) {
+          bodyEditor.style.display = bodyType === 'none' ? 'none' : 'block';
+        }
+
+        this.updateCurrentRequest({
+          body: {
+            type: bodyType as any,
+            content: bodyEditor ? bodyEditor.value : ''
+          }
+        });
+      });
+    });
+
+    if (bodyEditor) {
+      bodyEditor.addEventListener('input', () => {
+        const bodyType = (document.querySelector('input[name="body-type"]:checked') as HTMLInputElement)?.value || 'none';
+
+        this.updateCurrentRequest({
+          body: {
+            type: bodyType as any,
+            content: bodyEditor.value
+          }
+        });
+      });
+    }
+  }
+
+  private setupAuthEditor(): void {
+    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+    const authConfig = document.getElementById('auth-config');
+
+    if (authTypeSelect && authConfig) {
+      authTypeSelect.addEventListener('change', () => {
+        this.renderAuthConfig(authTypeSelect.value);
+      });
+    }
+  }
+
+  private renderAuthConfig(authType: string): void {
+    const authConfig = document.getElementById('auth-config');
     if (!authConfig) return;
 
     authConfig.innerHTML = '';
 
-    if (!this.currentRequest) {
-      this.currentRequest = this.createEmptyRequest();
-    }
+    const configs: Record<string, string[]> = {
+      basic: ['username', 'password'],
+      bearer: ['token'],
+      'api-key': ['key', 'value', 'location'],
+    };
 
-    this.currentRequest.auth = { type: authType, credentials: {} };
+    const fields = configs[authType] || [];
 
-    switch (authType) {
-      case 'basic':
-        authConfig.innerHTML = `
-          <div class="auth-field">
-            <label>Username</label>
-            <input type="text" id="authUsername" placeholder="Enter username">
-          </div>
-          <div class="auth-field">
-            <label>Password</label>
-            <input type="password" id="authPassword" placeholder="Enter password">
-          </div>
-        `;
-        
-        const usernameInput = document.getElementById('authUsername') as HTMLInputElement;
-        const passwordInput = document.getElementById('authPassword') as HTMLInputElement;
-        
-        if (usernameInput) {
-          usernameInput.addEventListener('input', () => {
-            if (this.currentRequest && this.currentRequest.auth) {
-              this.currentRequest.auth.credentials.username = usernameInput.value;
-            }
-          });
-        }
-        
-        if (passwordInput) {
-          passwordInput.addEventListener('input', () => {
-            if (this.currentRequest && this.currentRequest.auth) {
-              this.currentRequest.auth.credentials.password = passwordInput.value;
-            }
-          });
-        }
-        break;
+    fields.forEach(field => {
+      const input = document.createElement('input');
+      input.type = field === 'password' ? 'password' : 'text';
+      input.placeholder = field.charAt(0).toUpperCase() + field.slice(1);
+      input.dataset.field = field;
 
-      case 'bearer':
-        authConfig.innerHTML = `
-          <div class="auth-field">
-            <label>Token</label>
-            <input type="text" id="authToken" placeholder="Enter bearer token">
-          </div>
-        `;
-        
-        const tokenInput = document.getElementById('authToken') as HTMLInputElement;
-        if (tokenInput) {
-          tokenInput.addEventListener('input', () => {
-            if (this.currentRequest && this.currentRequest.auth) {
-              this.currentRequest.auth.credentials.token = tokenInput.value;
-            }
-          });
-        }
-        break;
+      if (field === 'location') {
+        const select = document.createElement('select');
+        select.dataset.field = field;
+        select.innerHTML = '<option value="header">Header</option><option value="query">Query</option>';
+        authConfig.appendChild(select);
+      } else {
+        authConfig.appendChild(input);
+      }
+    });
 
-      case 'api-key':
-        authConfig.innerHTML = `
-          <div class="auth-field">
-            <label>Key</label>
-            <input type="text" id="authKey" placeholder="Enter API key name">
-          </div>
-          <div class="auth-field">
-            <label>Value</label>
-            <input type="text" id="authValue" placeholder="Enter API key value">
-          </div>
-          <div class="auth-field">
-            <label>Add to</label>
-            <select id="authLocation">
-              <option value="header">Header</option>
-              <option value="query">Query Parameter</option>
-            </select>
-          </div>
-        `;
-        
-        const keyInput = document.getElementById('authKey') as HTMLInputElement;
-        const valueInput = document.getElementById('authValue') as HTMLInputElement;
-        const locationSelect = document.getElementById('authLocation') as HTMLSelectElement;
-        
-        [keyInput, valueInput, locationSelect].forEach(input => {
-          if (input) {
-            input.addEventListener('input', () => {
-              if (this.currentRequest && this.currentRequest.auth) {
-                this.currentRequest.auth.credentials = {
-                  key: keyInput?.value || '',
-                  value: valueInput?.value || '',
-                  location: locationSelect?.value || 'header'
-                };
-              }
-            });
-          }
-        });
-        break;
+    authConfig.addEventListener('input', () => {
+      this.updateAuthFromDOM(authType);
+    });
+  }
 
-      case 'oauth1':
-      case 'oauth2':
-        authConfig.innerHTML = `
-          <div class="auth-field">
-            <p>OAuth authentication coming soon...</p>
-          </div>
-        `;
-        break;
+  private updateAuthFromDOM(authType: string): void {
+    const authConfig = document.getElementById('auth-config');
+    if (!authConfig) return;
+
+    const config: Record<string, string> = {};
+    const inputs = authConfig.querySelectorAll('input, select');
+
+    inputs.forEach(input => {
+      const field = (input as HTMLElement).dataset.field;
+      const value = (input as HTMLInputElement | HTMLSelectElement).value;
+
+      if (field) {
+        config[field] = value;
+      }
+    });
+
+    this.updateCurrentRequest({
+      auth: {
+        type: authType as any,
+        config
+      }
+    });
+  }
+
+  private setupSendButton(): void {
+    const sendBtn = document.getElementById('send-request');
+
+    if (sendBtn) {
+      sendBtn.addEventListener('click', async () => {
+        await this.sendRequest();
+      });
     }
   }
 
   private async sendRequest(): Promise<void> {
     if (!this.currentRequest) return;
 
-    const sendBtn = document.getElementById('sendBtn');
+    const sendBtn = document.getElementById('send-request');
     if (sendBtn) {
       sendBtn.textContent = 'Sending...';
-      sendBtn.setAttribute('disabled', 'true');
+      (sendBtn as HTMLButtonElement).disabled = true;
     }
 
     try {
-      // Collect current form data
-      this.collectFormData();
+      const response = await window.apiCourier.request.send(this.currentRequest);
 
-      // Send request
-      const response = await window.electronAPI.sendRequest(this.currentRequest);
-      
-      // Emit response received event
-      this.eventBus.emit('response:received', response);
-      
-    } catch (error) {
-      console.error('Failed to send request:', error);
-      this.eventBus.emit('toast:show', {
-        message: `Request failed: ${error}`,
-        type: 'error'
+      const event = new CustomEvent('response-received', {
+        detail: { response }
       });
+      document.dispatchEvent(event);
+    } catch (error) {
+      console.error('Request failed:', error);
+      this.showError('Request failed: ' + (error as Error).message);
     } finally {
       if (sendBtn) {
         sendBtn.textContent = 'Send';
-        sendBtn.removeAttribute('disabled');
+        (sendBtn as HTMLButtonElement).disabled = false;
       }
     }
   }
 
-  private collectFormData(): void {
+  private listenToTabChanges(): void {
+    document.addEventListener('tab-changed', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const activeTab = customEvent.detail.activeTab;
+      if (activeTab) {
+        this.loadRequest(activeTab.request);
+      } else {
+        this.loadRequest(null);
+      }
+    });
+  }
+
+
+  private loadRequest(request: ApiRequest | null): void {
+    this.currentRequest = request;
+
+    const requestForm = document.querySelector('.request-form') as HTMLElement;
+    const emptyState = document.getElementById('request-empty-state');
+
+    if (!request) {
+      this.clearForm();
+      if (requestForm) requestForm.style.display = 'none';
+      this.showEmptyState();
+      return;
+    }
+
+    if (requestForm) requestForm.style.display = 'block';
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Load method and URL
+    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const urlInput = document.getElementById('request-url') as HTMLInputElement;
+
+    if (methodSelect) methodSelect.value = request.method;
+    if (urlInput) urlInput.value = request.url;
+
+    // Load params
+    this.loadParams(request.params || {});
+
+    // Load headers
+    this.loadHeaders(request.headers);
+
+    // Load body
+    if (request.body) {
+      this.loadBody(request.body);
+    }
+
+    // Load auth
+    if (request.auth) {
+      this.loadAuth(request.auth);
+    }
+  }
+
+  private loadParams(params: Record<string, string>): void {
+    const paramsEditor = document.getElementById('params-editor');
+    if (!paramsEditor) return;
+
+    paramsEditor.innerHTML = '';
+
+    Object.entries(params).forEach(([key, value]) => {
+      const row = document.createElement('div');
+      row.className = 'kv-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Key" class="key-input" value="${key}">
+        <input type="text" placeholder="Value" class="value-input" value="${value}">
+        <button class="remove-btn">×</button>
+      `;
+      paramsEditor.appendChild(row);
+    });
+
+    if (paramsEditor.children.length === 0) {
+      this.addParamRow();
+    }
+  }
+
+  private loadHeaders(headers: Record<string, string>): void {
+    const headersEditor = document.getElementById('headers-editor');
+    if (!headersEditor) return;
+
+    headersEditor.innerHTML = '';
+
+    Object.entries(headers).forEach(([key, value]) => {
+      const row = document.createElement('div');
+      row.className = 'kv-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Key" class="key-input" value="${key}">
+        <input type="text" placeholder="Value" class="value-input" value="${value}">
+        <button class="remove-btn">×</button>
+      `;
+      headersEditor.appendChild(row);
+    });
+
+    if (headersEditor.children.length === 0) {
+      this.addHeaderRow();
+    }
+  }
+
+  private loadBody(body: { type: string; content: string }): void {
+    const bodyTypeInput = document.querySelector(`input[name="body-type"][value="${body.type}"]`) as HTMLInputElement;
+    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
+
+    if (bodyTypeInput) {
+      bodyTypeInput.checked = true;
+    }
+
+    if (bodyEditor) {
+      bodyEditor.value = body.content;
+      bodyEditor.style.display = body.type === 'none' ? 'none' : 'block';
+    }
+  }
+
+  private loadAuth(auth: { type: string; config: Record<string, string> }): void {
+    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+
+    if (authTypeSelect) {
+      authTypeSelect.value = auth.type;
+      this.renderAuthConfig(auth.type);
+
+      // Load auth config values
+      setTimeout(() => {
+        const authConfig = document.getElementById('auth-config');
+        if (authConfig) {
+          Object.entries(auth.config).forEach(([field, value]) => {
+            const input = authConfig.querySelector(`[data-field="${field}"]`) as HTMLInputElement;
+            if (input) {
+              input.value = value;
+            }
+          });
+        }
+      }, 0);
+    }
+  }
+
+  private clearForm(): void {
+    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const urlInput = document.getElementById('request-url') as HTMLInputElement;
+    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
+
+    if (methodSelect) methodSelect.value = 'GET';
+    if (urlInput) urlInput.value = '';
+    if (bodyEditor) bodyEditor.value = '';
+
+    // Clear params
+    const paramsEditor = document.getElementById('params-editor');
+    if (paramsEditor) {
+      paramsEditor.innerHTML = '';
+      this.addParamRow();
+    }
+
+    // Clear headers
+    const headersEditor = document.getElementById('headers-editor');
+    if (headersEditor) {
+      headersEditor.innerHTML = '';
+      this.addHeaderRow();
+    }
+
+    // Reset body type
+    const noneBodyType = document.querySelector('input[name="body-type"][value="none"]') as HTMLInputElement;
+    if (noneBodyType) {
+      noneBodyType.checked = true;
+    }
+
+    // Reset auth
+    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+    if (authTypeSelect) {
+      authTypeSelect.value = 'none';
+      this.renderAuthConfig('none');
+    }
+  }
+
+  private updateCurrentRequest(updates: Partial<ApiRequest>): void {
     if (!this.currentRequest) return;
 
-    // Collect params
-    const paramsEditor = this.keyValueEditors.get('params');
-    if (paramsEditor) {
-      this.currentRequest.params = paramsEditor.getData();
-    }
+    this.currentRequest = { ...this.currentRequest, ...updates };
 
-    // Collect headers
-    const headersEditor = this.keyValueEditors.get('headers');
-    if (headersEditor) {
-      this.currentRequest.headers = headersEditor.getData();
-    }
-
-    // Collect body
-    const bodyContent = document.getElementById('bodyContent') as HTMLTextAreaElement;
-    const bodyTypeRadio = document.querySelector('input[name="bodyType"]:checked') as HTMLInputElement;
-    
-    if (bodyContent && bodyContent.value.trim()) {
-      const bodyType = bodyTypeRadio?.value || 'json';
-      let bodyData: any = bodyContent.value;
-
-      if (bodyType === 'json') {
-        try {
-          bodyData = JSON.parse(bodyContent.value);
-        } catch (e) {
-          // Keep as string if not valid JSON
-        }
-      }
-
-      this.currentRequest.body = {
-        type: bodyType as any,
-        data: bodyData
-      };
-    }
-  }
-
-  private createEmptyRequest(): Request {
-    return {
-      id: this.generateId(),
-      name: 'New Request',
-      method: 'GET',
-      url: '',
-      headers: {},
-      params: {},
-      auth: { type: 'none', credentials: {} }
-    };
-  }
-
-  private generateId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-}
-
-class KeyValueEditor {
-  private data: Record<string, string> = {};
-  private container: HTMLElement;
-
-  constructor(private containerId: string, private type: string) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Container with id ${containerId} not found`);
-    }
-    this.container = container;
-    this.setupAddButton();
-    this.render();
-  }
-
-  private setupAddButton(): void {
-    const parent = this.container.parentElement;
-    if (!parent) return;
-
-    const addButton = parent.querySelector('.add-row-btn');
-    if (addButton) {
-      addButton.addEventListener('click', () => {
-        this.addRow();
-      });
-    }
-  }
-
-  setData(data: Record<string, string>): void {
-    this.data = { ...data };
-    this.render();
-  }
-
-  getData(): Record<string, string> {
-    return { ...this.data };
-  }
-
-  private addRow(key: string = '', value: string = ''): void {
-    const id = `${this.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    
-    if (key) {
-      this.data[key] = value;
-    }
-
-    this.render();
-
-    // Focus on the new row
-    setTimeout(() => {
-      const newKeyInput = this.container.querySelector(`input[data-id="${id}"][data-field="key"]`) as HTMLInputElement;
-      if (newKeyInput) {
-        newKeyInput.focus();
-      }
-    }, 10);
-  }
-
-  private removeRow(key: string): void {
-    delete this.data[key];
-    this.render();
-  }
-
-  private render(): void {
-    this.container.innerHTML = '';
-
-    // Render existing data
-    Object.entries(this.data).forEach(([key, value]) => {
-      this.renderRow(key, value);
+    const event = new CustomEvent('request-updated', {
+      detail: { request: this.currentRequest }
     });
-
-    // Always have one empty row
-    if (Object.keys(this.data).length === 0 || !this.hasEmptyRow()) {
-      this.renderRow('', '');
-    }
+    document.dispatchEvent(event);
   }
 
-  private renderRow(key: string, value: string): void {
-    const id = `${this.type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    const row = document.createElement('div');
-    row.className = 'key-value-row';
-    
-    row.innerHTML = `
-      <input type="text" placeholder="Key" value="${key}" data-id="${id}" data-field="key">
-      <input type="text" placeholder="Value" value="${value}" data-id="${id}" data-field="value">
-      <button class="delete-btn" data-id="${id}">×</button>
+  private showError(message: string): void {
+    const errorDiv = document.createElement('div');
+    errorDiv.textContent = message;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--error-color);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 4px;
+      z-index: 10001;
+      font-size: 14px;
+      max-width: 300px;
+      word-wrap: break-word;
     `;
 
-    const keyInput = row.querySelector('input[data-field="key"]') as HTMLInputElement;
-    const valueInput = row.querySelector('input[data-field="value"]') as HTMLInputElement;
-    const deleteBtn = row.querySelector('.delete-btn') as HTMLButtonElement;
-
-    keyInput.addEventListener('input', () => {
-      const oldKey = key;
-      const newKey = keyInput.value;
-      
-      if (oldKey && oldKey !== newKey) {
-        delete this.data[oldKey];
+    document.body.appendChild(errorDiv);
+    setTimeout(() => {
+      if (document.body.contains(errorDiv)) {
+        document.body.removeChild(errorDiv);
       }
-      
-      if (newKey.trim()) {
-        this.data[newKey] = valueInput.value;
-      }
-    });
-
-    valueInput.addEventListener('input', () => {
-      const currentKey = keyInput.value;
-      if (currentKey.trim()) {
-        this.data[currentKey] = valueInput.value;
-      }
-    });
-
-    deleteBtn.addEventListener('click', () => {
-      const currentKey = keyInput.value;
-      if (currentKey) {
-        this.removeRow(currentKey);
-      } else {
-        row.remove();
-      }
-    });
-
-    this.container.appendChild(row);
+    }, 5000);
   }
 
-  private hasEmptyRow(): boolean {
-    const rows = this.container.querySelectorAll('.key-value-row');
-    return Array.from(rows).some(row => {
-      const keyInput = row.querySelector('input[data-field="key"]') as HTMLInputElement;
-      const valueInput = row.querySelector('input[data-field="value"]') as HTMLInputElement;
-      return !keyInput.value.trim() && !valueInput.value.trim();
-    });
+  private showEmptyState(): void {
+    const requestPanel = document.querySelector('.request-panel');
+    if (!requestPanel) return;
+
+    // Hide the request form
+    const requestForm = document.querySelector('.request-form') as HTMLElement;
+    if (requestForm) requestForm.style.display = 'none';
+
+    // Check if empty state already exists
+    let emptyState = document.getElementById('request-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.id = 'request-empty-state';
+      emptyState.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-align: center;
+        padding: 40px 20px;
+      `;
+
+      const icon = document.createElement('div');
+      icon.textContent = '📄';
+      icon.style.cssText = `
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      `;
+
+      const title = document.createElement('h3');
+      title.textContent = 'No Request Selected';
+      title.style.cssText = `
+        margin: 0 0 8px 0;
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 500;
+      `;
+
+      const description = document.createElement('p');
+      description.textContent = 'Select a request from collections or create a new request tab to get started';
+      description.style.cssText = `
+        margin: 0;
+        line-height: 1.5;
+        max-width: 300px;
+      `;
+
+      emptyState.appendChild(icon);
+      emptyState.appendChild(title);
+      emptyState.appendChild(description);
+      requestPanel.appendChild(emptyState);
+    } else {
+      emptyState.style.display = 'flex';
+    }
   }
 }

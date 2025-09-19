@@ -1,181 +1,123 @@
 # API Courier
 
-A professional API testing tool built with Electron and TypeScript - like Postman/Insomnia.
+A modern, professional API testing tool built with Electron, TypeScript, and modern web technologies. Inspired by Postman and Insomnia, API Courier provides a clean, intuitive interface for testing and managing your APIs.
 
 ## Features
 
-### Current Implementation
-- **Multi-tab Interface**: API, JSON Viewer, JSON Compare, Load Testing, and Ask AI tabs
-- **Professional Dark Theme**: With 4 theme options (Dark, Light, Purple, Blue)
-- **3-Panel Layout** for API tab:
-  - **Collections Panel**: Import/export collections, organize requests in folders
-  - **Request Panel**: Full-featured request builder
-  - **Response Panel**: Detailed response viewer with syntax highlighting
-- **Request Builder**:
-  - Multiple HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
-  - Tabs for Params, Body, Headers, and Auth
-  - Multiple body types (JSON, Raw, Form Data, URL Encoded)
-  - Authentication support (None, Basic, Bearer Token, API Key, OAuth 1.0/2.0)
-- **Response Viewer**:
-  - Status code, response time, and size display
-  - Formatted JSON and other content types
-  - Response headers viewer
-- **Collection Management**:
-  - Import/export collections as JSON
-  - Nested folder structure support
-  - Persistent storage with LowDB
+### ✅ Currently Implemented
 
-### Architecture
-- **Electron**: Multi-process architecture with main, preload, and renderer processes
-- **TypeScript**: Full type safety throughout the codebase
-- **Webpack**: Modern build system with hot reloading
-- **SCSS**: Professional styling with CSS variables for theming
-- **Event-driven**: Decoupled architecture using EventBus pattern
-- **Modular**: Clean separation of concerns with multiple managers
+- **5-Tab Interface**: API, JSON Viewer, JSON Compare, Load Testing, and Ask AI tabs
+- **API Tab with 3 Sections**:
+  - **Collections Panel**: Create and manage folders and subfolders for organizing requests
+  - **Request Panel**: Full-featured request builder with support for all HTTP methods
+  - **Response Panel**: View responses with formatted body and headers
+- **Request Tabs**: Manage multiple open requests with tabs
+- **Theme System**: 5 color themes (Blue, Green, Purple, Orange, Red) with dark base
+- **Collections Management**:
+  - Create nested folders and subfolders
+  - Add requests to collections
+  - Context menu with rename/delete options
+- **Request Builder**:
+  - Support for GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+  - Headers editor with key-value pairs
+  - Body editor with JSON, Raw, and Form URL Encoded support
+  - Authentication (Basic, Bearer Token, API Key)
+- **Response Viewer**:
+  - Auto-formatted JSON responses
+  - Headers display in table format
+  - Response metadata (status, time, size)
+
+### 🚧 Coming Soon
+
+- JSON Viewer tab
+- JSON Compare tab
+- Load Testing tab
+- Ask AI tab
+- Import/Export functionality
+- Advanced authentication (OAuth 2.0)
+- Environment variables
+- Request history
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+
+- Node.js 18 or higher
+- npm
 
 ### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd api-courier-2
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Build the application:
+   ```bash
+   npm run build
+   ```
+
+4. Start the application:
+   ```bash
+   npm start
+   ```
+
+### Development
+
+For development with hot reload:
+
 ```bash
-# Clone the repository
-git clone https://github.com/shivam96anand/api-courier2.0.git
-cd api-courier-2
-
-# Install dependencies
-npm install
-
-# Build and run in development mode
 npm run dev
-
-# Or build for production
-npm run build
-npm start
 ```
 
-### Available Scripts
-- `npm run build:dev` - Build in development mode
-- `npm run build:watch` - Build and watch for changes
-- `npm run dev` - Build and run in development mode
-- `npm start` - Build and run in production mode
+This will start the webpack dev server and watch for file changes.
 
-## Project Structure
+## Architecture
+
+API Courier follows Electron security best practices:
+
+- **Main Process**: Handles file system operations, networking, and data persistence
+- **Preload Script**: Secure bridge between main and renderer processes
+- **Renderer Process**: UI running with context isolation and sandbox enabled
+- **Modular Design**: Each component is kept under ~300 lines for maintainability
+
+### Project Structure
 
 ```
 src/
-├── main/                   # Electron main process
-│   ├── modules/           
-│   │   ├── window-manager.ts    # Window management
-│   │   ├── ipc-manager.ts       # Inter-process communication
-│   │   ├── store-manager.ts     # Data persistence
-│   │   └── request-manager.ts   # HTTP request handling
-│   └── index.ts           # Main process entry point
-├── preload/               # Preload scripts
-│   └── index.ts          # IPC API exposure
-├── renderer/              # Renderer process (UI)
-│   ├── components/        # UI components
-│   │   ├── ui-manager.ts        # General UI management
-│   │   ├── collections-manager.ts # Collection handling
-│   │   ├── request-manager.ts   # Request form management
-│   │   └── response-manager.ts  # Response display
-│   ├── styles/           # SCSS stylesheets
-│   │   └── main.scss     # Main stylesheet with theming
-│   ├── utils/            # Utility classes
-│   │   ├── event-bus.ts  # Event communication
-│   │   └── theme-manager.ts # Theme handling
-│   ├── index.ts          # Renderer entry point
-│   └── index.html        # HTML template
-└── shared/               # Shared types and interfaces
-    ├── types.ts          # Type definitions
-    └── ipc.ts           # IPC channel definitions
+├── main/           # Electron main process
+│   ├── modules/    # Modular main process components
+│   └── index.ts    # Main entry point
+├── preload/        # Secure IPC bridge
+├── renderer/       # UI components and logic
+│   ├── components/ # UI component managers
+│   ├── styles/     # SCSS styles
+│   └── utils/      # Utility functions
+└── shared/         # Types and constants shared across processes
 ```
 
-## Key Features Implemented
+## Usage
 
-### 1. Multi-Theme Support
-The application supports 4 professional themes:
-- Dark (default)
-- Light  
-- Purple
-- Blue
-
-Themes can be changed via the dropdown in the top-right corner.
-
-### 2. Resizable Panels
-The main API interface has 3 resizable panels:
-- Collections (left): 200-500px width
-- Request (middle): Flexible
-- Response (right): 300-600px width
-
-### 3. Collection Management
-- Import JSON collections from file
-- Export collections to JSON
-- Create new collections
-- Nested folder support
-- Persistent storage
-
-### 4. Request Builder
-- URL and method selection
-- Parameter editor with key-value pairs
-- Request body with multiple formats
-- Header management
-- Authentication configuration
-
-### 5. Response Handling
-- Real-time status, timing, and size display
-- Formatted response body
-- Response headers viewer
-- Error handling and display
-
-## Technical Highlights
-
-### Security
-- Context isolation enabled
-- Node integration disabled
-- Sandbox mode compatible
-- Secure IPC communication
-
-### Performance  
-- Webpack optimized builds
-- Efficient event system
-- Minimal memory footprint
-- Fast startup time
-
-### Development Experience
-- TypeScript throughout
-- Source maps for debugging
-- Hot reloading in development
-- Comprehensive error handling
-
-## Next Steps
-
-The following features are planned for future releases:
-- JSON Viewer tab implementation
-- JSON Compare functionality  
-- Load testing capabilities
-- AI-powered API assistance
-- Request history
-- Environment variables
-- Code generation
-- API documentation
-- Team collaboration features
+1. **Creating Collections**: Click the "+" button in the Collections panel to create folders or requests
+2. **Making Requests**: Select a request method, enter a URL, add headers/body as needed, and click "Send"
+3. **Managing Tabs**: Use the "+" button to create new request tabs, click tabs to switch between them
+4. **Changing Themes**: Use the dropdown in the top-right corner to select your preferred color theme
 
 ## Contributing
 
-This project follows clean architecture principles:
-1. **Separation of Concerns**: Each module has a single responsibility
-2. **Event-Driven**: Loose coupling between components
-3. **Type Safety**: Full TypeScript coverage
-4. **Testable**: Modular design for easy testing
-5. **Scalable**: Easy to add new features
+This project follows enterprise-level development practices:
+
+- TypeScript for type safety
+- ESLint + Prettier for code quality
+- Modular architecture for maintainability
+- Secure Electron practices
 
 ## License
 
-MIT License - see LICENSE file for details.
-
----
-
-**API Courier** - Making API testing professional and efficient! 🚀
+MIT License - see LICENSE file for details

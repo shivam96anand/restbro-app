@@ -1,71 +1,67 @@
 export interface Collection {
   id: string;
   name: string;
+  type: 'folder' | 'request';
   parentId?: string;
   children?: Collection[];
-  requests?: Request[];
-  type: 'collection' | 'folder';
+  request?: ApiRequest;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface Request {
+export interface ApiRequest {
   id: string;
   name: string;
-  method: HttpMethod;
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
   url: string;
-  headers: Record<string, string>;
-  body?: RequestBody;
-  auth?: AuthConfig;
   params?: Record<string, string>;
-  collectionId?: string;
-  parentId?: string;
-}
-
-export interface RequestBody {
-  type: 'json' | 'raw' | 'form-data' | 'x-www-form-urlencoded' | 'binary';
-  data: any;
-}
-
-export interface AuthConfig {
-  type: AuthType;
-  credentials: Record<string, any>;
-}
-
-export interface Response {
-  status: number;
-  statusText: string;
   headers: Record<string, string>;
-  body: any;
-  size: number;
-  time: number;
-  url: string;
-}
-
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
-
-export type AuthType = 'none' | 'basic' | 'bearer' | 'oauth1' | 'oauth2' | 'api-key';
-
-export interface Theme {
-  id: string;
-  name: string;
-  colors: {
-    primary: string;
-    secondary: string;
-    background: string;
-    surface: string;
-    accent: string;
-    text: string;
-    textSecondary: string;
-    border: string;
-    success: string;
-    warning: string;
-    error: string;
+  body?: {
+    type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
+    content: string;
+  };
+  auth?: {
+    type: 'none' | 'basic' | 'bearer' | 'api-key';
+    config: Record<string, string>;
   };
 }
 
-export interface AppSettings {
-  theme: string;
-  fontSize: number;
-  sidebarWidth: number;
-  requestPanelWidth: number;
-  expandedFolders: string[];
+export interface ApiResponse {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  body: string;
+  time: number;
+  size: number;
+}
+
+export interface RequestTab {
+  id: string;
+  name: string;
+  request: ApiRequest;
+  response?: ApiResponse;
+  isModified: boolean;
+}
+
+export interface AppTheme {
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+}
+
+export interface AppState {
+  collections: Collection[];
+  openTabs: RequestTab[];
+  activeTabId?: string;
+  selectedCollectionId?: string;
+  theme: AppTheme;
+}
+
+export interface IpcChannels {
+  'store:get': () => AppState;
+  'store:set': (state: Partial<AppState>) => void;
+  'request:send': (request: ApiRequest) => ApiResponse;
+  'collection:create': (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => Collection;
+  'collection:update': (id: string, updates: Partial<Collection>) => void;
+  'collection:delete': (id: string) => void;
 }

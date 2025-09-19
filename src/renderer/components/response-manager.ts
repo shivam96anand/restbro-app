@@ -1,368 +1,209 @@
-import { EventBus } from '../utils/event-bus';
-import { Response } from '../../shared/types';
+import { ApiResponse } from '../../shared/types';
 
 export class ResponseManager {
-  private currentResponse: Response | null = null;
-
-  constructor(private eventBus: EventBus) {}
+  private currentResponse: ApiResponse | null = null;
 
   initialize(): void {
-    this.setupEventListeners();
-    this.resetResponseUI();
+    this.setupResponseTabs();
+    this.listenToResponses();
+    this.listenToTabChanges();
   }
 
-  private setupEventListeners(): void {
-    this.eventBus.on('response:received', (response: Response) => {
-      this.currentResponse = response;
-      this.displayResponse(response);
-    });
+  private setupResponseTabs(): void {
+    const tabs = document.querySelectorAll('.response-tabs .tab');
+    const sections = document.querySelectorAll('.response-section');
 
-    this.eventBus.on('request:sending', () => {
-      this.showLoadingState();
-    });
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const sectionName = (tab as HTMLElement).dataset.section;
 
-    this.eventBus.on('request:error', (error: any) => {
-      this.showErrorState(error);
-    });
+        tabs.forEach(t => t.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
 
-    this.eventBus.on('response:restore', (response: Response) => {
-      this.currentResponse = response;
-      this.displayResponse(response);
-    });
-
-    this.eventBus.on('response:clear', () => {
-      this.currentResponse = null;
-      this.resetResponseUI();
-    });
-
-    this.eventBus.on('request:display', (request: any) => {
-      // Don't clear response automatically when switching tabs
-      // Let tabs manager handle response restoration
-    });
-
-    this.eventBus.on('request:selected', (request: any) => {
-      // Don't clear response automatically when selecting requests
-      // Let tabs manager handle response restoration
+        tab.classList.add('active');
+        const section = document.getElementById(`response-${sectionName}`);
+        if (section) {
+          section.classList.add('active');
+        }
+      });
     });
   }
 
-  private displayResponse(response: Response): void {
-    this.updateResponseInfo(response);
+  private listenToResponses(): void {
+    document.addEventListener('response-received', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const response = customEvent.detail.response;
+      this.displayResponse(response);
+    });
+  }
+
+  private listenToTabChanges(): void {
+    document.addEventListener('tab-changed', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const activeTab = customEvent.detail.activeTab;
+
+      if (activeTab && activeTab.response) {
+        // Display the response for this tab
+        this.displayResponse(activeTab.response);
+      } else {
+        // Clear the response panel if no response
+        this.clearResponse();
+      }
+    });
+  }
+
+  private displayResponse(response: ApiResponse): void {
+    this.currentResponse = response;
+    this.updateResponseMeta(response);
     this.updateResponseBody(response);
     this.updateResponseHeaders(response);
   }
 
-  private updateResponseInfo(response: Response): void {
-    // Status
-    const statusElement = document.getElementById('responseStatus');
-    if (statusElement) {
-      statusElement.textContent = `${response.status} ${response.statusText}`;
-      
-      // Remove previous status classes
-      statusElement.classList.remove('success', 'error', 'warning');
-      
-      // Add appropriate status class
-      if (response.status >= 200 && response.status < 300) {
-        statusElement.classList.add('success');
-      } else if (response.status >= 400) {
-        statusElement.classList.add('error');
-      } else if (response.status >= 300) {
-        statusElement.classList.add('warning');
-      }
-    }
 
-    // Time
-    const timeElement = document.getElementById('responseTime');
-    if (timeElement) {
-      timeElement.textContent = `${response.time}ms`;
-    }
+  private updateResponseMeta(response: ApiResponse): void {
+    const metaElement = document.getElementById('response-meta');
+    if (!metaElement) return;
 
-    // Size
-    const sizeElement = document.getElementById('responseSize');
-    if (sizeElement) {
-      sizeElement.textContent = this.formatBytes(response.size);
-    }
+    const statusClass = this.getStatusClass(response.status);
+    const statusBadge = `<span class="${statusClass}">${response.status} ${response.statusText}</span>`;
+    const timeBadge = `<span>${response.time}ms</span>`;
+    const sizeBadge = `<span>${this.formatBytes(response.size)}</span>`;
+
+    metaElement.innerHTML = `${statusBadge} ${timeBadge} ${sizeBadge}`;
   }
 
-  private updateResponseBody(response: Response): void {
-    const bodyElement = document.getElementById('responseBody');
+  private updateResponseBody(response: ApiResponse): void {
+    const bodyElement = document.getElementById('response-body');
     if (!bodyElement) return;
 
-    try {
-      let formattedBody: string;
-      
-      if (typeof response.body === 'string') {
-        // Try to parse as JSON for pretty formatting
-        try {
-          const parsed = JSON.parse(response.body);
-          formattedBody = JSON.stringify(parsed, null, 2);
-        } catch {
-          formattedBody = response.body;
-        }
-      } else if (typeof response.body === 'object') {
-        formattedBody = JSON.stringify(response.body, null, 2);
-      } else {
-        formattedBody = String(response.body);
-      }
-
-      bodyElement.textContent = formattedBody;
-      bodyElement.classList.remove('empty-state');
-      
-      // Add syntax highlighting class based on content type
-      const contentType = this.getResponseContentType(response);
-      this.applySyntaxHighlighting(bodyElement, contentType);
-      
-    } catch (error) {
-      bodyElement.textContent = 'Error displaying response body';
-      console.error('Error formatting response body:', error);
-    }
-  }
-
-  private updateResponseHeaders(response: Response): void {
-    const headersContainer = document.getElementById('responseHeaders');
-    if (!headersContainer) return;
-
-    headersContainer.innerHTML = '';
-
-    if (!response.headers || Object.keys(response.headers).length === 0) {
-      headersContainer.innerHTML = `
-        <div class="empty-state">
-          <span>📋</span>
-          <p>No headers received</p>
-        </div>
-      `;
+    if (!response.body) {
+      bodyElement.innerHTML = '<div class="response-placeholder">No response body</div>';
       return;
     }
 
+    const contentType = response.headers['content-type'] || '';
+    let formattedBody = response.body;
+
+    // Try to format JSON
+    if (contentType.includes('application/json') || this.isValidJSON(response.body)) {
+      try {
+        const parsed = JSON.parse(response.body);
+        formattedBody = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // Keep original if parsing fails
+      }
+    }
+
+    const preElement = document.createElement('pre');
+    preElement.style.whiteSpace = 'pre-wrap';
+    preElement.style.wordBreak = 'break-word';
+    preElement.style.fontSize = '12px';
+    preElement.style.lineHeight = '1.4';
+    preElement.style.margin = '0';
+    preElement.style.padding = '16px';
+    preElement.style.backgroundColor = 'var(--bg-tertiary)';
+    preElement.style.border = '1px solid var(--border-color)';
+    preElement.style.borderRadius = '4px';
+    preElement.style.overflow = 'auto';
+    preElement.style.maxHeight = '400px';
+
+    const codeElement = document.createElement('code');
+    codeElement.textContent = formattedBody;
+    preElement.appendChild(codeElement);
+
+    bodyElement.innerHTML = '';
+    bodyElement.appendChild(preElement);
+  }
+
+  private updateResponseHeaders(response: ApiResponse): void {
+    const headersElement = document.getElementById('response-headers');
+    if (!headersElement) return;
+
+    if (!response.headers || Object.keys(response.headers).length === 0) {
+      headersElement.innerHTML = '<div class="response-placeholder">No response headers</div>';
+      return;
+    }
+
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.fontSize = '12px';
+
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    headerRow.innerHTML = `
+      <th style="text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color);">Name</th>
+      <th style="text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color);">Value</th>
+    `;
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
     Object.entries(response.headers).forEach(([name, value]) => {
-      const headerItem = document.createElement('div');
-      headerItem.className = 'header-item';
-      headerItem.innerHTML = `
-        <span class="header-name">${name}:</span>
-        <span class="header-value">${value}</span>
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: 500;">${name}</td>
+        <td style="padding: 8px; border-bottom: 1px solid var(--border-color); word-break: break-word;">${value}</td>
       `;
-      headersContainer.appendChild(headerItem);
+      tbody.appendChild(row);
     });
+    table.appendChild(tbody);
+
+    headersElement.innerHTML = '';
+    headersElement.appendChild(table);
   }
 
-  private showLoadingState(): void {
-    // Status
-    const statusElement = document.getElementById('responseStatus');
-    if (statusElement) {
-      statusElement.textContent = 'Sending...';
-      statusElement.classList.remove('success', 'error', 'warning');
+  private getStatusClass(status: number): string {
+    if (status >= 200 && status < 300) {
+      return 'status-success';
+    } else if (status >= 400) {
+      return 'status-error';
+    } else if (status >= 300) {
+      return 'status-warning';
     }
-
-    // Time
-    const timeElement = document.getElementById('responseTime');
-    if (timeElement) {
-      timeElement.textContent = '...';
-    }
-
-    // Size
-    const sizeElement = document.getElementById('responseSize');
-    if (sizeElement) {
-      sizeElement.textContent = '...';
-    }
-
-    // Body
-    const bodyElement = document.getElementById('responseBody');
-    if (bodyElement) {
-      bodyElement.innerHTML = `
-        <div class="loading-state">
-          <span>⏳</span>
-          <p>Sending request...</p>
-        </div>
-      `;
-    }
-
-    // Headers
-    const headersContainer = document.getElementById('responseHeaders');
-    if (headersContainer) {
-      headersContainer.innerHTML = `
-        <div class="loading-state">
-          <span>⏳</span>
-          <p>Loading headers...</p>
-        </div>
-      `;
-    }
-  }
-
-  private showErrorState(error: any): void {
-    // Status
-    const statusElement = document.getElementById('responseStatus');
-    if (statusElement) {
-      statusElement.textContent = 'Error';
-      statusElement.classList.remove('success', 'warning');
-      statusElement.classList.add('error');
-    }
-
-    // Time
-    const timeElement = document.getElementById('responseTime');
-    if (timeElement) {
-      timeElement.textContent = '0ms';
-    }
-
-    // Size
-    const sizeElement = document.getElementById('responseSize');
-    if (sizeElement) {
-      sizeElement.textContent = '0 B';
-    }
-
-    // Body
-    const bodyElement = document.getElementById('responseBody');
-    if (bodyElement) {
-      bodyElement.innerHTML = `
-        <div class="error-state">
-          <span>❌</span>
-          <p>Request failed</p>
-          <pre>${error.message || error}</pre>
-        </div>
-      `;
-    }
-
-    // Headers
-    const headersContainer = document.getElementById('responseHeaders');
-    if (headersContainer) {
-      headersContainer.innerHTML = `
-        <div class="empty-state">
-          <span>📋</span>
-          <p>No headers available</p>
-        </div>
-      `;
-    }
-  }
-
-  private resetResponseUI(): void {
-    // Status
-    const statusElement = document.getElementById('responseStatus');
-    if (statusElement) {
-      statusElement.textContent = 'Ready';
-      statusElement.classList.remove('success', 'error', 'warning');
-    }
-
-    // Time
-    const timeElement = document.getElementById('responseTime');
-    if (timeElement) {
-      timeElement.textContent = '0ms';
-    }
-
-    // Size
-    const sizeElement = document.getElementById('responseSize');
-    if (sizeElement) {
-      sizeElement.textContent = '0 B';
-    }
-
-    // Body
-    const bodyElement = document.getElementById('responseBody');
-    if (bodyElement) {
-      bodyElement.innerHTML = `
-        <div class="empty-state">
-          <span>👋</span>
-          <p>Send a request to see the response</p>
-        </div>
-      `;
-    }
-
-    // Headers
-    const headersContainer = document.getElementById('responseHeaders');
-    if (headersContainer) {
-      headersContainer.innerHTML = `
-        <div class="empty-state">
-          <span>📋</span>
-          <p>Response headers will appear here</p>
-        </div>
-      `;
-    }
-  }
-
-  private getResponseContentType(response: Response): string {
-    if (!response.headers) return 'text';
-    
-    const contentType = response.headers['content-type'] || response.headers['Content-Type'] || '';
-    
-    if (contentType.includes('application/json')) return 'json';
-    if (contentType.includes('application/xml') || contentType.includes('text/xml')) return 'xml';
-    if (contentType.includes('text/html')) return 'html';
-    if (contentType.includes('text/css')) return 'css';
-    if (contentType.includes('application/javascript') || contentType.includes('text/javascript')) return 'javascript';
-    
-    return 'text';
-  }
-
-  private applySyntaxHighlighting(element: HTMLElement, contentType: string): void {
-    // Remove previous syntax classes
-    element.classList.remove('language-json', 'language-xml', 'language-html', 'language-css', 'language-javascript');
-    
-    // Add appropriate syntax class
-    switch (contentType) {
-      case 'json':
-        element.classList.add('language-json');
-        break;
-      case 'xml':
-        element.classList.add('language-xml');
-        break;
-      case 'html':
-        element.classList.add('language-html');
-        break;
-      case 'css':
-        element.classList.add('language-css');
-        break;
-      case 'javascript':
-        element.classList.add('language-javascript');
-        break;
-      default:
-        element.classList.add('language-text');
-    }
+    return '';
   }
 
   private formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
-  getCurrentResponse(): Response | null {
+  private isValidJSON(str: string): boolean {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  getCurrentResponse(): ApiResponse | null {
     return this.currentResponse;
   }
 
-  exportResponse(): void {
-    if (!this.currentResponse) {
-      this.eventBus.emit('toast:show', {
-        message: 'No response to export',
-        type: 'warning'
-      });
-      return;
+  clearResponse(): void {
+    this.currentResponse = null;
+
+    const bodyElement = document.getElementById('response-body');
+    const headersElement = document.getElementById('response-headers');
+    const metaElement = document.getElementById('response-meta');
+
+    if (bodyElement) {
+      bodyElement.innerHTML = '<div class="response-placeholder">Send a request to see the response here</div>';
     }
 
-    const exportData = {
-      request: {
-        method: 'GET', // This would come from the current request
-        url: this.currentResponse.url,
-        timestamp: new Date().toISOString()
-      },
-      response: this.currentResponse
-    };
+    if (headersElement) {
+      headersElement.innerHTML = '<div class="response-placeholder">No response headers</div>';
+    }
 
-    // Create download link
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `response_${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    this.eventBus.emit('toast:show', {
-      message: 'Response exported successfully',
-      type: 'success'
-    });
+    if (metaElement) {
+      metaElement.innerHTML = '<span>No response yet</span>';
+    }
   }
 }
