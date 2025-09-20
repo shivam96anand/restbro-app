@@ -14,6 +14,7 @@ export class TabsManager {
     const tabList = document.getElementById('request-tab-list');
     if (!tabList) return;
 
+    // Left click events
     tabList.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
 
@@ -35,6 +36,21 @@ export class TabsManager {
           this.createNewTab();
         } else if (tabId) {
           this.switchToTab(tabId);
+        }
+      }
+    });
+
+    // Right click context menu
+    tabList.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const target = e.target as HTMLElement;
+      const tabElement = target.closest('.request-tab') as HTMLElement;
+
+      if (tabElement) {
+        const tabId = tabElement.dataset.tabId;
+        // Only show context menu for actual tabs, not the "New Request" button
+        if (tabId && tabId !== 'new') {
+          this.showTabContextMenu(e, tabId);
         }
       }
     });
@@ -263,5 +279,227 @@ export class TabsManager {
     this.renderTabs();
     this.notifyTabChange();
     this.saveState();
+  }
+
+  private showTabContextMenu(event: MouseEvent, tabId: string): void {
+    const tab = this.tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    const menu = document.createElement('div');
+    menu.className = 'tab-context-menu';
+    menu.style.position = 'fixed';
+    menu.style.left = event.clientX + 'px';
+    menu.style.top = event.clientY + 'px';
+    menu.style.backgroundColor = 'var(--bg-tertiary)';
+    menu.style.border = '1px solid var(--border-color)';
+    menu.style.borderRadius = '6px';
+    menu.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+    menu.style.zIndex = '10000';
+    menu.style.minWidth = '180px';
+    menu.style.overflow = 'hidden';
+    menu.style.backdropFilter = 'blur(8px)';
+
+    const menuOptions = [
+      {
+        label: '🔄 Duplicate Tab',
+        action: () => this.duplicateTab(tabId),
+        description: 'Create a copy of this tab'
+      },
+      {
+        label: '📋 Copy Request URL',
+        action: () => this.copyRequestUrl(tabId),
+        description: 'Copy the request URL to clipboard'
+      },
+      {
+        label: '---',
+        action: null,
+        description: ''
+      },
+      {
+        label: '❌ Close Tab',
+        action: () => this.closeTab(tabId),
+        description: 'Close this tab'
+      },
+      {
+        label: '🗑️ Close All Tabs',
+        action: () => this.closeAllTabs(),
+        description: 'Close all open tabs'
+      },
+      {
+        label: '↩️ Close Other Tabs',
+        action: () => this.closeOtherTabs(tabId),
+        description: 'Close all tabs except this one'
+      }
+    ];
+
+    menuOptions.forEach(option => {
+      const item = document.createElement('div');
+
+      if (option.label === '---') {
+        // Create separator
+        item.className = 'tab-context-menu-separator';
+        item.style.cssText = `
+          height: 1px;
+          background: var(--border-color);
+          margin: 4px 0;
+        `;
+      } else {
+        item.className = 'tab-context-menu-item';
+        item.textContent = option.label;
+        item.title = option.description;
+        item.style.cssText = `
+          padding: 10px 16px;
+          cursor: pointer;
+          font-size: 12px;
+          color: var(--text-primary);
+          transition: background-color 0.15s ease;
+        `;
+
+        item.addEventListener('mouseenter', () => {
+          item.style.backgroundColor = 'var(--primary-color)';
+          item.style.color = 'white';
+        });
+
+        item.addEventListener('mouseleave', () => {
+          item.style.backgroundColor = 'transparent';
+          item.style.color = 'var(--text-primary)';
+        });
+
+        if (option.action) {
+          item.addEventListener('click', () => {
+            option.action();
+            if (document.body.contains(menu)) {
+              document.body.removeChild(menu);
+            }
+          });
+        }
+      }
+
+      menu.appendChild(item);
+    });
+
+    document.body.appendChild(menu);
+
+    // Close menu when clicking outside
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!menu.contains(e.target as Node)) {
+        if (document.body.contains(menu)) {
+          document.body.removeChild(menu);
+        }
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+  }
+
+  private closeAllTabs(): void {
+    if (this.tabs.length === 0) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(`Are you sure you want to close all ${this.tabs.length} tabs?`);
+    if (!confirmed) return;
+
+    this.tabs = [];
+    this.activeTabId = undefined;
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
+  }
+
+  private closeOtherTabs(keepTabId: string): void {
+    const tabsToClose = this.tabs.filter(tab => tab.id !== keepTabId);
+    if (tabsToClose.length === 0) return;
+
+    const confirmed = confirm(`Are you sure you want to close ${tabsToClose.length} other tabs?`);
+    if (!confirmed) return;
+
+    this.tabs = this.tabs.filter(tab => tab.id === keepTabId);
+    this.activeTabId = keepTabId;
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
+  }
+
+  private duplicateTab(tabId: string): void {
+    const originalTab = this.tabs.find(tab => tab.id === tabId);
+    if (!originalTab) return;
+
+    const duplicatedTab: RequestTab = {
+      id: this.generateId(),
+      name: `${originalTab.name} (Copy)`,
+      request: {
+        ...originalTab.request,
+        id: this.generateId() // Generate new ID for the duplicated request
+      },
+      response: originalTab.response ? { ...originalTab.response } : undefined,
+      isModified: true // Mark as modified since it's a copy
+    };
+
+    // Insert the duplicated tab right after the original
+    const originalIndex = this.tabs.findIndex(tab => tab.id === tabId);
+    this.tabs.splice(originalIndex + 1, 0, duplicatedTab);
+
+    // Switch to the duplicated tab
+    this.activeTabId = duplicatedTab.id;
+    this.renderTabs();
+    this.notifyTabChange();
+    this.saveState();
+  }
+
+  private copyRequestUrl(tabId: string): void {
+    const tab = this.tabs.find(t => t.id === tabId);
+    if (!tab || !tab.request.url) {
+      this.showNotification('No URL to copy', 'error');
+      return;
+    }
+
+    // Copy URL to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(tab.request.url).then(() => {
+        this.showNotification('URL copied to clipboard', 'success');
+      }).catch(() => {
+        this.showNotification('Failed to copy URL', 'error');
+      });
+    } else {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = tab.request.url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.showNotification('URL copied to clipboard', 'success');
+      } catch (err) {
+        this.showNotification('Failed to copy URL', 'error');
+      }
+      document.body.removeChild(textArea);
+    }
+  }
+
+  private showNotification(message: string, type: 'success' | 'error'): void {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? 'var(--success-color)' : 'var(--error-color)'};
+      color: white;
+      padding: 12px 16px;
+      border-radius: 4px;
+      z-index: 10001;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 3000);
   }
 }
