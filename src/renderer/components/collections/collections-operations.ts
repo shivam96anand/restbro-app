@@ -60,6 +60,27 @@ export class CollectionsOperations {
     return descendants;
   }
 
+  private getAllRequestsInFolder(folderId: string): string[] {
+    const requestIds: string[] = [];
+    const descendants = this.getDescendants(folderId);
+
+    // Include the folder itself if it's a request
+    const folder = this.findCollectionById(folderId);
+    if (folder && folder.type === 'request' && folder.request) {
+      requestIds.push(folder.request.id);
+    }
+
+    // Check all descendants for requests
+    for (const descendantId of descendants) {
+      const collection = this.findCollectionById(descendantId);
+      if (collection && collection.type === 'request' && collection.request) {
+        requestIds.push(collection.request.id);
+      }
+    }
+
+    return requestIds;
+  }
+
   async duplicateCollection(collectionId: string): Promise<void> {
     const collection = this.findCollectionById(collectionId);
     if (!collection) return;
@@ -195,11 +216,15 @@ export class CollectionsOperations {
     if (!confirmed) return;
 
     try {
+      // Get all request IDs that will be deleted (for closing tabs)
+      const affectedRequestIds = this.getAllRequestsInFolder(collectionId);
+
       await window.apiCourier.collection.delete(collectionId);
 
-      if (collection.type === 'request' && collection.request) {
+      // Dispatch deletion events for all affected requests
+      for (const requestId of affectedRequestIds) {
         const event = new CustomEvent('request-deleted', {
-          detail: { requestId: collection.request.id }
+          detail: { requestId }
         });
         document.dispatchEvent(event);
       }

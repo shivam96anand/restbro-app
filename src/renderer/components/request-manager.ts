@@ -9,17 +9,21 @@ export class RequestManager {
   private dataManager: RequestDataManager;
 
   constructor() {
+    this.formHandler = new RequestFormHandler(
+      (updates) => this.updateRequest(updates)
+    );
+
     this.dataManager = new RequestDataManager(
       (message) => this.formHandler.showError(message)
     );
 
-    this.formHandler = new RequestFormHandler(
-      (updates) => this.dataManager.updateCurrentRequest(updates)
-    );
-
     this.editorsManager = new RequestEditorsManager(
-      (updates) => this.dataManager.updateCurrentRequest(updates)
+      (updates) => this.updateRequest(updates)
     );
+  }
+
+  private updateRequest(updates: Partial<ApiRequest>): void {
+    this.dataManager.updateCurrentRequest(updates);
   }
 
   initialize(): void {

@@ -20,14 +20,25 @@ export class RequestEditorsManager {
         const target = e.target as HTMLElement;
         if (target.classList.contains('remove-btn')) {
           const row = target.closest('.kv-row');
-          if (row && paramsEditor.children.length > 1) {
+          if (row) {
             row.remove();
             this.updateParamsFromDOM();
+            // Add a new empty row if no rows left
+            if (paramsEditor.children.length === 0) {
+              this.addParamRow();
+            }
           }
         }
       });
 
       paramsEditor.addEventListener('input', () => {
+        this.updateParamsFromDOM();
+      });
+
+      paramsEditor.addEventListener('change', (e) => {
+        if ((e.target as HTMLElement).classList.contains('kv-checkbox')) {
+          this.updateRowVisualState(e.target as HTMLInputElement);
+        }
         this.updateParamsFromDOM();
       });
     }
@@ -46,14 +57,25 @@ export class RequestEditorsManager {
         const target = e.target as HTMLElement;
         if (target.classList.contains('remove-btn')) {
           const row = target.closest('.kv-row');
-          if (row && headersEditor.children.length > 1) {
+          if (row) {
             row.remove();
             this.updateHeadersFromDOM();
+            // Add a new empty row if no rows left
+            if (headersEditor.children.length === 0) {
+              this.addHeaderRow();
+            }
           }
         }
       });
 
       headersEditor.addEventListener('input', () => {
+        this.updateHeadersFromDOM();
+      });
+
+      headersEditor.addEventListener('change', (e) => {
+        if ((e.target as HTMLElement).classList.contains('kv-checkbox')) {
+          this.updateRowVisualState(e.target as HTMLInputElement);
+        }
         this.updateHeadersFromDOM();
       });
     }
@@ -112,6 +134,7 @@ export class RequestEditorsManager {
     const row = document.createElement('div');
     row.className = 'kv-row';
     row.innerHTML = `
+      <input type="checkbox" class="kv-checkbox" checked>
       <input type="text" placeholder="Key" class="key-input">
       <input type="text" placeholder="Value" class="value-input">
       <button class="remove-btn">×</button>
@@ -127,6 +150,7 @@ export class RequestEditorsManager {
     const row = document.createElement('div');
     row.className = 'kv-row';
     row.innerHTML = `
+      <input type="checkbox" class="kv-checkbox" checked>
       <input type="text" placeholder="Key" class="key-input">
       <input type="text" placeholder="Value" class="value-input">
       <button class="remove-btn">×</button>
@@ -143,10 +167,11 @@ export class RequestEditorsManager {
     const rows = paramsEditor.querySelectorAll('.kv-row');
 
     rows.forEach(row => {
+      const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-      if (keyInput && valueInput && keyInput.value.trim()) {
+      if (checkbox && checkbox.checked && keyInput && valueInput && keyInput.value.trim()) {
         params[keyInput.value.trim()] = valueInput.value.trim();
       }
     });
@@ -162,10 +187,11 @@ export class RequestEditorsManager {
     const rows = headersEditor.querySelectorAll('.kv-row');
 
     rows.forEach(row => {
+      const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-      if (keyInput && valueInput && keyInput.value.trim()) {
+      if (checkbox && checkbox.checked && keyInput && valueInput && keyInput.value.trim()) {
         headers[keyInput.value.trim()] = valueInput.value.trim();
       }
     });
@@ -242,6 +268,7 @@ export class RequestEditorsManager {
       const row = document.createElement('div');
       row.className = 'kv-row';
       row.innerHTML = `
+        <input type="checkbox" class="kv-checkbox" checked>
         <input type="text" placeholder="Key" class="key-input" value="${key}">
         <input type="text" placeholder="Value" class="value-input" value="${value}">
         <button class="remove-btn">×</button>
@@ -264,6 +291,7 @@ export class RequestEditorsManager {
       const row = document.createElement('div');
       row.className = 'kv-row';
       row.innerHTML = `
+        <input type="checkbox" class="kv-checkbox" checked>
         <input type="text" placeholder="Key" class="key-input" value="${key}">
         <input type="text" placeholder="Value" class="value-input" value="${value}">
         <button class="remove-btn">×</button>
@@ -308,6 +336,17 @@ export class RequestEditorsManager {
           });
         }
       }, 0);
+    }
+  }
+
+  private updateRowVisualState(checkbox: HTMLInputElement): void {
+    const row = checkbox.closest('.kv-row');
+    if (row) {
+      if (checkbox.checked) {
+        row.classList.remove('disabled');
+      } else {
+        row.classList.add('disabled');
+      }
     }
   }
 

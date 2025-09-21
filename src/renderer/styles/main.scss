@@ -584,8 +584,27 @@ body {
   display: flex;
   gap: 10px;
   margin-bottom: 8px;
+  align-items: center;
+  transition: opacity 0.2s ease, filter 0.2s ease;
 
-  input {
+  .kv-checkbox {
+    flex: 0 0 auto;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    filter: grayscale(50%);
+
+    input:not(.kv-checkbox) {
+      color: var(--text-disabled, rgba(128, 128, 128, 0.7));
+      background-color: var(--bg-disabled, rgba(128, 128, 128, 0.1));
+    }
+  }
+
+  input:not(.kv-checkbox) {
     flex: 1;
     background-color: var(--bg-tertiary);
     color: var(--text-primary);

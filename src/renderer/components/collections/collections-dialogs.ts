@@ -25,7 +25,10 @@ export class CollectionsDialogs {
           name: name,
           method: 'GET',
           url: '',
-          headers: {},
+          headers: {
+            'User-Agent': 'API-Courier/1.0',
+            'Accept-Encoding': 'gzip'
+          },
           params: {},
           body: {
             type: 'none',

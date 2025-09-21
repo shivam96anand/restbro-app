@@ -39,7 +39,10 @@ export class TabsStateManager {
       method: 'GET',
       url: '',
       params: {},
-      headers: {},
+      headers: {
+        'User-Agent': 'API-Courier/1.0',
+        'Accept-Encoding': 'gzip'
+      },
     };
 
     const newTab: RequestTab = {

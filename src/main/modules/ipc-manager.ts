@@ -27,8 +27,8 @@ class IpcManager {
         updatedAt: new Date(),
       };
 
-      // If this is a request collection, create a default ApiRequest
-      if (collection.type === 'request') {
+      // If this is a request collection and no request is provided, create a default ApiRequest
+      if (collection.type === 'request' && !collection.request) {
         const defaultRequest: ApiRequest = {
           id: randomUUID(),
           name: collection.name,
@@ -38,6 +38,12 @@ class IpcManager {
           headers: {},
         };
         newCollection.request = defaultRequest;
+      } else if (collection.type === 'request' && collection.request) {
+        // Use the provided request data but ensure it has a unique ID
+        newCollection.request = {
+          ...collection.request,
+          id: randomUUID()
+        };
       }
 
       const state = storeManager.getState();
