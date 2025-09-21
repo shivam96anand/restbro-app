@@ -10,7 +10,6 @@ API Courier is a secure, modular Electron app built with TypeScript that provide
 
 ### Main Process (`src/main/`)
 - **Modular TypeScript architecture** - Split by concern into small modules
-- **File size limit**: Maximum ~300 lines per file
 - **Required modules**:
   - `bootstrap.ts` - Application initialization
   - `windows.ts` - Window management

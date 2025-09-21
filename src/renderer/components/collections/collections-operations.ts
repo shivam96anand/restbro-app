@@ -1,0 +1,216 @@
+import { Collection } from '../../../shared/types';
+import { CollectionsDialogs } from './collections-dialogs';
+
+export class CollectionsOperations {
+  private collections: Collection[] = [];
+  private onShowError: (message: string) => void;
+  private dialogs: CollectionsDialogs;
+
+  constructor(onShowError: (message: string) => void) {
+    this.onShowError = onShowError;
+    this.dialogs = new CollectionsDialogs(onShowError);
+  }
+
+  setCollections(collections: Collection[]): void {
+    this.collections = collections;
+  }
+
+  findCollectionById(id: string): Collection | undefined {
+    return this.collections.find(c => c.id === id);
+  }
+
+  async moveCollection(draggedId: string, targetFolderId: string): Promise<void> {
+    const draggedCollection = this.findCollectionById(draggedId);
+    const targetFolder = this.findCollectionById(targetFolderId);
+
+    if (!draggedCollection || !targetFolder || targetFolder.type !== 'folder') {
+      return;
+    }
+
+    if (this.isDescendant(targetFolderId, draggedId)) {
+      this.onShowError('Cannot move folder into itself or its descendants');
+      return;
+    }
+
+    try {
+      await window.apiCourier.collection.update(draggedId, { parentId: targetFolderId });
+      draggedCollection.parentId = targetFolderId;
+    } catch (error) {
+      console.error('Failed to move collection:', error);
+      this.onShowError('Failed to move collection');
+    }
+  }
+
+  private isDescendant(folderId: string, ancestorId: string): boolean {
+    const descendants = this.getDescendants(ancestorId);
+    return descendants.includes(folderId);
+  }
+
+  private getDescendants(folderId: string): string[] {
+    const descendants: string[] = [];
+    const children = this.collections.filter(c => c.parentId === folderId);
+
+    for (const child of children) {
+      descendants.push(child.id);
+      if (child.type === 'folder') {
+        descendants.push(...this.getDescendants(child.id));
+      }
+    }
+
+    return descendants;
+  }
+
+  async duplicateCollection(collectionId: string): Promise<void> {
+    const collection = this.findCollectionById(collectionId);
+    if (!collection) return;
+
+    try {
+      const duplicatedName = `${collection.name} Copy`;
+      const newCollection = await window.apiCourier.collection.create({
+        name: duplicatedName,
+        type: collection.type,
+        parentId: collection.parentId,
+        request: collection.request ? { ...collection.request } : undefined
+      });
+
+      this.collections.push(newCollection);
+
+      if (collection.type === 'folder') {
+        await this.duplicateChildren(collection.id, newCollection.id);
+      }
+    } catch (error) {
+      console.error('Failed to duplicate collection:', error);
+      this.onShowError('Failed to duplicate collection');
+    }
+  }
+
+  private async duplicateChildren(originalParentId: string, newParentId: string): Promise<void> {
+    const children = this.collections.filter(c => c.parentId === originalParentId);
+
+    for (const child of children) {
+      try {
+        const newChild = await window.apiCourier.collection.create({
+          name: child.name,
+          type: child.type,
+          parentId: newParentId,
+          request: child.request ? { ...child.request } : undefined
+        });
+
+        this.collections.push(newChild);
+
+        if (child.type === 'folder') {
+          await this.duplicateChildren(child.id, newChild.id);
+        }
+      } catch (error) {
+        console.error('Failed to duplicate child collection:', error);
+      }
+    }
+  }
+
+  exportCollection(collectionId: string): void {
+    const collection = this.findCollectionById(collectionId);
+    if (!collection) return;
+
+    const exportData = {
+      version: '1.0',
+      type: 'api-courier-export',
+      timestamp: new Date().toISOString(),
+      collection: this.buildExportData(collection)
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${collection.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  private buildExportData(collection: Collection): any {
+    const data: any = {
+      id: collection.id,
+      name: collection.name,
+      type: collection.type,
+      request: collection.request,
+      children: []
+    };
+
+    if (collection.type === 'folder') {
+      const children = this.collections.filter(c => c.parentId === collection.id);
+      data.children = children.map(child => this.buildExportData(child));
+    }
+
+    return data;
+  }
+
+  async showCreateDialog(type: 'folder' | 'request' = 'folder', parentId?: string): Promise<Collection | null> {
+    const newCollection = await this.dialogs.showCreateDialog(type, parentId);
+    if (newCollection) {
+      this.collections.push(newCollection);
+    }
+    return newCollection;
+  }
+
+  async renameCollection(collectionId: string): Promise<void> {
+    const collection = this.findCollectionById(collectionId);
+    if (!collection) return;
+
+    const newName = await this.dialogs.showRenameDialog(collection);
+    if (!newName) return;
+
+    try {
+      await window.apiCourier.collection.update(collectionId, { name: newName });
+      collection.name = newName;
+      collection.updatedAt = new Date();
+
+      const event = new CustomEvent('collection-renamed', {
+        detail: {
+          collectionId,
+          newName,
+          collection
+        }
+      });
+      document.dispatchEvent(event);
+
+      const collectionsChangedEvent = new CustomEvent('collections-changed', {
+        detail: { collections: this.collections }
+      });
+      document.dispatchEvent(collectionsChangedEvent);
+    } catch (error) {
+      console.error('Failed to rename collection:', error);
+      this.onShowError('Failed to rename collection');
+    }
+  }
+
+  async deleteCollection(collectionId: string): Promise<void> {
+    const collection = this.findCollectionById(collectionId);
+    if (!collection) return;
+
+    const confirmed = await this.dialogs.showConfirm(`Delete "${collection.name}"?`, 'This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      await window.apiCourier.collection.delete(collectionId);
+
+      if (collection.type === 'request' && collection.request) {
+        const event = new CustomEvent('request-deleted', {
+          detail: { requestId: collection.request.id }
+        });
+        document.dispatchEvent(event);
+      }
+
+      const index = this.collections.findIndex(c => c.id === collectionId);
+      if (index !== -1) {
+        this.collections.splice(index, 1);
+      }
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+      this.onShowError('Failed to delete collection');
+    }
+  }
+}
