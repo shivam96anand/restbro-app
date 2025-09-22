@@ -1295,6 +1295,8 @@ body[data-theme="red"] {
       .json-nodes-container {
         position: relative;
         padding: 4px 0;
+        will-change: contents;
+        contain: layout;
       }
     }
   }
@@ -1313,6 +1315,8 @@ body[data-theme="red"] {
     position: relative;
     min-height: calc(1.3em + 4px);
     box-sizing: border-box;
+    will-change: auto;
+    contain: layout style;
 
     &:hover {
       background-color: var(--hover-color);

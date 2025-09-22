@@ -113,7 +113,7 @@ export class JsonViewer {
     this.nodes = [];
     let lineNumber = 1;
 
-    const parseNode = (key: string, value: any, level: number, parent?: JsonNode, isRoot: boolean = false): JsonNode => {
+    const parseNode = (key: string, value: any, level: number, parent?: JsonNode): JsonNode => {
       const type = this.getValueType(value);
       const node: JsonNode = {
         key,
@@ -140,9 +140,6 @@ export class JsonViewer {
         }
       }
 
-      if (!isRoot) {
-        this.nodes.push(node);
-      }
       return node;
     };
 
@@ -150,28 +147,14 @@ export class JsonViewer {
       const rootType = this.getValueType(this.jsonData);
 
       if (rootType === 'object' || rootType === 'array') {
-        // For root arrays/objects, show the container with its brackets
-        const rootNode = parseNode('', this.jsonData, 0, undefined, false);
-        this.flattenAndAddNodes(rootNode);
+        // For root arrays/objects, create a single root node
+        const rootNode = parseNode('', this.jsonData, 0, undefined);
+        this.nodes = [rootNode];
       } else {
         // For primitive values at root, show them directly
-        const rootNode = parseNode('', this.jsonData, -1, undefined, true);
-        if (rootNode.children) {
-          rootNode.children.forEach(child => {
-            child.level = 0;
-            this.flattenAndAddNodes(child);
-          });
-        }
+        const rootNode = parseNode('', this.jsonData, 0, undefined);
+        this.nodes = [rootNode];
       }
-    }
-  }
-
-  private flattenAndAddNodes(node: JsonNode): void {
-    this.nodes.push(node);
-    if (node.children) {
-      node.children.forEach(child => {
-        this.flattenAndAddNodes(child);
-      });
     }
   }
 
@@ -202,6 +185,65 @@ export class JsonViewer {
     });
   }
 
+  private renderNodesOptimized(): void {
+    const container = this.container.querySelector('.json-nodes-container') as HTMLElement;
+    const visibleNodes = this.getVisibleNodesWithClosingBrackets();
+
+    // Use DocumentFragment for batch DOM updates
+    const fragment = document.createDocumentFragment();
+
+    // Process nodes in chunks to avoid blocking the UI
+    if (visibleNodes.length > 100) {
+      this.renderNodesInChunks(visibleNodes, container);
+    } else {
+      visibleNodes.forEach(nodeData => {
+        if (nodeData.isClosingBracket) {
+          const closingElement = this.createClosingBracketElement(nodeData.node!);
+          fragment.appendChild(closingElement);
+        } else {
+          const nodeElement = this.createNodeElement(nodeData.node!);
+          fragment.appendChild(nodeElement);
+        }
+      });
+
+      // Single DOM update
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    }
+  }
+
+  private renderNodesInChunks(visibleNodes: Array<{node?: JsonNode, isClosingBracket: boolean}>, container: HTMLElement): void {
+    const chunkSize = 50;
+    let currentIndex = 0;
+
+    container.innerHTML = '';
+
+    const processChunk = () => {
+      const fragment = document.createDocumentFragment();
+      const endIndex = Math.min(currentIndex + chunkSize, visibleNodes.length);
+
+      for (let i = currentIndex; i < endIndex; i++) {
+        const nodeData = visibleNodes[i];
+        if (nodeData.isClosingBracket) {
+          const closingElement = this.createClosingBracketElement(nodeData.node!);
+          fragment.appendChild(closingElement);
+        } else {
+          const nodeElement = this.createNodeElement(nodeData.node!);
+          fragment.appendChild(nodeElement);
+        }
+      }
+
+      container.appendChild(fragment);
+      currentIndex = endIndex;
+
+      if (currentIndex < visibleNodes.length) {
+        requestAnimationFrame(processChunk);
+      }
+    };
+
+    requestAnimationFrame(processChunk);
+  }
+
   private getVisibleNodes(): JsonNode[] {
     const visibleNodes: JsonNode[] = [];
 
@@ -212,9 +254,10 @@ export class JsonViewer {
       }
     };
 
-    this.nodes.filter(node => node.level === 0).forEach(rootNode => {
-      addVisibleNodes(rootNode);
-    });
+    // Since we now have only one root node, process it directly
+    if (this.nodes.length > 0) {
+      addVisibleNodes(this.nodes[0]);
+    }
 
     return visibleNodes;
   }
@@ -235,9 +278,10 @@ export class JsonViewer {
       }
     };
 
-    this.nodes.filter(node => node.level === 0).forEach(rootNode => {
-      addVisibleNodes(rootNode);
-    });
+    // Since we now have only one root node, process it directly
+    if (this.nodes.length > 0) {
+      addVisibleNodes(this.nodes[0]);
+    }
 
     return result;
   }
@@ -251,6 +295,10 @@ export class JsonViewer {
     const isArrayItem = node.parent && node.parent.type === 'array';
     const hasKey = node.key && !isArrayItem;
 
+    // Create content container
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'node-content';
+
     if (node.type === 'object' || node.type === 'array') {
       const hasChildren = node.children && node.children.length > 0;
       const expandIcon = hasChildren ? (node.isExpanded ? '▼' : '▶') : '';
@@ -259,28 +307,25 @@ export class JsonViewer {
 
       const keyPart = hasKey ? `<span class="key">"${this.highlightSearchTerm(node.key, node.lineNumber, true)}"</span><span class="separator">: </span>` : '';
 
-      element.innerHTML = `
-        <div class="node-content">
-          <span class="expand-icon">${expandIcon}</span>
-          ${keyPart}
-          <span class="bracket">${node.type === 'array' ? '[' : '{'}</span>
-          <span class="preview">${preview}</span>
-          ${!node.isExpanded ? `<span class="bracket">${node.type === 'array' ? ']' : '}'}</span>` : ''}
-        </div>
+      contentDiv.innerHTML = `
+        <span class="expand-icon">${expandIcon}</span>
+        ${keyPart}
+        <span class="bracket">${node.type === 'array' ? '[' : '{'}</span>
+        <span class="preview">${preview}</span>
+        ${!node.isExpanded ? `<span class="bracket">${node.type === 'array' ? ']' : '}'}</span>` : ''}
       `;
     } else {
       const displayValue = this.formatValueWithHighlight(node.value, node.type, node.lineNumber);
       const keyPart = hasKey ? `<span class="key">"${this.highlightSearchTerm(node.key, node.lineNumber, true)}"</span><span class="separator">: </span>` : '';
 
-      element.innerHTML = `
-        <div class="node-content">
-          <span class="expand-icon"></span>
-          ${keyPart}
-          <span class="value value-${node.type}">${displayValue}</span>
-        </div>
+      contentDiv.innerHTML = `
+        <span class="expand-icon"></span>
+        ${keyPart}
+        <span class="value value-${node.type}">${displayValue}</span>
       `;
     }
 
+    element.appendChild(contentDiv);
     return element;
   }
 
@@ -420,23 +465,6 @@ export class JsonViewer {
     this.syncLineHeightsImmediate();
   }
 
-  private syncLineHeights(): void {
-    const lineNumbers = this.container.querySelectorAll('.line-number') as NodeListOf<HTMLElement>;
-    const jsonNodes = this.container.querySelectorAll('.json-node') as NodeListOf<HTMLElement>;
-
-    // Ensure we have the same number of elements
-    if (lineNumbers.length !== jsonNodes.length) return;
-
-    // Match heights after content is rendered
-    setTimeout(() => {
-      lineNumbers.forEach((lineNumber, index) => {
-        if (jsonNodes[index]) {
-          const nodeHeight = jsonNodes[index].offsetHeight;
-          lineNumber.style.minHeight = `${nodeHeight}px`;
-        }
-      });
-    }, 0);
-  }
 
   private syncLineHeightsImmediate(): void {
     const lineNumbers = this.container.querySelectorAll('.line-number') as NodeListOf<HTMLElement>;
@@ -485,31 +513,46 @@ export class JsonViewer {
 
   private toggleNode(node: JsonNode): void {
     node.isExpanded = !node.isExpanded;
-    this.renderNodes();
-    this.updateLineNumbers();
-    this.syncLineNumbersScroll();
+    this.renderNodesOptimized();
+    this.updateLineNumbersBatched();
   }
 
   private expandAll(): void {
-    this.nodes.forEach(node => {
+    const expandNode = (node: JsonNode) => {
       if (node.type === 'object' || node.type === 'array') {
         node.isExpanded = true;
       }
-    });
-    this.renderNodes();
-    this.updateLineNumbers();
-    this.syncLineNumbersScroll();
+      if (node.children) {
+        node.children.forEach(child => expandNode(child));
+      }
+    };
+
+    // Expand all nodes in the tree
+    if (this.nodes.length > 0) {
+      expandNode(this.nodes[0]);
+    }
+
+    this.renderNodesOptimized();
+    this.updateLineNumbersBatched();
   }
 
   private collapseAll(): void {
-    this.nodes.forEach(node => {
+    const collapseNode = (node: JsonNode) => {
       if (node.type === 'object' || node.type === 'array') {
-        node.isExpanded = node.level === 0;
+        node.isExpanded = false;
       }
-    });
-    this.renderNodes();
-    this.updateLineNumbers();
-    this.syncLineNumbersScroll();
+      if (node.children) {
+        node.children.forEach(child => collapseNode(child));
+      }
+    };
+
+    // Collapse all nodes in the tree
+    if (this.nodes.length > 0) {
+      collapseNode(this.nodes[0]);
+    }
+
+    this.renderNodesOptimized();
+    this.updateLineNumbersBatched();
   }
 
   private performSearch(): void {
@@ -657,7 +700,6 @@ export class JsonViewer {
     if (this.currentSearchIndex === -1 || !this.searchMatches[this.currentSearchIndex]) return;
 
     const match = this.searchMatches[this.currentSearchIndex];
-    const content = this.container.querySelector('.json-content') as HTMLElement;
 
     // Find the actual node element to scroll to
     const nodeElements = this.container.querySelectorAll('.json-node');
