@@ -1,0 +1,110 @@
+// Tab Components
+
+// Request tabs
+.request-tabs {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 20px;
+  overflow-x: auto;
+}
+
+.tab-list {
+  display: flex;
+  gap: 2px;
+}
+
+.request-tab {
+  background: var(--bg-tertiary);
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  position: relative;
+
+  &:hover {
+    background-color: var(--hover-color);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--primary-color);
+  }
+
+  &.new-tab-button {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+
+    &:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background: rgba(37, 99, 235, 0.1);
+    }
+  }
+
+  .tab-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab-close {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1;
+    text-align: center;
+
+    &:hover {
+      background: var(--error-color);
+      color: white;
+    }
+  }
+
+  &:hover .tab-close,
+  &.active .tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Response tabs
+.response-tabs {
+  display: flex;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+
+  .tab {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+
+    &:hover {
+      color: var(--text-primary);
+      background-color: var(--hover-color);
+    }
+
+    &.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+  }
+}

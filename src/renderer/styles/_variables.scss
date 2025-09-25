@@ -1,0 +1,40 @@
+// CSS Custom Properties and Theme Variables
+:root {
+  --primary-color: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --border-color: #404040;
+  --hover-color: #404040;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+
+  // JSON Viewer Colors
+  --json-bg: #1e1e1e;
+  --json-border: #333;
+  --json-line-number: #6e6e6e;
+  --json-string: #ce9178;
+  --json-number: #b5cea8;
+  --json-boolean: #569cd6;
+  --json-null: #808080;
+  --json-key: #9cdcfe;
+  --json-bracket: #da70d6;
+  --json-expand-icon: #cccccc;
+  --json-search-highlight: #ffff0050;
+  --json-search-current: #ff6600;
+
+  // Load Testing Colors
+  --progress-bg: #2d2d2d;
+  --progress-fill: var(--primary-color);
+  --metric-card-bg: #2a2a2a;
+  --status-success: #10b981;
+  --status-redirect: #3b82f6;
+  --status-client-error: #f59e0b;
+  --status-server-error: #ef4444;
+  --status-error: #991b1b;
+}

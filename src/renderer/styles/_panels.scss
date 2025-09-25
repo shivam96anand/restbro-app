@@ -1,0 +1,75 @@
+// Panel Layout Styles
+
+.api-layout {
+  display: flex;
+  height: calc(100vh - 120px);
+  position: relative;
+}
+
+.collections-panel {
+  width: 20%;
+  min-width: 200px;
+  max-width: 400px;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.request-panel {
+  width: 35%;
+  min-width: 300px;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.response-panel {
+  width: 45%;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 10;
+
+  &:hover {
+    background: var(--primary-color);
+    opacity: 0.5;
+  }
+
+  &.resizing {
+    background: var(--primary-color);
+    opacity: 0.8;
+  }
+}
+
+.panel-header {
+  background-color: var(--bg-secondary);
+  padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+    margin: 0;
+  }
+}
