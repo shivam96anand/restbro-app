@@ -13,6 +13,17 @@
   --success-color: #10b981;
   --error-color: #ef4444;
   --warning-color: #f59e0b;
+  --accent-color: #8b5cf6;
+
+  // RGB versions for rgba usage
+  --primary-color-rgb: 37, 99, 235;
+  --success-color-rgb: 16, 185, 129;
+  --error-color-rgb: 239, 68, 68;
+  --warning-color-rgb: 245, 158, 11;
+
+  // Semantic colors
+  --bg-error: rgba(239, 68, 68, 0.1);
+  --text-error: #ef4444;
 
   // JSON Viewer Colors
   --json-bg: #1e1e1e;

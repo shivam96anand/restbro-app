@@ -8,8 +8,10 @@ import { ResponseManager } from './components/response-manager';
 import { HistoryManager } from './components/history-manager';
 import { LoadTestManager } from './components/loadtest-manager';
 import { JsonViewerTab } from './components/JsonViewerTab';
+import { AskAiTab } from './components/AskAiTab';
 import { ThemeManager } from './utils/theme-manager';
 import { resizeManager } from './utils/resize-manager';
+import { createRequestContext, createResponseContext } from '../ai/askAiService';
 
 declare global {
   interface Window {
@@ -26,6 +28,7 @@ class ApiCourierRenderer {
   private historyManager: HistoryManager;
   private loadTestManager: LoadTestManager;
   private jsonViewerTab: JsonViewerTab;
+  private askAiTab: AskAiTab;
   private themeManager: ThemeManager;
 
   constructor() {
@@ -38,6 +41,7 @@ class ApiCourierRenderer {
     this.historyManager = new HistoryManager();
     this.loadTestManager = new LoadTestManager();
     this.jsonViewerTab = new JsonViewerTab();
+    this.askAiTab = new AskAiTab();
   }
 
   async initialize(): Promise<void> {
@@ -53,6 +57,7 @@ class ApiCourierRenderer {
     this.responseManager.initialize();
     this.historyManager.initialize();
     await this.loadTestManager.initialize();
+    this.askAiTab.initialize();
     resizeManager.initialize();
 
     // Load initial state after all managers are initialized
@@ -146,6 +151,37 @@ class ApiCourierRenderer {
       } else if (!activeTab) {
         // If no active tab, clear collection selection
         this.collectionsManager.clearSelection();
+      }
+    });
+
+    // Listen for Ask AI requests
+    document.addEventListener('open-ask-ai', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const response = customEvent.detail.response;
+
+      // Get the current active tab to access request data
+      const activeTab = this.tabsManager.getActiveTab();
+      if (activeTab && activeTab.request && response) {
+        // Convert to context objects
+        const requestCtx = createRequestContext(activeTab.request);
+        const responseCtx = createResponseContext(response);
+
+        // Open Ask AI with context
+        this.askAiTab.openWithContext(requestCtx, responseCtx);
+      }
+    });
+
+    // Listen for tab switching requests (for Ask AI to switch tabs)
+    document.addEventListener('switch-to-tab', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const tabName = customEvent.detail.tabName;
+
+      if (tabName) {
+        // Use the app manager to switch tabs
+        const navTab = document.querySelector(`[data-tab="${tabName}"]`) as HTMLElement;
+        if (navTab) {
+          navTab.click();
+        }
       }
     });
   }

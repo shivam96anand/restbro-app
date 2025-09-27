@@ -488,8 +488,22 @@ export class ResponseManager {
   }
 
   private handleAskAI(): void {
-    // Placeholder for Ask AI functionality - to be implemented later
-    this.showToast('Ask AI feature coming soon!');
+    if (!this.currentResponse) {
+      this.showToast('No response to analyze');
+      return;
+    }
+
+    // Get current active tab to access request data
+    const event = new CustomEvent('get-active-tab-data');
+    document.dispatchEvent(event);
+
+    // We'll get the response via a custom event since we need to access TabsManager
+    const askAiEvent = new CustomEvent('open-ask-ai', {
+      detail: {
+        response: this.currentResponse
+      }
+    });
+    document.dispatchEvent(askAiEvent);
   }
 
   private showToast(message: string): void {
