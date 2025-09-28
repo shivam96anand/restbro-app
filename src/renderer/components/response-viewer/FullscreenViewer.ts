@@ -159,6 +159,9 @@ export class FullscreenViewer implements FullscreenViewerHandle {
       onCopy: () => this.handleCopy(),
       onExport: () => this.handleExport(),
       onFontSizeChange: (size) => this.handleFontSizeChange(size),
+      onScrollTop: () => this.handleScrollTop(),
+      onScrollBottom: () => this.handleScrollBottom(),
+      onAskAI: () => this.handleAskAI(),
     });
 
     // Initialize raw editor
@@ -373,6 +376,10 @@ export class FullscreenViewer implements FullscreenViewerHandle {
 
       .fullscreen-toolbar {
         flex-shrink: 0;
+        background: var(--bg-secondary, #f8f9fa);
+        border-bottom: 1px solid var(--border-color, #e0e0e0);
+        min-height: 48px;
+        z-index: 1;
       }
 
       .fullscreen-content {
@@ -529,6 +536,82 @@ export class FullscreenViewer implements FullscreenViewerHandle {
   private handleFontSizeChange(size: number): void {
     this.rawEditor?.setFontSize(size);
     this.jsonTree?.setFontSize(size);
+  }
+
+  private handleScrollTop(): void {
+    const activeTab = this.stateManager.getState().activeTab;
+    
+    if (activeTab === 'pretty') {
+      // Scroll pretty view to top
+      const prettyView = this.modal?.querySelector('.pretty-view') as HTMLElement;
+      if (prettyView) {
+        const scrollable = prettyView.querySelector('.json-tree-container, .json-content') as HTMLElement;
+        if (scrollable) {
+          scrollable.scrollTop = 0;
+        }
+      }
+    } else if (activeTab === 'raw') {
+      // Scroll raw editor to top
+      this.rawEditor?.goToLine(1);
+    }
+  }
+
+  private handleScrollBottom(): void {
+    const activeTab = this.stateManager.getState().activeTab;
+    
+    if (activeTab === 'pretty') {
+      // Scroll pretty view to bottom
+      const prettyView = this.modal?.querySelector('.pretty-view') as HTMLElement;
+      if (prettyView) {
+        const scrollable = prettyView.querySelector('.json-tree-container, .json-content') as HTMLElement;
+        if (scrollable) {
+          scrollable.scrollTop = scrollable.scrollHeight;
+        }
+      }
+    } else if (activeTab === 'raw') {
+      // Scroll raw editor to bottom - get last line number
+      const content = this.rawEditor?.getValue() || '';
+      const lines = content.split('\n').length;
+      this.rawEditor?.goToLine(lines);
+    }
+  }
+
+  private handleAskAI(): void {
+    if (!this.currentContent) {
+      this.showToast('No JSON to analyze');
+      return;
+    }
+
+    // Create response context for Ask AI using the existing event pattern
+    try {
+      const response = {
+        body: this.currentContent,
+        headers: {}, // We don't have headers in fullscreen mode
+        status: 200,
+        statusText: 'OK',
+        size: this.currentContent.length,
+        time: 0, // No timing info available
+        contentType: 'application/json',
+        timestamp: Date.now()
+      };
+
+      // Dispatch the existing 'open-ask-ai' event that the main app listens for
+      const askAIEvent = new CustomEvent('open-ask-ai', {
+        detail: {
+          response: response
+        }
+      });
+      
+      document.dispatchEvent(askAIEvent);
+      this.showToast('Opening Ask AI...');
+      
+      // Close fullscreen to show the AI tab
+      this.hide();
+      
+    } catch (error) {
+      console.error('Failed to trigger Ask AI:', error);
+      this.showToast('Failed to open Ask AI');
+    }
   }
 
   private handleContentChange(content: string): void {

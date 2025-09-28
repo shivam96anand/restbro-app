@@ -20,6 +20,9 @@ export interface ToolbarOptions {
   onCopy?: () => void;
   onExport?: () => void;
   onFontSizeChange?: (size: number) => void;
+  onScrollTop?: () => void;
+  onScrollBottom?: () => void;
+  onAskAI?: () => void;
 }
 
 export interface ToolbarHandle {
@@ -130,6 +133,8 @@ export class Toolbar implements ToolbarHandle {
       { id: 'expand', label: 'Expand All', icon: '📂', shortcut: 'Ctrl+E', handler: () => this.options.onExpandAll?.() },
       { id: 'collapse', label: 'Collapse All', icon: '📁', shortcut: 'Ctrl+Shift+E', handler: () => this.options.onCollapseAll?.() },
       { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+F', handler: () => this.options.onSearch?.() },
+      { id: 'scroll-top', label: 'Top', icon: '⬆️', shortcut: 'Ctrl+Home', handler: () => this.options.onScrollTop?.() },
+      { id: 'scroll-bottom', label: 'Bottom', icon: '⬇️', shortcut: 'Ctrl+End', handler: () => this.options.onScrollBottom?.() },
     ];
 
     actions.forEach(action => {
@@ -285,6 +290,7 @@ export class Toolbar implements ToolbarHandle {
       { id: 'copy', label: 'Copy JSON', icon: '📋', handler: () => this.options.onCopy?.() },
       { id: 'export', label: 'Export...', icon: '💾', handler: () => this.options.onExport?.() },
       { id: 'fullscreen', label: 'Fullscreen', icon: '🔍', handler: () => this.options.onFullscreen?.() },
+      { id: 'ask-ai', label: 'Ask AI', icon: '🤖', handler: () => this.options.onAskAI?.() },
     ];
 
     actions.forEach(action => {
@@ -323,6 +329,8 @@ export class Toolbar implements ToolbarHandle {
       { key: 'Control+Shift+e', mac: 'Meta+Shift+e', action: () => this.options.onCollapseAll?.() },
       { key: 'Control+=', mac: 'Meta+=', action: () => this.changeFontSize(1) },
       { key: 'Control+-', mac: 'Meta+-', action: () => this.changeFontSize(-1) },
+      { key: 'Control+Home', mac: 'Meta+Home', action: () => this.options.onScrollTop?.() },
+      { key: 'Control+End', mac: 'Meta+End', action: () => this.options.onScrollBottom?.() },
       { key: 'F11', action: () => this.options.onFullscreen?.() },
     ];
 
@@ -459,6 +467,7 @@ export class Toolbar implements ToolbarHandle {
       .toolbar-actions {
         display: flex;
         gap: 4px;
+        flex-wrap: wrap;
       }
 
       .toolbar-button {
@@ -587,6 +596,38 @@ export class Toolbar implements ToolbarHandle {
 
       .item-icon {
         font-size: 14px;
+      }
+
+      /* Responsive adjustments for more buttons */
+      @media (max-width: 900px) {
+        .toolbar-actions {
+          gap: 2px;
+        }
+
+        .toolbar-button {
+          padding: 4px 6px;
+          font-size: 10px;
+        }
+
+        .button-label {
+          display: none;
+        }
+
+        .button-icon {
+          font-size: 14px;
+        }
+      }
+
+      /* Make Ask AI button more prominent */
+      .toolbar-button[data-action="ask-ai"] {
+        background: var(--primary-color, #007bff);
+        color: white;
+        border-color: var(--primary-color, #007bff);
+      }
+
+      .toolbar-button[data-action="ask-ai"]:hover {
+        background: var(--primary-dark, #0056b3);
+        border-color: var(--primary-dark, #0056b3);
       }
     `;
 

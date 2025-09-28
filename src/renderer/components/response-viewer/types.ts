@@ -141,7 +141,7 @@ export const VIEWER_CONSTANTS = {
   LINE_HEIGHT: 20, // px
   MIN_FONT_SIZE: 10,
   MAX_FONT_SIZE: 24,
-  DEFAULT_FONT_SIZE: 13,
+  DEFAULT_FONT_SIZE: 11,
 } as const;
 
 // CSS classes for styling
