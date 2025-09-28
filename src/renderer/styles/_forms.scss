@@ -339,20 +339,127 @@
   }
 }
 
+// Enhanced Body Editor Styles
+.body-editor-container {
+  margin-top: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.body-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+}
+
+.body-editor-actions {
+  display: flex;
+  gap: 6px;
+
+  .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-color);
+    }
+
+    &.btn-secondary {
+      background-color: var(--bg-secondary);
+    }
+
+    &.btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+  }
+}
+
+.body-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  
+  &.valid {
+    color: var(--success-color);
+    background-color: var(--success-bg);
+  }
+  
+  &.invalid {
+    color: var(--error-color);
+    background-color: var(--error-bg);
+  }
+  
+  &.info {
+    color: var(--text-secondary);
+  }
+}
+
+.body-editor-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.line-numbers {
+  background-color: var(--bg-tertiary);
+  border-right: 1px solid var(--border-color);
+  padding: 12px 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  user-select: none;
+  width: 40px;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+
+  .line-number {
+    height: 16.8px; // Match textarea line height
+  }
+}
+
 .body-editor {
   width: 100%;
   height: 200px;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border: none;
   padding: 12px;
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 12px;
+  line-height: 1.4;
   resize: vertical;
+  outline: none;
+  margin: 0;
+  box-sizing: border-box;
 
   &::placeholder {
     color: var(--text-secondary);
+  }
+
+  &.json-mode {
+    // Enhanced styling for JSON mode
+    tab-size: 2;
+  }
+
+  // Enhanced styling for JSON mode
+  &.json-mode {
+    tab-size: 2;
+    white-space: pre;
   }
 }
 

@@ -1,7 +1,9 @@
 import { ApiRequest } from '../../../shared/types';
+import { RequestBodyEditor } from './RequestBodyEditor';
 
 export class RequestEditorsManager {
   private onRequestUpdate: (updates: Partial<ApiRequest>) => void;
+  private bodyEditor: RequestBodyEditor | null = null;
 
   constructor(onRequestUpdate: (updates: Partial<ApiRequest>) => void) {
     this.onRequestUpdate = onRequestUpdate;
@@ -82,39 +84,21 @@ export class RequestEditorsManager {
   }
 
   setupBodyEditor(): void {
-    const bodyTypeInputs = document.querySelectorAll('input[name="body-type"]');
-    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
+    const bodySection = document.getElementById('body-section');
+    if (!bodySection) return;
 
-    bodyTypeInputs.forEach(input => {
-      input.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const bodyType = target.value;
-
-        if (bodyEditor) {
-          bodyEditor.style.display = bodyType === 'none' ? 'none' : 'block';
+    // Initialize the enhanced body editor
+    this.bodyEditor = new RequestBodyEditor(bodySection, {
+      onBodyChange: (body) => {
+        this.onRequestUpdate({ body });
+      },
+      onStatusUpdate: (type, message) => {
+        // We can add a global status handler here if needed
+        if (type === 'error') {
+          console.error('Body editor error:', message);
         }
-
-        this.onRequestUpdate({
-          body: {
-            type: bodyType as any,
-            content: bodyEditor ? bodyEditor.value : ''
-          }
-        });
-      });
+      }
     });
-
-    if (bodyEditor) {
-      bodyEditor.addEventListener('input', () => {
-        const bodyType = (document.querySelector('input[name="body-type"]:checked') as HTMLInputElement)?.value || 'none';
-
-        this.onRequestUpdate({
-          body: {
-            type: bodyType as any,
-            content: bodyEditor.value
-          }
-        });
-      });
-    }
   }
 
   setupAuthEditor(): void {
@@ -313,16 +297,11 @@ export class RequestEditorsManager {
   }
 
   loadBody(body: { type: string; content: string }): void {
-    const bodyTypeInput = document.querySelector(`input[name="body-type"][value="${body.type}"]`) as HTMLInputElement;
-    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
-
-    if (bodyTypeInput) {
-      bodyTypeInput.checked = true;
-    }
-
-    if (bodyEditor) {
-      bodyEditor.value = body.content;
-      bodyEditor.style.display = body.type === 'none' ? 'none' : 'block';
+    if (this.bodyEditor) {
+      this.bodyEditor.setBody({
+        type: body.type as any,
+        content: body.content
+      });
     }
   }
 
@@ -379,8 +358,10 @@ export class RequestEditorsManager {
   }
 
   clearEditors(): void {
-    const bodyEditor = document.getElementById('request-body') as HTMLTextAreaElement;
-    if (bodyEditor) bodyEditor.value = '';
+    // Clear body editor using the enhanced body editor
+    if (this.bodyEditor) {
+      this.bodyEditor.clear();
+    }
 
     const paramsEditor = document.getElementById('params-editor');
     if (paramsEditor) {
@@ -392,11 +373,6 @@ export class RequestEditorsManager {
     if (headersEditor) {
       headersEditor.innerHTML = '';
       this.addHeaderRow();
-    }
-
-    const noneBodyType = document.querySelector('input[name="body-type"][value="none"]') as HTMLInputElement;
-    if (noneBodyType) {
-      noneBodyType.checked = true;
     }
 
     const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
