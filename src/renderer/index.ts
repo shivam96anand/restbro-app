@@ -8,6 +8,7 @@ import { ResponseManager } from './components/response-manager';
 import { HistoryManager } from './components/history-manager';
 import { LoadTestManager } from './components/loadtest-manager';
 import { JsonViewerTab } from './components/JsonViewerTab';
+import { JsonCompareTabManager } from './components/JsonCompareTab';
 import { AskAiTab } from './components/AskAiTab';
 import { ThemeManager } from './utils/theme-manager';
 import { resizeManager } from './utils/resize-manager';
@@ -28,6 +29,7 @@ class ApiCourierRenderer {
   private historyManager: HistoryManager;
   private loadTestManager: LoadTestManager;
   private jsonViewerTab: JsonViewerTab;
+  private jsonCompareTab: JsonCompareTabManager;
   private askAiTab: AskAiTab;
   private themeManager: ThemeManager;
 
@@ -41,6 +43,7 @@ class ApiCourierRenderer {
     this.historyManager = new HistoryManager();
     this.loadTestManager = new LoadTestManager();
     this.jsonViewerTab = new JsonViewerTab();
+    this.jsonCompareTab = new JsonCompareTabManager();
     this.askAiTab = new AskAiTab();
   }
 

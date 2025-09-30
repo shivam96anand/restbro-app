@@ -5,7 +5,7 @@ import { NodeRenderer } from './json-viewer/renderer';
 import { LineNumbersManager } from './json-viewer/line-numbers';
 import { JsonViewerUtilities } from './json-viewer/utilities';
 
-export { JsonNode, SearchMatch } from './json-viewer/types';
+export type { JsonNode, SearchMatch } from './json-viewer/types';
 
 export class JsonViewer {
   private container: HTMLElement;

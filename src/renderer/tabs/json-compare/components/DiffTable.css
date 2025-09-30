@@ -1,0 +1,242 @@
+.diff-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.diff-table-controls {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+}
+
+.filter-input {
+  flex: 1;
+  max-width: 400px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.filter-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.type-filters {
+  display: flex;
+  gap: 6px;
+}
+
+/* Override active state for filter buttons - keep them looking like default buttons */
+.type-filters .response-action-btn.active {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  opacity: 1 !important;
+}
+
+/* Inactive filter buttons should be dimmed */
+.type-filters .response-action-btn:not(.active) {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  opacity: 0.4 !important;
+  pointer-events: auto;
+}
+
+.type-filters .response-action-btn:not(.active):hover {
+  opacity: 0.6 !important;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.diff-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.diff-table-header {
+  display: flex;
+  background-color: var(--bg-tertiary);
+  border-bottom: 2px solid var(--border-color);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.header-cell {
+  padding: 12px;
+  border-right: 1px solid var(--border-color);
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.path-header {
+  flex: 0 0 35%;
+}
+
+.type-header {
+  flex: 0 0 12%;
+}
+
+.value-header {
+  flex: 0 0 26.5%;
+}
+
+.diff-row {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.diff-row:hover {
+  background-color: var(--hover-color);
+}
+
+.diff-cell {
+  padding: 8px 12px;
+  border-right: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.diff-cell:last-child {
+  border-right: none;
+}
+
+.path-cell {
+  flex: 0 0 35%;
+  gap: 8px;
+}
+
+.path-text {
+  flex: 1;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  word-break: break-all;
+  color: var(--text-primary);
+}
+
+.copy-path-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.copy-path-btn:hover {
+  opacity: 1;
+  background-color: var(--hover-color);
+}
+
+.type-cell {
+  flex: 0 0 12%;
+  justify-content: center;
+}
+
+.type-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.type-badge-added {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: var(--success-color);
+}
+
+.type-badge-removed {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: var(--error-color);
+}
+
+.type-badge-changed {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: var(--warning-color);
+}
+
+.value-cell {
+  flex: 0 0 26.5%;
+}
+
+.value-cell.disabled {
+  opacity: 0.4;
+}
+
+.value-text {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: auto;
+  max-height: 70px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 6px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border-color);
+}
+
+/* JSON syntax highlighting in table values */
+.value-text .json-key {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.value-text .json-string {
+  color: #ffffff;
+}
+
+.value-text .json-number {
+  color: #ffffff;
+}
+
+.value-text .json-boolean {
+  color: #ffffff;
+}
+
+.value-text .json-null {
+  color: #ffffff;
+  font-style: italic;
+}
+
+.empty-table-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
