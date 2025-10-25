@@ -136,7 +136,7 @@ export class RawEditor implements RawEditorHandle {
           fontFamily: '"JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
         },
         '.cm-content': {
-          padding: '12px 8px',
+          padding: '12px 8px 60px 8px', // Add bottom padding to prevent cut-off
           minHeight: '300px',
         },
         '.cm-editor': {

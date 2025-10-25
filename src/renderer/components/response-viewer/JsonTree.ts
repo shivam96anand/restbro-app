@@ -111,8 +111,8 @@ class VirtualScroller {
     const content = this.viewport.querySelector('.json-tree-content') as HTMLElement;
     if (!content) return;
 
-    // Set total height for scrollbar
-    const totalHeight = this.items.length * this.itemHeight;
+    // Set total height for scrollbar with extra padding at the bottom
+    const totalHeight = this.items.length * this.itemHeight + 60; // Add 60px bottom padding
     content.style.height = `${totalHeight}px`;
 
     // Clear current content
