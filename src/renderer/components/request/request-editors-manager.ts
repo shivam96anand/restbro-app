@@ -325,4 +325,8 @@ export class RequestEditorsManager {
   updateOAuthStatus(message: string, type: 'loading' | 'success' | 'error'): void {
     this.uiHelpers.updateOAuthStatus(message, type);
   }
+
+  updateTokenInfo(config: Record<string, string>): void {
+    this.uiHelpers.updateTokenInfo(config);
+  }
 }

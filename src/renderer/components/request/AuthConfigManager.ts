@@ -28,8 +28,15 @@ export class AuthConfigManager {
 
     if (authTypeSelect) {
       authTypeSelect.addEventListener('change', () => {
-        this.renderConfig(authTypeSelect.value);
-        this.uiHelpers.toggleOAuthStatus(authTypeSelect.value === 'oauth2');
+        const newAuthType = authTypeSelect.value;
+        this.renderConfig(newAuthType);
+        this.uiHelpers.toggleOAuthStatus(newAuthType === 'oauth2');
+
+        // Update the request with the new auth type and empty config
+        this.onAuthUpdate({
+          type: newAuthType,
+          config: {}
+        });
       });
     }
   }

@@ -1,186 +1,386 @@
-/**
- * Toolbar component with all viewer controls and keyboard shortcuts
- */
+/**/**
 
-import { ViewerTab, ViewerEvents, VIEWER_CONSTANTS, VIEWER_CLASSES } from './types';
-import { ViewerStateManager } from './viewerState';
+ * Toolbar component with all viewer controls and keyboard shortcuts * Toolbar component with all viewer controls and keyboard shortcuts
 
-export interface ToolbarOptions {
-  container: HTMLElement;
-  stateManager: ViewerStateManager;
-  onTabChange?: (tab: ViewerTab) => void;
-  onFormat?: () => void;
-  onMinify?: () => void;
-  onExpandAll?: () => void;
-  onCollapseAll?: () => void;
-  onToggleWrap?: () => void;
-  onToggleTypes?: () => void;
-  onSearch?: () => void;
-  onFullscreen?: () => void;
-  onCopy?: () => void;
-  onExport?: () => void;
-  onFontSizeChange?: (size: number) => void;
-  onScrollTop?: () => void;
-  onScrollBottom?: () => void;
-  onAskAI?: () => void;
-}
+ */ */
 
-export interface ToolbarHandle {
-  setActiveTab: (tab: ViewerTab) => void;
-  updateSearchResults: (current: number, total: number) => void;
-  setFormatEnabled: (enabled: boolean) => void;
-  destroy: () => void;
-}
 
-export class Toolbar implements ToolbarHandle {
-  private container: HTMLElement;
-  private stateManager: ViewerStateManager;
-  private options: ToolbarOptions;
-  private elements: Map<string, HTMLElement> = new Map();
-  private keyboardShortcuts: Map<string, () => void> = new Map();
 
-  constructor(options: ToolbarOptions) {
-    this.options = options;
-    this.container = options.container;
-    this.stateManager = options.stateManager;
+import { ViewerTab, VIEWER_CONSTANTS } from './types';import { ViewerTab, VIEWER_CONSTANTS } from './types';
 
-    this.render();
-    this.setupKeyboardShortcuts();
-    this.attachEventListeners();
-  }
+import { ViewerStateManager } from './viewerState';import { ViewerStateManager } from './viewerState';
 
-  private render(): void {
-    this.container.className = `${VIEWER_CLASSES.toolbar} json-viewer-toolbar`;
-    this.container.innerHTML = '';
+import { ToolbarUI, ToolbarUICallbacks } from './ToolbarUI';import { ToolbarUI, ToolbarUICallbacks } from './ToolbarUI';
 
-    // Create toolbar sections
-    const leftSection = this.createSection('toolbar-left');
-    const centerSection = this.createSection('toolbar-center');
-    const rightSection = this.createSection('toolbar-right');
+import { ToolbarKeyboardHandler, KeyboardShortcutCallbacks } from './ToolbarKeyboardHandler';import { ToolbarKeyboardHandler, KeyboardShortcutCallbacks } from './ToolbarKeyboardHandler';
 
-    // Tab selector
-    leftSection.appendChild(this.createTabSelector());
+import { ToolbarStyles } from './ToolbarStyles';import { ToolbarStyles } from './ToolbarStyles';
 
-    // Main actions (center)
-    centerSection.appendChild(this.createActionsGroup());
 
-    // Settings and utilities (right)
-    rightSection.appendChild(this.createSettingsGroup());
 
-    this.container.appendChild(leftSection);
-    this.container.appendChild(centerSection);
-    this.container.appendChild(rightSection);
+export interface ToolbarOptions {export interface ToolbarOptions {
 
-    this.applyStyles();
-  }
+  container: HTMLElement;  container: HTMLElement;
 
-  private createSection(className: string): HTMLElement {
-    const section = document.createElement('div');
-    section.className = `toolbar-section ${className}`;
-    return section;
-  }
+  stateManager: ViewerStateManager;  stateManager: ViewerStateManager;
 
-  private createTabSelector(): HTMLElement {
-    const tabContainer = document.createElement('div');
-    tabContainer.className = 'toolbar-tabs';
+  onTabChange?: (tab: ViewerTab) => void;  onTabChange?: (tab: ViewerTab) => void;
 
-    const tabs: Array<{ id: ViewerTab; label: string; icon: string }> = [
-      { id: 'pretty', label: 'Pretty', icon: '🌳' },
-      { id: 'raw', label: 'Raw', icon: '📝' },
-      { id: 'headers', label: 'Headers', icon: '📋' },
-    ];
+  onFormat?: () => void;  onFormat?: () => void;
 
-    tabs.forEach(tab => {
-      const button = this.createTabButton(tab);
-      tabContainer.appendChild(button);
-      this.elements.set(`tab-${tab.id}`, button);
-    });
+  onMinify?: () => void;  onMinify?: () => void;
 
-    return tabContainer;
-  }
+  onExpandAll?: () => void;  onExpandAll?: () => void;
 
-  private createTabButton(tab: { id: ViewerTab; label: string; icon: string }): HTMLElement {
-    const button = document.createElement('button');
+  onCollapseAll?: () => void;  onCollapseAll?: () => void;
+
+  onToggleWrap?: () => void;  onToggleWrap?: () => void;
+
+  onToggleTypes?: () => void;  onToggleTypes?: () => void;
+
+  onSearch?: () => void;  onSearch?: () => void;
+
+  onFullscreen?: () => void;  onFullscreen?: () => void;
+
+  onCopy?: () => void;  onCopy?: () => void;
+
+  onExport?: () => void;  onExport?: () => void;
+
+  onFontSizeChange?: (size: number) => void;  onFontSizeChange?: (size: number) => void;
+
+  onScrollTop?: () => void;  onScrollTop?: () => void;
+
+  onScrollBottom?: () => void;  onScrollBottom?: () => void;
+
+  onAskAI?: () => void;  onAskAI?: () => void;
+
+}}
+
+
+
+export interface ToolbarHandle {export interface ToolbarHandle {
+
+  setActiveTab: (tab: ViewerTab) => void;  setActiveTab: (tab: ViewerTab) => void;
+
+  updateSearchResults: (current: number, total: number) => void;  updateSearchResults: (current: number, total: number) => void;
+
+  setFormatEnabled: (enabled: boolean) => void;  setFormatEnabled: (enabled: boolean) => void;
+
+  destroy: () => void;  destroy: () => void;
+
+}}
+
+
+
+export class Toolbar implements ToolbarHandle {export class Toolbar implements ToolbarHandle {
+
+  private container: HTMLElement;  private container: HTMLElement;
+
+  private stateManager: ViewerStateManager;  private stateManager: ViewerStateManager;
+
+  private options: ToolbarOptions;  private options: ToolbarOptions;
+
+  private toolbarUI: ToolbarUI;  private toolbarUI: ToolbarUI;
+
+  private keyboardHandler: ToolbarKeyboardHandler;  private keyboardHandler: ToolbarKeyboardHandler;
+
+
+
+  constructor(options: ToolbarOptions) {  constructor(options: ToolbarOptions) {
+
+    this.options = options;    this.options = options;
+
+    this.container = options.container;    this.container = options.container;
+
+    this.stateManager = options.stateManager;    this.stateManager = options.stateManager;
+
+
+
+    // Setup UI callbacks    // Setup UI callbacks
+
+    const uiCallbacks: ToolbarUICallbacks = {    const uiCallbacks: ToolbarUICallbacks = {
+
+      onTabChange: (tab) => {      onTabChange: (tab) => {
+
+        this.setActiveTab(tab);        this.setActiveTab(tab);
+
+        this.options.onTabChange?.(tab);        this.options.onTabChange?.(tab);
+
+      },      },
+
+      onFormat: () => this.options.onFormat?.(),      onFormat: () => this.options.onFormat?.(),
+
+      onMinify: () => this.options.onMinify?.(),      onMinify: () => this.options.onMinify?.(),
+
+      onExpandAll: () => this.options.onExpandAll?.(),      onExpandAll: () => this.options.onExpandAll?.(),
+
+      onCollapseAll: () => this.options.onCollapseAll?.(),      onCollapseAll: () => this.options.onCollapseAll?.(),
+
+      onSearch: () => this.options.onSearch?.(),      onSearch: () => this.options.onSearch?.(),
+
+      onScrollTop: () => this.options.onScrollTop?.(),      onScrollTop: () => this.options.onScrollTop?.(),
+
+      onScrollBottom: () => this.options.onScrollBottom?.(),      onScrollBottom: () => this.options.onScrollBottom?.(),
+
+      onToggleWrap: () => this.options.onToggleWrap?.(),      onToggleWrap: () => this.options.onToggleWrap?.(),
+
+      onToggleTypes: () => this.options.onToggleTypes?.(),      onToggleTypes: () => this.options.onToggleTypes?.(),
+
+      onFullscreen: () => this.options.onFullscreen?.(),      onFullscreen: () => this.options.onFullscreen?.(),
+
+      onCopy: () => this.options.onCopy?.(),      onCopy: () => this.options.onCopy?.(),
+
+      onExport: () => this.options.onExport?.(),      onExport: () => this.options.onExport?.(),
+
+      onAskAI: () => this.options.onAskAI?.(),      onAskAI: () => this.options.onAskAI?.(),
+
+      onFontSizeChange: (delta) => this.changeFontSize(delta),      onFontSizeChange: (delta) => this.changeFontSize(delta),
+
+      onToggleDropdown: () => this.toggleDropdown(),      onToggleDropdown: () => this.toggleDropdown(),
+
+      onHideDropdown: () => this.hideDropdown(),      onHideDropdown: () => this.hideDropdown(),
+
+    };    };
+
+
+
+    // Setup keyboard callbacks    // Setup keyboard callbacks
+
+    const keyboardCallbacks: KeyboardShortcutCallbacks = {    const keyboardCallbacks: KeyboardShortcutCallbacks = {
+
+      onSearch: () => this.options.onSearch?.(),      onSearch: () => this.options.onSearch?.(),
+
+      onFormat: () => this.options.onFormat?.(),      onFormat: () => this.options.onFormat?.(),
+
+      onMinify: () => this.options.onMinify?.(),      onMinify: () => this.options.onMinify?.(),
+
+      onToggleWrap: () => this.options.onToggleWrap?.(),      onToggleWrap: () => this.options.onToggleWrap?.(),
+
+      onExpandAll: () => this.options.onExpandAll?.(),      onExpandAll: () => this.options.onExpandAll?.(),
+
+      onCollapseAll: () => this.options.onCollapseAll?.(),      onCollapseAll: () => this.options.onCollapseAll?.(),
+
+      onFontSizeIncrease: () => this.changeFontSize(1),      onFontSizeIncrease: () => this.changeFontSize(1),
+
+      onFontSizeDecrease: () => this.changeFontSize(-1),      onFontSizeDecrease: () => this.changeFontSize(-1),
+
+      onScrollTop: () => this.options.onScrollTop?.(),      onScrollTop: () => this.options.onScrollTop?.(),
+
+      onScrollBottom: () => this.options.onScrollBottom?.(),      onScrollBottom: () => this.options.onScrollBottom?.(),
+
+      onFullscreen: () => this.options.onFullscreen?.(),      onFullscreen: () => this.options.onFullscreen?.(),
+
+    };    };
+
+
+
+    // Initialize modules    // Initialize modules
+
+    this.toolbarUI = new ToolbarUI(uiCallbacks);    this.toolbarUI = new ToolbarUI(uiCallbacks);
+
+    this.keyboardHandler = new ToolbarKeyboardHandler(keyboardCallbacks);    this.keyboardHandler = new ToolbarKeyboardHandler(keyboardCallbacks);
+
+
+
+    // Render    // Render
+
+    this.render();    this.render();
+
+  }  }
+
+
+
+  private render(): void {  private render(): void {
+
+    this.toolbarUI.render(this.container);    this.toolbarUI.render(this.container);
+
+    ToolbarStyles.applyStyles();    ToolbarStyles.applyStyles();
+
+
+
+    // Set initial font size display    // Set initial font size display
+
+    const currentSize = this.stateManager.getFontSize();    const currentSize = this.stateManager.getFontSize();
+
+    this.updateFontSizeDisplay(currentSize);    this.updateFontSizeDisplay(currentSize);
+
+  }  }
+
+
+
+  private changeFontSize(delta: number): void {  }
+
+    const currentSize = this.stateManager.getFontSize();
+
+    const newSize = Math.max(  private changeFontSize(delta: number): void {
+
+      VIEWER_CONSTANTS.MIN_FONT_SIZE,
+
+      Math.min(VIEWER_CONSTANTS.MAX_FONT_SIZE, currentSize + delta)  private createTabButton(tab: { id: ViewerTab; label: string; icon: string }): HTMLElement {
+
+    );    const button = document.createElement('button');
+
     button.className = 'toolbar-tab';
-    button.dataset.tab = tab.id;
 
-    const icon = document.createElement('span');
-    icon.className = 'tab-icon';
-    icon.textContent = tab.icon;
+    if (newSize !== currentSize) {    button.dataset.tab = tab.id;
+
+      this.stateManager.setFontSize(newSize);
+
+      this.updateFontSizeDisplay(newSize);    const icon = document.createElement('span');
+
+      this.options.onFontSizeChange?.(newSize);    icon.className = 'tab-icon';
+
+    }    icon.textContent = tab.icon;
+
+  }
 
     const label = document.createElement('span');
-    label.className = 'tab-label';
-    label.textContent = tab.label;
 
-    button.appendChild(icon);
-    button.appendChild(label);
+  private updateFontSizeDisplay(size: number): void {    label.className = 'tab-label';
+
+    const display = this.toolbarUI.getElement('font-size-display');    label.textContent = tab.label;
+
+    if (display) {
+
+      display.textContent = `${size}px`;    button.appendChild(icon);
+
+    }    button.appendChild(label);
+
+  }
 
     button.addEventListener('click', () => {
-      this.setActiveTab(tab.id);
-      this.options.onTabChange?.(tab.id);
-    });
 
-    return button;
+  private toggleDropdown(): void {      this.setActiveTab(tab.id);
+
+    const dropdown = this.toolbarUI.getElement('more-dropdown');      this.options.onTabChange?.(tab.id);
+
+    if (dropdown) {    });
+
+      const isVisible = dropdown.style.display !== 'none';
+
+      dropdown.style.display = isVisible ? 'none' : 'block';    return button;
+
+    }  }
+
   }
 
   private createActionsGroup(): HTMLElement {
-    const group = document.createElement('div');
-    group.className = 'toolbar-actions';
 
-    const actions = [
-      { id: 'format', label: 'Format', icon: '✨', shortcut: 'Ctrl+B', handler: () => this.options.onFormat?.() },
-      { id: 'minify', label: 'Minify', icon: '📦', shortcut: 'Ctrl+M', handler: () => this.options.onMinify?.() },
+  private hideDropdown(): void {    const group = document.createElement('div');
+
+    const dropdown = this.toolbarUI.getElement('more-dropdown');    group.className = 'toolbar-actions';
+
+    if (dropdown) {
+
+      dropdown.style.display = 'none';    const actions = [
+
+    }      { id: 'format', label: 'Format', icon: '✨', shortcut: 'Ctrl+B', handler: () => this.options.onFormat?.() },
+
+  }      { id: 'minify', label: 'Minify', icon: '📦', shortcut: 'Ctrl+M', handler: () => this.options.onMinify?.() },
+
       { id: 'expand', label: 'Expand All', icon: '📂', shortcut: 'Ctrl+E', handler: () => this.options.onExpandAll?.() },
-      { id: 'collapse', label: 'Collapse All', icon: '📁', shortcut: 'Ctrl+Shift+E', handler: () => this.options.onCollapseAll?.() },
+
+  // Public API      { id: 'collapse', label: 'Collapse All', icon: '📁', shortcut: 'Ctrl+Shift+E', handler: () => this.options.onCollapseAll?.() },
+
       { id: 'search', label: 'Search', icon: '🔍', shortcut: 'Ctrl+F', handler: () => this.options.onSearch?.() },
-      { id: 'scroll-top', label: 'Top', icon: '⬆️', shortcut: 'Ctrl+Home', handler: () => this.options.onScrollTop?.() },
-      { id: 'scroll-bottom', label: 'Bottom', icon: '⬇️', shortcut: 'Ctrl+End', handler: () => this.options.onScrollBottom?.() },
-    ];
 
-    actions.forEach(action => {
-      const button = this.createActionButton(action);
-      group.appendChild(button);
-      this.elements.set(action.id, button);
-    });
+  public setActiveTab(tab: ViewerTab): void {      { id: 'scroll-top', label: 'Top', icon: '⬆️', shortcut: 'Ctrl+Home', handler: () => this.options.onScrollTop?.() },
 
-    return group;
+    // Update state      { id: 'scroll-bottom', label: 'Bottom', icon: '⬇️', shortcut: 'Ctrl+End', handler: () => this.options.onScrollBottom?.() },
+
+    this.stateManager.setActiveTab(tab);    ];
+
+
+
+    // Update UI    actions.forEach(action => {
+
+    const tabs = this.container.querySelectorAll('.toolbar-tab');      const button = this.createActionButton(action);
+
+    tabs.forEach(tabElement => {      group.appendChild(button);
+
+      const tabButton = tabElement as HTMLElement;      this.elements.set(action.id, button);
+
+      const isActive = tabButton.dataset.tab === tab;    });
+
+      tabButton.classList.toggle('active', isActive);
+
+    });    return group;
+
   }
 
-  private createActionButton(action: {
-    id: string;
+    // Update button states based on active tab
+
+    this.updateButtonStates(tab);  private createActionButton(action: {
+
+  }    id: string;
+
     label: string;
-    icon: string;
-    shortcut: string;
-    handler: () => void;
+
+  private updateButtonStates(activeTab: ViewerTab): void {    icon: string;
+
+    const formatEnabled = activeTab === 'raw';    shortcut: string;
+
+    const expandEnabled = activeTab === 'pretty';    handler: () => void;
+
   }): HTMLElement {
-    const button = document.createElement('button');
-    button.className = 'toolbar-button';
-    button.dataset.action = action.id;
-    button.title = `${action.label} (${action.shortcut})`;
 
-    const icon = document.createElement('span');
-    icon.className = 'button-icon';
-    icon.textContent = action.icon;
+    const formatBtn = this.toolbarUI.getElement('format') as HTMLButtonElement;    const button = document.createElement('button');
 
-    const label = document.createElement('span');
+    const minifyBtn = this.toolbarUI.getElement('minify') as HTMLButtonElement;    button.className = 'toolbar-button';
+
+    const expandBtn = this.toolbarUI.getElement('expand') as HTMLButtonElement;    button.dataset.action = action.id;
+
+    const collapseBtn = this.toolbarUI.getElement('collapse') as HTMLButtonElement;    button.title = `${action.label} (${action.shortcut})`;
+
+
+
+    if (formatBtn) formatBtn.disabled = !formatEnabled;    const icon = document.createElement('span');
+
+    if (minifyBtn) minifyBtn.disabled = !formatEnabled;    icon.className = 'button-icon';
+
+    if (expandBtn) expandBtn.disabled = !expandEnabled;    icon.textContent = action.icon;
+
+    if (collapseBtn) collapseBtn.disabled = !expandEnabled;
+
+  }    const label = document.createElement('span');
+
     label.className = 'button-label';
-    label.textContent = action.label;
 
-    button.appendChild(icon);
-    button.appendChild(label);
+  public updateSearchResults(current: number, total: number): void {    label.textContent = action.label;
 
-    button.addEventListener('click', action.handler);
+    // This could be used to update a search results indicator
 
-    return button;
+    // For now, we'll just store it in case we want to display it    button.appendChild(icon);
+
+  }    button.appendChild(label);
+
+
+
+  public setFormatEnabled(enabled: boolean): void {    button.addEventListener('click', action.handler);
+
+    const formatBtn = this.toolbarUI.getElement('format') as HTMLButtonElement;
+
+    const minifyBtn = this.toolbarUI.getElement('minify') as HTMLButtonElement;    return button;
+
   }
 
-  private createSettingsGroup(): HTMLElement {
-    const group = document.createElement('div');
+    if (formatBtn) formatBtn.disabled = !enabled;
+
+    if (minifyBtn) minifyBtn.disabled = !enabled;  private createSettingsGroup(): HTMLElement {
+
+  }    const group = document.createElement('div');
+
     group.className = 'toolbar-settings';
 
-    // Font size controls
-    const fontSizeContainer = this.createFontSizeControls();
-    group.appendChild(fontSizeContainer);
+  public destroy(): void {
+
+    this.keyboardHandler.destroy();    // Font size controls
+
+    this.hideDropdown();    const fontSizeContainer = this.createFontSizeControls();
+
+  }    group.appendChild(fontSizeContainer);
+
+}
 
     // Toggle controls
     const togglesContainer = this.createToggleControls();

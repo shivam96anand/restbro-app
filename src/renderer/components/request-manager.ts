@@ -43,11 +43,15 @@ export class RequestManager {
     document.addEventListener('tab-changed', (e: Event) => {
       const customEvent = e as CustomEvent;
       const activeTab = customEvent.detail.activeTab;
-      this.loadRequest(activeTab ? activeTab.request : null, activeTab ? activeTab.collectionId : undefined);
+      this.loadRequest(
+        activeTab ? activeTab.request : null,
+        activeTab ? activeTab.collectionId : undefined,
+        activeTab ? activeTab.activeDetailsTab : undefined
+      );
     });
   }
 
-  private loadRequest(request: ApiRequest | null, collectionId?: string): void {
+  private loadRequest(request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): void {
     this.dataManager.setCurrentRequest(request);
 
     if (!request) {
@@ -59,6 +63,7 @@ export class RequestManager {
     this.formHandler.showRequestForm();
     this.formHandler.loadBasicRequestData(request);
     this.formHandler.refreshVariableTooltips(collectionId); // Refresh tooltips with collectionId
+    this.formHandler.restoreActiveDetailsTab(activeDetailsTab); // Restore the active details tab
     this.editorsManager.loadParams(request.params || {});
     this.editorsManager.loadHeaders(request.headers);
 

@@ -12,6 +12,9 @@ export class ResponseManager {
   private actions!: ResponseActions;
   private state: ResponseState;
   private container: HTMLElement;
+  private loadingElement: HTMLElement | null = null;
+  private loadingStartTime: number = 0;
+  private loadingTimerInterval: number | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -101,10 +104,21 @@ export class ResponseManager {
   }
 
   private listenToResponses(): void {
+    document.addEventListener('request-sending', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const startTime = customEvent.detail.timestamp;
+      this.showLoadingState(startTime);
+    });
+
     document.addEventListener('response-received', (e: Event) => {
       const customEvent = e as CustomEvent;
       const response = customEvent.detail.response;
+      this.hideLoadingState();
       this.displayResponse(response);
+    });
+
+    document.addEventListener('request-failed', (e: Event) => {
+      this.hideLoadingState();
     });
   }
 
@@ -137,6 +151,104 @@ export class ResponseManager {
     this.viewer.clear();
     this.actions.hide();
     this.search.hide();
+    this.hideLoadingState();
+  }
+
+  private showLoadingState(startTime: number): void {
+    this.loadingStartTime = startTime;
+
+    // Hide any existing response
+    this.viewer.clear();
+    this.actions.hide();
+    this.search.hide();
+
+    // Create loading overlay
+    this.loadingElement = document.createElement('div');
+    this.loadingElement.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      font-size: 14px;
+    `;
+
+    // Create spinner
+    const spinner = document.createElement('div');
+    spinner.style.cssText = `
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    `;
+
+    // Create status text
+    const statusText = document.createElement('div');
+    statusText.textContent = 'Sending request...';
+    statusText.style.cssText = `
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      font-weight: 500;
+    `;
+
+    // Create timer
+    const timer = document.createElement('div');
+    timer.id = 'request-timer';
+    timer.textContent = '0.0s';
+    timer.style.cssText = `
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+    `;
+
+    this.loadingElement.appendChild(spinner);
+    this.loadingElement.appendChild(statusText);
+    this.loadingElement.appendChild(timer);
+
+    // Find the response body container and add loading state
+    const responseBody = this.container.querySelector('#response-body');
+    if (responseBody) {
+      responseBody.innerHTML = '';
+      responseBody.appendChild(this.loadingElement);
+    } else {
+      console.error('Response body element not found - spinner cannot be displayed');
+    }
+
+    // Start timer
+    this.loadingTimerInterval = window.setInterval(() => {
+      const elapsed = (Date.now() - this.loadingStartTime) / 1000;
+      timer.textContent = `${elapsed.toFixed(1)}s`;
+    }, 100);
+
+    // Add spin animation if not already in styles
+    if (!document.getElementById('loading-spinner-style')) {
+      const style = document.createElement('style');
+      style.id = 'loading-spinner-style';
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }
+
+  private hideLoadingState(): void {
+    if (this.loadingTimerInterval) {
+      clearInterval(this.loadingTimerInterval);
+      this.loadingTimerInterval = null;
+    }
+
+    if (this.loadingElement && this.loadingElement.parentNode) {
+      this.loadingElement.remove();
+      this.loadingElement = null;
+    }
   }
 
   // Action button implementations

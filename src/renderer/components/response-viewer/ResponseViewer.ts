@@ -47,6 +47,7 @@ export class ResponseViewer {
     this.updateResponseBody(response);
     this.updateResponseHeaders(response);
     this.updateResponseMeta(response);
+    this.updateResponseTimestamp();
   }
 
   private updateResponseBody(response: ApiResponse): void {
@@ -166,10 +167,32 @@ export class ResponseViewer {
 
     const statusClass = this.getStatusClass(response.status);
     const statusBadge = `<span class="${statusClass}">${response.status} ${response.statusText}</span>`;
-    const timeBadge = `<span>${response.time}ms</span>`;
+    const timeBadge = `<span>${this.formatResponseTime(response.time)}</span>`;
     const sizeBadge = `<span>${this.formatBytes(response.size)}</span>`;
 
     metaElement.innerHTML = `${statusBadge}<span class="meta-separator">•</span>${timeBadge}<span class="meta-separator">•</span>${sizeBadge}`;
+  }
+
+  private formatResponseTime(timeMs: number): string {
+    if (timeMs >= 1000) {
+      const timeInSeconds = timeMs / 1000;
+      return `${timeInSeconds.toFixed(2)}s`;
+    }
+    return `${timeMs}ms`;
+  }
+
+  private updateResponseTimestamp(): void {
+    const timestampElement = document.getElementById('response-timestamp');
+    if (!timestampElement) return;
+
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+
+    timestampElement.textContent = `${displayHours}:${minutes}:${seconds} ${ampm}`;
   }
 
   public switchTab(tab: string): void {
@@ -259,6 +282,7 @@ export class ResponseViewer {
     const bodyElement = document.getElementById('response-body');
     const headersElement = document.getElementById('response-headers');
     const metaElement = document.getElementById('response-meta');
+    const timestampElement = document.getElementById('response-timestamp');
 
     if (bodyElement) {
       bodyElement.innerHTML = '<div class="response-placeholder">Send a request to see the response here</div>';
@@ -270,6 +294,10 @@ export class ResponseViewer {
 
     if (metaElement) {
       metaElement.innerHTML = '<span>No response yet</span>';
+    }
+
+    if (timestampElement) {
+      timestampElement.textContent = '';
     }
 
     this.jsonViewer = null;

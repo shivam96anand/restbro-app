@@ -51,7 +51,7 @@ export class CollectionsDialogs {
   }
 
   async showRenameDialog(collection: Collection): Promise<string | null> {
-    const newName = await modal.show('Rename', collection.name);
+    const newName = await modal.show('Rename', 'Enter new name', collection.name);
     if (!newName || newName === collection.name) return null;
     return newName;
   }

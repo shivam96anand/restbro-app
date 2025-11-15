@@ -9,7 +9,7 @@ export class EnvironmentDialogs {
   }
 
   async promptEnvironmentName(defaultValue: string = ''): Promise<string | null> {
-    return modal.show('Environment Name', defaultValue || 'Enter environment name');
+    return modal.show('Environment Name', 'Enter environment name', defaultValue);
   }
 
   async showManageDialog(

@@ -221,10 +221,6 @@ export function addVariableTooltips(
   let currentTooltip: HTMLDivElement | null = null;
   let isMouseOver = false;
 
-  console.log('[Variable Tooltips] Initializing for input:', inputElement.id);
-  console.log('[Variable Tooltips] Active environment:', activeEnvironment?.name);
-  console.log('[Variable Tooltips] Folder variables:', folderVars);
-
   const showTooltip = (e: MouseEvent) => {
     const text = inputElement.value;
     const variables = detectVariables(text);

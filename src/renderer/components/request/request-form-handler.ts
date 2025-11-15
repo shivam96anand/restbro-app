@@ -74,9 +74,6 @@ export class RequestFormHandler {
       // Build folder variables from ancestor chain
       const folderVars = buildFolderVars(collectionId, state.collections);
 
-      console.log('[RequestFormHandler] Building tooltips with collectionId:', collectionId);
-      console.log('[RequestFormHandler] Folder variables:', folderVars);
-
       // Add tooltip functionality
       addVariableTooltips(inputElement, activeEnvironment, globals, folderVars);
 
@@ -106,8 +103,6 @@ export class RequestFormHandler {
       // Build folder variables using stored collectionId
       const folderVars = buildFolderVars(this.currentCollectionId, state.collections);
 
-      console.log('[RequestFormHandler] Initializing auth tooltips with collectionId:', this.currentCollectionId);
-
       // Add tooltips to all input elements in auth config
       const inputs = authConfig.querySelectorAll('input[type="text"], input[type="password"]');
       inputs.forEach((input) => {
@@ -136,6 +131,9 @@ export class RequestFormHandler {
           section.classList.add('active');
         }
 
+        // Save the active tab state
+        this.saveActiveDetailsTab(sectionName);
+
         // If Auth tab is clicked, hide the OAuth status box completely
         if (sectionName === 'auth') {
           const oauthStatus = document.getElementById('oauth-status');
@@ -145,6 +143,45 @@ export class RequestFormHandler {
         }
       });
     });
+  }
+
+  /**
+   * Save the active details tab for the current request tab
+   */
+  private saveActiveDetailsTab(tabName: string | undefined): void {
+    if (!tabName) return;
+
+    // Dispatch event to save the active details tab
+    const event = new CustomEvent('active-details-tab-changed', {
+      detail: { activeDetailsTab: tabName }
+    });
+    document.dispatchEvent(event);
+  }
+
+  /**
+   * Restore the active details tab for a request
+   */
+  restoreActiveDetailsTab(activeDetailsTab?: string): void {
+    const tabs = document.querySelectorAll('.request-details .tab');
+    const sections = document.querySelectorAll('.request-details .section');
+
+    // Default to 'params' if no active tab is saved
+    const tabToActivate = activeDetailsTab || 'params';
+
+    tabs.forEach(t => t.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+
+    // Activate the saved tab
+    const targetTab = document.querySelector(`.request-details .tab[data-section="${tabToActivate}"]`);
+    const targetSection = document.getElementById(`${tabToActivate}-section`);
+
+    if (targetTab) {
+      targetTab.classList.add('active');
+    }
+
+    if (targetSection) {
+      targetSection.classList.add('active');
+    }
   }
 
   loadBasicRequestData(request: ApiRequest): void {

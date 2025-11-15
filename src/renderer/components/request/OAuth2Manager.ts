@@ -45,6 +45,24 @@ export class OAuth2Manager {
       onPasswordToggle: () => this.uiHelpers.togglePasswordVisibility(),
       onCopyToken: () => this.uiHelpers.copyAccessToken()
     });
+
+    // Add input listeners to save field changes
+    this.setupFieldListeners(authConfig);
+  }
+
+  /**
+   * Sets up input listeners for OAuth fields to save changes
+   */
+  private setupFieldListeners(authConfig: HTMLElement): void {
+    const inputs = authConfig.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      if ((input as HTMLElement).dataset.field) {
+        input.addEventListener('input', () => {
+          const config = this.uiRenderer.getConfigFromDOM();
+          this.onConfigUpdate(config);
+        });
+      }
+    });
   }
 
   /**

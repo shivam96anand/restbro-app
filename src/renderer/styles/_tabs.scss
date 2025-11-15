@@ -86,6 +86,7 @@
 // Response tabs
 .response-tabs {
   display: flex;
+  align-items: center;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
 
@@ -106,5 +107,13 @@
       color: var(--primary-color);
       border-bottom-color: var(--primary-color);
     }
+  }
+
+  .response-timestamp {
+    margin-left: auto;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: 'Courier New', monospace;
   }
 }

@@ -1,13 +1,13 @@
 export class Modal {
   private modal: HTMLElement | null = null;
 
-  show(title: string, placeholder: string = ''): Promise<string | null> {
+  show(title: string, placeholder: string = '', initialValue: string = ''): Promise<string | null> {
     return new Promise((resolve) => {
-      this.createModal(title, placeholder, resolve);
+      this.createModal(title, placeholder, initialValue, resolve);
     });
   }
 
-  private createModal(title: string, placeholder: string, resolve: (value: string | null) => void): void {
+  private createModal(title: string, placeholder: string, initialValue: string, resolve: (value: string | null) => void): void {
     // Remove existing modal if any
     this.hide();
 
@@ -53,6 +53,7 @@ export class Modal {
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = placeholder;
+    input.value = initialValue;
     input.style.cssText = `
       width: 100%;
       padding: 8px 12px;
@@ -141,6 +142,10 @@ export class Modal {
     // Add to DOM and focus input
     document.body.appendChild(this.modal);
     input.focus();
+    // Select all text if there's an initial value
+    if (initialValue) {
+      input.select();
+    }
   }
 
   hide(): void {

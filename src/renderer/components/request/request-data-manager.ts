@@ -61,6 +61,12 @@ export class RequestDataManager {
       (sendBtn as HTMLButtonElement).disabled = true;
     }
 
+    // Dispatch event to show loading state in response panel
+    const sendingEvent = new CustomEvent('request-sending', {
+      detail: { timestamp: Date.now() }
+    });
+    document.dispatchEvent(sendingEvent);
+
     try {
       // Check and refresh OAuth token if needed
       let requestToSend = { ...this.currentRequest };
@@ -117,6 +123,12 @@ export class RequestDataManager {
     } catch (error) {
       console.error('Request failed:', error);
       this.onShowError('Request failed: ' + (error as Error).message);
+
+      // Dispatch event to hide loading state
+      const failedEvent = new CustomEvent('request-failed', {
+        detail: { error: (error as Error).message }
+      });
+      document.dispatchEvent(failedEvent);
     } finally {
       if (sendBtn) {
         sendBtn.textContent = 'Send';

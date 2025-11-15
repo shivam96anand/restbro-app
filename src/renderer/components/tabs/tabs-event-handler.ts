@@ -85,6 +85,14 @@ export class TabsEventHandler {
       }
     });
 
+    document.addEventListener('active-details-tab-changed', (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const activeDetailsTab = customEvent.detail.activeDetailsTab;
+      if (activeDetailsTab) {
+        this.onUpdateActiveTab({ activeDetailsTab }, false);
+      }
+    });
+
     document.addEventListener('request-deleted', (e: Event) => {
       const customEvent = e as CustomEvent;
       const requestId = customEvent.detail.requestId;
