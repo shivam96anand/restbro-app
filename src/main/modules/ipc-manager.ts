@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, shell } from 'electron';
 import { readFileSync } from 'fs';
 import { IPC_CHANNELS } from '../../shared/ipc';
 import { storeManager } from './store-manager';
@@ -281,6 +281,13 @@ class IpcManager {
 
     ipcMain.handle(IPC_CHANNELS.COLLECTIONS_STATE_SET, (_, uiState: CollectionsUIState): void => {
       storeManager.setState({ collectionsUIState: uiState });
+    });
+
+    ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL, async (_, url: string): Promise<void> => {
+      if (!url) {
+        return;
+      }
+      await shell.openExternal(url);
     });
   }
 }

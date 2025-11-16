@@ -30,6 +30,9 @@ export const IPC_CHANNELS = {
   // Collections UI state channels
   COLLECTIONS_STATE_GET: 'collections-state:get',
   COLLECTIONS_STATE_SET: 'collections-state:set',
+
+  // System helpers
+  OPEN_EXTERNAL: 'system:open-external',
 } as const;
 
 export type IpcChannelKey = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];

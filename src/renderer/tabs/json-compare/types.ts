@@ -12,6 +12,7 @@ export interface DiffRow {
 }
 
 export interface DiffDecoration {
+  path: string;
   startLine: number;
   startColumn: number;
   endLine: number;

@@ -191,14 +191,14 @@ export function computeDecorations(
     if (row.type === 'removed' || row.type === 'changed') {
       const range = findTextRangeForPath(leftText, row.path);
       if (range) {
-        leftDecorations.push({ ...range, type: row.type });
+        leftDecorations.push({ path: row.path, ...range, type: row.type });
       }
     }
 
     if (row.type === 'added' || row.type === 'changed') {
       const range = findTextRangeForPath(rightText, row.path);
       if (range) {
-        rightDecorations.push({ ...range, type: row.type });
+        rightDecorations.push({ path: row.path, ...range, type: row.type });
       }
     }
   });

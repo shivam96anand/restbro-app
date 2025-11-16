@@ -33,6 +33,9 @@ const IPC_CHANNELS = {
   // Collections UI state channels
   COLLECTIONS_STATE_GET: 'collections-state:get',
   COLLECTIONS_STATE_SET: 'collections-state:set',
+
+  // System helpers
+  OPEN_EXTERNAL: 'system:open-external',
 } as const;
 
 // Define types inline to avoid import issues
@@ -239,6 +242,10 @@ const apiCourierAPI = {
     set: (uiState: CollectionsUIState): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.COLLECTIONS_STATE_SET, uiState),
   },
+
+  system: {
+    openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
+  }
 };
 
 contextBridge.exposeInMainWorld('apiCourier', apiCourierAPI);

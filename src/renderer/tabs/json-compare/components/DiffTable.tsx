@@ -9,12 +9,27 @@ import './DiffTable.css';
 
 interface DiffTableProps {
   rows: DiffRow[];
-  onRowClick: (path: string, type: DiffChangeType) => void;
+  onNavigate: (path: string, side: 'left' | 'right') => void;
 }
 
-const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
+const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<DiffChangeType[]>(['added', 'removed', 'changed']);
+
+  const normalizeSearch = (value: string) => value.toLowerCase();
+  const stringifyValue = (value: unknown): string => {
+    if (value === undefined || value === null) {
+      return '';
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  };
 
   // Filter rows
   const filteredRows = useMemo(() => {
@@ -24,10 +39,10 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
 
       // Search filter
       if (searchFilter) {
-        const lower = searchFilter.toLowerCase();
-        const matchPath = row.path.toLowerCase().includes(lower);
-        const matchLeft = JSON.stringify(row.leftValue).toLowerCase().includes(lower);
-        const matchRight = JSON.stringify(row.rightValue).toLowerCase().includes(lower);
+        const lower = normalizeSearch(searchFilter);
+        const matchPath = (row.path || '').toLowerCase().includes(lower);
+        const matchLeft = stringifyValue(row.leftValue).toLowerCase().includes(lower);
+        const matchRight = stringifyValue(row.rightValue).toLowerCase().includes(lower);
         return matchPath || matchLeft || matchRight;
       }
 
@@ -113,12 +128,21 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
   // Virtualized row renderer
   const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
     const row = filteredRows[index];
+    const leftDisabled = row.type === 'added';
+    const rightDisabled = row.type === 'removed';
+
+    const handleKeyJump = (e: React.KeyboardEvent, disabled: boolean, side: 'left' | 'right') => {
+      if (disabled) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onNavigate(row.path, side);
+      }
+    };
 
     return (
       <div
         style={style}
         className="diff-row"
-        onClick={() => onRowClick(row.path, row.type)}
       >
         <div className="diff-cell path-cell">
           <span className="path-text">{row.path || '/'}</span>
@@ -127,7 +151,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
             onClick={(e) => copyPath(row.path, e)}
             title="Copy path"
           >
-            📋
+            ⧉
           </button>
         </div>
         <div className="diff-cell type-cell">
@@ -135,15 +159,35 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
             {getTypeLabel(row.type)}
           </span>
         </div>
-        <div className={`diff-cell value-cell ${row.type === 'added' ? 'disabled' : ''}`}>
+        <div
+          className={`diff-cell value-cell left ${leftDisabled ? 'disabled' : 'clickable'}`}
+          role={leftDisabled ? undefined : 'button'}
+          tabIndex={leftDisabled ? -1 : 0}
+          onClick={() => !leftDisabled && onNavigate(row.path, 'left')}
+          onKeyDown={(e) => handleKeyJump(e, leftDisabled, 'left')}
+        >
           {renderValue(row.leftValue)}
+          {!leftDisabled && <span className="jump-pill">Navigate</span>}
         </div>
-        <div className={`diff-cell value-cell ${row.type === 'removed' ? 'disabled' : ''}`}>
+        <div
+          className={`diff-cell value-cell right ${rightDisabled ? 'disabled' : 'clickable'}`}
+          role={rightDisabled ? undefined : 'button'}
+          tabIndex={rightDisabled ? -1 : 0}
+          onClick={() => !rightDisabled && onNavigate(row.path, 'right')}
+          onKeyDown={(e) => handleKeyJump(e, rightDisabled, 'right')}
+        >
           {renderValue(row.rightValue)}
+          {!rightDisabled && <span className="jump-pill">Navigate</span>}
         </div>
       </div>
     );
   };
+
+  const estimatedHeight = filteredRows.length * 82;
+  const rowHeight = 66;
+  const maxVisibleRows = 5;
+  const visibleRows = Math.min(filteredRows.length, maxVisibleRows);
+  const listHeight = (visibleRows > 0 ? visibleRows : maxVisibleRows) * rowHeight;
 
   return (
     <div className="diff-table-wrapper">
@@ -158,27 +202,24 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
         />
         <div className="type-filters">
           <button
-            className={`response-action-btn ${selectedTypes.includes('added') ? 'active' : ''}`}
+            className={`type-filter-btn ${selectedTypes.includes('added') ? 'active' : ''}`}
             onClick={() => toggleType('added')}
           >
             ADDED
           </button>
           <button
-            className={`response-action-btn ${selectedTypes.includes('removed') ? 'active' : ''}`}
+            className={`type-filter-btn ${selectedTypes.includes('removed') ? 'active' : ''}`}
             onClick={() => toggleType('removed')}
           >
             REMOVED
           </button>
           <button
-            className={`response-action-btn ${selectedTypes.includes('changed') ? 'active' : ''}`}
+            className={`type-filter-btn ${selectedTypes.includes('changed') ? 'active' : ''}`}
             onClick={() => toggleType('changed')}
           >
             CHANGED
           </button>
         </div>
-        <span className="diff-count">
-          {filteredRows.length} of {rows.length} differences
-        </span>
       </div>
 
       {/* Table Header */}
@@ -191,13 +232,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onRowClick }) => {
 
       {/* Virtualized Table Body */}
       {filteredRows.length > 0 ? (
-        <VirtualList
-          height={400}
-          itemCount={filteredRows.length}
-          itemSize={80}
-          width="100%"
-          overscanCount={5}
-        >
+        <VirtualList height={listHeight} itemCount={filteredRows.length} itemSize={rowHeight} width="100%" overscanCount={5}>
           {Row}
         </VirtualList>
       ) : (

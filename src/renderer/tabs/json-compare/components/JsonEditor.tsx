@@ -25,6 +25,7 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const decorationsRef = useRef<string[]>([]);
+    const decorationMapRef = useRef<Map<string, DiffDecoration>>(new Map());
     const [isValid, setIsValid] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -150,14 +151,19 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
     useEffect(() => {
       if (!editorRef.current) return;
 
-      const monacoDecorations = decorations.map(dec => ({
-        range: new monaco.Range(dec.startLine, dec.startColumn, dec.endLine, dec.endColumn),
-        options: {
-          className: `diff-${dec.type}`,
-          isWholeLine: false,
-          inlineClassName: `diff-inline-${dec.type}`,
-        }
-      }));
+      decorationMapRef.current = new Map();
+
+      const monacoDecorations = decorations.map(dec => {
+        decorationMapRef.current.set(dec.path, dec);
+        return {
+          range: new monaco.Range(dec.startLine, dec.startColumn, dec.endLine, dec.endColumn),
+          options: {
+            className: `diff-${dec.type}`,
+            isWholeLine: false,
+            inlineClassName: `diff-inline-${dec.type}`,
+          }
+        };
+      });
 
       decorationsRef.current = editorRef.current.deltaDecorations(decorationsRef.current, monacoDecorations);
     }, [decorations]);
@@ -167,23 +173,42 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
       revealPath: (path: string) => {
         if (!editorRef.current) return;
 
-        // Find decoration for this path
-        const decoration = decorations.find(d => {
-          // Simple heuristic: match by approximate position
-          return true; // In real impl, map path -> decoration
-        });
+        const decoration = decorationMapRef.current.get(path);
+        let range: monaco.Range | null = null;
 
         if (decoration) {
-          const range = new monaco.Range(
+          range = new monaco.Range(
             decoration.startLine,
             decoration.startColumn,
             decoration.endLine,
             decoration.endColumn
           );
-          editorRef.current.revealRangeInCenter(range, monaco.editor.ScrollType.Smooth);
-          editorRef.current.setSelection(range);
-          editorRef.current.focus();
+        } else if (decorationMapRef.current.size > 0) {
+          const fallback = decorationMapRef.current.values().next().value as DiffDecoration | undefined;
+          if (fallback) {
+            range = new monaco.Range(
+              fallback.startLine,
+              fallback.startColumn,
+              fallback.endLine,
+              fallback.endColumn
+            );
+          }
         }
+
+        if (!range) {
+          const model = editorRef.current.getModel();
+          if (model) {
+            range = model.getFullModelRange();
+          }
+        }
+
+        if (!range) {
+          return;
+        }
+
+        editorRef.current.revealRangeInCenter(range, monaco.editor.ScrollType.Smooth);
+        editorRef.current.setSelection(range);
+        editorRef.current.focus();
       },
       focusEditor: () => {
         editorRef.current?.focus();

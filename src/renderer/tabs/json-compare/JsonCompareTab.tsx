@@ -8,7 +8,6 @@ import JsonEditor, { JsonEditorRef } from './components/JsonEditor';
 import DiffTable from './components/DiffTable';
 import { useJsonDiff } from './hooks/useJsonDiff';
 import { loadCompareState, saveCompareState } from './state/persist';
-import type { DiffChangeType } from './types';
 import './styles.css';
 
 const JsonCompareTab: React.FC = () => {
@@ -16,8 +15,6 @@ const JsonCompareTab: React.FC = () => {
   const [rightJson, setRightJson] = useState('');
   const [leftValid, setLeftValid] = useState(true);
   const [rightValid, setRightValid] = useState(true);
-  const [leftError, setLeftError] = useState<string>('');
-  const [rightError, setRightError] = useState<string>('');
 
   const leftEditorRef = useRef<JsonEditorRef>(null);
   const rightEditorRef = useRef<JsonEditorRef>(null);
@@ -65,11 +62,10 @@ const JsonCompareTab: React.FC = () => {
     navigator.clipboard.writeText(rightJson);
   };
 
-  const handleRowClick = useCallback((path: string, type: DiffChangeType) => {
-    if (type === 'removed' || type === 'changed') {
+  const handleNavigate = useCallback((path: string, side: 'left' | 'right') => {
+    if (side === 'left') {
       leftEditorRef.current?.revealPath(path);
-    }
-    if (type === 'added' || type === 'changed') {
+    } else {
       rightEditorRef.current?.revealPath(path);
     }
   }, []);
@@ -89,88 +85,89 @@ const JsonCompareTab: React.FC = () => {
   }, [compute]);
 
   const diffCount = result?.rows.length || 0;
-  const diffTime = result?.stats.totalTime || 0;
+  const stats = result?.stats;
+  const diffTime = stats?.totalTime || 0;
 
   return (
     <div className="json-compare-container">
-      {/* Header */}
       <div className="json-compare-header">
-        <div className="header-top">
-          <h3 className="header-title">JSON Compare</h3>
-          <div className="header-status">
-            {status === 'success' && (
-              <span className="status-info">
-                Compared {diffCount} differences in {diffTime.toFixed(0)} ms
-              </span>
-            )}
-            {status === 'computing' && (
-              <span className="status-computing">Computing...</span>
-            )}
-            {status === 'error' && (
-              <span className="status-error">Error: {error}</span>
-            )}
+        <div className="header-row">
+          <div className="title-stack">
+            <h3 className="header-title">JSON Compare</h3>
+          </div>
+          <div className="header-actions">
+            <button className="compare-action-btn" onClick={handleSwap} title="Swap sides">
+              <span className="icon">⇆</span> Swap
+            </button>
+            <button className="compare-action-btn" onClick={handleClear} title="Clear both editors">
+              <span className="icon">✕</span> Clear
+            </button>
+            <button className="compare-action-btn" onClick={handleCopyLeft} title="Copy left JSON">
+              <span className="icon">⧉</span> Copy left
+            </button>
+            <button className="compare-action-btn" onClick={handleCopyRight} title="Copy right JSON">
+              <span className="icon">⧉</span> Copy right
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="response-actions">
-          <button className="response-action-btn" onClick={handleSwap} title="Swap sides">
-            SWAP
-          </button>
-          <button className="response-action-btn" onClick={handleClear} title="Clear both editors">
-            CLEAR
-          </button>
-          <button className="response-action-btn" onClick={handleCopyLeft} title="Copy left JSON">
-            COPY LEFT
-          </button>
-          <button className="response-action-btn" onClick={handleCopyRight} title="Copy right JSON">
-            COPY RIGHT
-          </button>
-          <span className="actions-hint">
-            Auto-compare enabled • Cmd/Ctrl+Enter to force
-          </span>
-        </div>
-      </div>
-
-      {/* Editors */}
-      <div className="editors-container">
-        <div className="editor-pane">
-          <JsonEditor
-            ref={leftEditorRef}
-            value={leftJson}
-            onChange={setLeftJson}
-            label="Left JSON"
-            decorations={result?.leftDecorations || []}
-            onValidityChange={(valid, err) => {
-              setLeftValid(valid);
-              setLeftError(err || '');
-            }}
-          />
-        </div>
-        <div className="editor-pane">
-          <JsonEditor
-            ref={rightEditorRef}
-            value={rightJson}
-            onChange={setRightJson}
-            label="Right JSON"
-            decorations={result?.rightDecorations || []}
-            onValidityChange={(valid, err) => {
-              setRightValid(valid);
-              setRightError(err || '');
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Diff Table */}
-      <div className="diff-table-container">
-        {(!leftValid || !rightValid) ? (
-          <div className="empty-state">
-            <p>Fix JSON errors to see differences</p>
+        <div className="mini-metric-grid">
+          <div className="mini-metric-card accent-primary">
+            <span className="metric-label">Total</span>
+            <span className="metric-value">{diffCount}</span>
           </div>
-        ) : (
-          <DiffTable rows={result?.rows || []} onRowClick={handleRowClick} />
-        )}
+          <div className="mini-metric-card accent-changed">
+            <span className="metric-label">Changed</span>
+            <span className="metric-value">{stats?.changed ?? 0}</span>
+          </div>
+          <div className="mini-metric-card accent-removed">
+            <span className="metric-label">Removed</span>
+            <span className="metric-value">{stats?.removed ?? 0}</span>
+          </div>
+          <div className="mini-metric-card accent-added">
+            <span className="metric-label">Added</span>
+            <span className="metric-value">{stats?.added ?? 0}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="json-compare-body">
+        <div className="editors-container">
+          <div className="editor-pane">
+            <JsonEditor
+              ref={leftEditorRef}
+              value={leftJson}
+              onChange={setLeftJson}
+              label="Left JSON (Original)"
+              decorations={result?.leftDecorations || []}
+              onValidityChange={(valid) => {
+                setLeftValid(valid);
+              }}
+            />
+          </div>
+          <div className="editor-pane">
+            <JsonEditor
+              ref={rightEditorRef}
+              value={rightJson}
+              onChange={setRightJson}
+              label="Right JSON (Comparison)"
+              decorations={result?.rightDecorations || []}
+              onValidityChange={(valid) => {
+                setRightValid(valid);
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="diff-table-container">
+          {(!leftValid || !rightValid) ? (
+            <div className="empty-state">
+              <p>Fix JSON errors to see differences</p>
+            </div>
+          ) : (
+            <DiffTable rows={result?.rows || []} onNavigate={handleNavigate} />
+          )}
+        </div>
       </div>
     </div>
   );

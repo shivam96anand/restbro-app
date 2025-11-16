@@ -7,6 +7,7 @@ export interface JsonInputPanelEvents {
 export class JsonInputPanel {
   private container: HTMLElement;
   private events: JsonInputPanelEvents;
+  private readonly storageKey = 'apiCourier.jsonViewer.lastInput';
 
   constructor(container: HTMLElement, events: JsonInputPanelEvents) {
     this.container = container;
@@ -90,7 +91,10 @@ export class JsonInputPanel {
 
     // JSON input textarea
     const jsonInput = this.container.querySelector('#json-input') as HTMLTextAreaElement;
-    jsonInput?.addEventListener('input', () => this.updateStatus());
+    jsonInput?.addEventListener('input', () => {
+      this.persistCurrentInput();
+      this.updateStatus();
+    });
 
     // Action buttons
     this.container.querySelector('#clear-input-btn')?.addEventListener('click', () => this.clearInput());
@@ -158,6 +162,7 @@ export class JsonInputPanel {
       const jsonInput = this.container.querySelector('#json-input') as HTMLTextAreaElement;
 
       jsonInput.value = text;
+      this.persistCurrentInput(text);
       this.events.onStatusUpdate('success', `File "${file.name}" loaded successfully`);
 
       // Auto-parse if it looks like valid JSON
@@ -175,6 +180,7 @@ export class JsonInputPanel {
   private clearInput(): void {
     const jsonInput = this.container.querySelector('#json-input') as HTMLTextAreaElement;
     jsonInput.value = '';
+    this.persistCurrentInput('');
     this.updateStatus();
     this.events.onClearViewer();
   }
@@ -192,6 +198,7 @@ export class JsonInputPanel {
       const parsed = JSON.parse(text);
       const formatted = JSON.stringify(parsed, null, 2);
       jsonInput.value = formatted;
+      this.persistCurrentInput(formatted);
       this.events.onStatusUpdate('success', 'JSON formatted successfully');
     } catch (error) {
       this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -211,6 +218,7 @@ export class JsonInputPanel {
       const parsed = JSON.parse(text);
       const minified = JSON.stringify(parsed);
       jsonInput.value = minified;
+      this.persistCurrentInput(minified);
       this.events.onStatusUpdate('success', 'JSON minified successfully');
     } catch (error) {
       this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -261,8 +269,64 @@ export class JsonInputPanel {
     return jsonInput?.value?.trim() || '';
   }
 
+  public restorePersistedInput(): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      return;
+    }
+
+    const saved = storage.getItem(this.storageKey);
+    if (!saved) {
+      return;
+    }
+
+    const jsonInput = this.container.querySelector('#json-input') as HTMLTextAreaElement;
+    if (!jsonInput) {
+      return;
+    }
+
+    jsonInput.value = saved;
+    this.updateStatus();
+
+    try {
+      const parsed = JSON.parse(saved);
+      this.events.onJsonParsed(parsed);
+      this.events.onStatusUpdate('success', 'Restored JSON from previous session');
+    } catch {
+      this.events.onClearViewer();
+    }
+  }
+
   public destroy(): void {
     // Clean up any resources if needed
     // Event listeners are automatically cleaned up when DOM is replaced
+  }
+
+  private persistCurrentInput(value?: string): void {
+    const storage = this.getStorage();
+    if (!storage) {
+      return;
+    }
+
+    const text =
+      value !== undefined ? value : (this.container.querySelector('#json-input') as HTMLTextAreaElement)?.value || '';
+
+    if (!text.trim()) {
+      storage.removeItem(this.storageKey);
+      return;
+    }
+
+    storage.setItem(this.storageKey, text);
+  }
+
+  private getStorage(): Storage | null {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return null;
+      }
+      return window.localStorage;
+    } catch {
+      return null;
+    }
   }
 }

@@ -3,6 +3,7 @@ export class AppManager {
 
   initialize(): void {
     this.setupNavTabs();
+    this.setupFeedbackButton();
     this.showTab(this.activeTab);
   }
 
@@ -19,6 +20,20 @@ export class AppManager {
         }
       });
     });
+  }
+
+  private setupFeedbackButton(): void {
+    const feedbackBtn = document.getElementById('feedback-btn');
+    if (feedbackBtn) {
+      feedbackBtn.addEventListener('click', () => {
+        const url = 'https://forms.gle/knkLgwdyUzjRxuQt5';
+        if (window.apiCourier?.system?.openExternal) {
+          window.apiCourier.system.openExternal(url);
+        } else {
+          window.open(url, '_blank');
+        }
+      });
+    }
   }
 
   private switchToTab(tabName: string): void {

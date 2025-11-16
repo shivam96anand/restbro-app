@@ -65,6 +65,9 @@ export class JsonViewerTab {
 
     // Initialize search manager
     this.searchManager = new JsonViewerSearch(this.container);
+
+    // Restore last JSON input after all components are ready
+    this.inputPanel.restorePersistedInput();
   }
 
   private setStatus(type: 'info' | 'success' | 'warning' | 'error', message: string): void {
