@@ -77,14 +77,30 @@ export class CollectionsUIHandler {
         }
       }
 
-      if (target.classList.contains('collection-add-folder')) {
-        const parentId = target.dataset.parentId;
-        this.onShowCreateDialog('folder', parentId);
+      // Check if target or parent is an add folder button
+      const addFolderBtn = target.classList.contains('collection-add-folder')
+        ? target
+        : target.closest('.collection-add-folder');
+      if (addFolderBtn) {
+        const parentId = (addFolderBtn as HTMLElement).dataset.parentId;
+        if (parentId) {
+          e.stopPropagation();
+          this.onShowCreateDialog('folder', parentId);
+          return;
+        }
       }
 
-      if (target.classList.contains('collection-add-request')) {
-        const parentId = target.dataset.parentId;
-        this.onShowCreateDialog('request', parentId);
+      // Check if target or parent is an add request button
+      const addRequestBtn = target.classList.contains('collection-add-request')
+        ? target
+        : target.closest('.collection-add-request');
+      if (addRequestBtn) {
+        const parentId = (addRequestBtn as HTMLElement).dataset.parentId;
+        if (parentId) {
+          e.stopPropagation();
+          this.onShowCreateDialog('request', parentId);
+          return;
+        }
       }
     });
   }

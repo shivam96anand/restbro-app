@@ -71,6 +71,10 @@ export interface Globals {
   variables: Record<string, string>;
 }
 
+export interface CollectionsUIState {
+  expandedFolderIds: string[];
+}
+
 export interface AppState {
   collections: Collection[];
   openTabs: RequestTab[];
@@ -81,6 +85,7 @@ export interface AppState {
   environments: Environment[];
   activeEnvironmentId?: string;
   globals: Globals;
+  collectionsUIState?: CollectionsUIState;
 }
 
 // Load Testing Types

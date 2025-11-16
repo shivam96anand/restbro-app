@@ -26,6 +26,10 @@ export const IPC_CHANNELS = {
   // Import channels
   IMPORT_PARSE_PREVIEW: 'import:parse-preview',
   IMPORT_COMMIT: 'import:commit',
+
+  // Collections UI state channels
+  COLLECTIONS_STATE_GET: 'collections-state:get',
+  COLLECTIONS_STATE_SET: 'collections-state:set',
 } as const;
 
 export type IpcChannelKey = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];

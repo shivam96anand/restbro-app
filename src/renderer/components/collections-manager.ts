@@ -12,8 +12,8 @@ export class CollectionsManager {
     this.core.initialize();
   }
 
-  setCollections(collections: Collection[]): void {
-    this.core.setCollections(collections);
+  async setCollections(collections: Collection[]): Promise<void> {
+    await this.core.setCollections(collections);
   }
 
   getCollections(): Collection[] {

@@ -9,6 +9,7 @@ export interface CollectionTreeState {
 export class CollectionsSearch {
   private onTreeStateChange: (state: CollectionTreeState) => void;
   private onShowKeyboardShortcuts: () => void;
+  private savedExpandedFolders: Set<string> = new Set();
 
   constructor(
     onTreeStateChange: (state: CollectionTreeState) => void,
@@ -18,7 +19,7 @@ export class CollectionsSearch {
     this.onShowKeyboardShortcuts = onShowKeyboardShortcuts;
   }
 
-  setupSearchFunctionality(): void {
+  setupSearchFunctionality(getCurrentExpandedFolders: () => Set<string>): void {
     // Note: Import button is now defined in HTML, not created dynamically
 
     const collectionsTree = document.getElementById('collections-tree');
@@ -38,13 +39,13 @@ export class CollectionsSearch {
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement;
-        this.handleSearchInput(target.value.toLowerCase());
+        this.handleSearchInput(target.value.toLowerCase(), getCurrentExpandedFolders());
       });
 
       searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           searchInput.value = '';
-          this.handleSearchInput('');
+          this.handleSearchInput('', getCurrentExpandedFolders());
         }
       });
     }
@@ -57,9 +58,14 @@ export class CollectionsSearch {
     }
   }
 
-  private handleSearchInput(searchTerm: string): void {
+  private handleSearchInput(searchTerm: string, currentExpandedFolders?: Set<string>): void {
+    if (searchTerm && currentExpandedFolders) {
+      // Save the user's folder state when starting a search
+      this.savedExpandedFolders = new Set(currentExpandedFolders);
+    }
+
     this.onTreeStateChange({
-      expandedFolders: new Set(),
+      expandedFolders: searchTerm ? new Set() : this.savedExpandedFolders,
       searchTerm,
       draggedItem: undefined
     });

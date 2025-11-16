@@ -3,6 +3,7 @@ import { CollectionsSearch, CollectionTreeState } from './collections-search';
 import { CollectionsUIHandler } from './collections-ui-handler';
 import { CollectionsRenderer } from './collections-renderer';
 import { CollectionsOperations } from './collections-operations';
+import { CollectionsStatePersistence } from './collections-state-persistence';
 
 export class CollectionsCore {
   private collections: Collection[] = [];
@@ -17,8 +18,11 @@ export class CollectionsCore {
   private uiHandler: CollectionsUIHandler;
   private renderer: CollectionsRenderer;
   private operations: CollectionsOperations;
+  private statePersistence: CollectionsStatePersistence;
 
   constructor() {
+    this.statePersistence = new CollectionsStatePersistence();
+
     this.operations = new CollectionsOperations(
       (message) => this.uiHandler.showError(message)
     );
@@ -45,7 +49,7 @@ export class CollectionsCore {
 
   initialize(): void {
     this.uiHandler.setupCollectionEvents(this.treeState);
-    this.search.setupSearchFunctionality();
+    this.search.setupSearchFunctionality(() => this.treeState.expandedFolders);
     this.setupKeyboardShortcuts();
     this.renderCollections();
   }
@@ -61,6 +65,10 @@ export class CollectionsCore {
     } else {
       this.treeState.expandedFolders.add(folderId);
     }
+
+    // Persist the expanded folders state
+    this.statePersistence.saveExpandedFolders(this.treeState.expandedFolders);
+
     this.renderCollections();
   }
 
@@ -207,15 +215,13 @@ export class CollectionsCore {
 
 
 
-  setCollections(collections: Collection[]): void {
+  async setCollections(collections: Collection[]): Promise<void> {
     this.collections = collections;
     this.operations.setCollections(collections);
 
-    this.collections.forEach(collection => {
-      if (collection.type === 'folder') {
-        this.treeState.expandedFolders.add(collection.id);
-      }
-    });
+    // Load persisted expanded folders state
+    const expandedFolders = await this.statePersistence.loadExpandedFolders();
+    this.treeState.expandedFolders = expandedFolders;
 
     this.renderCollections();
   }

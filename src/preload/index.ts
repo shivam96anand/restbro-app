@@ -29,6 +29,10 @@ const IPC_CHANNELS = {
   // Import channels
   IMPORT_PARSE_PREVIEW: 'import:parse-preview',
   IMPORT_COMMIT: 'import:commit',
+
+  // Collections UI state channels
+  COLLECTIONS_STATE_GET: 'collections-state:get',
+  COLLECTIONS_STATE_SET: 'collections-state:set',
 } as const;
 
 // Define types inline to avoid import issues
@@ -164,6 +168,10 @@ interface OAuthResult {
   error?: string;
 }
 
+interface CollectionsUIState {
+  expandedFolderIds: string[];
+}
+
 const apiCourierAPI = {
   store: {
     get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
@@ -223,6 +231,13 @@ const apiCourierAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.IMPORT_PARSE_PREVIEW, fileContent),
     commit: (preview: any): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.IMPORT_COMMIT, preview),
+  },
+
+  collectionsState: {
+    get: (): Promise<CollectionsUIState> =>
+      ipcRenderer.invoke(IPC_CHANNELS.COLLECTIONS_STATE_GET),
+    set: (uiState: CollectionsUIState): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.COLLECTIONS_STATE_SET, uiState),
   },
 };
 

@@ -6,7 +6,7 @@ import { requestManager } from './request-manager';
 import { loadTestEngine } from './loadtest-engine';
 import { loadTestExporter } from './loadtest-export';
 import { oauthManager } from './oauth';
-import { Collection, ApiRequest, AppState, LoadTestConfig, LoadTestSummary, OAuthConfig } from '../../shared/types';
+import { Collection, ApiRequest, AppState, LoadTestConfig, LoadTestSummary, OAuthConfig, CollectionsUIState } from '../../shared/types';
 import { randomUUID } from 'crypto';
 import { detectAndParse, generatePreview, parseJsonFile, ImportPreview } from './importers';
 
@@ -271,6 +271,16 @@ class IpcManager {
           error: error instanceof Error ? error.message : 'Failed to commit import',
         };
       }
+    });
+
+    // Collections UI state IPC handlers
+    ipcMain.handle(IPC_CHANNELS.COLLECTIONS_STATE_GET, (): CollectionsUIState => {
+      const state = storeManager.getState();
+      return state.collectionsUIState || { expandedFolderIds: [] };
+    });
+
+    ipcMain.handle(IPC_CHANNELS.COLLECTIONS_STATE_SET, (_, uiState: CollectionsUIState): void => {
+      storeManager.setState({ collectionsUIState: uiState });
     });
   }
 }

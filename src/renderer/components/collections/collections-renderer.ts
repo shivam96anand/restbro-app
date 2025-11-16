@@ -1,5 +1,6 @@
 import { Collection } from '../../../shared/types';
 import { CollectionTreeState } from './collections-search';
+import { createIconElement, getMethodIcon, getIcon } from './collections-icons';
 
 export class CollectionsRenderer {
   private findCollectionById: (id: string) => Collection | undefined;
@@ -22,10 +23,45 @@ export class CollectionsRenderer {
     const rootCollections = collectionsToShow.filter(c => !c.parentId);
 
     if (rootCollections.length === 0) {
-      const message = treeState.searchTerm
-        ? 'No collections match your search.'
-        : 'No collections yet. Click + to create one.';
-      tree.innerHTML = `<div class="empty-state">${message}</div>`;
+      if (treeState.searchTerm) {
+        tree.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-message">No collections match your search.</div>
+          </div>
+        `;
+      } else {
+        const emptyStateContainer = document.createElement('div');
+        emptyStateContainer.className = 'empty-state';
+
+        const icon = document.createElement('div');
+        icon.className = 'empty-state-icon';
+        const folderIcon = createIconElement('folder-closed', {
+          style: { width: '48px', height: '48px', opacity: '0.3' }
+        });
+        icon.appendChild(folderIcon);
+
+        const message = document.createElement('div');
+        message.className = 'empty-state-message';
+        message.textContent = 'No collections yet. Get started by creating your first folder or request.';
+
+        const ctaButton = document.createElement('button');
+        ctaButton.className = 'empty-state-cta';
+        ctaButton.id = 'empty-state-create-btn';
+        const addIcon = createIconElement('add', {
+          style: { width: '16px', height: '16px' }
+        });
+        ctaButton.appendChild(addIcon);
+        const buttonText = document.createTextNode('Create Collection');
+        ctaButton.appendChild(buttonText);
+
+        emptyStateContainer.appendChild(icon);
+        emptyStateContainer.appendChild(message);
+        emptyStateContainer.appendChild(ctaButton);
+
+        tree.innerHTML = '';
+        tree.appendChild(emptyStateContainer);
+      }
       return;
     }
 
@@ -72,12 +108,15 @@ export class CollectionsRenderer {
     contentWrapper.className = 'collection-content';
 
     if (collection.type === 'folder') {
-      const toggle = document.createElement('span');
-      toggle.className = 'folder-toggle';
-      toggle.dataset.folderId = collection.id;
       const isExpanded = treeState.expandedFolders.has(collection.id);
-      toggle.textContent = isExpanded ? '▼' : '▶';
-      toggle.title = isExpanded ? 'Collapse folder' : 'Expand folder';
+      const toggle = createIconElement(
+        isExpanded ? 'chevron-down' : 'chevron-right',
+        {
+          className: 'folder-toggle',
+          title: isExpanded ? 'Collapse folder' : 'Expand folder'
+        }
+      );
+      toggle.dataset.folderId = collection.id;
       contentWrapper.appendChild(toggle);
     } else {
       if (depth > 0) {
@@ -87,37 +126,53 @@ export class CollectionsRenderer {
       }
     }
 
-    const icon = document.createElement('span');
-    icon.className = 'collection-icon';
-
+    // Add icon (only for folders, not for requests)
     if (collection.type === 'folder') {
       const isExpanded = treeState.expandedFolders.has(collection.id);
-      icon.textContent = isExpanded ? '📂' : '📁';
-    } else {
-      const method = collection.request?.method || 'GET';
-      const methodIcons: Record<string, string> = {
-        'GET': '📄',
-        'POST': '📝',
-        'PUT': '✏️',
-        'PATCH': '🔧',
-        'DELETE': '🗑️',
-        'HEAD': '👁️',
-        'OPTIONS': '⚙️'
-      };
-      icon.textContent = methodIcons[method] || '📄';
+      const icon = createIconElement(
+        isExpanded ? 'folder-open' : 'folder-closed',
+        { className: 'collection-icon' }
+      );
+      contentWrapper.appendChild(icon);
     }
 
-    contentWrapper.appendChild(icon);
+    // Add method badge for requests (no icon, just badge)
+    if (collection.type === 'request' && collection.request) {
+      const methodBadge = document.createElement('span');
+      methodBadge.className = 'method-badge'; // Remove method-specific class
+      methodBadge.textContent = collection.request.method;
+      methodBadge.title = `${collection.request.method} request`;
+      contentWrapper.appendChild(methodBadge);
+    }
 
     const name = document.createElement('span');
     name.className = 'collection-name';
     name.textContent = collection.name;
+    name.title = collection.name; // Add tooltip for full name
 
     if (treeState.searchTerm && collection.name.toLowerCase().includes(treeState.searchTerm)) {
       name.classList.add('search-highlight');
     }
 
     contentWrapper.appendChild(name);
+
+    // Add folder count badge or empty indicator for folders
+    if (collection.type === 'folder') {
+      const childCount = allCollections.filter(c => c.parentId === collection.id).length;
+
+      if (childCount === 0) {
+        const emptyIndicator = document.createElement('span');
+        emptyIndicator.className = 'empty-folder-indicator';
+        emptyIndicator.textContent = '(empty)';
+        contentWrapper.appendChild(emptyIndicator);
+      } else {
+        const countBadge = document.createElement('span');
+        countBadge.className = 'folder-count-badge';
+        countBadge.textContent = childCount.toString();
+        countBadge.title = `${childCount} item${childCount !== 1 ? 's' : ''}`;
+        contentWrapper.appendChild(countBadge);
+      }
+    }
 
     if (collection.type === 'folder') {
       const actions = document.createElement('div');
@@ -127,13 +182,19 @@ export class CollectionsRenderer {
       addFolder.className = 'action-btn collection-add-folder';
       addFolder.dataset.parentId = collection.id;
       addFolder.title = 'Add folder';
-      addFolder.textContent = '📁+';
+      const addFolderIcon = createIconElement('add-folder', {
+        style: { width: '12px', height: '12px', display: 'inline-block' }
+      });
+      addFolder.appendChild(addFolderIcon);
 
       const addRequest = document.createElement('button');
       addRequest.className = 'action-btn collection-add-request';
       addRequest.dataset.parentId = collection.id;
       addRequest.title = 'Add request';
-      addRequest.textContent = '📄+';
+      const addRequestIcon = createIconElement('add-file', {
+        style: { width: '12px', height: '12px', display: 'inline-block' }
+      });
+      addRequest.appendChild(addRequestIcon);
 
       actions.appendChild(addFolder);
       actions.appendChild(addRequest);
@@ -193,22 +254,18 @@ export class CollectionsRenderer {
     menu.style.position = 'fixed';
     menu.style.left = rect.left + 'px';
     menu.style.top = (rect.bottom + 4) + 'px';
-    menu.style.backgroundColor = 'var(--bg-tertiary)';
-    menu.style.border = '1px solid var(--border-color)';
-    menu.style.borderRadius = '6px';
-    menu.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
     menu.style.zIndex = '10000';
-    menu.style.minWidth = '150px';
-    menu.style.overflow = 'hidden';
 
     const createOptions = [
       {
-        label: '📁 New Folder',
+        label: 'New Folder',
+        icon: 'folder-closed' as const,
         action: onCreateFolder,
         description: 'Create a new folder'
       },
       {
-        label: '📄 New Request',
+        label: 'New Request',
+        icon: 'file' as const,
         action: onCreateRequest,
         description: 'Create a new API request'
       }
@@ -217,15 +274,11 @@ export class CollectionsRenderer {
     createOptions.forEach((option) => {
       const item = document.createElement('div');
       item.className = 'create-menu-item';
-      item.style.cssText = `
-        padding: 12px 16px;
-        cursor: pointer;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background-color 0.15s ease;
-      `;
+
+      const icon = createIconElement(option.icon, {
+        style: { width: '14px', height: '14px', display: 'inline-block', flexShrink: '0' }
+      });
+      item.appendChild(icon);
 
       const label = document.createElement('span');
       label.textContent = option.label;
@@ -233,16 +286,6 @@ export class CollectionsRenderer {
 
       item.appendChild(label);
       item.title = option.description;
-
-      item.addEventListener('mouseenter', () => {
-        item.style.backgroundColor = 'var(--primary-color)';
-        item.style.color = 'white';
-      });
-
-      item.addEventListener('mouseleave', () => {
-        item.style.backgroundColor = 'transparent';
-        item.style.color = 'var(--text-primary)';
-      });
 
       item.addEventListener('click', () => {
         option.action();
@@ -278,44 +321,17 @@ export class CollectionsRenderer {
     const menu = document.createElement('div');
     menu.className = 'context-menu';
     menu.style.position = 'fixed';
-    menu.style.left = event.clientX + 'px';
-    menu.style.top = event.clientY + 'px';
-    menu.style.backgroundColor = 'var(--bg-tertiary)';
-    menu.style.border = '1px solid var(--border-color)';
-    menu.style.borderRadius = '4px';
-    menu.style.padding = '8px 0';
     menu.style.zIndex = '1000';
-    menu.style.minWidth = '150px';
+    menu.style.visibility = 'hidden'; // Hide initially to measure dimensions
 
     actions.forEach(action => {
       const item = document.createElement('div');
 
       if (action.label === '---') {
         item.className = 'context-menu-separator';
-        item.style.cssText = `
-          height: 1px;
-          background: var(--border-color);
-          margin: 4px 0;
-        `;
       } else {
         item.textContent = action.label;
         item.className = 'context-menu-item';
-        item.style.cssText = `
-          padding: 8px 16px;
-          cursor: pointer;
-          font-size: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        `;
-
-        item.addEventListener('mouseenter', () => {
-          item.style.backgroundColor = 'var(--hover-color)';
-        });
-
-        item.addEventListener('mouseleave', () => {
-          item.style.backgroundColor = 'transparent';
-        });
 
         if (action.action) {
           item.addEventListener('click', () => {
@@ -331,6 +347,32 @@ export class CollectionsRenderer {
     });
 
     document.body.appendChild(menu);
+
+    // Position menu with boundary detection
+    const menuRect = menu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = event.clientX;
+    let top = event.clientY;
+
+    // Check right boundary
+    if (left + menuRect.width > viewportWidth) {
+      left = viewportWidth - menuRect.width - 8; // 8px padding
+    }
+
+    // Check bottom boundary
+    if (top + menuRect.height > viewportHeight) {
+      top = viewportHeight - menuRect.height - 8; // 8px padding
+    }
+
+    // Ensure menu doesn't go off the left or top edge
+    left = Math.max(8, left);
+    top = Math.max(8, top);
+
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.visibility = 'visible';
 
     const handleClickOutside = (e: MouseEvent) => {
       if (!menu.contains(e.target as Node)) {

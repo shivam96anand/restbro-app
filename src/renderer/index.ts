@@ -88,7 +88,7 @@ class ApiCourierRenderer {
     try {
       const state = await window.apiCourier.store.get();
       this.themeManager.setTheme(state.theme);
-      this.collectionsManager.setCollections(state.collections);
+      await this.collectionsManager.setCollections(state.collections);
       this.tabsManager.setTabs(state.openTabs, state.activeTabId);
       this.historyManager.setHistory((state as any).history || []);
       this.environmentManager.setEnvironments((state as any).environments || []);
