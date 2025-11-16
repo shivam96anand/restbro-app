@@ -4,16 +4,8 @@
  */
 
 import { ViewerState, ViewerTab, VIEWER_CONSTANTS } from './types';
-
-const STORAGE_PREFIX = 'viewer:';
-const GLOBAL_SETTINGS_KEY = 'viewer:settings';
-
-interface GlobalSettings {
-  theme: 'light' | 'dark';
-  fontSize: number;
-  wrapText: boolean;
-  showTypes: boolean;
-}
+import { ViewerStateStorage } from './ViewerStateStorage';
+import { ViewerGlobalSettings, GlobalSettings } from './ViewerGlobalSettings';
 
 export class ViewerStateManager {
   private state: ViewerState;
@@ -23,7 +15,7 @@ export class ViewerStateManager {
 
   constructor(requestId: string) {
     this.requestId = requestId;
-    this.storageKey = `${STORAGE_PREFIX}${requestId}`;
+    this.storageKey = ViewerStateStorage.getStorageKey(requestId);
     this.state = this.loadState();
   }
 
@@ -31,32 +23,17 @@ export class ViewerStateManager {
    * Load state from localStorage or create default state
    */
   private loadState(): ViewerState {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      const globalSettings = this.getGlobalSettings();
+    const stored = ViewerStateStorage.loadState(this.storageKey);
+    const globalSettings = ViewerGlobalSettings.getSettings();
 
-      if (stored) {
-        const parsedState = JSON.parse(stored) as ViewerState;
-        // Ensure expandedNodes is a Set
-        if (parsedState.prettyView.expandedNodes) {
-          parsedState.prettyView.expandedNodes = new Set(
-            Array.isArray(parsedState.prettyView.expandedNodes)
-              ? parsedState.prettyView.expandedNodes
-              : Array.from(parsedState.prettyView.expandedNodes)
-          );
-        }
-
-        // Apply global settings if they've changed
-        parsedState.rawEditor.fontSize = globalSettings.fontSize;
-        parsedState.prettyView.fontSize = globalSettings.fontSize;
-        parsedState.rawEditor.theme = globalSettings.theme;
-        parsedState.rawEditor.wrapText = globalSettings.wrapText;
-        parsedState.prettyView.showTypes = globalSettings.showTypes;
-
-        return parsedState;
-      }
-    } catch (error) {
-      console.warn('Failed to load viewer state:', error);
+    if (stored) {
+      // Apply global settings if they've changed
+      stored.rawEditor.fontSize = globalSettings.fontSize;
+      stored.prettyView.fontSize = globalSettings.fontSize;
+      stored.rawEditor.theme = globalSettings.theme;
+      stored.rawEditor.wrapText = globalSettings.wrapText;
+      stored.prettyView.showTypes = globalSettings.showTypes;
+      return stored;
     }
 
     return this.createDefaultState();
@@ -66,7 +43,7 @@ export class ViewerStateManager {
    * Create default state with global settings applied
    */
   private createDefaultState(): ViewerState {
-    const globalSettings = this.getGlobalSettings();
+    const globalSettings = ViewerGlobalSettings.getSettings();
 
     return {
       requestId: this.requestId,
@@ -94,55 +71,27 @@ export class ViewerStateManager {
   }
 
   /**
-   * Get global settings that apply to all viewers
-   */
-  private getGlobalSettings(): GlobalSettings {
-    try {
-      const stored = localStorage.getItem(GLOBAL_SETTINGS_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.warn('Failed to load global settings:', error);
-    }
-
-    return {
-      theme: 'light',
-      fontSize: VIEWER_CONSTANTS.DEFAULT_FONT_SIZE,
-      wrapText: true,
-      showTypes: true,
-    };
-  }
-
-  /**
    * Save global settings that apply to all viewers
    */
   public saveGlobalSettings(settings: Partial<GlobalSettings>): void {
-    const current = this.getGlobalSettings();
-    const updated = { ...current, ...settings };
+    const updated = ViewerGlobalSettings.saveSettings(settings);
 
-    try {
-      localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(updated));
-
-      // Apply to current state
-      if (settings.fontSize !== undefined) {
-        this.state.rawEditor.fontSize = settings.fontSize;
-        this.state.prettyView.fontSize = settings.fontSize;
-      }
-      if (settings.theme !== undefined) {
-        this.state.rawEditor.theme = settings.theme;
-      }
-      if (settings.wrapText !== undefined) {
-        this.state.rawEditor.wrapText = settings.wrapText;
-      }
-      if (settings.showTypes !== undefined) {
-        this.state.prettyView.showTypes = settings.showTypes;
-      }
-
-      this.scheduleSave();
-    } catch (error) {
-      console.error('Failed to save global settings:', error);
+    // Apply to current state
+    if (settings.fontSize !== undefined) {
+      this.state.rawEditor.fontSize = updated.fontSize;
+      this.state.prettyView.fontSize = updated.fontSize;
     }
+    if (settings.theme !== undefined) {
+      this.state.rawEditor.theme = updated.theme;
+    }
+    if (settings.wrapText !== undefined) {
+      this.state.rawEditor.wrapText = updated.wrapText;
+    }
+    if (settings.showTypes !== undefined) {
+      this.state.prettyView.showTypes = updated.showTypes;
+    }
+
+    this.scheduleSave();
   }
 
   /**
@@ -263,54 +212,10 @@ export class ViewerStateManager {
    * Immediately save state to localStorage
    */
   public saveState(): void {
-    try {
-      // Convert Set to Array for JSON serialization
-      const stateToSave = {
-        ...this.state,
-        prettyView: {
-          ...this.state.prettyView,
-          expandedNodes: Array.from(this.state.prettyView.expandedNodes),
-        },
-      };
-
-      localStorage.setItem(this.storageKey, JSON.stringify(stateToSave));
-    } catch (error) {
-      console.error('Failed to save viewer state:', error);
-      // If localStorage is full, try to clean up old states
-      this.cleanupOldStates();
-    }
-  }
-
-  /**
-   * Clean up old viewer states to free storage space
-   */
-  private cleanupOldStates(): void {
-    try {
-      const keysToRemove: string[] = [];
-      const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days ago
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key?.startsWith(STORAGE_PREFIX) && key !== this.storageKey) {
-          try {
-            const item = localStorage.getItem(key);
-            if (item) {
-              const parsed = JSON.parse(item);
-              // If no timestamp or very old, mark for removal
-              if (!parsed.timestamp || parsed.timestamp < cutoffTime) {
-                keysToRemove.push(key);
-              }
-            }
-          } catch {
-            // If we can't parse it, remove it
-            keysToRemove.push(key);
-          }
-        }
-      }
-
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-    } catch (error) {
-      console.warn('Failed to cleanup old states:', error);
+    const success = ViewerStateStorage.saveState(this.storageKey, this.state);
+    if (!success) {
+      // If save failed, try to clean up old states and retry
+      ViewerStateStorage.cleanupOldStates(this.storageKey);
     }
   }
 
@@ -331,25 +236,14 @@ export class ViewerStateManager {
       this.saveTimeout = null;
     }
 
-    try {
-      localStorage.removeItem(this.storageKey);
-    } catch (error) {
-      console.warn('Failed to clear viewer state:', error);
-    }
+    ViewerStateStorage.clearState(this.storageKey);
   }
 
   /**
    * Check if localStorage is available
    */
   public static isStorageAvailable(): boolean {
-    try {
-      const test = '__storage_test__';
-      localStorage.setItem(test, test);
-      localStorage.removeItem(test);
-      return true;
-    } catch {
-      return false;
-    }
+    return ViewerStateStorage.isStorageAvailable();
   }
 
   /**
