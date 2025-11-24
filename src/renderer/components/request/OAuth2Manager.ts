@@ -204,7 +204,11 @@ export class OAuth2Manager {
     if (!this.isTokenExpired(auth)) return null;
 
     try {
-      const result = await (window as any).electronAPI.oauth.refreshToken(auth.config);
+      // Resolve environment variables before refreshing
+      const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
+      console.log('[OAuth2Manager] Auto-refreshing token with resolved config');
+
+      const result = await (window as any).electronAPI.oauth.refreshToken(resolvedConfig);
 
       if (result.success) {
         return {
@@ -235,7 +239,11 @@ export class OAuth2Manager {
     if (!auth.config.tokenUrl || !auth.config.clientId) return null;
 
     try {
-      const result = await (window as any).electronAPI.oauth.startFlow(auth.config);
+      // Resolve environment variables before getting token
+      const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
+      console.log('[OAuth2Manager] Auto-getting token with resolved config');
+
+      const result = await (window as any).electronAPI.oauth.startFlow(resolvedConfig);
 
       if (result.success) {
         const updatedConfig = {
