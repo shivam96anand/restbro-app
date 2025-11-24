@@ -5,6 +5,9 @@ export class RequestDataManager {
   private currentRequest: ApiRequest | null = null;
   private onShowError: (message: string) => void;
   private editorsManager?: RequestEditorsManager;
+  private isSending = false;
+  private cancelRequested = false;
+  private hasEmittedCancellation = false;
 
   constructor(onShowError: (message: string) => void, editorsManager?: RequestEditorsManager) {
     this.onShowError = onShowError;
@@ -19,6 +22,25 @@ export class RequestDataManager {
         await this.sendRequest();
       });
     }
+
+    // Ensure buttons start in idle state
+    this.toggleRequestButtons(false);
+  }
+
+  setupCancelButton(): void {
+    const cancelBtn = document.getElementById('cancel-request');
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', async () => {
+        await this.cancelRequest();
+      });
+    }
+  }
+
+  setupCancelEventListener(): void {
+    document.addEventListener('request-cancel-trigger', async () => {
+      await this.cancelRequest();
+    });
   }
 
   setupTabChangeListener(): void {
@@ -55,11 +77,10 @@ export class RequestDataManager {
   private async sendRequest(): Promise<void> {
     if (!this.currentRequest) return;
 
-    const sendBtn = document.getElementById('send-request');
-    if (sendBtn) {
-      sendBtn.textContent = 'Sending...';
-      (sendBtn as HTMLButtonElement).disabled = true;
-    }
+    this.isSending = true;
+    this.cancelRequested = false;
+    this.hasEmittedCancellation = false;
+    this.toggleRequestButtons(true);
 
     // Dispatch event to show loading state in response panel
     const sendingEvent = new CustomEvent('request-sending', {
@@ -116,24 +137,82 @@ export class RequestDataManager {
 
       const response = await window.apiCourier.request.send(requestToSend);
 
+      if (this.cancelRequested) {
+        this.emitCancellationEvent();
+        return;
+      }
+
       const event = new CustomEvent('response-received', {
         detail: { response, request: requestToSend }
       });
       document.dispatchEvent(event);
     } catch (error) {
       console.error('Request failed:', error);
-      this.onShowError('Request failed: ' + (error as Error).message);
+      const message = (error as Error).message || '';
 
-      // Dispatch event to hide loading state
-      const failedEvent = new CustomEvent('request-failed', {
-        detail: { error: (error as Error).message }
-      });
-      document.dispatchEvent(failedEvent);
-    } finally {
-      if (sendBtn) {
-        sendBtn.textContent = 'Send';
-        (sendBtn as HTMLButtonElement).disabled = false;
+      if (message.toLowerCase().includes('cancel')) {
+        this.emitCancellationEvent();
+      } else {
+        this.onShowError('Request failed: ' + message);
+
+        // Dispatch event to hide loading state
+        const failedEvent = new CustomEvent('request-failed', {
+          detail: { error: message }
+        });
+        document.dispatchEvent(failedEvent);
       }
+    } finally {
+      this.isSending = false;
+      this.cancelRequested = false;
+      this.toggleRequestButtons(false);
     }
+  }
+
+  private async cancelRequest(): Promise<void> {
+    if (!this.currentRequest || !this.isSending || this.cancelRequested) return;
+
+    this.cancelRequested = true;
+    this.toggleRequestButtons(true);
+
+    try {
+      const cancelled = await window.apiCourier.request.cancel(this.currentRequest.id);
+      if (cancelled) {
+        this.emitCancellationEvent();
+      } else {
+        this.cancelRequested = false;
+        this.toggleRequestButtons(true);
+      }
+    } catch (error) {
+      console.error('Failed to cancel request:', error);
+      this.cancelRequested = false;
+      this.toggleRequestButtons(true);
+    }
+  }
+
+  private toggleRequestButtons(isSending: boolean): void {
+    const sendBtn = document.getElementById('send-request') as HTMLButtonElement | null;
+    const cancelBtn = document.getElementById('cancel-request') as HTMLButtonElement | null;
+
+    if (sendBtn) {
+      sendBtn.textContent = isSending ? 'Sending...' : 'Send';
+      sendBtn.disabled = isSending;
+    }
+
+    if (cancelBtn) {
+      cancelBtn.style.display = isSending ? 'inline-flex' : 'none';
+      cancelBtn.classList.toggle('visible', isSending);
+      cancelBtn.textContent = this.cancelRequested ? 'Cancelling...' : 'Cancel';
+      cancelBtn.disabled = this.cancelRequested;
+    }
+  }
+
+  private emitCancellationEvent(): void {
+    if (this.hasEmittedCancellation) return;
+
+    const cancelledEvent = new CustomEvent('request-cancelled', {
+      detail: { requestId: this.currentRequest?.id }
+    });
+    document.dispatchEvent(cancelledEvent);
+    this.hasEmittedCancellation = true;
   }
 }

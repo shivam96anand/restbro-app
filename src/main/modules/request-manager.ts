@@ -10,8 +10,11 @@ import { RequestBuilder } from './request-builder';
 import { RequestErrorFormatter } from './request-error-formatter';
 
 class RequestManager {
+  private activeRequests = new Map<string, { req: http.ClientRequest; reject: (err: Error) => void }>();
+
   async sendRequest(request: ApiRequest): Promise<ApiResponse> {
     const startTime = Date.now();
+    const requestId = request.id || `request-${Date.now()}`;
 
     // Resolve variables first
     const state = storeManager.getState();
@@ -45,7 +48,26 @@ class RequestManager {
     // Handle OAuth token refresh if needed
     const updatedRequest = await this.handleOAuthRefresh(requestWithResolved);
 
-    return new Promise<ApiResponse>((resolve) => {
+    return new Promise<ApiResponse>((resolve, reject) => {
+      let settled = false;
+      const cleanup = () => {
+        this.activeRequests.delete(requestId);
+      };
+
+      const safeResolve = (response: ApiResponse): void => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(response);
+      };
+
+      const safeReject = (error: Error): void => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+
       try {
         // Build URL with query parameters
         const urlString = RequestBuilder.buildUrlWithParams(
@@ -80,12 +102,14 @@ class RequestManager {
         };
 
         const req = httpModule.request(options, (res) => {
-          this.handleResponse(res, startTime, resolve);
+          this.handleResponse(res, startTime, safeResolve);
         });
 
         req.on('error', (error) => {
-          this.handleRequestError(error, urlString, startTime, resolve);
+          this.handleRequestError(error, urlString, startTime, safeResolve);
         });
+
+        this.activeRequests.set(requestId, { req, reject: safeReject });
 
         // Write body data if present
         if (bodyData) {
@@ -94,9 +118,21 @@ class RequestManager {
 
         req.end();
       } catch (error) {
-        this.handleGeneralError(error, request.url, startTime, resolve);
+        this.handleGeneralError(error, request.url, startTime, safeResolve);
       }
     });
+  }
+
+  cancelRequest(requestId: string): boolean {
+    const active = this.activeRequests.get(requestId);
+
+    if (!active) {
+      return false;
+    }
+
+    active.req.destroy(new Error('Request cancelled by user'));
+    active.reject(new Error('Request cancelled by user'));
+    return true;
   }
 
   private handleResponse(

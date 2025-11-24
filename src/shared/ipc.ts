@@ -2,6 +2,7 @@ export const IPC_CHANNELS = {
   STORE_GET: 'store:get',
   STORE_SET: 'store:set',
   REQUEST_SEND: 'request:send',
+  REQUEST_CANCEL: 'request:cancel',
   COLLECTION_CREATE: 'collection:create',
   COLLECTION_UPDATE: 'collection:update',
   COLLECTION_DELETE: 'collection:delete',

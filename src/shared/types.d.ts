@@ -54,6 +54,7 @@ export interface IpcChannels {
     'store:get': () => AppState;
     'store:set': (state: Partial<AppState>) => void;
     'request:send': (request: ApiRequest) => ApiResponse;
+    'request:cancel': (requestId: string) => boolean;
     'collection:create': (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => Collection;
     'collection:update': (id: string, updates: Partial<Collection>) => void;
     'collection:delete': (id: string) => void;

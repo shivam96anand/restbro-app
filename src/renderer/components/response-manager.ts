@@ -13,6 +13,8 @@ export class ResponseManager {
   private state: ResponseState;
   private container: HTMLElement;
   private loadingElement: HTMLElement | null = null;
+  private loadingElements: HTMLElement[] = [];
+  private loadingTimers: HTMLElement[] = [];
   private loadingStartTime: number = 0;
   private loadingTimerInterval: number | null = null;
 
@@ -119,6 +121,14 @@ export class ResponseManager {
 
     document.addEventListener('request-failed', (e: Event) => {
       this.hideLoadingState();
+      this.state.currentResponse = null;
+      this.viewer.clear();
+      this.actions.hide();
+      this.search.hide();
+    });
+
+    document.addEventListener('request-cancelled', () => {
+      this.handleRequestCancelled();
     });
   }
 
@@ -156,26 +166,56 @@ export class ResponseManager {
 
   private showLoadingState(startTime: number): void {
     this.loadingStartTime = startTime;
+    this.hideLoadingState();
 
     // Hide any existing response
     this.viewer.clear();
     this.actions.hide();
     this.search.hide();
 
-    // Create loading overlay
-    this.loadingElement = document.createElement('div');
-    this.loadingElement.style.cssText = `
+    ['response-body', 'response-headers'].forEach((sectionId) => {
+      const section = this.container.querySelector(`#${sectionId}`);
+      if (!section) {
+        console.error(`${sectionId} element not found - spinner cannot be displayed`);
+        return;
+      }
+
+      const { wrapper, timer } = this.createLoadingOverlay();
+      section.innerHTML = '';
+      section.appendChild(wrapper);
+      this.loadingElements.push(wrapper);
+      this.loadingTimers.push(timer);
+    });
+
+    this.loadingElement = this.loadingElements[0] || null;
+
+    // Start timer
+    this.loadingTimerInterval = window.setInterval(() => {
+      const elapsed = (Date.now() - this.loadingStartTime) / 1000;
+      this.loadingTimers.forEach((timer) => {
+        timer.textContent = `${elapsed.toFixed(1)}s`;
+      });
+    }, 100);
+
+    this.ensureSpinnerAnimation();
+  }
+
+  private createLoadingOverlay(): { wrapper: HTMLElement; timer: HTMLElement } {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'response-loading-overlay';
+    wrapper.style.cssText = `
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100%;
+      width: 100%;
       color: var(--text-secondary);
       font-size: 14px;
     `;
 
-    // Create spinner
     const spinner = document.createElement('div');
+    spinner.className = 'response-loading-spinner';
     spinner.style.cssText = `
       width: 40px;
       height: 40px;
@@ -186,7 +226,6 @@ export class ResponseManager {
       margin-bottom: 16px;
     `;
 
-    // Create status text
     const statusText = document.createElement('div');
     statusText.textContent = 'Sending request...';
     statusText.style.cssText = `
@@ -196,9 +235,8 @@ export class ResponseManager {
       font-weight: 500;
     `;
 
-    // Create timer
     const timer = document.createElement('div');
-    timer.id = 'request-timer';
+    timer.className = 'request-timer';
     timer.textContent = '0.0s';
     timer.style.cssText = `
       font-size: 12px;
@@ -206,37 +244,39 @@ export class ResponseManager {
       font-family: 'Courier New', monospace;
     `;
 
-    this.loadingElement.appendChild(spinner);
-    this.loadingElement.appendChild(statusText);
-    this.loadingElement.appendChild(timer);
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-btn visible';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.marginTop = '12px';
+    cancelBtn.style.paddingLeft = '18px';
+    cancelBtn.style.paddingRight = '18px';
+    cancelBtn.addEventListener('click', () => {
+      cancelBtn.textContent = 'Cancelling...';
+      cancelBtn.disabled = true;
+      const cancelEvent = new CustomEvent('request-cancel-trigger');
+      document.dispatchEvent(cancelEvent);
+    });
 
-    // Find the response body container and add loading state
-    const responseBody = this.container.querySelector('#response-body');
-    if (responseBody) {
-      responseBody.innerHTML = '';
-      responseBody.appendChild(this.loadingElement);
-    } else {
-      console.error('Response body element not found - spinner cannot be displayed');
-    }
+    wrapper.appendChild(spinner);
+    wrapper.appendChild(statusText);
+    wrapper.appendChild(timer);
+    wrapper.appendChild(cancelBtn);
 
-    // Start timer
-    this.loadingTimerInterval = window.setInterval(() => {
-      const elapsed = (Date.now() - this.loadingStartTime) / 1000;
-      timer.textContent = `${elapsed.toFixed(1)}s`;
-    }, 100);
+    return { wrapper, timer };
+  }
 
-    // Add spin animation if not already in styles
-    if (!document.getElementById('loading-spinner-style')) {
-      const style = document.createElement('style');
-      style.id = 'loading-spinner-style';
-      style.textContent = `
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
+  private ensureSpinnerAnimation(): void {
+    if (document.getElementById('loading-spinner-style')) return;
+
+    const style = document.createElement('style');
+    style.id = 'loading-spinner-style';
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   private hideLoadingState(): void {
@@ -249,6 +289,18 @@ export class ResponseManager {
       this.loadingElement.remove();
       this.loadingElement = null;
     }
+
+    this.loadingElements.forEach((el) => el.remove());
+    this.loadingElements = [];
+    this.loadingTimers = [];
+  }
+
+  private handleRequestCancelled(): void {
+    this.hideLoadingState();
+    this.state.currentResponse = null;
+    this.viewer.clear();
+    this.actions.hide();
+    this.search.hide();
   }
 
   // Action button implementations

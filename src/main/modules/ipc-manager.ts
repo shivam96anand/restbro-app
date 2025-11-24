@@ -24,6 +24,10 @@ class IpcManager {
       return await requestManager.sendRequest(request);
     });
 
+    ipcMain.handle(IPC_CHANNELS.REQUEST_CANCEL, async (_, requestId: string) => {
+      return requestManager.cancelRequest(requestId);
+    });
+
     ipcMain.handle(IPC_CHANNELS.COLLECTION_CREATE, (_, collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>): Collection => {
       const newCollection: Collection = {
         ...collection,
