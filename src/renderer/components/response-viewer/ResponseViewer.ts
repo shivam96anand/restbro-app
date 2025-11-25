@@ -6,10 +6,15 @@ export class ResponseViewer {
   private container: HTMLElement;
   private jsonViewer: JsonViewer | null = null;
   private currentFormatter: 'json' | 'plain' | null = null;
+  private currentRequestId: string = 'default';
 
   constructor(container: HTMLElement, private config: ResponseViewerConfig) {
     this.container = container;
     this.setupViewerElements();
+  }
+
+  public setRequestId(requestId: string): void {
+    this.currentRequestId = requestId;
   }
 
   private setupViewerElements(): void {
@@ -90,7 +95,9 @@ export class ResponseViewer {
     container.appendChild(jsonContainer);
 
     try {
-      this.jsonViewer = new JsonViewer('response-json-viewer-container');
+      this.jsonViewer = new JsonViewer('response-json-viewer-container', {
+        requestId: this.currentRequestId
+      });
       this.jsonViewer.setData(jsonData);
     } catch (error) {
       console.error('Failed to initialize JSON viewer:', error);

@@ -17,6 +17,7 @@ export class ResponseManager {
   private loadingTimers: HTMLElement[] = [];
   private loadingStartTime: number = 0;
   private loadingTimerInterval: number | null = null;
+  private currentRequestId: string = 'default';
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -138,8 +139,11 @@ export class ResponseManager {
       const activeTab = customEvent.detail.activeTab;
 
       if (activeTab && activeTab.response) {
+        // Update current request ID for state persistence
+        this.currentRequestId = activeTab.id || 'default';
         this.displayResponse(activeTab.response);
       } else {
+        this.currentRequestId = 'default';
         this.clearResponse();
       }
     });
@@ -147,6 +151,7 @@ export class ResponseManager {
 
   private displayResponse(response: ApiResponse): void {
     this.state.currentResponse = response;
+    this.viewer.setRequestId(this.currentRequestId);
     this.viewer.displayResponse(response);
     this.tabs.updateTabs(response);
     this.actions.updateVisibility(response, this.state.activeTab);

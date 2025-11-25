@@ -180,18 +180,42 @@ export class CollectionsOperations {
 
     try {
       const duplicatedName = `${collection.name} Copy`;
+
+      // Calculate order to place duplicate right after the original
+      const siblings = this.collections
+        .filter(c => c.parentId === collection.parentId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      const originalIndex = siblings.findIndex(c => c.id === collectionId);
+      const newOrder = originalIndex !== -1 && originalIndex < siblings.length - 1
+        ? ((collection.order ?? 0) + (siblings[originalIndex + 1].order ?? 0)) / 2
+        : (collection.order ?? 0) + 1000;
+
       const newCollection = await window.apiCourier.collection.create({
         name: duplicatedName,
         type: collection.type,
         parentId: collection.parentId,
+        order: newOrder,
         request: collection.request ? { ...collection.request } : undefined
       });
 
-      this.collections.push(newCollection);
+      // Insert the duplicate right after the original in the array
+      const insertIndex = this.collections.findIndex(c => c.id === collectionId);
+      if (insertIndex !== -1) {
+        this.collections.splice(insertIndex + 1, 0, newCollection);
+      } else {
+        this.collections.push(newCollection);
+      }
 
       if (collection.type === 'folder') {
         await this.duplicateChildren(collection.id, newCollection.id);
       }
+
+      // Dispatch collections changed event
+      const event = new CustomEvent('collections-changed', {
+        detail: { collections: this.collections }
+      });
+      document.dispatchEvent(event);
     } catch (error) {
       console.error('Failed to duplicate collection:', error);
       this.onShowError('Failed to duplicate collection');
