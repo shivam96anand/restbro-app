@@ -23,21 +23,23 @@ export class RequestBodyEditor {
 
   private setupDOM(): void {
     this.container.innerHTML = `
-      <div class="body-type-selector">
-        <label><input type="radio" name="body-type" value="none" checked> None</label>
-        <label><input type="radio" name="body-type" value="json"> JSON</label>
-        <label><input type="radio" name="body-type" value="raw"> Raw</label>
-        <label><input type="radio" name="body-type" value="form-urlencoded"> Form URL Encoded</label>
+      <div class="body-type-row">
+        <div class="body-type-selector">
+          <label><input type="radio" name="body-type" value="none" checked> None</label>
+          <label><input type="radio" name="body-type" value="json"> JSON</label>
+          <label><input type="radio" name="body-type" value="raw"> Raw</label>
+          <label><input type="radio" name="body-type" value="form-urlencoded"> Form URL Encoded</label>
+        </div>
       </div>
       <div class="body-editor-container" id="body-editor-container" style="display: none;">
         <div class="body-editor-header">
-          <div class="body-editor-actions">
-            <button id="format-body-btn" class="btn btn-secondary" style="display: none;">Format JSON</button>
-            <button id="minify-body-btn" class="btn btn-secondary" style="display: none;">Minify</button>
-            <button id="validate-body-btn" class="btn btn-secondary" style="display: none;">Validate</button>
-            <button id="clear-body-btn" class="btn btn-secondary">Clear</button>
+          <div class="body-editor-heading">
+            <div class="title">Request Body</div>
           </div>
-          <div class="body-status" id="body-status"></div>
+          <div class="body-editor-actions">
+            <button id="format-body-btn" class="btn btn-secondary" style="display: none;">Format</button>
+            <div class="body-status" id="body-status"></div>
+          </div>
         </div>
         <div class="body-editor-wrapper">
           <textarea 
@@ -46,7 +48,6 @@ export class RequestBodyEditor {
             placeholder="Request body"
             spellcheck="false"
           ></textarea>
-          <div class="line-numbers" id="body-line-numbers"></div>
         </div>
       </div>
     `;
@@ -66,22 +67,18 @@ export class RequestBodyEditor {
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
     if (bodyEditor) {
       bodyEditor.addEventListener('input', () => this.handleBodyContentChange());
-      bodyEditor.addEventListener('scroll', () => this.syncLineNumbers());
       bodyEditor.addEventListener('keydown', (e) => this.handleKeydown(e));
     }
 
     // Action buttons
     this.container.querySelector('#format-body-btn')?.addEventListener('click', () => this.formatJson());
-    this.container.querySelector('#minify-body-btn')?.addEventListener('click', () => this.minifyJson());
-    this.container.querySelector('#validate-body-btn')?.addEventListener('click', () => this.validateJson());
-    this.container.querySelector('#clear-body-btn')?.addEventListener('click', () => this.clearBody());
   }
 
   private handleBodyTypeChange(bodyType: string): void {
     this.currentBodyType = bodyType as BodyType;
     const bodyEditorContainer = this.container.querySelector('#body-editor-container') as HTMLElement;
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const jsonActions = this.container.querySelectorAll('#format-body-btn, #minify-body-btn, #validate-body-btn');
+    const formatBtn = this.container.querySelector('#format-body-btn') as HTMLElement;
 
     if (bodyType === 'none') {
       bodyEditorContainer.style.display = 'none';
@@ -90,9 +87,9 @@ export class RequestBodyEditor {
       bodyEditorContainer.style.display = 'block';
       
       // Show/hide JSON-specific actions
-      jsonActions.forEach(btn => {
-        (btn as HTMLElement).style.display = bodyType === 'json' ? 'inline-block' : 'none';
-      });
+      if (formatBtn) {
+        formatBtn.style.display = bodyType === 'json' ? 'inline-block' : 'none';
+      }
 
       // Set placeholder and initial content based on type
       if (bodyType === 'json') {
@@ -113,7 +110,6 @@ export class RequestBodyEditor {
         bodyEditor.classList.remove('json-mode');
       }
 
-      this.updateLineNumbers();
       this.updateStatus();
       this.events.onBodyChange({ type: bodyType as BodyType, content: bodyEditor.value });
     }
@@ -121,7 +117,6 @@ export class RequestBodyEditor {
 
   private handleBodyContentChange(): void {
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    this.updateLineNumbers();
     this.updateStatus();
     this.events.onBodyChange({ 
       type: this.currentBodyType, 
@@ -202,75 +197,6 @@ export class RequestBodyEditor {
     }
   }
 
-  private minifyJson(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const text = bodyEditor.value.trim();
-
-    if (!text) {
-      this.events.onStatusUpdate('warning', 'No JSON to minify');
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(text);
-      const minified = JSON.stringify(parsed);
-      bodyEditor.value = minified;
-      this.handleBodyContentChange();
-      this.events.onStatusUpdate('success', 'JSON minified successfully');
-    } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private validateJson(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const text = bodyEditor.value.trim();
-
-    if (!text) {
-      this.events.onStatusUpdate('warning', 'No JSON to validate');
-      return;
-    }
-
-    try {
-      JSON.parse(text);
-      const size = text.length;
-      const sizeStr = size > 1024 ? `${(size / 1024).toFixed(1)}KB` : `${size}B`;
-      this.events.onStatusUpdate('success', `Valid JSON (${sizeStr})`);
-    } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private clearBody(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    bodyEditor.value = this.currentBodyType === 'json' ? '{\n  \n}' : '';
-    this.handleBodyContentChange();
-    this.events.onStatusUpdate('info', 'Body cleared');
-  }
-
-  private updateLineNumbers(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const lineNumbers = this.container.querySelector('#body-line-numbers') as HTMLElement;
-    
-    if (!lineNumbers || !bodyEditor) return;
-    
-    const lines = bodyEditor.value.split('\n');
-    const lineNumbersHtml = lines.map((_, index) => 
-      `<div class="line-number">${index + 1}</div>`
-    ).join('');
-    
-    lineNumbers.innerHTML = lineNumbersHtml;
-  }
-
-  private syncLineNumbers(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const lineNumbers = this.container.querySelector('#body-line-numbers') as HTMLElement;
-    
-    if (lineNumbers && bodyEditor) {
-      lineNumbers.scrollTop = bodyEditor.scrollTop;
-    }
-  }
-
   private updateStatus(): void {
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
     const statusElement = this.container.querySelector('#body-status') as HTMLElement;
@@ -278,28 +204,18 @@ export class RequestBodyEditor {
 
     if (!statusElement) return;
 
-    if (!text) {
-      statusElement.textContent = '';
-      statusElement.className = 'body-status';
-      return;
-    }
-
     if (this.currentBodyType === 'json') {
       try {
-        JSON.parse(text);
-        const size = text.length;
-        const sizeStr = size > 1024 ? `${(size / 1024).toFixed(1)}KB` : `${size}B`;
-        statusElement.textContent = `Valid JSON (${sizeStr})`;
-        statusElement.className = 'body-status valid';
+        JSON.parse(text || '{}');
+        statusElement.textContent = '';
+        statusElement.className = 'body-status';
       } catch (error) {
         statusElement.textContent = 'Invalid JSON';
         statusElement.className = 'body-status invalid';
       }
     } else {
-      const size = text.length;
-      const sizeStr = size > 1024 ? `${(size / 1024).toFixed(1)}KB` : `${size}B`;
-      statusElement.textContent = `${this.currentBodyType.toUpperCase()} (${sizeStr})`;
-      statusElement.className = 'body-status info';
+      statusElement.textContent = '';
+      statusElement.className = 'body-status';
     }
   }
 
