@@ -712,6 +712,8 @@
   flex: 1;
   min-height: 0;
   height: 100%;
+  position: relative;
+  z-index: 2;
 
   &::placeholder {
     color: var(--text-secondary);
@@ -726,6 +728,75 @@
   &.json-mode {
     tab-size: 2;
     white-space: pre;
+  }
+
+  &.has-syntax-highlighting {
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text-primary);
+  }
+}
+
+// Syntax highlighting overlay
+.syntax-highlight-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 16px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow: auto;
+  pointer-events: none;
+  z-index: 1;
+  color: var(--text-primary);
+  word-wrap: break-word;
+  word-break: break-word;
+  display: none;
+
+  // JSON syntax colors - Theme-aware
+  .json-key {
+    color: var(--primary-color); // Theme color for keys
+    font-weight: 600;
+  }
+
+  .json-string {
+    color: var(--text-primary); // White for string values
+  }
+
+  .json-number {
+    color: var(--primary-light); // Lighter variant of theme color for numbers
+    font-weight: 500;
+  }
+
+  .json-boolean {
+    color: var(--primary-light); // Lighter variant of theme color for booleans
+    font-weight: 500;
+  }
+
+  .json-null {
+    color: var(--text-secondary); // Gray for null
+    font-style: italic;
+  }
+
+  .json-bracket {
+    color: var(--primary-color); // Theme color for brackets
+    font-weight: bold;
+  }
+
+  .json-punctuation {
+    color: var(--text-secondary); // Secondary color for colons and commas
+  }
+
+  .json-variable {
+    color: var(--primary-color);
+    font-weight: 700;
+    background-color: rgba(var(--primary-color-rgb), 0.2);
+    border-radius: 3px;
+    padding: 0 2px;
   }
 }
 
@@ -1297,8 +1368,95 @@ textarea {
 
   &:focus {
     .variable-highlight {
-      background-color: rgba(37, 99, 235, 0.15);
+      background-color: rgba(var(--primary-color-rgb), 0.2);
     }
+  }
+}
+
+// Variable highlight overlay container
+.variable-highlight-container {
+  position: absolute;
+  pointer-events: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: inherit;
+  border: 1px solid transparent;
+  color: transparent;
+  z-index: 1;
+
+  span {
+    color: transparent;
+  }
+
+  .variable-highlight {
+    color: var(--primary-color);
+    font-weight: 600;
+    background-color: rgba(var(--primary-color-rgb), 0.15);
+    border-radius: 3px;
+    padding: 0 2px;
+
+    &.undefined {
+      color: var(--error-color);
+      background-color: rgba(239, 68, 68, 0.15);
+    }
+  }
+}
+
+// Inline variable color coding for input fields
+input[type="text"],
+input[type="password"],
+textarea {
+  &.has-variables-inline {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+  }
+}
+
+// Variable background layer for inputs with variables
+.variable-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+
+  .variable-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    padding: inherit;
+    white-space: pre;
+    overflow: hidden;
+    z-index: 1;
+    color: transparent;
+
+    .variable-token {
+      color: var(--primary-color);
+      font-weight: 600;
+      background-color: rgba(var(--primary-color-rgb), 0.15);
+      border-radius: 3px;
+      padding: 0 2px;
+
+      &.undefined {
+        color: var(--error-color);
+        background-color: rgba(239, 68, 68, 0.15);
+      }
+    }
+  }
+
+  input,
+  textarea {
+    position: relative;
+    z-index: 2;
+    background: transparent;
   }
 }
 

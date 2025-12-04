@@ -1,3 +1,5 @@
+import { addVariableTooltips, detectVariables } from './variable-helper';
+
 type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded';
 type BodyFormat = 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
 
@@ -12,6 +14,10 @@ export class RequestBodyEditor {
   private events: RequestBodyEditorEvents;
   private currentBodyType: BodyType = 'none';
   private currentFormat: BodyFormat = 'json';
+  private activeEnvironment: any;
+  private globals: any;
+  private folderVars: any;
+  private highlightOverlay: HTMLDivElement | null = null;
   private readonly formatContentTypes: Record<BodyFormat, string> = {
     json: 'application/json',
     xml: 'application/xml',
@@ -24,6 +30,21 @@ export class RequestBodyEditor {
     this.container = container;
     this.events = events;
     this.initialize();
+  }
+
+  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+    this.activeEnvironment = activeEnvironment;
+    this.globals = globals;
+    this.folderVars = folderVars;
+
+    // Add variable tooltips to the textarea
+    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    if (bodyEditor && this.activeEnvironment && this.globals) {
+      addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
+    }
+
+    // Update highlighting with new context
+    this.updateHighlighting();
   }
 
   private initialize(): void {
@@ -58,9 +79,10 @@ export class RequestBodyEditor {
           </div>
         </div>
         <div class="body-editor-wrapper">
-          <textarea 
-            id="request-body" 
-            class="body-editor enhanced-json-editor" 
+          <div class="syntax-highlight-overlay" id="syntax-highlight-overlay"></div>
+          <textarea
+            id="request-body"
+            class="body-editor enhanced-json-editor"
             placeholder="Request body"
             spellcheck="false"
           ></textarea>
@@ -82,8 +104,17 @@ export class RequestBodyEditor {
     // Body editor textarea
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
     if (bodyEditor) {
-      bodyEditor.addEventListener('input', () => this.handleBodyContentChange());
+      bodyEditor.addEventListener('input', () => {
+        this.handleBodyContentChange();
+        this.updateHighlighting();
+      });
       bodyEditor.addEventListener('keydown', (e) => this.handleKeydown(e));
+      bodyEditor.addEventListener('scroll', () => this.syncScroll());
+
+      // Add variable tooltips
+      if (this.activeEnvironment && this.globals) {
+        addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
+      }
     }
 
     // Action buttons
@@ -91,6 +122,11 @@ export class RequestBodyEditor {
     this.container.querySelector('#body-content-type')?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       this.handleFormatChange(target.value as BodyFormat);
+    });
+
+    // Listen for theme changes and refresh highlighting
+    document.addEventListener('theme-changed', () => {
+      this.updateHighlighting();
     });
   }
 
@@ -304,6 +340,8 @@ export class RequestBodyEditor {
     if (bodyEditor) {
       bodyEditor.value = body.content;
       this.handleBodyContentChange();
+      // Trigger highlighting when body is loaded
+      this.updateHighlighting();
     }
 
     if (contentTypeSelect) {
@@ -409,5 +447,221 @@ export class RequestBodyEditor {
     }
 
     return 'text';
+  }
+
+  /**
+   * Update syntax highlighting overlay with JSON syntax and variable highlighting
+   */
+  private updateHighlighting(): void {
+    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLDivElement;
+
+    if (!bodyEditor || !overlay) return;
+
+    const text = bodyEditor.value;
+
+    // Only apply syntax highlighting for JSON format
+    if (this.currentFormat === 'json' && text.trim()) {
+      const highlightedHtml = this.highlightJson(text);
+      overlay.innerHTML = highlightedHtml;
+      overlay.style.display = 'block';
+      bodyEditor.classList.add('has-syntax-highlighting');
+    } else {
+      // For non-JSON, just highlight variables
+      const highlightedHtml = this.highlightVariablesOnly(text);
+      overlay.innerHTML = highlightedHtml;
+
+      if (highlightedHtml) {
+        overlay.style.display = 'block';
+        bodyEditor.classList.add('has-syntax-highlighting');
+      } else {
+        overlay.style.display = 'none';
+        bodyEditor.classList.remove('has-syntax-highlighting');
+      }
+    }
+  }
+
+  /**
+   * Sync scroll position between textarea and overlay
+   */
+  private syncScroll(): void {
+    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLDivElement;
+
+    if (bodyEditor && overlay) {
+      overlay.scrollTop = bodyEditor.scrollTop;
+      overlay.scrollLeft = bodyEditor.scrollLeft;
+    }
+  }
+
+  /**
+   * Highlight JSON syntax with color coding
+   */
+  private highlightJson(text: string): string {
+    // Escape HTML
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Use a token-based approach to avoid regex conflicts
+    const tokens: Array<{ type: string; value: string }> = [];
+
+    // Simple tokenizer for JSON
+    let i = 0;
+    let currentToken = '';
+
+    while (i < escaped.length) {
+      const char = escaped[i];
+      const nextChar = escaped[i + 1];
+
+      // Check for variables {{...}}
+      if (char === '{' && nextChar === '{') {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        let varEnd = escaped.indexOf('}}', i);
+        if (varEnd !== -1) {
+          tokens.push({ type: 'variable', value: escaped.substring(i, varEnd + 2) });
+          i = varEnd + 2;
+          continue;
+        }
+      }
+
+      // Check for strings
+      if (char === '"') {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        let stringEnd = i + 1;
+        while (stringEnd < escaped.length) {
+          if (escaped[stringEnd] === '"' && escaped[stringEnd - 1] !== '\\') {
+            break;
+          }
+          stringEnd++;
+        }
+        const stringValue = escaped.substring(i, stringEnd + 1);
+        // Check if this is a key (followed by colon)
+        let afterString = stringEnd + 1;
+        while (afterString < escaped.length && /\s/.test(escaped[afterString])) {
+          afterString++;
+        }
+        const isKey = escaped[afterString] === ':';
+        tokens.push({ type: isKey ? 'key' : 'string', value: stringValue });
+        i = stringEnd + 1;
+        continue;
+      }
+
+      // Check for numbers
+      if (/[\d-]/.test(char)) {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        let numEnd = i;
+        while (numEnd < escaped.length && /[\d.\-e+]/.test(escaped[numEnd])) {
+          numEnd++;
+        }
+        tokens.push({ type: 'number', value: escaped.substring(i, numEnd) });
+        i = numEnd;
+        continue;
+      }
+
+      // Check for keywords
+      if (escaped.substring(i, i + 4) === 'true' || escaped.substring(i, i + 5) === 'false') {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        const keyword = escaped.substring(i, i + 4) === 'true' ? 'true' : 'false';
+        tokens.push({ type: 'boolean', value: keyword });
+        i += keyword.length;
+        continue;
+      }
+
+      if (escaped.substring(i, i + 4) === 'null') {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        tokens.push({ type: 'null', value: 'null' });
+        i += 4;
+        continue;
+      }
+
+      // Check for special characters
+      if ('{}[]'.includes(char)) {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        tokens.push({ type: 'bracket', value: char });
+        i++;
+        continue;
+      }
+
+      if (':,'.includes(char)) {
+        if (currentToken) {
+          tokens.push({ type: 'text', value: currentToken });
+          currentToken = '';
+        }
+        tokens.push({ type: 'punctuation', value: char });
+        i++;
+        continue;
+      }
+
+      currentToken += char;
+      i++;
+    }
+
+    if (currentToken) {
+      tokens.push({ type: 'text', value: currentToken });
+    }
+
+    // Convert tokens to HTML
+    return tokens.map(token => {
+      switch (token.type) {
+        case 'variable':
+          return `<span class="json-variable">${token.value}</span>`;
+        case 'key':
+          return `<span class="json-key">${token.value}</span>`;
+        case 'string':
+          return `<span class="json-string">${token.value}</span>`;
+        case 'number':
+          return `<span class="json-number">${token.value}</span>`;
+        case 'boolean':
+          return `<span class="json-boolean">${token.value}</span>`;
+        case 'null':
+          return `<span class="json-null">${token.value}</span>`;
+        case 'bracket':
+          return `<span class="json-bracket">${token.value}</span>`;
+        case 'punctuation':
+          return `<span class="json-punctuation">${token.value}</span>`;
+        default:
+          return token.value;
+      }
+    }).join('');
+  }
+
+  /**
+   * Highlight only variables in text (for non-JSON formats)
+   */
+  private highlightVariablesOnly(text: string): string {
+    if (!text || !this.activeEnvironment && !this.globals) return '';
+
+    const variables = detectVariables(text);
+    if (variables.length === 0) return '';
+
+    let result = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Highlight variables
+    result = result.replace(/(\{\{[^}]+\}\})/g, '<span class="json-variable">$1</span>');
+
+    return result;
   }
 }

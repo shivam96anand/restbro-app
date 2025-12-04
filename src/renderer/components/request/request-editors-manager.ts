@@ -315,6 +315,17 @@ export class RequestEditorsManager {
     this.authConfigManager.clear();
   }
 
+  /**
+   * Set variable context for highlighting in params, headers, and body editors
+   */
+  setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+    this.paramsManager.setVariableContext(activeEnvironment, globals, folderVars);
+    this.headersManager.setVariableContext(activeEnvironment, globals, folderVars);
+    if (this.bodyEditor) {
+      this.bodyEditor.setVariableContext(activeEnvironment, globals, folderVars);
+    }
+  }
+
   // Delegate OAuth methods to AuthConfigManager
   isOAuthTokenExpired(auth: { type: string; config: Record<string, string> }): boolean {
     return this.authConfigManager.isOAuthTokenExpired(auth);

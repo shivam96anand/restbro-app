@@ -53,6 +53,16 @@ export class ThemeManager {
     // Calculate lighter variant
     const lightColor = this.lightenColor(theme.primaryColor, 20);
     document.documentElement.style.setProperty('--primary-light', lightColor);
+
+    // Set RGB values for rgba() usage in variable highlighting
+    const rgb = this.hexToRgb(theme.primaryColor);
+    document.documentElement.style.setProperty('--primary-color-rgb', rgb);
+  }
+
+  private hexToRgb(hex: string): string {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return '37, 99, 235'; // Default blue RGB
+    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
   }
 
   private lightenColor(color: string, percent: number): string {

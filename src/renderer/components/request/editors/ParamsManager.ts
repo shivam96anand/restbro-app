@@ -1,12 +1,22 @@
 import type { KeyValuePair } from '../../../../shared/types';
+import { addVariableTooltips, addVariableHighlighting } from '../variable-helper';
 
 export class ParamsManager {
   private container: HTMLElement;
   private onUpdateCallback: ((params: KeyValuePair[]) => void) | null = null;
+  private activeEnvironment: any;
+  private globals: any;
+  private folderVars: any;
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.setupEventListeners();
+  }
+
+  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+    this.activeEnvironment = activeEnvironment;
+    this.globals = globals;
+    this.folderVars = folderVars;
   }
 
   private setupEventListeners(): void {
@@ -60,6 +70,27 @@ export class ParamsManager {
     `;
 
     paramsEditor.appendChild(row);
+
+    // Add variable highlighting to new inputs
+    const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+    const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+    if (keyInput && this.activeEnvironment && this.globals) {
+      this.addVariableSupport(keyInput);
+    }
+    if (valueInput && this.activeEnvironment && this.globals) {
+      this.addVariableSupport(valueInput);
+    }
+  }
+
+  private addVariableSupport(input: HTMLInputElement): void {
+    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(input, this.activeEnvironment, this.globals);
+
+    // Update highlighting on input
+    input.addEventListener('input', () => {
+      addVariableHighlighting(input, this.activeEnvironment, this.globals);
+    });
   }
 
   private updateParamsFromDOM(): void {
@@ -127,6 +158,17 @@ export class ParamsManager {
         <button class="remove-btn">×</button>
       `;
       paramsEditor.appendChild(row);
+
+      // Add variable support to loaded inputs
+      const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+      const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+      if (keyInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(keyInput);
+      }
+      if (valueInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(valueInput);
+      }
     });
 
     if (paramsEditor.children.length === 0) {

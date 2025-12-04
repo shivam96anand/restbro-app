@@ -2,6 +2,7 @@ import { ApiRequest } from '../../shared/types';
 import { RequestFormHandler } from './request/request-form-handler';
 import { RequestEditorsManager } from './request/request-editors-manager';
 import { RequestDataManager } from './request/request-data-manager';
+import { buildFolderVars } from './request/variable-helper';
 
 export class RequestManager {
   private formHandler: RequestFormHandler;
@@ -53,7 +54,7 @@ export class RequestManager {
     });
   }
 
-  private loadRequest(request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): void {
+  private async loadRequest(request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): Promise<void> {
     this.dataManager.setCurrentRequest(request);
 
     if (!request) {
@@ -66,6 +67,10 @@ export class RequestManager {
     this.formHandler.loadBasicRequestData(request);
     this.formHandler.refreshVariableTooltips(collectionId); // Refresh tooltips with collectionId
     this.formHandler.restoreActiveDetailsTab(activeDetailsTab); // Restore the active details tab
+
+    // Set variable context for params and headers editors
+    await this.refreshVariableContext(collectionId);
+
     this.editorsManager.loadParams(request.params || {});
     this.editorsManager.loadHeaders(request.headers);
 
@@ -75,6 +80,25 @@ export class RequestManager {
 
     if (request.auth) {
       this.editorsManager.loadAuth(request.auth, collectionId);
+    }
+  }
+
+  /**
+   * Refresh variable context for editors when environment changes or request loads
+   */
+  private async refreshVariableContext(collectionId?: string): Promise<void> {
+    try {
+      const state = await window.apiCourier.store.get();
+      const activeEnvironment = state.activeEnvironmentId
+        ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
+        : undefined;
+
+      const globals = state.globals || { variables: {} };
+      const folderVars = buildFolderVars(collectionId, state.collections);
+
+      this.editorsManager.setVariableContext(activeEnvironment, globals, folderVars);
+    } catch (error) {
+      console.error('Failed to refresh variable context:', error);
     }
   }
 

@@ -1,12 +1,22 @@
 import type { KeyValuePair } from '../../../../shared/types';
+import { addVariableTooltips, addVariableHighlighting } from '../variable-helper';
 
 export class HeadersManager {
   private container: HTMLElement;
   private onUpdateCallback: ((headers: KeyValuePair[]) => void) | null = null;
+  private activeEnvironment: any;
+  private globals: any;
+  private folderVars: any;
 
   constructor(container: HTMLElement) {
     this.container = container;
     this.setupEventListeners();
+  }
+
+  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+    this.activeEnvironment = activeEnvironment;
+    this.globals = globals;
+    this.folderVars = folderVars;
   }
 
   private setupEventListeners(): void {
@@ -60,6 +70,27 @@ export class HeadersManager {
     `;
 
     headersEditor.appendChild(row);
+
+    // Add variable highlighting to new inputs
+    const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+    const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+    if (keyInput && this.activeEnvironment && this.globals) {
+      this.addVariableSupport(keyInput);
+    }
+    if (valueInput && this.activeEnvironment && this.globals) {
+      this.addVariableSupport(valueInput);
+    }
+  }
+
+  private addVariableSupport(input: HTMLInputElement): void {
+    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(input, this.activeEnvironment, this.globals);
+
+    // Update highlighting on input
+    input.addEventListener('input', () => {
+      addVariableHighlighting(input, this.activeEnvironment, this.globals);
+    });
   }
 
   private updateHeadersFromDOM(): void {
@@ -127,6 +158,17 @@ export class HeadersManager {
         <button class="remove-btn">×</button>
       `;
       headersEditor.appendChild(row);
+
+      // Add variable support to loaded inputs
+      const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+      const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+      if (keyInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(keyInput);
+      }
+      if (valueInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(valueInput);
+      }
     });
 
     if (headersEditor.children.length === 0) {
@@ -153,7 +195,7 @@ export class HeadersManager {
     // Find existing header row or create new one
     let targetRow: Element | null = null;
     const rows = headersEditor.querySelectorAll('.kv-row');
-    
+
     rows.forEach(row => {
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       if (keyInput && keyInput.value.toLowerCase() === key.toLowerCase()) {
@@ -165,6 +207,10 @@ export class HeadersManager {
       const valueInput = (targetRow as Element).querySelector('.value-input') as HTMLInputElement;
       if (valueInput) {
         valueInput.value = value;
+        // Update variable highlighting
+        if (this.activeEnvironment && this.globals) {
+          addVariableHighlighting(valueInput, this.activeEnvironment, this.globals);
+        }
       }
     } else {
       // Create new row
@@ -177,6 +223,17 @@ export class HeadersManager {
         <button class="remove-btn">×</button>
       `;
       headersEditor.appendChild(row);
+
+      // Add variable support to new inputs
+      const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+      const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+
+      if (keyInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(keyInput);
+      }
+      if (valueInput && this.activeEnvironment && this.globals) {
+        this.addVariableSupport(valueInput);
+      }
     }
 
     this.updateHeadersFromDOM();
