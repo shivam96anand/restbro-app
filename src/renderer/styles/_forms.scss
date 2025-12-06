@@ -874,9 +874,11 @@
   // Password field with eye button
   .password-field {
     position: relative;
+    width: 100%;
 
     input {
       padding-right: 40px;
+      width: 100%;
     }
 
     .eye-button {
@@ -1351,6 +1353,39 @@ pre, code, .json-viewer, .json-content {
     font-size: 10px;
     color: var(--text-secondary);
     font-style: italic;
+  }
+
+  .variable-tooltip-copy {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+
+    &:hover {
+      background: var(--primary-hover, var(--primary-color));
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &.copied {
+      background: var(--success-color, #22c55e);
+      pointer-events: none;
+    }
   }
 }
 

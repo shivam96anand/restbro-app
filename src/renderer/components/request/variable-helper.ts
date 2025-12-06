@@ -6,6 +6,35 @@
 import { Environment, Collection } from '../../../shared/types';
 
 /**
+ * Global tooltip state to ensure only one tooltip is visible at a time
+ */
+let globalTooltip: HTMLDivElement | null = null;
+
+/**
+ * Track mouse position globally
+ */
+if (typeof window !== 'undefined') {
+  document.addEventListener('mousemove', (e: MouseEvent) => {
+    (window as any).__mouseX = e.clientX;
+    (window as any).__mouseY = e.clientY;
+  });
+}
+
+/**
+ * Removes the global tooltip if it exists
+ */
+function removeGlobalTooltip(): void {
+  if (globalTooltip) {
+    // Cleanup event listeners if stored
+    if ((globalTooltip as any).__cleanup) {
+      (globalTooltip as any).__cleanup();
+    }
+    globalTooltip.remove();
+    globalTooltip = null;
+  }
+}
+
+/**
  * Builds folder variables by merging ancestor folder variables
  * Precedence: nearest folder (child) overrides distant folder (parent)
  */
@@ -104,7 +133,8 @@ export function resolveVariable(
 export function createVariableTooltip(
   variableName: string,
   value: string | undefined,
-  source: string
+  source: string,
+  onCopy?: (value: string) => void
 ): HTMLDivElement {
   const tooltip = document.createElement('div');
   tooltip.className = 'variable-tooltip';
@@ -128,6 +158,25 @@ export function createVariableTooltip(
   tooltip.appendChild(valueDiv);
   tooltip.appendChild(sourceDiv);
 
+  // Add copy button if value exists
+  if (value && onCopy) {
+    const copyButton = document.createElement('button');
+    copyButton.className = 'variable-tooltip-copy';
+    copyButton.title = 'Copy value';
+    copyButton.textContent = '📋 Copy';
+    copyButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onCopy(value);
+      copyButton.textContent = '✓ Copied!';
+      copyButton.classList.add('copied');
+      setTimeout(() => {
+        copyButton.textContent = '📋 Copy';
+        copyButton.classList.remove('copied');
+      }, 1500);
+    });
+    tooltip.appendChild(copyButton);
+  }
+
   return tooltip;
 }
 
@@ -137,7 +186,8 @@ export function createVariableTooltip(
 export function addVariableHighlighting(
   inputElement: HTMLInputElement,
   activeEnvironment: Environment | undefined,
-  globals: { variables: Record<string, string> }
+  globals: { variables: Record<string, string> },
+  folderVars?: Record<string, string>
 ): void {
   const text = inputElement.value;
   const variables = detectVariables(text);
@@ -202,10 +252,84 @@ export function addVariableHighlighting(
     varSpan.textContent = text.substring(variable.start, variable.end);
 
     // Resolve variable to determine if it's defined
-    const { value } = resolveVariable(variable.name, activeEnvironment, globals);
+    const { value, source } = resolveVariable(variable.name, activeEnvironment, globals, folderVars);
     if (!value) {
       varSpan.classList.add('undefined');
     }
+
+    // Add hover tooltip to the variable span
+    varSpan.style.pointerEvents = 'auto';
+    varSpan.style.cursor = 'help';
+
+    varSpan.addEventListener('mouseenter', (e: MouseEvent) => {
+      // Remove any existing tooltip
+      removeGlobalTooltip();
+
+      // Copy handler for the tooltip
+      const handleCopy = (valueToCopy: string) => {
+        navigator.clipboard.writeText(valueToCopy).catch((err) => {
+          console.error('Failed to copy to clipboard:', err);
+        });
+      };
+
+      // Create and position new tooltip
+      globalTooltip = createVariableTooltip(variable.name, value, source, handleCopy);
+      document.body.appendChild(globalTooltip);
+
+      // Position tooltip near the cursor
+      const target = e.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      globalTooltip.style.position = 'fixed';
+      globalTooltip.style.left = `${rect.left}px`;
+      globalTooltip.style.top = `${rect.bottom + 5}px`;
+      globalTooltip.style.zIndex = '10000';
+      globalTooltip.style.pointerEvents = 'auto';
+
+      // Track if mouse enters tooltip
+      let mouseEnteredTooltip = false;
+
+      const tooltipMouseEnter = () => {
+        mouseEnteredTooltip = true;
+      };
+
+      const tooltipMouseLeave = () => {
+        removeGlobalTooltip();
+      };
+
+      globalTooltip.addEventListener('mouseenter', tooltipMouseEnter);
+      globalTooltip.addEventListener('mouseleave', tooltipMouseLeave);
+
+      // Store cleanup function
+      (globalTooltip as any).__cleanup = () => {
+        globalTooltip?.removeEventListener('mouseenter', tooltipMouseEnter);
+        globalTooltip?.removeEventListener('mouseleave', tooltipMouseLeave);
+      };
+    });
+
+    varSpan.addEventListener('mouseleave', () => {
+      // Small delay to allow mouse to move to tooltip
+      setTimeout(() => {
+        if (globalTooltip) {
+          // Check if mouse entered the tooltip
+          const mouseX = (window as any).__mouseX || 0;
+          const mouseY = (window as any).__mouseY || 0;
+          const tooltipRect = globalTooltip.getBoundingClientRect();
+
+          const isOverTooltip = mouseX >= tooltipRect.left &&
+                                mouseX <= tooltipRect.right &&
+                                mouseY >= tooltipRect.top &&
+                                mouseY <= tooltipRect.bottom;
+
+          if (!isOverTooltip) {
+            // Cleanup and remove
+            if ((globalTooltip as any).__cleanup) {
+              (globalTooltip as any).__cleanup();
+            }
+            removeGlobalTooltip();
+          }
+        }
+      }, 100);
+    });
 
     container.appendChild(varSpan);
     lastIndex = variable.end;
@@ -247,7 +371,6 @@ export function addVariableTooltips(
     inputElement.removeEventListener('blur', existingHandlers.blur);
   }
 
-  let currentTooltip: HTMLDivElement | null = null;
   let isMouseOver = false;
 
   const showTooltip = (e: MouseEvent) => {
@@ -255,10 +378,7 @@ export function addVariableTooltips(
     const variables = detectVariables(text);
 
     if (variables.length === 0) {
-      if (currentTooltip) {
-        currentTooltip.remove();
-        currentTooltip = null;
-      }
+      removeGlobalTooltip();
       return;
     }
 
@@ -268,27 +388,30 @@ export function addVariableTooltips(
     // Resolve the variable
     const { value, source } = resolveVariable(hoveredVariable.name, activeEnvironment, globals, folderVars);
 
-    // Remove existing tooltip
-    if (currentTooltip) {
-      currentTooltip.remove();
-    }
+    // Remove existing global tooltip
+    removeGlobalTooltip();
+
+    // Copy handler for the tooltip
+    const handleCopy = (valueToCopy: string) => {
+      navigator.clipboard.writeText(valueToCopy).catch((err) => {
+        console.error('Failed to copy to clipboard:', err);
+      });
+    };
 
     // Create and position new tooltip
-    currentTooltip = createVariableTooltip(hoveredVariable.name, value, source);
-    document.body.appendChild(currentTooltip);
+    globalTooltip = createVariableTooltip(hoveredVariable.name, value, source, handleCopy);
+    document.body.appendChild(globalTooltip);
 
     // Position tooltip near the cursor
-    currentTooltip.style.position = 'fixed';
-    currentTooltip.style.left = `${e.clientX + 15}px`;
-    currentTooltip.style.top = `${e.clientY + 15}px`;
-    currentTooltip.style.zIndex = '10000';
+    globalTooltip.style.position = 'fixed';
+    globalTooltip.style.left = `${e.clientX + 15}px`;
+    globalTooltip.style.top = `${e.clientY + 15}px`;
+    globalTooltip.style.zIndex = '10000';
+    globalTooltip.style.pointerEvents = 'auto'; // Enable clicking on the tooltip
   };
 
   const hideTooltip = () => {
-    if (currentTooltip) {
-      currentTooltip.remove();
-      currentTooltip = null;
-    }
+    removeGlobalTooltip();
   };
 
   const handleMouseEnter = () => {
@@ -303,7 +426,29 @@ export function addVariableTooltips(
 
   const handleMouseLeave = () => {
     isMouseOver = false;
-    hideTooltip();
+    // Delay hiding to allow moving mouse to tooltip
+    setTimeout(() => {
+      if (!isMouseOver && globalTooltip) {
+        // Check if mouse is over the tooltip
+        const tooltipRect = globalTooltip.getBoundingClientRect();
+        const isOverTooltip = document.elementFromPoint(
+          tooltipRect.left + tooltipRect.width / 2,
+          tooltipRect.top + tooltipRect.height / 2
+        ) === globalTooltip || globalTooltip.contains(document.elementFromPoint(
+          tooltipRect.left + tooltipRect.width / 2,
+          tooltipRect.top + tooltipRect.height / 2
+        ) as Node);
+
+        if (!isOverTooltip) {
+          hideTooltip();
+        } else {
+          // Add mouse leave handler to tooltip itself
+          globalTooltip.addEventListener('mouseleave', () => {
+            hideTooltip();
+          }, { once: true });
+        }
+      }
+    }, 100);
   };
 
   const handleBlur = () => {

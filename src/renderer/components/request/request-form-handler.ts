@@ -1,5 +1,5 @@
 import { ApiRequest, Environment, Globals } from '../../../shared/types';
-import { addVariableTooltips, detectVariables, buildFolderVars, addVariableHighlighting } from './variable-helper';
+import { detectVariables, buildFolderVars, addVariableHighlighting } from './variable-helper';
 
 export class RequestFormHandler {
   private onRequestUpdate: (updates: Partial<ApiRequest>) => void;
@@ -323,29 +323,31 @@ export class RequestFormHandler {
    * Add variable highlighting and tooltips to a text input, reusing cached context
    */
   private enhanceVariableInput(inputElement: HTMLInputElement): void {
-    addVariableTooltips(inputElement, this.activeEnvironment, this.globals, this.folderVars);
-
-    // Do not overlay/hide text on password fields to keep secrets masked
-    if (inputElement.type === 'password') {
-      return;
-    }
-
-    this.refreshInputHighlight(inputElement);
-
-    // Keep highlighting updated as user types
+    // Always add input listener first, so it works even if value is loaded later
     if (!inputElement.dataset.variableHighlightListenerAttached) {
       inputElement.addEventListener('input', () => {
         this.refreshInputHighlight(inputElement);
       });
       inputElement.dataset.variableHighlightListenerAttached = 'true';
     }
+
+    // For password fields, only apply highlighting if there are variables
+    // If there ARE variables, we want to show them for easy copying
+    if (inputElement.type === 'password') {
+      const hasVariables = detectVariables(inputElement.value).length > 0;
+      if (!hasVariables) {
+        return; // Keep as password field (dots) if no variables
+      }
+    }
+
+    this.refreshInputHighlight(inputElement);
   }
 
   /**
    * Refresh highlighting state for an input
    */
   private refreshInputHighlight(inputElement: HTMLInputElement): void {
-    addVariableHighlighting(inputElement, this.activeEnvironment, this.globals);
+    addVariableHighlighting(inputElement, this.activeEnvironment, this.globals, this.folderVars);
     this.updateVariableIndicator(inputElement);
   }
 }
