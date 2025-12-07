@@ -15,6 +15,7 @@ export class NodeRenderer {
 
     const isArrayItem = node.parent && node.parent.type === 'array';
     const hasKey = node.key && !isArrayItem;
+    const needsComma = this.needsComma(node);
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'node-content';
@@ -29,12 +30,14 @@ export class NodeRenderer {
         `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>` :
         '';
 
+      const commaPart = needsComma && !node.isExpanded ? '<span class="comma">,</span>' : '';
+
       contentDiv.innerHTML = `
         <span class="expand-icon">${expandIcon}</span>
         ${keyPart}
         <span class="bracket">${node.type === 'array' ? '[' : '{'}</span>
         <span class="preview">${preview}</span>
-        ${!node.isExpanded ? `<span class="bracket">${node.type === 'array' ? ']' : '}'}</span>` : ''}
+        ${!node.isExpanded ? `<span class="bracket">${node.type === 'array' ? ']' : '}'}</span>${commaPart}` : ''}
       `;
     } else {
       const displayValue = JsonFormatter.formatValueWithHighlight(
@@ -49,10 +52,12 @@ export class NodeRenderer {
         `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>` :
         '';
 
+      const commaPart = needsComma ? '<span class="comma">,</span>' : '';
+
       contentDiv.innerHTML = `
         <span class="expand-icon"></span>
         ${keyPart}
-        <span class="value value-${node.type}">${displayValue}</span>
+        <span class="value value-${node.type}">${displayValue}</span>${commaPart}
       `;
     }
 
@@ -60,15 +65,30 @@ export class NodeRenderer {
     return element;
   }
 
+  private static needsComma(node: JsonNode): boolean {
+    if (!node.parent || !node.parent.children) {
+      return false;
+    }
+
+    const siblings = node.parent.children;
+    const nodeIndex = siblings.indexOf(node);
+
+    // Comma needed if this is not the last child
+    return nodeIndex !== -1 && nodeIndex < siblings.length - 1;
+  }
+
   public static createClosingBracketElement(node: JsonNode): HTMLElement {
     const element = document.createElement('div');
     element.className = 'json-node json-node-bracket';
     element.style.paddingLeft = `${node.level * 12 + 8}px`;
 
+    const needsComma = this.needsComma(node);
+    const commaPart = needsComma ? '<span class="comma">,</span>' : '';
+
     element.innerHTML = `
       <div class="node-content">
         <span class="expand-icon"></span>
-        <span class="bracket">${node.type === 'array' ? ']' : '}'}</span>
+        <span class="bracket">${node.type === 'array' ? ']' : '}'}</span>${commaPart}
       </div>
     `;
 

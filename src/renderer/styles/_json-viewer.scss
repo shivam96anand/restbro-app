@@ -95,19 +95,20 @@
 
     .node-content {
       flex: 1;
-      display: flex;
-      align-items: flex-start;
-      width: 100%;
-      gap: 2px;
-      flex-wrap: wrap;
+      white-space: nowrap;
+
+      span {
+        display: inline;
+      }
     }
 
     .expand-icon {
       color: var(--json-expand-icon);
+      display: inline-block;
       width: 12px;
       cursor: pointer;
       user-select: none;
-      flex-shrink: 0;
+      vertical-align: top;
     }
 
     .key {
@@ -121,9 +122,12 @@
       margin: 0 2px;
     }
 
+    .comma {
+      color: var(--json-bracket);
+      margin-left: 0;
+    }
+
     .value {
-      flex: 1;
-      min-width: 0;
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: break-word;
@@ -223,25 +227,31 @@
 
     .node-content {
       flex: 1;
-      display: flex;
-      align-items: flex-start;
-      width: 100%;
-      gap: 2px;
-      flex-wrap: wrap;
+      white-space: nowrap;
+
+      span {
+        display: inline;
+      }
     }
 
     .expand-icon {
       color: var(--json-expand-icon);
+      display: inline-block;
       width: 12px;
       cursor: pointer;
       user-select: none;
-      flex-shrink: 0;
+      vertical-align: top;
       visibility: hidden;
     }
 
     .bracket {
       color: var(--json-bracket);
       font-weight: bold;
+    }
+
+    .comma {
+      color: var(--json-bracket);
+      margin-left: 0;
     }
   }
 
