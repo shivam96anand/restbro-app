@@ -1,4 +1,5 @@
 import { addVariableTooltips, detectVariables } from './variable-helper';
+import { MonacoJsonEditor } from './MonacoJsonEditor';
 
 type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded';
 type BodyFormat = 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
@@ -18,6 +19,7 @@ export class RequestBodyEditor {
   private globals: any;
   private folderVars: any;
   private highlightOverlay: HTMLDivElement | null = null;
+  private monacoEditor: MonacoJsonEditor | null = null;
   private readonly formatContentTypes: Record<BodyFormat, string> = {
     json: 'application/json',
     xml: 'application/xml',
@@ -79,6 +81,7 @@ export class RequestBodyEditor {
           </div>
         </div>
         <div class="body-editor-wrapper">
+          <div id="monaco-json-editor" class="monaco-json-editor-container" style="display: none; height: 400px;"></div>
           <div class="syntax-highlight-overlay" id="syntax-highlight-overlay"></div>
           <textarea
             id="request-body"
@@ -130,6 +133,79 @@ export class RequestBodyEditor {
     });
   }
 
+  private switchToMonacoEditor(initialValue: string = ''): void {
+    const monacoContainer = this.container.querySelector('#monaco-json-editor') as HTMLElement;
+    const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLElement;
+
+    if (!monacoContainer) return;
+
+    // Dispose existing Monaco editor if any
+    if (this.monacoEditor) {
+      this.monacoEditor.dispose();
+      this.monacoEditor = null;
+    }
+
+    // Get current value from textarea if no initial value provided
+    const valueToSet = initialValue || textarea?.value || '';
+
+    // Hide textarea and overlay, show Monaco container
+    if (textarea) textarea.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+    monacoContainer.style.display = 'block';
+
+    // Create Monaco editor
+    this.monacoEditor = new MonacoJsonEditor({
+      container: monacoContainer,
+      value: valueToSet,
+      onChange: (value) => {
+        // Update the hidden textarea to keep state in sync
+        if (textarea) textarea.value = value;
+        this.handleBodyContentChange();
+      },
+      onValidityChange: (valid, error) => {
+        const statusElement = this.container.querySelector('#body-status') as HTMLElement;
+        if (statusElement) {
+          if (!valid && error) {
+            statusElement.textContent = 'Invalid JSON';
+            statusElement.className = 'body-status invalid';
+          } else {
+            statusElement.textContent = '';
+            statusElement.className = 'body-status';
+          }
+        }
+      }
+    });
+
+    // Focus the Monaco editor
+    setTimeout(() => {
+      this.monacoEditor?.focus();
+    }, 100);
+  }
+
+  private switchToTextareaEditor(): void {
+    const monacoContainer = this.container.querySelector('#monaco-json-editor') as HTMLElement;
+    const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+
+    // Dispose Monaco editor if active
+    if (this.monacoEditor) {
+      // Get the current value before disposing
+      const currentValue = this.monacoEditor.getValue();
+      this.monacoEditor.dispose();
+      this.monacoEditor = null;
+
+      // Update textarea with Monaco's value
+      if (textarea) textarea.value = currentValue;
+    }
+
+    // Hide Monaco, show textarea
+    if (monacoContainer) monacoContainer.style.display = 'none';
+    if (textarea) textarea.style.display = 'block';
+
+    // Update highlighting for non-JSON formats
+    this.updateHighlighting();
+  }
+
   private handleBodyTypeChange(bodyType: string): void {
     const normalizedType = bodyType as BodyType;
     const bodyEditorContainer = this.container.querySelector('#body-editor-container') as HTMLElement;
@@ -167,6 +243,8 @@ export class RequestBodyEditor {
 
     if (normalizedType === 'none') {
       bodyEditorContainer.style.display = 'none';
+      // Clean up Monaco editor if active
+      this.switchToTextareaEditor();
       this.events.onBodyChange({
         type: this.currentBodyType,
         content: '',
@@ -176,29 +254,28 @@ export class RequestBodyEditor {
       this.events.onContentTypeChange?.(null);
     } else {
       bodyEditorContainer.style.display = 'block';
-      
+
       // Show/hide JSON-specific actions
       if (formatBtn) {
         formatBtn.style.display = this.currentFormat === 'json' ? 'inline-block' : 'none';
       }
 
-      // Set placeholder and initial content based on type
+      // Switch editor based on format
       if (this.currentFormat === 'json') {
-        bodyEditor.placeholder = 'Enter JSON data...';
-        bodyEditor.classList.add('json-mode');
-        if (!bodyEditor.value.trim()) {
-          bodyEditor.value = '{\n  \n}';
-          setTimeout(() => {
-            bodyEditor.focus();
-            bodyEditor.setSelectionRange(4, 4); // Position cursor inside the object
-          }, 0);
+        // Use Monaco editor for JSON
+        const currentValue = bodyEditor.value.trim() || '{\n  \n}';
+        this.switchToMonacoEditor(currentValue);
+      } else {
+        // Use textarea for other formats
+        this.switchToTextareaEditor();
+
+        if (normalizedType === 'raw') {
+          bodyEditor.placeholder = 'Enter body...';
+          bodyEditor.classList.remove('json-mode');
+        } else if (normalizedType === 'form-urlencoded') {
+          bodyEditor.placeholder = 'key1=value1&key2=value2';
+          bodyEditor.classList.remove('json-mode');
         }
-      } else if (normalizedType === 'raw') {
-        bodyEditor.placeholder = 'Enter body...';
-        bodyEditor.classList.remove('json-mode');
-      } else if (normalizedType === 'form-urlencoded') {
-        bodyEditor.placeholder = 'key1=value1&key2=value2';
-        bodyEditor.classList.remove('json-mode');
       }
 
       this.updateStatus();
@@ -277,12 +354,20 @@ export class RequestBodyEditor {
   }
 
   private formatJson(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const text = bodyEditor.value.trim();
-
     if (this.currentFormat !== 'json') {
       return;
     }
+
+    // Use Monaco's format if active
+    if (this.monacoEditor) {
+      this.monacoEditor.format();
+      this.events.onStatusUpdate('success', 'JSON formatted successfully');
+      return;
+    }
+
+    // Fallback to textarea formatting (shouldn't happen in JSON mode)
+    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const text = bodyEditor.value.trim();
 
     if (!text) {
       this.events.onStatusUpdate('warning', 'No JSON to format');
@@ -337,7 +422,12 @@ export class RequestBodyEditor {
       this.handleBodyTypeChange(normalizedType);
     }
 
-    if (bodyEditor) {
+    // Set the value in the appropriate editor
+    if (inferredFormat === 'json' && this.monacoEditor) {
+      // Monaco editor is active for JSON
+      this.monacoEditor.setValue(body.content);
+    } else if (bodyEditor) {
+      // Textarea for other formats
       bodyEditor.value = body.content;
       this.handleBodyContentChange();
       // Trigger highlighting when body is loaded
@@ -352,20 +442,37 @@ export class RequestBodyEditor {
   public getBody(): { type: BodyType; content: string; format?: BodyFormat; contentType?: string } {
     const bodyTypeInput = this.container.querySelector('input[name="body-type"]:checked') as HTMLInputElement;
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    
+
+    // Get content from Monaco editor if active, otherwise from textarea
+    const content = this.monacoEditor ? this.monacoEditor.getValue() : (bodyEditor?.value || '');
+
     return {
       type: this.currentFormat === 'json' ? 'json' : ((bodyTypeInput?.value as BodyType) || 'none'),
-      content: bodyEditor?.value || '',
+      content,
       format: this.currentFormat,
       contentType: this.getCurrentContentType() || undefined
     };
   }
 
   public clear(): void {
+    // Dispose Monaco editor if active
+    if (this.monacoEditor) {
+      this.monacoEditor.dispose();
+      this.monacoEditor = null;
+    }
+
     const noneTypeInput = this.container.querySelector('input[name="body-type"][value="none"]') as HTMLInputElement;
     if (noneTypeInput) {
       noneTypeInput.checked = true;
       this.handleBodyTypeChange('none');
+    }
+  }
+
+  public destroy(): void {
+    // Cleanup Monaco editor
+    if (this.monacoEditor) {
+      this.monacoEditor.dispose();
+      this.monacoEditor = null;
     }
   }
 
@@ -386,21 +493,20 @@ export class RequestBodyEditor {
 
     if (bodyEditor) {
       if (format === 'json') {
-        bodyEditor.placeholder = 'Enter JSON data...';
-        bodyEditor.classList.add('json-mode');
-        if (!bodyEditor.value.trim()) {
-          bodyEditor.value = '{\n  \n}';
-          setTimeout(() => {
-            bodyEditor.focus();
-            bodyEditor.setSelectionRange(4, 4);
-          }, 0);
-        }
-      } else if (format === 'form-urlencoded') {
-        bodyEditor.placeholder = 'key1=value1&key2=value2';
-        bodyEditor.classList.remove('json-mode');
+        // Switch to Monaco editor for JSON
+        const currentValue = bodyEditor.value.trim() || '{\n  \n}';
+        this.switchToMonacoEditor(currentValue);
       } else {
-        bodyEditor.placeholder = 'Enter body...';
-        bodyEditor.classList.remove('json-mode');
+        // Switch to textarea for other formats
+        this.switchToTextareaEditor();
+
+        if (format === 'form-urlencoded') {
+          bodyEditor.placeholder = 'key1=value1&key2=value2';
+          bodyEditor.classList.remove('json-mode');
+        } else {
+          bodyEditor.placeholder = 'Enter body...';
+          bodyEditor.classList.remove('json-mode');
+        }
       }
     }
 
