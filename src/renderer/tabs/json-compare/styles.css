@@ -1,6 +1,6 @@
 /* Modern JSON Compare Tab Styles */
 
-#json-compare-tab {
+#json-compare-tab.active {
   height: 100%;
   width: 100%;
   flex: 1 1 auto;
