@@ -318,12 +318,16 @@ export class CollectionsRenderer {
   showContextMenu(
     event: MouseEvent,
     collection: Collection,
-    actions: Array<{ label: string; action: (() => void) | null }>
+    actions: Array<{ label: string; action: (() => void) | null; destructive?: boolean }>
   ): void {
+    // Remove any existing context menus
+    const existingMenus = document.querySelectorAll('.context-menu');
+    existingMenus.forEach(menu => menu.remove());
+
     const menu = document.createElement('div');
     menu.className = 'context-menu';
     menu.style.position = 'fixed';
-    menu.style.zIndex = '1000';
+    menu.style.zIndex = '10000';
     menu.style.visibility = 'hidden'; // Hide initially to measure dimensions
 
     actions.forEach(action => {
@@ -332,8 +336,29 @@ export class CollectionsRenderer {
       if (action.label === '---') {
         item.className = 'context-menu-separator';
       } else {
-        item.textContent = action.label;
         item.className = 'context-menu-item';
+        if (action.destructive) {
+          item.classList.add('destructive');
+        }
+
+        // Parse emoji icon from label
+        const emojiMatch = action.label.match(/^(\p{Emoji})\s*/u);
+        if (emojiMatch) {
+          const iconSpan = document.createElement('span');
+          iconSpan.className = 'context-menu-icon';
+          iconSpan.textContent = emojiMatch[1];
+          item.appendChild(iconSpan);
+
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'context-menu-label';
+          labelSpan.textContent = action.label.replace(emojiMatch[0], '');
+          item.appendChild(labelSpan);
+        } else {
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'context-menu-label';
+          labelSpan.textContent = action.label;
+          item.appendChild(labelSpan);
+        }
 
         if (action.action) {
           item.addEventListener('click', () => {
@@ -385,8 +410,20 @@ export class CollectionsRenderer {
       }
     };
 
+    // Handle escape key
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (document.body.contains(menu)) {
+          document.body.removeChild(menu);
+        }
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('click', handleClickOutside);
+      }
+    };
+
     setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }, 0);
   }
 }

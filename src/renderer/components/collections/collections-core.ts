@@ -4,6 +4,8 @@ import { CollectionsUIHandler } from './collections-ui-handler';
 import { CollectionsRenderer } from './collections-renderer';
 import { CollectionsOperations } from './collections-operations';
 import { CollectionsStatePersistence } from './collections-state-persistence';
+import { FolderVariablesDialog } from './folder-variables-dialog';
+import { buildFolderVars } from '../request/variable-helper';
 
 export class CollectionsCore {
   private collections: Collection[] = [];
@@ -159,6 +161,8 @@ export class CollectionsCore {
         { label: '📁 Add Folder', action: () => this.showCreateDialog('folder', collectionId) },
         { label: '📄 Add Request', action: () => this.showCreateDialog('request', collectionId) },
         { label: '---', action: null },
+        { label: '⚙️ Manage Variables', action: () => this.showFolderVariablesDialog(collectionId) },
+        { label: '---', action: null },
         { label: '📋 Duplicate Folder', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
         { label: '📤 Export Folder', action: () => this.operations.exportCollection(collectionId) },
         { label: '---', action: null }
@@ -173,10 +177,47 @@ export class CollectionsCore {
 
     actions.push(
       { label: '✏️ Rename', action: () => this.operations.renameCollection(collectionId).then(() => this.renderCollections()) },
-      { label: '🗑️ Delete', action: () => this.operations.deleteCollection(collectionId).then(() => this.renderCollections()) }
+      { label: '🗑️ Delete', action: () => this.operations.deleteCollection(collectionId).then(() => this.renderCollections()), destructive: true }
     );
 
     this.renderer.showContextMenu(event, collection, actions);
+  }
+
+  private async showFolderVariablesDialog(collectionId: string): Promise<void> {
+    const folder = this.operations.findCollectionById(collectionId);
+    if (!folder || folder.type !== 'folder') return;
+
+    // Get inherited variables from parent folders (excluding current folder's variables)
+    const inheritedVars = folder.parentId 
+      ? buildFolderVars(folder.parentId, this.collections)
+      : {};
+
+    const result = await FolderVariablesDialog.show(folder, inheritedVars);
+    
+    if (result) {
+      try {
+        // Update the folder with new variables
+        await window.apiCourier.collection.update(collectionId, { variables: result.variables });
+        folder.variables = result.variables;
+        folder.updatedAt = new Date();
+
+        // Dispatch event to notify about the change
+        const event = new CustomEvent('collections-changed', {
+          detail: { collections: this.collections }
+        });
+        document.dispatchEvent(event);
+
+        // Also dispatch event to refresh variable tooltips in any open requests
+        const refreshEvent = new CustomEvent('folder-variables-changed', {
+          detail: { folderId: collectionId, variables: result.variables }
+        });
+        document.dispatchEvent(refreshEvent);
+
+        this.renderCollections();
+      } catch (error) {
+        console.error('Failed to update folder variables:', error);
+      }
+    }
   }
 
 

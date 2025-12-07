@@ -14,6 +14,7 @@ import { ThemeManager } from './utils/theme-manager';
 import { resizeManager } from './utils/resize-manager';
 import { EnvironmentManager } from './components/environments/environment-manager';
 import { ImportManager } from './components/import/import-manager';
+import { VariableEditDialog } from './components/request/variable-edit-dialog';
 
 declare global {
   interface Window {
@@ -189,6 +190,65 @@ class ApiCourierRenderer {
         const navTab = document.querySelector(`[data-tab="${tabName}"]`) as HTMLElement;
         if (navTab) {
           navTab.click();
+        }
+      }
+    });
+
+    // Listen for variable edit requests from tooltips
+    document.addEventListener('edit-variable-requested', async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { variableName, value, source } = customEvent.detail;
+
+      // Get current state to populate the dialog
+      const state = await window.apiCourier.store.get();
+      const activeTab = this.tabsManager.getActiveTab();
+      const collectionId = activeTab?.collectionId;
+
+      const result = await VariableEditDialog.show(
+        variableName,
+        value,
+        source,
+        state.environments || [],
+        state.activeEnvironmentId,
+        state.globals || { variables: {} },
+        collectionId,
+        state.collections || []
+      );
+
+      if (result) {
+        try {
+          if (result.source === 'environment' && result.environmentId) {
+            // Update environment variable
+            const envIndex = state.environments.findIndex((e: any) => e.id === result.environmentId);
+            if (envIndex !== -1) {
+              state.environments[envIndex].variables[result.variableName] = result.newValue;
+              await window.apiCourier.store.set({ environments: state.environments });
+              this.environmentManager.setEnvironments(state.environments);
+              document.dispatchEvent(new CustomEvent('environment-changed'));
+            }
+          } else if (result.source === 'globals') {
+            // Update global variable
+            const globals = state.globals || { variables: {} };
+            globals.variables[result.variableName] = result.newValue;
+            await window.apiCourier.store.set({ globals });
+            document.dispatchEvent(new CustomEvent('globals-updated'));
+          } else if (result.source === 'folder' && result.folderId) {
+            // Update folder variable
+            await window.apiCourier.collection.update(result.folderId, {
+              variables: { 
+                ...(this.collectionsManager.getCollections().find(c => c.id === result.folderId)?.variables || {}),
+                [result.variableName]: result.newValue 
+              }
+            });
+            // Refresh collections
+            const updatedState = await window.apiCourier.store.get();
+            await this.collectionsManager.setCollections(updatedState.collections);
+            document.dispatchEvent(new CustomEvent('folder-variables-changed', {
+              detail: { folderId: result.folderId }
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to save variable:', error);
         }
       }
     });

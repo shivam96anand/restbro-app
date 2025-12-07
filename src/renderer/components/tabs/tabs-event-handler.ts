@@ -120,50 +120,46 @@ export class TabsEventHandler {
     onCloseAllTabs: () => void,
     onCloseOtherTabs: (keepTabId: string) => void
   ): void {
+    // Remove any existing context menus
+    const existingMenus = document.querySelectorAll('.context-menu, .tab-context-menu');
+    existingMenus.forEach(menu => menu.remove());
+
     const menu = document.createElement('div');
-    menu.className = 'tab-context-menu';
+    menu.className = 'context-menu';
     menu.style.position = 'fixed';
-    menu.style.left = event.clientX + 'px';
-    menu.style.top = event.clientY + 'px';
-    menu.style.backgroundColor = 'var(--bg-tertiary)';
-    menu.style.border = '1px solid var(--border-color)';
-    menu.style.borderRadius = '6px';
-    menu.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
     menu.style.zIndex = '10000';
-    menu.style.minWidth = '180px';
-    menu.style.overflow = 'hidden';
-    menu.style.backdropFilter = 'blur(8px)';
+    menu.style.visibility = 'hidden';
 
     const menuOptions = [
       {
         label: '🔄 Duplicate Tab',
         action: () => onDuplicateTab(tab.id),
-        description: 'Create a copy of this tab'
+        destructive: false
       },
       {
         label: '📋 Copy Request URL',
         action: () => onCopyRequestUrl(tab.id),
-        description: 'Copy the request URL to clipboard'
+        destructive: false
       },
       {
         label: '---',
         action: null,
-        description: ''
+        destructive: false
       },
       {
         label: '❌ Close Tab',
         action: () => this.onCloseTab(tab.id),
-        description: 'Close this tab'
+        destructive: false
       },
       {
         label: '🗑️ Close All Tabs',
         action: () => onCloseAllTabs(),
-        description: 'Close all open tabs'
+        destructive: true
       },
       {
         label: '↩️ Close Other Tabs',
         action: () => onCloseOtherTabs(tab.id),
-        description: 'Close all tabs except this one'
+        destructive: false
       }
     ];
 
@@ -171,33 +167,31 @@ export class TabsEventHandler {
       const item = document.createElement('div');
 
       if (option.label === '---') {
-        item.className = 'tab-context-menu-separator';
-        item.style.cssText = `
-          height: 1px;
-          background: var(--border-color);
-          margin: 4px 0;
-        `;
+        item.className = 'context-menu-separator';
       } else {
-        item.className = 'tab-context-menu-item';
-        item.textContent = option.label;
-        item.title = option.description;
-        item.style.cssText = `
-          padding: 10px 16px;
-          cursor: pointer;
-          font-size: 12px;
-          color: var(--text-primary);
-          transition: background-color 0.15s ease;
-        `;
+        item.className = 'context-menu-item';
+        if (option.destructive) {
+          item.classList.add('destructive');
+        }
 
-        item.addEventListener('mouseenter', () => {
-          item.style.backgroundColor = 'var(--primary-color)';
-          item.style.color = 'white';
-        });
+        // Parse emoji icon from label
+        const emojiMatch = option.label.match(/^(\p{Emoji})\s*/u);
+        if (emojiMatch) {
+          const iconSpan = document.createElement('span');
+          iconSpan.className = 'context-menu-icon';
+          iconSpan.textContent = emojiMatch[1];
+          item.appendChild(iconSpan);
 
-        item.addEventListener('mouseleave', () => {
-          item.style.backgroundColor = 'transparent';
-          item.style.color = 'var(--text-primary)';
-        });
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'context-menu-label';
+          labelSpan.textContent = option.label.replace(emojiMatch[0], '');
+          item.appendChild(labelSpan);
+        } else {
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'context-menu-label';
+          labelSpan.textContent = option.label;
+          item.appendChild(labelSpan);
+        }
 
         if (option.action) {
           item.addEventListener('click', () => {
@@ -214,17 +208,50 @@ export class TabsEventHandler {
 
     document.body.appendChild(menu);
 
+    // Position menu with boundary detection
+    const menuRect = menu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = event.clientX;
+    let top = event.clientY;
+
+    if (left + menuRect.width > viewportWidth) {
+      left = viewportWidth - menuRect.width - 8;
+    }
+    if (top + menuRect.height > viewportHeight) {
+      top = viewportHeight - menuRect.height - 8;
+    }
+    left = Math.max(8, left);
+    top = Math.max(8, top);
+
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.visibility = 'visible';
+
     const handleClickOutside = (e: MouseEvent) => {
       if (!menu.contains(e.target as Node)) {
         if (document.body.contains(menu)) {
           document.body.removeChild(menu);
         }
         document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (document.body.contains(menu)) {
+          document.body.removeChild(menu);
+        }
+        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
       }
     };
 
     setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }, 0);
   }
 
