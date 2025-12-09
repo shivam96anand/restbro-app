@@ -291,7 +291,22 @@
   color: var(--text-secondary);
 }
 
-.session-delete {
+.session-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.session-item:hover .session-actions {
+  opacity: 1;
+}
+
+.session-item.active .session-actions {
+  opacity: 1;
+}
+
+.session-rename, .session-delete {
   background: none;
   border: none;
   width: 24px;
@@ -299,15 +314,38 @@
   border-radius: 6px;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+}
 
-  &:hover {
-    background: var(--bg-error);
-    color: var(--text-error);
+.session-rename:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.session-delete:hover {
+  background: var(--bg-error);
+  color: var(--text-error);
+}
+
+.session-title-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+
+  &:focus {
+    border-color: var(--primary-color);
   }
 }
 
@@ -744,7 +782,7 @@
 }
 
 .message-text {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
   word-break: break-word;
@@ -870,6 +908,23 @@
   40% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* Streaming cursor animation */
+.streaming-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  font-weight: 500;
+}
+
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
   }
 }
 

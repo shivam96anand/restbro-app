@@ -11,7 +11,9 @@ declare const apiCourier: {
       message?: AiMessage;
       error?: string;
       tokenLimitExceeded?: boolean;
+      requestId?: string;
     }>;
+    onMessageStream: (callback: (data: { requestId: string; chunk: string }) => void) => () => void;
     checkEngine: () => Promise<{ available: boolean; error?: string }>;
   };
 };
@@ -26,12 +28,16 @@ interface AskAiState {
   searchQuery: string;
   showContextPanel: boolean;
   activeContextTab: 'params' | 'headers' | 'body' | 'auth' | 'response';
+  renamingSessionId: string | null;
+  streamingContent: string;
+  currentRequestId: string | null;
 }
 
 export class AskAiTab {
   private container: HTMLElement;
   private isInitialized = false;
   private eventListenersAttached = false;
+  private streamCleanup: (() => void) | null = null;
   private state: AskAiState = {
     sessions: [],
     activeSessionId: null,
@@ -40,7 +46,10 @@ export class AskAiTab {
     engineStatus: 'unknown',
     searchQuery: '',
     showContextPanel: false,
-    activeContextTab: 'response',
+    activeContextTab: 'body',
+    renamingSessionId: null,
+    streamingContent: '',
+    currentRequestId: null,
   };
 
   constructor(container: HTMLElement) {
@@ -54,9 +63,28 @@ export class AskAiTab {
     await this.checkEngineStatus();
     if (!this.eventListenersAttached) {
       this.setupEventListeners();
+      this.setupStreamListener();
       this.eventListenersAttached = true;
     }
     this.isInitialized = true;
+  }
+
+  private setupStreamListener(): void {
+    this.streamCleanup = apiCourier.ai.onMessageStream((data) => {
+      // Accept streaming chunks while we're actively sending a message
+      if (this.state.isSending) {
+        // Store the request ID from the first chunk
+        if (!this.state.currentRequestId && data.requestId) {
+          this.state.currentRequestId = data.requestId;
+        }
+
+        // Only process chunks for the current request
+        if (data.requestId === this.state.currentRequestId) {
+          this.state.streamingContent += data.chunk;
+          this.updateStreamingMessage();
+        }
+      }
+    });
   }
 
   initialize(): void {
@@ -82,7 +110,7 @@ export class AskAiTab {
       const session = await apiCourier.ai.createSession(context);
       this.state.sessions.unshift(session);
       this.state.activeSessionId = session.id;
-      this.state.showContextPanel = true;
+      this.state.showContextPanel = false;
       this.render();
       this.scrollToBottom();
     } catch (error) {
@@ -183,13 +211,26 @@ export class AskAiTab {
     return filtered.map(session => `
       <div class="session-item ${session.id === this.state.activeSessionId ? 'active' : ''}" data-session-id="${session.id}">
         <div class="session-main">
-          <div class="session-title">${this.escapeHtml(session.title)}</div>
+          ${this.state.renamingSessionId === session.id ? `
+            <input
+              type="text"
+              class="session-title-input"
+              value="${this.escapeAttr(session.title)}"
+              data-session-id="${session.id}"
+              autofocus
+            />
+          ` : `
+            <div class="session-title" title="${this.escapeAttr(session.title)}">${this.escapeHtml(session.title)}</div>
+          `}
           <div class="session-meta">
             <span>${session.messages.length} messages</span>
             <span>${this.formatDate(session.updatedAt)}</span>
           </div>
         </div>
-        <button class="session-delete" data-session-id="${session.id}" title="Delete">🗑️</button>
+        <div class="session-actions">
+          <button class="session-rename" data-session-id="${session.id}" title="Rename">✏️</button>
+          <button class="session-delete" data-session-id="${session.id}" title="Delete">🗑️</button>
+        </div>
       </div>
     `).join('');
   }
@@ -215,13 +256,12 @@ export class AskAiTab {
   }
 
   private renderContextPanel(session: AiSession): string {
-    if (!session.context || (!session.context.request && !session.context.response && !session.context.fileContent)) {
+    if (!session.context || (!session.context.request && !session.context.fileContent)) {
       return '';
     }
 
     const ctx = session.context;
     const req = ctx.request;
-    const res = ctx.response;
 
     return `
       <div class="context-panel ${this.state.showContextPanel ? 'expanded' : 'collapsed'}">
@@ -238,18 +278,14 @@ export class AskAiTab {
                 <span class="method-badge method-${req.method.toLowerCase()}">${req.method}</span>
                 <span class="request-url">${this.escapeHtml(req.url)}</span>
               </div>
-              <div class="request-tabs">
-                <div class="tab-group">
-                  <button class="tab-button ${this.state.activeContextTab === 'params' ? 'active' : ''}" data-tab="params">Params</button>
-                  <button class="tab-button ${this.state.activeContextTab === 'headers' ? 'active' : ''}" data-tab="headers">Headers</button>
-                  <button class="tab-button ${this.state.activeContextTab === 'body' ? 'active' : ''}" data-tab="body">Body</button>
-                  <button class="tab-button ${this.state.activeContextTab === 'auth' ? 'active' : ''}" data-tab="auth">Auth</button>
-                  ${res ? `<button class="tab-button ${this.state.activeContextTab === 'response' ? 'active' : ''}" data-tab="response">Response</button>` : ''}
+              ${req.body?.content ? `
+                <div class="context-section">
+                  <h5>Request Body</h5>
+                  <div class="details-content">
+                    <pre>${this.escapeHtml(req.body.content.slice(0, 500))}${req.body.content.length > 500 ? '...' : ''}</pre>
+                  </div>
                 </div>
-                <div class="tab-contents">
-                  ${this.renderContextTabContent(ctx)}
-                </div>
-              </div>
+              ` : ''}
             ` : ''}
             ${ctx.fileContent ? `
               <div class="context-section">
@@ -310,9 +346,14 @@ export class AskAiTab {
     }
 
     const messagesHtml = session.messages.map(msg => this.renderMessage(msg)).join('');
-    const typingHtml = this.state.isSending ? this.renderTypingIndicator() : '';
+    const streamingHtml = this.state.isSending && this.state.streamingContent
+      ? this.renderStreamingMessage(this.state.streamingContent)
+      : '';
+    const typingHtml = this.state.isSending && !this.state.streamingContent
+      ? this.renderTypingIndicator()
+      : '';
 
-    return `<div class="chat-messages">${messagesHtml}${typingHtml}</div>`;
+    return `<div class="chat-messages">${messagesHtml}${streamingHtml}${typingHtml}</div>`;
   }
 
   private renderEmptyChat(): string {
@@ -333,7 +374,23 @@ export class AskAiTab {
           <div class="message-text">${formattedContent}</div>
         </div>
         <div class="message-actions">
-          <button class="copy-message" data-content="${this.escapeAttr(msg.content)}">📋 Copy</button>
+          <button class="copy-message" data-content="${this.escapeAttr(msg.content)}" title="Copy to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderStreamingMessage(content: string): string {
+    const formattedContent = this.formatMessageContent(content);
+    return `
+      <div class="message assistant streaming">
+        <div class="message-content">
+          <div class="message-text">${formattedContent}<span class="streaming-cursor">▋</span></div>
         </div>
       </div>
     `;
@@ -352,6 +409,21 @@ export class AskAiTab {
         </div>
       </div>
     `;
+  }
+
+  private updateStreamingMessage(): void {
+    const chatMessages = this.container.querySelector('.chat-messages');
+    if (!chatMessages) return;
+
+    const streamingMsg = chatMessages.querySelector('.message.streaming');
+    if (streamingMsg) {
+      const messageText = streamingMsg.querySelector('.message-text');
+      if (messageText) {
+        const formattedContent = this.formatMessageContent(this.state.streamingContent);
+        messageText.innerHTML = formattedContent + '<span class="streaming-cursor">▋</span>';
+        this.scrollToBottom();
+      }
+    }
   }
 
   private renderWelcome(): string {
@@ -422,6 +494,7 @@ export class AskAiTab {
     this.container.addEventListener('click', (e) => this.handleClick(e));
     this.container.addEventListener('input', (e) => this.handleInput(e));
     this.container.addEventListener('keydown', (e) => this.handleKeydown(e));
+    this.container.addEventListener('blur', (e) => this.handleBlur(e), true);
 
     // File drop zone
     this.container.addEventListener('dragover', (e) => {
@@ -453,11 +526,19 @@ export class AskAiTab {
       return;
     }
 
-    // Session item (but not delete button)
+    // Session item (but not delete or rename button)
     const sessionItem = target.closest('.session-item') as HTMLElement;
-    if (sessionItem && !target.classList.contains('session-delete')) {
+    if (sessionItem && !target.classList.contains('session-delete') && !target.classList.contains('session-rename') && !target.classList.contains('session-title-input')) {
       const sessionId = sessionItem.dataset.sessionId;
-      if (sessionId) this.selectSession(sessionId);
+      if (sessionId && this.state.renamingSessionId !== sessionId) this.selectSession(sessionId);
+      return;
+    }
+
+    // Session rename
+    if (target.classList.contains('session-rename')) {
+      e.stopPropagation();
+      const sessionId = (target as HTMLElement).dataset.sessionId;
+      if (sessionId) this.startRenameSession(sessionId);
       return;
     }
 
@@ -509,12 +590,13 @@ export class AskAiTab {
     }
 
     // Copy message
-    if (target.classList.contains('copy-message')) {
-      const content = target.dataset.content;
+    if (target.classList.contains('copy-message') || target.closest('.copy-message')) {
+      const btn = target.classList.contains('copy-message') ? target : target.closest('.copy-message') as HTMLElement;
+      const content = btn?.dataset.content;
       if (content) {
         navigator.clipboard.writeText(content);
-        target.textContent = '✓ Copied';
-        setTimeout(() => { target.textContent = '📋 Copy'; }, 2000);
+        btn.classList.add('copied');
+        setTimeout(() => { btn.classList.remove('copied'); }, 2000);
       }
       return;
     }
@@ -563,6 +645,72 @@ export class AskAiTab {
         this.sendMessage();
       }
     }
+
+    // Handle rename input
+    if (target.classList.contains('session-title-input')) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const input = target as HTMLInputElement;
+        const sessionId = input.dataset.sessionId;
+        if (sessionId) this.finishRenameSession(sessionId, input.value.trim());
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.cancelRenameSession();
+      }
+    }
+  }
+
+  private handleBlur(e: FocusEvent): void {
+    const target = e.target as HTMLElement;
+
+    // Handle rename input blur
+    if (target.classList.contains('session-title-input')) {
+      const input = target as HTMLInputElement;
+      const sessionId = input.dataset.sessionId;
+      if (sessionId && this.state.renamingSessionId === sessionId) {
+        this.finishRenameSession(sessionId, input.value.trim());
+      }
+    }
+  }
+
+  private startRenameSession(sessionId: string): void {
+    this.state.renamingSessionId = sessionId;
+    this.render();
+    // Focus the input after render
+    setTimeout(() => {
+      const input = this.container.querySelector('.session-title-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 0);
+  }
+
+  private async finishRenameSession(sessionId: string, newTitle: string): Promise<void> {
+    if (!newTitle) {
+      this.cancelRenameSession();
+      return;
+    }
+
+    const session = this.state.sessions.find(s => s.id === sessionId);
+    if (session && session.title !== newTitle) {
+      try {
+        const updatedSession = await apiCourier.ai.updateSession(sessionId, { title: newTitle });
+        if (updatedSession) {
+          session.title = updatedSession.title;
+        }
+      } catch (error) {
+        console.error('Failed to rename session:', error);
+      }
+    }
+
+    this.state.renamingSessionId = null;
+    this.render();
+  }
+
+  private cancelRenameSession(): void {
+    this.state.renamingSessionId = null;
+    this.render();
   }
 
   private async handleFileUpload(file: File): Promise<void> {
@@ -622,8 +770,7 @@ export class AskAiTab {
 
   private selectSession(sessionId: string): void {
     this.state.activeSessionId = sessionId;
-    const session = this.getActiveSession();
-    this.state.showContextPanel = !!(session?.context?.request || session?.context?.response || session?.context?.fileContent);
+    this.state.showContextPanel = false;
     this.render();
     this.scrollToBottom();
   }
@@ -660,6 +807,8 @@ export class AskAiTab {
     input.value = '';
     input.style.height = 'auto';
     this.state.isSending = true;
+    this.state.streamingContent = '';
+    this.state.currentRequestId = null;
 
     // Add user message to UI immediately
     const session = this.getActiveSession();
@@ -700,6 +849,8 @@ export class AskAiTab {
       this.showError(error instanceof Error ? error.message : 'Failed to send message');
     } finally {
       this.state.isSending = false;
+      this.state.streamingContent = '';
+      this.state.currentRequestId = null;
       this.render();
       this.scrollToBottom();
     }
@@ -753,13 +904,25 @@ export class AskAiTab {
   }
 
   private formatMessageContent(content: string): string {
+    // Escape HTML first
+    let formatted = this.escapeHtml(content);
+    
     // Handle code blocks
-    let formatted = content.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-      return `<div class="code-block"><code>${this.escapeHtml(code.trim())}</code></div>`;
+    formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      return `<div class="code-block"><code>${code.trim()}</code></div>`;
     });
 
     // Handle inline code
     formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+    // Handle bold **text**
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Handle italic *text* (but not if already part of bold)
+    formatted = formatted.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+
+    // Handle numbered lists (1. 2. 3.)
+    formatted = formatted.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-num">$1.</span> $2</div>');
 
     // Handle line breaks
     formatted = formatted.replace(/\n/g, '<br>');
@@ -806,6 +969,10 @@ export class AskAiTab {
   }
 
   destroy(): void {
+    if (this.streamCleanup) {
+      this.streamCleanup();
+      this.streamCleanup = null;
+    }
     this.isInitialized = false;
   }
 }

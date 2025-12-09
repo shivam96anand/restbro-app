@@ -90,7 +90,7 @@ class AiEngine {
     return null;
   }
 
-  async sendMessage(params: AiSendMessageParams): Promise<AiSendMessageResult> {
+  async sendMessage(params: AiSendMessageParams, streamCallback?: (chunk: string) => void): Promise<AiSendMessageResult> {
     const { sessionId, message, context } = params;
 
     let session = this.sessions.find(s => s.id === sessionId);
@@ -127,8 +127,10 @@ class AiEngine {
     const llmMessages = this.buildLlmMessages(session);
 
     try {
-      const response = await this.callLlm(llmMessages);
-      
+      const response = streamCallback
+        ? await this.callLlmStreaming(llmMessages, streamCallback)
+        : await this.callLlm(llmMessages);
+
       const assistantMessage: AiMessage = {
         id: randomUUID(),
         role: 'assistant',
@@ -149,7 +151,7 @@ class AiEngine {
     } catch (error) {
       // Remove the user message if LLM call failed
       session.messages.pop();
-      
+
       const errorMsg = error instanceof Error ? error.message : 'Failed to get AI response';
       return { success: false, error: errorMsg };
     }
@@ -277,12 +279,6 @@ class AiEngine {
     return lines.join('\n');
   }
 
-  private formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
   private calculateContextSize(context?: AiContext): number {
     if (!context) return 0;
     
@@ -318,6 +314,73 @@ class AiEngine {
 
     const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     return data.choices?.[0]?.message?.content || 'No response from AI';
+  }
+
+  private async callLlmStreaming(
+    messages: Array<{ role: string; content: string }>,
+    streamCallback: (chunk: string) => void
+  ): Promise<string> {
+    const response = await net.fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: LLM_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`LLM request failed: ${response.status} - ${errorText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+          if (trimmed.startsWith('data: ')) {
+            const jsonStr = trimmed.slice(6);
+            try {
+              const data = JSON.parse(jsonStr) as {
+                choices?: Array<{ delta?: { content?: string } }>;
+              };
+              const content = data.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                streamCallback(content);
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE data:', parseError);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    return fullContent || 'No response from AI';
   }
 
   private generateSessionTitle(context?: AiContext): string {

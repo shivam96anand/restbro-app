@@ -40,6 +40,7 @@ export const IPC_CHANNELS = {
   AI_CREATE_SESSION: 'ai:create-session',
   AI_DELETE_SESSION: 'ai:delete-session',
   AI_SEND_MESSAGE: 'ai:send-message',
+  AI_MESSAGE_STREAM: 'ai:message-stream',
   AI_CHECK_ENGINE: 'ai:check-engine',
   AI_UPDATE_SESSION: 'ai:update-session',
 } as const;

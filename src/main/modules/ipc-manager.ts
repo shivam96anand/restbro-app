@@ -321,8 +321,20 @@ class IpcManager {
       return aiEngine.updateSession(sessionId, updates);
     });
 
-    ipcMain.handle(IPC_CHANNELS.AI_SEND_MESSAGE, async (_, params: AiSendMessageParams) => {
-      return await aiEngine.sendMessage(params);
+    ipcMain.handle(IPC_CHANNELS.AI_SEND_MESSAGE, async (event, params: AiSendMessageParams) => {
+      // Create a unique request ID for streaming
+      const requestId = randomUUID();
+
+      // Send streaming messages back to the renderer
+      const streamCallback = (chunk: string) => {
+        event.sender.send(IPC_CHANNELS.AI_MESSAGE_STREAM, { requestId, chunk });
+      };
+
+      // Start streaming and wait for completion
+      const result = await aiEngine.sendMessage(params, streamCallback);
+
+      // Send final result with requestId
+      return { ...result, requestId };
     });
 
     ipcMain.handle(IPC_CHANNELS.AI_CHECK_ENGINE, async () => {
