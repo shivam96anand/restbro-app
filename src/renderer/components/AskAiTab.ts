@@ -50,9 +50,7 @@ export class AskAiTab {
     `;
   }
 
-  // Stub methods to maintain compatibility
   openWithContext(requestCtx: any, responseCtx: any): void {
-    // Switch to ask-ai tab to show coming soon message
     const event = new CustomEvent('switch-to-tab', {
       detail: { tabName: 'ask-ai' }
     });

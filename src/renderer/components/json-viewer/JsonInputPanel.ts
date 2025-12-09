@@ -238,7 +238,6 @@ export class JsonInputPanel {
     try {
       const parsed = JSON.parse(text);
       this.events.onJsonParsed(parsed);
-      this.events.onStatusUpdate('success', 'JSON parsed and displayed successfully');
     } catch (error) {
       this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
       this.events.onClearViewer();
