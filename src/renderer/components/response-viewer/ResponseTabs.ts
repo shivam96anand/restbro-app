@@ -77,24 +77,6 @@ export class ResponseTabs {
   public updateTabs(response: ApiResponse): void {
     // Update tab badges with response info if needed
     this.updateTabBadges(response);
-    this.updateTimestamp();
-  }
-
-  private updateTimestamp(): void {
-    const timestampElement = document.getElementById('response-timestamp');
-    if (!timestampElement) return;
-
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear().toString().slice(-2);
-    const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-
-    timestampElement.textContent = `${day}/${month}/${year} ${displayHours}:${minutes}:${seconds} ${ampm}`;
   }
 
   private updateTabBadges(response: ApiResponse): void {

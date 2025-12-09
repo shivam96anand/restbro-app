@@ -34,6 +34,14 @@ export const IPC_CHANNELS = {
 
   // System helpers
   OPEN_EXTERNAL: 'system:open-external',
+
+  // AI Chat channels
+  AI_GET_SESSIONS: 'ai:get-sessions',
+  AI_CREATE_SESSION: 'ai:create-session',
+  AI_DELETE_SESSION: 'ai:delete-session',
+  AI_SEND_MESSAGE: 'ai:send-message',
+  AI_CHECK_ENGINE: 'ai:check-engine',
+  AI_UPDATE_SESSION: 'ai:update-session',
 } as const;
 
 export type IpcChannelKey = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];

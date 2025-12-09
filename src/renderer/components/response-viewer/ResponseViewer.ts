@@ -52,7 +52,6 @@ export class ResponseViewer {
     this.updateResponseBody(response);
     this.updateResponseHeaders(response);
     this.updateResponseMeta(response);
-    this.updateResponseTimestamp();
   }
 
   private updateResponseBody(response: ApiResponse): void {
@@ -178,6 +177,9 @@ export class ResponseViewer {
     const sizeBadge = `<span>${this.formatBytes(response.size)}</span>`;
 
     metaElement.innerHTML = `${statusBadge}<span class="meta-separator">•</span>${timeBadge}<span class="meta-separator">•</span>${sizeBadge}`;
+
+    // Update timestamp separately
+    this.updateResponseTimestamp(response.timestamp);
   }
 
   private formatResponseTime(timeMs: number): string {
@@ -188,14 +190,14 @@ export class ResponseViewer {
     return `${timeMs}ms`;
   }
 
-  private updateResponseTimestamp(): void {
+  private updateResponseTimestamp(timestamp: number): void {
     const timestampElement = document.getElementById('response-timestamp');
     if (!timestampElement) return;
 
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const date = new Date(timestamp);
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
 

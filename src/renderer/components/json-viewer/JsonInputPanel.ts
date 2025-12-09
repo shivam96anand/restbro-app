@@ -290,7 +290,6 @@ export class JsonInputPanel {
     try {
       const parsed = JSON.parse(saved);
       this.events.onJsonParsed(parsed);
-      this.events.onStatusUpdate('success', 'Restored JSON from previous session');
     } catch {
       this.events.onClearViewer();
     }

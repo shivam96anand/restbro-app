@@ -30,6 +30,7 @@ export interface ApiResponse {
     body: string;
     time: number;
     size: number;
+    timestamp: number;
 }
 export interface RequestTab {
     id: string;

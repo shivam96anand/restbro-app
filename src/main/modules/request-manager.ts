@@ -187,6 +187,7 @@ class RequestManager {
         body,
         time: endTime - startTime,
         size: actualTransferSize,
+        timestamp: endTime,
       });
     });
 
@@ -201,6 +202,7 @@ class RequestManager {
         body: errorBody,
         time: endTime - startTime,
         size: Buffer.byteLength(errorBody),
+        timestamp: endTime,
       });
     });
   }
@@ -220,6 +222,7 @@ class RequestManager {
       body: errorBody,
       time: endTime - startTime,
       size: Buffer.byteLength(errorBody),
+      timestamp: endTime,
     });
   }
 
@@ -239,6 +242,7 @@ class RequestManager {
       body: errorBody,
       time: endTime - startTime,
       size: Buffer.byteLength(errorBody),
+      timestamp: endTime,
     });
   }
 

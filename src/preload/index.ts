@@ -37,6 +37,14 @@ const IPC_CHANNELS = {
 
   // System helpers
   OPEN_EXTERNAL: 'system:open-external',
+
+  // AI Chat channels
+  AI_GET_SESSIONS: 'ai:get-sessions',
+  AI_CREATE_SESSION: 'ai:create-session',
+  AI_DELETE_SESSION: 'ai:delete-session',
+  AI_SEND_MESSAGE: 'ai:send-message',
+  AI_CHECK_ENGINE: 'ai:check-engine',
+  AI_UPDATE_SESSION: 'ai:update-session',
 } as const;
 
 // Define types inline to avoid import issues
@@ -176,6 +184,58 @@ interface CollectionsUIState {
   expandedFolderIds: string[];
 }
 
+// AI Chat Types
+interface AiMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+}
+
+interface AiContext {
+  request?: ApiRequest;
+  response?: ApiResponse;
+  fileContent?: string;
+  fileName?: string;
+}
+
+interface AiSession {
+  id: string;
+  title: string;
+  messages: AiMessage[];
+  context?: AiContext;
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface AiSessionsState {
+  sessions: AiSession[];
+  activeSessionId?: string;
+}
+
+interface AiSendMessageParams {
+  sessionId: string;
+  message: string;
+  context?: AiContext;
+}
+
+interface AiSendMessageResult {
+  success: boolean;
+  message?: AiMessage;
+  error?: string;
+  tokenLimitExceeded?: boolean;
+}
+
+interface ApiResponse {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  body: string;
+  time: number;
+  size: number;
+  timestamp: number;
+}
+
 const apiCourierAPI = {
   store: {
     get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
@@ -247,7 +307,22 @@ const apiCourierAPI = {
 
   system: {
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
-  }
+  },
+
+  ai: {
+    getSessions: (): Promise<AiSessionsState> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_GET_SESSIONS),
+    createSession: (context?: AiContext): Promise<AiSession> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_CREATE_SESSION, context),
+    deleteSession: (sessionId: string): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_DELETE_SESSION, sessionId),
+    updateSession: (sessionId: string, updates: { title?: string; context?: AiContext }): Promise<AiSession | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_UPDATE_SESSION, sessionId, updates),
+    sendMessage: (params: AiSendMessageParams): Promise<AiSendMessageResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_SEND_MESSAGE, params),
+    checkEngine: (): Promise<{ available: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.AI_CHECK_ENGINE),
+  },
 };
 
 contextBridge.exposeInMainWorld('apiCourier', apiCourierAPI);

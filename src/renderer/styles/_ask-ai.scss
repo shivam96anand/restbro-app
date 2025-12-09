@@ -159,6 +159,22 @@
     color: var(--text-primary);
   }
 
+  .btn-new-session {
+    background: var(--primary-color);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+    }
+  }
+
   .btn-clear-sessions {
     background: none;
     border: none;
@@ -908,6 +924,32 @@
   display: flex;
   gap: 12px;
   align-items: flex-end;
+}
+
+.file-upload-zone {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+  }
+
+  &.dragover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+    border-style: dashed;
+  }
 }
 
 #message-input {

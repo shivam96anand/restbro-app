@@ -45,6 +45,7 @@ export interface ApiResponse {
   body: string;
   time: number;
   size: number;
+  timestamp: number; // Unix timestamp in milliseconds when response was received
 }
 
 export interface RequestTab {
@@ -210,3 +211,48 @@ export interface IpcChannels {
   'oauth:refresh-token': (config: OAuthConfig) => OAuthResult;
   'oauth:get-token-info': (config: OAuthConfig) => { isValid: boolean; expiresIn?: number };
 }
+
+// AI Chat Types
+export interface AiMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+}
+
+export interface AiContext {
+  request?: ApiRequest;
+  response?: ApiResponse;
+  fileContent?: string;
+  fileName?: string;
+}
+
+export interface AiSession {
+  id: string;
+  title: string;
+  messages: AiMessage[];
+  context?: AiContext;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface AiSendMessageParams {
+  sessionId: string;
+  message: string;
+  context?: AiContext;
+}
+
+export interface AiSendMessageResult {
+  success: boolean;
+  message?: AiMessage;
+  error?: string;
+  tokenLimitExceeded?: boolean;
+}
+
+export interface AiSessionsState {
+  sessions: AiSession[];
+  activeSessionId?: string;
+}
+
+// Token limit for Qwen 7B model (conservative estimate: ~12K chars ≈ 4K tokens)
+export const AI_MAX_CONTEXT_CHARS = 12000;

@@ -6,7 +6,8 @@ import { requestManager } from './request-manager';
 import { loadTestEngine } from './loadtest-engine';
 import { loadTestExporter } from './loadtest-export';
 import { oauthManager } from './oauth';
-import { Collection, ApiRequest, AppState, LoadTestConfig, LoadTestSummary, OAuthConfig, CollectionsUIState } from '../../shared/types';
+import { aiEngine } from './ai-engine';
+import { Collection, ApiRequest, AppState, LoadTestConfig, LoadTestSummary, OAuthConfig, CollectionsUIState, AiContext, AiSendMessageParams } from '../../shared/types';
 import { randomUUID } from 'crypto';
 import { detectAndParse, generatePreview, parseJsonFile, ImportPreview } from './importers';
 
@@ -301,6 +302,31 @@ class IpcManager {
         return;
       }
       await shell.openExternal(url);
+    });
+
+    // AI Chat IPC handlers
+    ipcMain.handle(IPC_CHANNELS.AI_GET_SESSIONS, () => {
+      return aiEngine.getSessions();
+    });
+
+    ipcMain.handle(IPC_CHANNELS.AI_CREATE_SESSION, (_, context?: AiContext) => {
+      return aiEngine.createSession(context);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.AI_DELETE_SESSION, (_, sessionId: string) => {
+      return aiEngine.deleteSession(sessionId);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.AI_UPDATE_SESSION, (_, sessionId: string, updates: { title?: string; context?: AiContext }) => {
+      return aiEngine.updateSession(sessionId, updates);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.AI_SEND_MESSAGE, async (_, params: AiSendMessageParams) => {
+      return await aiEngine.sendMessage(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.AI_CHECK_ENGINE, async () => {
+      return await aiEngine.checkEngine();
     });
   }
 }

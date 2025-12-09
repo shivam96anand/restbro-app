@@ -174,10 +174,14 @@ class ApiCourierRenderer {
       }
     });
 
-    // Listen for Ask AI requests - show coming soon message
+    // Listen for Ask AI requests - open with context from response viewer
     document.addEventListener('open-ask-ai', (e: Event) => {
-      // Simply show the coming soon message by opening the Ask AI tab
-      this.askAiTab.openWithContext(null, null);
+      const customEvent = e as CustomEvent;
+      const response = customEvent.detail?.response;
+      // Get the current request from tabs manager
+      const activeTab = this.tabsManager.getActiveTab();
+      const request = activeTab?.request;
+      this.askAiTab.openWithContext(request, response);
     });
 
     // Listen for tab switching requests (for Ask AI to switch tabs)

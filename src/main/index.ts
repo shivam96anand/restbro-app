@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import { windowManager } from './modules/window-manager';
 import { storeManager } from './modules/store-manager';
 import { ipcManager } from './modules/ipc-manager';
+import { aiEngine } from './modules/ai-engine';
 
 class ApiCourierApp {
   private isQuitting = false;
@@ -9,6 +10,7 @@ class ApiCourierApp {
   async initialize(): Promise<void> {
     await app.whenReady();
     await storeManager.initialize();
+    await aiEngine.initialize();
     ipcManager.initialize();
     this.createWindow();
     this.setupEventHandlers();
@@ -47,6 +49,7 @@ class ApiCourierApp {
   private async gracefulShutdown(): Promise<void> {
     console.log('Graceful shutdown: flushing database...');
     await storeManager.flush();
+    await aiEngine.flush();
     console.log('Database flushed successfully');
     windowManager.closeAllWindows();
   }
@@ -54,6 +57,7 @@ class ApiCourierApp {
   private async quit(): Promise<void> {
     this.isQuitting = true;
     await storeManager.flush();
+    await aiEngine.flush();
     app.quit();
   }
 }
