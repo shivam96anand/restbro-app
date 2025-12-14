@@ -45,6 +45,68 @@ export class RequestFormHandler {
   }
 
   /**
+   * Set variable context directly (used when loading from cache)
+   * Note: This only sets the context. Call refreshAllInputHighlighting() after
+   * all inputs are loaded to apply highlighting.
+   */
+  public setVariableContext(context: { activeEnvironment?: any; globals: any; folderVars: Record<string, string> }): void {
+    this.activeEnvironment = context.activeEnvironment;
+    this.globals = context.globals;
+    this.folderVars = context.folderVars;
+
+    // Ensure listeners are attached to URL input
+    const urlInput = document.getElementById('request-url') as HTMLInputElement;
+    if (urlInput && !urlInput.dataset.variableHighlightListenerAttached) {
+      urlInput.addEventListener('input', () => {
+        this.updateVariableIndicator(urlInput);
+        this.refreshInputHighlight(urlInput);
+      });
+      urlInput.dataset.variableHighlightListenerAttached = 'true';
+    }
+  }
+
+  /**
+   * Refresh highlighting for all inputs (URL and auth inputs)
+   * Call this after values are loaded to ensure highlighting is applied
+   */
+  public refreshAllInputHighlighting(): void {
+    // Refresh URL input
+    const urlInput = document.getElementById('request-url') as HTMLInputElement;
+    if (urlInput && urlInput.value) {
+      this.refreshInputHighlight(urlInput);
+    }
+
+    // Refresh auth inputs
+    this.refreshAuthInputHighlighting();
+  }
+
+  /**
+   * Refresh highlighting for all auth inputs (used when context is updated)
+   */
+  private refreshAuthInputHighlighting(): void {
+    const authConfig = document.getElementById('auth-config');
+    if (!authConfig) return;
+
+    const inputs = authConfig.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach((input) => {
+      const inputElement = input as HTMLInputElement;
+
+      // Ensure listener is attached
+      if (!inputElement.dataset.variableHighlightListenerAttached) {
+        inputElement.addEventListener('input', () => {
+          this.refreshInputHighlight(inputElement);
+        });
+        inputElement.dataset.variableHighlightListenerAttached = 'true';
+      }
+
+      // Apply highlighting to current value
+      if (inputElement.value) {
+        this.refreshInputHighlight(inputElement);
+      }
+    });
+  }
+
+  /**
    * Refresh variable tooltips (call this when environment changes or request loads)
    */
   public async refreshVariableTooltips(collectionId?: string): Promise<void> {

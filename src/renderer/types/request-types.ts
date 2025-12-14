@@ -108,3 +108,18 @@ export interface RequestBody {
   type: EditorType;
   content: any;
 }
+
+export interface RequestStateCache {
+  tabId: string;
+  request: ApiRequest;
+  collectionId?: string;
+  variableContext: VariableContext;
+  activeDetailsTab?: string;
+  timestamp: number;
+}
+
+export interface VariableContext {
+  activeEnvironment?: any;
+  globals: any;
+  folderVars: Record<string, string>;
+}

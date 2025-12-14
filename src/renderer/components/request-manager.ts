@@ -3,6 +3,7 @@ import { RequestFormHandler } from './request/request-form-handler';
 import { RequestEditorsManager } from './request/request-editors-manager';
 import { RequestDataManager } from './request/request-data-manager';
 import { buildFolderVars } from './request/variable-helper';
+import { RequestStateCache, VariableContext } from '../types/request-types';
 
 export class RequestManager {
   private formHandler: RequestFormHandler;
@@ -11,6 +12,8 @@ export class RequestManager {
   private storeCache: any = null;
   private storeCacheTime: number = 0;
   private readonly CACHE_TTL = 500; // Cache for 500ms
+  private requestStateCache: Map<string, RequestStateCache> = new Map();
+  private readonly REQUEST_CACHE_TTL = 5000; // Cache request state for 5 seconds
 
   constructor() {
     this.formHandler = new RequestFormHandler(
@@ -50,6 +53,7 @@ export class RequestManager {
       const customEvent = e as CustomEvent;
       const activeTab = customEvent.detail.activeTab;
       this.loadRequest(
+        activeTab ? activeTab.id : null,
         activeTab ? activeTab.request : null,
         activeTab ? activeTab.collectionId : undefined,
         activeTab ? activeTab.activeDetailsTab : undefined
@@ -59,37 +63,54 @@ export class RequestManager {
     // Invalidate cache when environments or collections change
     document.addEventListener('environment-changed', () => {
       this.invalidateStoreCache();
+      this.invalidateRequestStateCache();
     });
 
     document.addEventListener('collection-updated', () => {
       this.invalidateStoreCache();
+      this.invalidateRequestStateCache();
     });
 
     document.addEventListener('globals-updated', () => {
       this.invalidateStoreCache();
+      this.invalidateRequestStateCache();
     });
   }
 
-  private async loadRequest(request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): Promise<void> {
+  private async loadRequest(tabId: string | null, request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): Promise<void> {
     this.dataManager.setCurrentRequest(request);
 
-    if (!request) {
+    if (!request || !tabId) {
       this.clearForm();
       this.formHandler.showEmptyState();
+      return;
+    }
+
+    // Check if we have a cached state for this tab
+    const cachedState = this.getCachedRequestState(tabId);
+    if (cachedState) {
+      // Load synchronously from cache for instant display
+      this.loadRequestFromCache(cachedState, activeDetailsTab);
       return;
     }
 
     // Load UI immediately for smooth transition
     this.formHandler.showRequestForm();
     this.formHandler.loadBasicRequestData(request);
-    this.formHandler.restoreActiveDetailsTab(activeDetailsTab); // Restore the active details tab
+    this.formHandler.restoreActiveDetailsTab(activeDetailsTab);
 
-    // Set collectionId context BEFORE loading auth to ensure variable highlighting works correctly
-    await Promise.all([
-      this.formHandler.refreshVariableTooltips(collectionId),
-      this.refreshVariableContext(collectionId)
-    ]);
+    // Load variable context and cache it
+    const variableContext = await this.loadVariableContext(collectionId);
 
+    // Set context for editors
+    this.editorsManager.setVariableContext(
+      variableContext.activeEnvironment,
+      variableContext.globals,
+      variableContext.folderVars
+    );
+    this.formHandler.setVariableContext(variableContext);
+
+    // Load editors
     this.editorsManager.loadParams(request.params || {});
     this.editorsManager.loadHeaders(request.headers);
 
@@ -100,12 +121,62 @@ export class RequestManager {
     if (request.auth) {
       this.editorsManager.loadAuth(request.auth, collectionId);
     }
+
+    // Cache the loaded state for next time
+    this.cacheRequestState(tabId, request, collectionId, variableContext, activeDetailsTab);
+
+    // Refresh highlighting asynchronously (non-blocking)
+    // Use requestAnimationFrame for next paint cycle
+    requestAnimationFrame(() => {
+      this.formHandler.refreshAllInputHighlighting();
+    });
   }
 
   /**
-   * Refresh variable context for editors when environment changes or request loads
+   * Load request from cached state (synchronous, instant)
    */
-  private async refreshVariableContext(collectionId?: string): Promise<void> {
+  private loadRequestFromCache(cachedState: RequestStateCache, activeDetailsTab?: string): void {
+    const { request, variableContext, collectionId } = cachedState;
+
+    // Load UI synchronously
+    this.formHandler.showRequestForm();
+    this.formHandler.loadBasicRequestData(request);
+    this.formHandler.restoreActiveDetailsTab(activeDetailsTab || cachedState.activeDetailsTab);
+
+    // Set cached variable context (synchronous)
+    this.editorsManager.setVariableContext(
+      variableContext.activeEnvironment,
+      variableContext.globals,
+      variableContext.folderVars
+    );
+    this.formHandler.setVariableContext(variableContext);
+
+    // Load editors synchronously
+    this.editorsManager.loadParams(request.params || {});
+    this.editorsManager.loadHeaders(request.headers);
+
+    if (request.body) {
+      this.editorsManager.loadBody(request.body);
+    }
+
+    if (request.auth) {
+      this.editorsManager.loadAuth(request.auth, collectionId);
+    }
+
+    // Refresh highlighting asynchronously (non-blocking)
+    // Use requestAnimationFrame to apply highlighting after paint
+    requestAnimationFrame(() => {
+      // Double requestAnimationFrame ensures auth inputs are fully rendered
+      requestAnimationFrame(() => {
+        this.formHandler.refreshAllInputHighlighting();
+      });
+    });
+  }
+
+  /**
+   * Load variable context and return it
+   */
+  private async loadVariableContext(collectionId?: string): Promise<VariableContext> {
     try {
       const state = await this.getCachedStore();
       const activeEnvironment = state.activeEnvironmentId
@@ -115,11 +186,56 @@ export class RequestManager {
       const globals = state.globals || { variables: {} };
       const folderVars = buildFolderVars(collectionId, state.collections);
 
-      this.editorsManager.setVariableContext(activeEnvironment, globals, folderVars);
+      return { activeEnvironment, globals, folderVars };
     } catch (error) {
-      console.error('Failed to refresh variable context:', error);
+      console.error('Failed to load variable context:', error);
+      return { globals: { variables: {} }, folderVars: {} };
     }
   }
+
+  /**
+   * Get cached request state if available and fresh
+   */
+  private getCachedRequestState(tabId: string): RequestStateCache | null {
+    const cached = this.requestStateCache.get(tabId);
+    if (!cached) return null;
+
+    const now = Date.now();
+    if (now - cached.timestamp > this.REQUEST_CACHE_TTL) {
+      this.requestStateCache.delete(tabId);
+      return null;
+    }
+
+    return cached;
+  }
+
+  /**
+   * Cache request state for a tab
+   */
+  private cacheRequestState(
+    tabId: string,
+    request: ApiRequest,
+    collectionId: string | undefined,
+    variableContext: VariableContext,
+    activeDetailsTab?: string
+  ): void {
+    this.requestStateCache.set(tabId, {
+      tabId,
+      request,
+      collectionId,
+      variableContext,
+      activeDetailsTab,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Invalidate request state cache
+   */
+  private invalidateRequestStateCache(): void {
+    this.requestStateCache.clear();
+  }
+
 
   /**
    * Get store data with caching to reduce IPC calls during rapid tab switching
