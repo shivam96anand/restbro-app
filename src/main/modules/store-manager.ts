@@ -3,6 +3,8 @@ import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { AppState, AppTheme, Globals, CollectionsUIState, NotepadState } from '../../shared/types';
 
+const defaultNavOrder = ['api', 'json-viewer', 'json-compare', 'notepad', 'load-testing', 'ask-ai'];
+
 const defaultTheme: AppTheme = {
   name: 'blue',
   primaryColor: '#2563eb',
@@ -28,6 +30,7 @@ const defaultState: AppState = {
   openTabs: [],
   history: [],
   theme: defaultTheme,
+  navOrder: defaultNavOrder,
   environments: [],
   globals: defaultGlobals,
   collectionsUIState: defaultCollectionsUIState,
@@ -62,6 +65,7 @@ class StoreManager {
           globals: loadedData.globals || defaultGlobals,
           collectionsUIState: loadedData.collectionsUIState || defaultCollectionsUIState,
           notepad: loadedData.notepad || defaultNotepadState,
+          navOrder: loadedData.navOrder || defaultNavOrder,
         };
       } catch (error) {
         console.error('Failed to read database file, using default state:', error);

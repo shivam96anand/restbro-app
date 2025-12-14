@@ -93,6 +93,7 @@ class ApiCourierRenderer {
     try {
       const state = await window.apiCourier.store.get();
       this.themeManager.setTheme(state.theme);
+      this.appManager.setNavOrder(state.navOrder);
       await this.collectionsManager.setCollections(state.collections);
       this.tabsManager.setTabs(state.openTabs, state.activeTabId);
       this.historyManager.setHistory((state as any).history || []);
@@ -161,6 +162,10 @@ class ApiCourierRenderer {
 
     // Listen for collection changes to trigger state saves
     document.addEventListener('collections-changed', () => {
+      this.saveState();
+    });
+
+    document.addEventListener('nav-order-changed', () => {
       this.saveState();
     });
 
@@ -291,6 +296,7 @@ class ApiCourierRenderer {
         history: this.historyManager.getHistory(),
         activeTabId: this.tabsManager.getActiveTabId(),
         theme: this.themeManager.getCurrentTheme(),
+        navOrder: this.appManager.getNavOrder(),
         environments: this.environmentManager.getEnvironments(),
         activeEnvironmentId: this.environmentManager.getActiveEnvironmentId(),
       };

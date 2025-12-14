@@ -50,6 +50,7 @@ export interface AppState {
     activeTabId?: string;
     selectedCollectionId?: string;
     theme: AppTheme;
+    navOrder: string[];
 }
 export interface IpcChannels {
     'store:get': () => AppState;
