@@ -20,8 +20,12 @@ export class RequestFormHandler {
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
     if (methodSelect) {
+      // Apply initial method color class
+      this.updateMethodSelectColor(methodSelect);
+      
       methodSelect.addEventListener('change', () => {
         this.onRequestUpdate({ method: methodSelect.value as any });
+        this.updateMethodSelectColor(methodSelect);
       });
     }
 
@@ -280,7 +284,10 @@ export class RequestFormHandler {
     const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
-    if (methodSelect) methodSelect.value = request.method;
+    if (methodSelect) {
+      methodSelect.value = request.method;
+      this.updateMethodSelectColor(methodSelect);
+    }
     if (urlInput) urlInput.value = request.url;
   }
 
@@ -288,8 +295,25 @@ export class RequestFormHandler {
     const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
-    if (methodSelect) methodSelect.value = 'GET';
+    if (methodSelect) {
+      methodSelect.value = 'GET';
+      this.updateMethodSelectColor(methodSelect);
+    }
     if (urlInput) urlInput.value = '';
+  }
+
+  /**
+   * Updates the method select element's color class based on the current HTTP method
+   */
+  private updateMethodSelectColor(methodSelect: HTMLSelectElement): void {
+    // Remove all existing method color classes
+    methodSelect.classList.remove(
+      'method-get', 'method-post', 'method-put', 
+      'method-patch', 'method-delete', 'method-head', 'method-options'
+    );
+    // Add the appropriate class for the current method
+    const method = methodSelect.value.toLowerCase();
+    methodSelect.classList.add(`method-${method}`);
   }
 
   showEmptyState(): void {
