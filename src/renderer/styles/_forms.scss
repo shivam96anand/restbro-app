@@ -523,110 +523,65 @@
   background: var(--bg-primary);
 }
 
-// ============================================
-// REQUEST LINE - URL BAR COMPONENT
-// Clean rewrite with proper structure
-// ============================================
-
 .request-line {
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  height: 42px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.2s ease;
+  gap: 10px;
+  margin-bottom: 20px;
   position: relative;
-
-  &:hover {
-    border-color: #555;
-  }
-
-  &:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
-  }
 }
 
-// HTTP Method dropdown
 .method-select {
-  flex: 0 0 auto;
-  width: 100px;
-  height: auto;
-  margin: 0;
-  padding: 0 16px;
-  background-color: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  border: none;
-  border-right: 1px solid var(--border-color);
-  border-radius: 0;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.03);
-    color: var(--text-primary);
-  }
-  
-  option {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-  }
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  width: 100px;
 }
 
-// URL input wrapper - contains input + variable highlight overlay
 .url-input-wrapper {
-  flex: 1 1 auto;
+  flex: 1;
   position: relative;
-  height: auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
 
   // Variable highlight container gets appended here by JS
   .variable-highlight-container {
     position: absolute;
     inset: 0;
-    pointer-events: none;
-    z-index: 1;
+    pointer-events: none; // Container doesn't block clicks
+    z-index: 2; // CRITICAL: Above input so variable spans can receive hover events
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    overflow: hidden;
+    padding: 8px 12px;
+    overflow-x: auto; // Allow horizontal scrolling, synced with input via JS
+    overflow-y: hidden;
     white-space: nowrap;
     font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
     font-size: 13px;
+
+    // Hide scrollbar but keep scrolling functionality
+    scrollbar-width: none; // Firefox
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Edge
+    }
+
+    // Variable spans inside have pointer-events: auto (set by JS)
+    // This allows hovering over specific variables while not blocking input clicks elsewhere
   }
 }
 
-// URL text input
 .url-input {
-  position: relative;
-  z-index: 2;
+  flex: 1;
   width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0 16px;
-  background: transparent;
+  background-color: var(--bg-tertiary);
   color: var(--text-primary);
-  border: none;
-  font-size: 13px;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-weight: 400;
-  outline: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 12px;
+  position: relative;
+  z-index: 1; // Below overlay so variable spans can receive hover
 
   &::placeholder {
     color: var(--text-secondary);
-    opacity: 0.5;
   }
 }
 
@@ -2558,5 +2513,115 @@ textarea {
 
   &:hover {
     background: var(--primary-dark);
+  }
+}
+
+// ============================================
+// VARIABLE AUTOCOMPLETE - Suggestions dropdown
+// ============================================
+
+.variable-autocomplete-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 250px; // Increased to show ~4-5 items
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 350px; // Ensure enough width for values
+
+  // Custom scrollbar for better UX
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+.variable-autocomplete-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 12px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover,
+  &.selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+  }
+
+  &.empty {
+    color: var(--text-secondary);
+    cursor: default;
+    font-size: 12px;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  .variable-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    padding-right: 8px;
+  }
+
+  .variable-name {
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .variable-value {
+    color: var(--text-secondary);
+    font-size: 12px; // Slightly increased for better readability
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.4;
+    max-width: 100%;
+  }
+
+  .variable-badge {
+    background: rgba(var(--primary-color-rgb), 0.2);
+    color: var(--primary-color);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    align-self: flex-start; // Align to top of the item
+    height: fit-content;
+    line-height: 1.2;
   }
 }

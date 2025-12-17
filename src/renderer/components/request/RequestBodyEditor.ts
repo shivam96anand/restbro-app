@@ -1,5 +1,6 @@
 import { addVariableTooltips, detectVariables } from './variable-helper';
 import { MonacoJsonEditor } from './MonacoJsonEditor';
+import { setupAutocomplete } from './variable-autocomplete';
 
 type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded';
 type BodyFormat = 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
@@ -39,10 +40,17 @@ export class RequestBodyEditor {
     this.globals = globals;
     this.folderVars = folderVars;
 
-    // Add variable tooltips to the textarea
+    // Add variable tooltips and autocomplete to the textarea
     const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
     if (bodyEditor && this.activeEnvironment && this.globals) {
       addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
+      
+      // Setup autocomplete for variable suggestions
+      setupAutocomplete(bodyEditor, () => ({
+        activeEnvironment: this.activeEnvironment,
+        globals: this.globals,
+        folderVars: this.folderVars || {}
+      }));
     }
 
     // Update highlighting with new context
@@ -115,9 +123,14 @@ export class RequestBodyEditor {
       bodyEditor.addEventListener('keydown', (e) => this.handleKeydown(e));
       bodyEditor.addEventListener('scroll', () => this.syncScroll());
 
-      // Add variable tooltips
+      // Add variable tooltips and autocomplete
       if (this.activeEnvironment && this.globals) {
         addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
+        setupAutocomplete(bodyEditor, () => ({
+          activeEnvironment: this.activeEnvironment,
+          globals: this.globals,
+          folderVars: this.folderVars || {}
+        }));
       }
     }
 

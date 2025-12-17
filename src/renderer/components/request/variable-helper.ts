@@ -263,8 +263,23 @@ export function addVariableHighlighting(
     container.style.letterSpacing = computed.letterSpacing;
     container.style.padding = computed.padding;
 
+    // CRITICAL FIX: Sync scroll position between input and overlay
+    // This allows the overlay to scroll naturally with the input text
+    const syncScroll = () => {
+      container.scrollLeft = inputElement.scrollLeft;
+    };
+    inputElement.addEventListener('scroll', syncScroll);
+
+    // Store cleanup function to remove listener if needed
+    (container as any).__scrollSyncCleanup = () => {
+      inputElement.removeEventListener('scroll', syncScroll);
+    };
+
     // Update position on window resize
     window.addEventListener('resize', updatePosition);
+  } else {
+    // Container exists, ensure scroll is synced
+    container.scrollLeft = inputElement.scrollLeft;
   }
 
   // Clear existing content

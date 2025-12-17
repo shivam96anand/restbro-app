@@ -1,5 +1,6 @@
 import type { KeyValuePair } from '../../../../shared/types';
 import { addVariableTooltips, addVariableHighlighting } from '../variable-helper';
+import { setupAutocomplete } from '../variable-autocomplete';
 
 export class ParamsManager {
   private container: HTMLElement;
@@ -17,6 +18,23 @@ export class ParamsManager {
     this.activeEnvironment = activeEnvironment;
     this.globals = globals;
     this.folderVars = folderVars;
+
+    // Setup variable support for all existing inputs
+    const paramsEditor = this.container.querySelector('#params-editor');
+    if (paramsEditor) {
+      const rows = paramsEditor.querySelectorAll('.kv-row');
+      rows.forEach((row) => {
+        const keyInput = row.querySelector('.key-input') as HTMLInputElement;
+        const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+        
+        if (keyInput && !(keyInput as any).__variableSupportSetup) {
+          this.addVariableSupport(keyInput);
+        }
+        if (valueInput && !(valueInput as any).__variableSupportSetup) {
+          this.addVariableSupport(valueInput);
+        }
+      });
+    }
   }
 
   private setupEventListeners(): void {
@@ -71,26 +89,31 @@ export class ParamsManager {
 
     paramsEditor.appendChild(row);
 
-    // Add variable highlighting to new inputs
+    // Add variable support to new inputs (context will be available via callback)
     const keyInput = row.querySelector('.key-input') as HTMLInputElement;
     const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-    if (keyInput && this.activeEnvironment && this.globals) {
+    if (keyInput) {
       this.addVariableSupport(keyInput);
     }
-    if (valueInput && this.activeEnvironment && this.globals) {
+    if (valueInput) {
       this.addVariableSupport(valueInput);
     }
   }
 
   private addVariableSupport(input: HTMLInputElement): void {
-    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
-    addVariableHighlighting(input, this.activeEnvironment, this.globals);
+    // Mark as setup to avoid duplicates
+    (input as any).__variableSupportSetup = true;
 
-    // Update highlighting on input
-    input.addEventListener('input', () => {
-      addVariableHighlighting(input, this.activeEnvironment, this.globals);
-    });
+    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
+
+    // Setup autocomplete for variable suggestions (context fetched dynamically via callback)
+    setupAutocomplete(input, () => ({
+      activeEnvironment: this.activeEnvironment,
+      globals: this.globals,
+      folderVars: this.folderVars || {}
+    }));
   }
 
   private updateParamsFromDOM(): void {
@@ -153,20 +176,24 @@ export class ParamsManager {
       row.className = enabled ? 'kv-row' : 'kv-row disabled';
       row.innerHTML = `
         <input type="checkbox" class="kv-checkbox" ${enabled ? 'checked' : ''}>
-        <input type="text" placeholder="Key" class="key-input" value="${key}">
-        <input type="text" placeholder="Value" class="value-input" value="${value}">
+        <input type="text" placeholder="Key" class="key-input">
+        <input type="text" placeholder="Value" class="value-input">
         <button class="remove-btn">×</button>
       `;
       paramsEditor.appendChild(row);
 
-      // Add variable support to loaded inputs
+      // Set values after creating elements to avoid HTML escaping issues
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+      
+      if (keyInput) keyInput.value = key;
+      if (valueInput) valueInput.value = value;
 
-      if (keyInput && this.activeEnvironment && this.globals) {
+      // Add variable support to loaded inputs (context available via callback)
+      if (keyInput) {
         this.addVariableSupport(keyInput);
       }
-      if (valueInput && this.activeEnvironment && this.globals) {
+      if (valueInput) {
         this.addVariableSupport(valueInput);
       }
     });

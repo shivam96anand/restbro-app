@@ -1,5 +1,6 @@
 import { ApiRequest, Environment, Globals } from '../../../shared/types';
 import { detectVariables, buildFolderVars, addVariableHighlighting } from './variable-helper';
+import { setupAutocomplete } from './variable-autocomplete';
 
 export class RequestFormHandler {
   private onRequestUpdate: (updates: Partial<ApiRequest>) => void;
@@ -38,6 +39,13 @@ export class RequestFormHandler {
         }
       });
 
+      // Setup autocomplete for URL input
+      setupAutocomplete(urlInput, () => ({
+        activeEnvironment: this.activeEnvironment,
+        globals: this.globals,
+        folderVars: this.folderVars
+      }));
+
       // Variable tooltips will be initialized by refreshVariableTooltips()
       // which is called from request-manager when a request is loaded
     }
@@ -74,7 +82,7 @@ export class RequestFormHandler {
    * Call this after values are loaded to ensure highlighting is applied
    */
   public refreshAllInputHighlighting(): void {
-    // Refresh URL input
+    // Refresh URL input (tooltips are added automatically in refreshInputHighlight)
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
     if (urlInput && urlInput.value) {
       this.refreshInputHighlight(urlInput);
@@ -195,6 +203,13 @@ export class RequestFormHandler {
             this.refreshInputHighlight(inputElement);
           });
           inputElement.dataset.variableHighlightListenerAttached = 'true';
+
+          // Setup autocomplete for auth inputs
+          setupAutocomplete(inputElement, () => ({
+            activeEnvironment: this.activeEnvironment,
+            globals: this.globals,
+            folderVars: this.folderVars
+          }));
         }
       });
 
@@ -230,12 +245,19 @@ export class RequestFormHandler {
         // Save the active tab state
         this.saveActiveDetailsTab(sectionName);
 
-        // If Auth tab is clicked, hide the OAuth status box completely
+        // If Auth tab is clicked, hide the OAuth status box and refresh variable highlighting
         if (sectionName === 'auth') {
           const oauthStatus = document.getElementById('oauth-status');
           if (oauthStatus) {
             oauthStatus.style.display = 'none';
           }
+
+          // CRITICAL FIX: Refresh variable highlighting when auth tab becomes active
+          // This fixes the issue where variables lose color when switching between tabs
+          // Use setTimeout to ensure the section is fully visible before refreshing
+          setTimeout(() => {
+            this.refreshAuthInputHighlighting();
+          }, 0);
         }
       });
     });

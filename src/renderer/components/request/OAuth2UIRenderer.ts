@@ -224,6 +224,22 @@ export class OAuth2UIRenderer {
             input.dispatchEvent(new Event('input', { bubbles: true }));
           }
         });
+
+        // CRITICAL FIX: Use multiple requestAnimationFrame to ensure DOM is fully painted
+        // and variable context is loaded before re-triggering highlighting
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              Object.entries(config).forEach(([field, value]) => {
+                const input = authConfig.querySelector(`[data-field="${field}"]`) as HTMLInputElement;
+                if (input && value) {
+                  // Re-trigger input event to ensure highlighting is applied with correct context
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+              });
+            });
+          });
+        });
       }
     }, 0);
   }
