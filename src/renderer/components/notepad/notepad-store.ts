@@ -67,7 +67,7 @@ export class NotepadStore {
   }
 
   createTab(initial?: Partial<Pick<NotepadTab, 'title' | 'content' | 'filePath'>>): NotepadTab {
-    const title = initial?.title || `Untitled ${this.state.untitledCounter}`;
+    const title = initial?.title || 'Untitled';
     const now = Date.now();
 
     const tab: NotepadTab = {
@@ -82,7 +82,6 @@ export class NotepadStore {
 
     this.state.tabs.push(tab);
     this.state.activeTabId = tab.id;
-    this.state.untitledCounter += 1;
     this.touch();
     return tab;
   }

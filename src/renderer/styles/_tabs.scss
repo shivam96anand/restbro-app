@@ -6,50 +6,65 @@
               rgba(var(--primary-color-rgb), 0.02) 0%,
               var(--bg-secondary) 100%);
   border-bottom: 2px solid var(--border-color);
-  padding: 0 20px;
+  padding: 8px 12px;
   overflow-x: auto;
 }
 
 .tab-list {
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
 .request-tab {
   background: var(--bg-tertiary);
-  border: none;
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  padding: 8px 16px;
-  border-radius: 4px 4px 0 0;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 8px;
   max-width: 200px;
   position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
   &:hover {
     background-color: var(--hover-color);
     color: var(--text-primary);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.15);
   }
 
   &.active {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-bottom: 2px solid var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-color: var(--primary-light);
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   }
 
   &.new-tab-button {
-    background: transparent;
-    border: 1px dashed var(--border-color);
-    color: var(--text-secondary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 600;
 
     &:hover {
+      background: var(--primary-color);
       border-color: var(--primary-color);
-      color: var(--primary-color);
-      background: rgba(37, 99, 235, 0.1);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.25);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
   }
 
