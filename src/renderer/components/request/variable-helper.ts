@@ -225,10 +225,16 @@ export function addVariableHighlighting(
 ): void {
   const text = inputElement.value;
   const variables = detectVariables(text);
+  const highlightId =
+    inputElement.dataset.variableHighlightId ||
+    `var-highlight-${Math.random().toString(36).slice(2)}`;
+  inputElement.dataset.variableHighlightId = highlightId;
 
   if (variables.length === 0) {
     // Remove any existing highlight container
-    const existing = inputElement.parentElement?.querySelector('.variable-highlight-container');
+    const existing = inputElement.parentElement?.querySelector(
+      `.variable-highlight-container[data-for="${highlightId}"]`
+    );
     if (existing) {
       existing.remove();
     }
@@ -237,12 +243,15 @@ export function addVariableHighlighting(
   }
 
   // Create or get highlight container
-  let container = inputElement.parentElement?.querySelector('.variable-highlight-container') as HTMLDivElement;
+  let container = inputElement.parentElement?.querySelector(
+    `.variable-highlight-container[data-for="${highlightId}"]`
+  ) as HTMLDivElement;
   const isNewContainer = !container;
   
   if (isNewContainer) {
     container = document.createElement('div');
     container.className = 'variable-highlight-container';
+    container.dataset.for = highlightId;
     inputElement.parentElement?.appendChild(container);
   }
 

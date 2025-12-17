@@ -26,11 +26,10 @@ export class ParamsManager {
       rows.forEach((row) => {
         const keyInput = row.querySelector('.key-input') as HTMLInputElement;
         const valueInput = row.querySelector('.value-input') as HTMLInputElement;
-        
-        if (keyInput && !(keyInput as any).__variableSupportSetup) {
+        if (keyInput) {
           this.addVariableSupport(keyInput);
         }
-        if (valueInput && !(valueInput as any).__variableSupportSetup) {
+        if (valueInput) {
           this.addVariableSupport(valueInput);
         }
       });
@@ -102,11 +101,15 @@ export class ParamsManager {
   }
 
   private addVariableSupport(input: HTMLInputElement): void {
-    // Mark as setup to avoid duplicates
-    (input as any).__variableSupportSetup = true;
+    // Attach once, but always refresh decorations with the latest context
+    if (!(input as any).__variableSupportSetup) {
+      (input as any).__variableSupportSetup = true;
+      input.addEventListener('input', () => {
+        this.refreshVariableDecorations(input);
+      });
+    }
 
-    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
-    addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
+    this.refreshVariableDecorations(input);
 
     // Setup autocomplete for variable suggestions (context fetched dynamically via callback)
     setupAutocomplete(input, () => ({
@@ -114,6 +117,11 @@ export class ParamsManager {
       globals: this.globals,
       folderVars: this.folderVars || {}
     }));
+  }
+
+  private refreshVariableDecorations(input: HTMLInputElement): void {
+    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
   }
 
   private updateParamsFromDOM(): void {

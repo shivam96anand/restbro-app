@@ -321,7 +321,14 @@ export class RequestFormHandler {
       methodSelect.value = 'GET';
       this.updateMethodSelectColor(methodSelect);
     }
-    if (urlInput) urlInput.value = '';
+    if (urlInput) {
+      urlInput.value = '';
+
+      // Remove any leftover variable overlay/indicator from the previous tab
+      const existing = urlInput.parentElement?.querySelector('.variable-highlight-container');
+      if (existing) existing.remove();
+      urlInput.classList.remove('has-variable-overlay', 'has-variables');
+    }
   }
 
   /**

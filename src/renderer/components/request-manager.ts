@@ -80,8 +80,10 @@ export class RequestManager {
   private async loadRequest(tabId: string | null, request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): Promise<void> {
     this.dataManager.setCurrentRequest(request);
 
+    // Always clear UI state before loading a request so previous tab data doesn't linger
+    this.clearForm();
+
     if (!request || !tabId) {
-      this.clearForm();
       this.formHandler.showEmptyState();
       return;
     }
