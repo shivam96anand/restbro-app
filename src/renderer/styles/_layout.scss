@@ -1,13 +1,16 @@
 // App Layout Styles
 
 .app-header {
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.02) 0%,
+              var(--bg-secondary) 100%);
+  border-bottom: 2px solid var(--border-color);
   padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   -webkit-app-region: drag;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {

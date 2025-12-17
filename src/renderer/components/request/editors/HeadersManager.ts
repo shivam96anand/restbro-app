@@ -1,5 +1,5 @@
 import type { KeyValuePair } from '../../../../shared/types';
-import { addVariableTooltips, addVariableHighlighting } from '../variable-helper';
+import { addVariableHighlighting } from '../variable-helper';
 import { setupAutocomplete } from '../variable-autocomplete';
 
 export class HeadersManager {
@@ -120,7 +120,7 @@ export class HeadersManager {
   }
 
   private refreshVariableDecorations(input: HTMLInputElement): void {
-    addVariableTooltips(input, this.activeEnvironment, this.globals, this.folderVars);
+    // Only use addVariableHighlighting - it handles both coloring and tooltips on hover
     addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
   }
 

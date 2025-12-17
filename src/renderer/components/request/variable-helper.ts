@@ -291,6 +291,26 @@ export function addVariableHighlighting(
 
     // Update position on window resize
     window.addEventListener('resize', updatePosition);
+
+    // Remove tooltip when input gains focus (user is typing)
+    const focusHandler = () => {
+      removeGlobalTooltip();
+    };
+    inputElement.addEventListener('focus', focusHandler);
+
+    // Remove tooltip when clicking anywhere in the document
+    const clickHandler = (e: MouseEvent) => {
+      if (globalTooltip && !globalTooltip.contains(e.target as Node)) {
+        removeGlobalTooltip();
+      }
+    };
+    document.addEventListener('click', clickHandler);
+
+    // Store cleanup for these listeners too
+    (container as any).__inputCleanup = () => {
+      inputElement.removeEventListener('focus', focusHandler);
+      document.removeEventListener('click', clickHandler);
+    };
   } else {
     // Container exists, ensure scroll is synced
     container.scrollLeft = inputElement.scrollLeft;
@@ -369,29 +389,31 @@ export function addVariableHighlighting(
       };
     });
 
+    // Track if we should keep tooltip (for when mouse moves to tooltip)
+    let keepTooltipTimer: number | null = null;
+
     varSpan.addEventListener('mouseleave', () => {
-      // Small delay to allow mouse to move to tooltip
-      setTimeout(() => {
+      // Delay to allow mouse to move to tooltip
+      keepTooltipTimer = window.setTimeout(() => {
+        // Only remove if tooltip exists and mouse hasn't entered it
         if (globalTooltip) {
-          // Check if mouse entered the tooltip
+          const tooltipRect = globalTooltip.getBoundingClientRect();
           const mouseX = (window as any).__mouseX || 0;
           const mouseY = (window as any).__mouseY || 0;
-          const tooltipRect = globalTooltip.getBoundingClientRect();
-
+          
           const isOverTooltip = mouseX >= tooltipRect.left &&
                                 mouseX <= tooltipRect.right &&
                                 mouseY >= tooltipRect.top &&
                                 mouseY <= tooltipRect.bottom;
 
           if (!isOverTooltip) {
-            // Cleanup and remove
             if ((globalTooltip as any).__cleanup) {
               (globalTooltip as any).__cleanup();
             }
             removeGlobalTooltip();
           }
         }
-      }, 100);
+      }, 50); // Reduced delay from 100ms to 50ms
     });
 
     container.appendChild(varSpan);

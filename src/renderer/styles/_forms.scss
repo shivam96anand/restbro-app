@@ -324,15 +324,17 @@
 
 // Context Menu Styles - Modern Enterprise Design
 .context-menu {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-              0 10px 15px -3px rgba(0, 0, 0, 0.2),
-              0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.03) 0%,
+              var(--bg-tertiary) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.05);
   min-width: 200px;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
   animation: contextMenuSlideIn 0.15s ease-out;
   transform-origin: top left;
 
@@ -348,16 +350,16 @@
   }
 
   .context-menu-item {
-    padding: 10px 14px;
+    padding: 11px 16px;
     cursor: pointer;
     font-size: 13px;
-    border-radius: 6px;
-    transition: all 0.12s ease;
+    border-radius: 7px;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--text-primary);
-    font-weight: 450;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
     position: relative;
     overflow: hidden;
 
@@ -383,16 +385,20 @@
     }
 
     &:hover {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      background: linear-gradient(135deg,
+                  rgba(255, 255, 255, 0.08) 0%,
+                  rgba(255, 255, 255, 0.12) 100%);
       color: white;
-      transform: translateX(2px);
+      transform: translateX(3px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 
       .context-menu-icon {
         opacity: 1;
+        transform: scale(1.1);
       }
 
       .context-menu-shortcut {
-        color: rgba(255, 255, 255, 0.7);
+        color: rgba(255, 255, 255, 0.8);
       }
     }
 
@@ -417,8 +423,12 @@
 
   .context-menu-separator {
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--border-color) 20%, var(--border-color) 80%, transparent 100%);
-    margin: 6px 8px;
+    background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.1) 20%, 
+                rgba(255, 255, 255, 0.1) 80%, 
+                transparent 100%);
+    margin: 8px 10px;
   }
 
   .context-menu-group-label {
@@ -710,14 +720,25 @@
 
   input:not(.kv-checkbox) {
     flex: 1;
-    background-color: var(--bg-tertiary);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
     padding: 6px 10px;
     font-size: 11px;
     font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
     transition: all 0.12s ease;
+    position: relative;
+    z-index: 1;
+
+    &.has-variable-overlay {
+      background: transparent !important;
+      color: transparent;
+      caret-color: var(--text-primary);
+      z-index: 2;
+    }
 
     &::placeholder {
       color: var(--text-secondary);
@@ -728,8 +749,10 @@
     &:focus {
       outline: none;
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.08);
-      background-color: var(--bg-primary);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+      background: linear-gradient(135deg,
+                  rgba(var(--primary-color-rgb), 0.04) 0%,
+                  rgba(0, 0, 0, 0.2) 100%);
     }
   }
 
@@ -1068,10 +1091,12 @@
   gap: 6px;
 
   input {
-    background-color: var(--bg-tertiary);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
     padding: 6px 10px;
     font-size: 11px;
     font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
@@ -1084,7 +1109,10 @@
     &:focus {
       outline: none;
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.08);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+      background: linear-gradient(135deg,
+                  rgba(var(--primary-color-rgb), 0.04) 0%,
+                  rgba(0, 0, 0, 0.2) 100%);
     }
   }
 }
@@ -1113,10 +1141,12 @@
   }
 
   input, select {
-    background-color: var(--bg-tertiary);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
     padding: 6px 10px;
     font-size: 11px;
     min-height: 16px;
@@ -1792,8 +1822,8 @@ textarea {
   overflow: hidden;
   padding: inherit;
   border: 1px solid transparent;
-  color: var(--text-primary);
-  z-index: 1;
+  color: transparent;
+  z-index: 3;
 
   span {
     color: var(--text-primary);
@@ -1806,7 +1836,7 @@ textarea {
     padding: 0;
 
     &.undefined {
-      color: var(--primary-color);
+      color: var(--error-color);
       text-decoration: underline dotted var(--error-color);
     }
   }
@@ -1819,7 +1849,9 @@ textarea {
   &.has-variables-inline {
     position: relative;
     z-index: 2;
-    background: transparent;
+    background: transparent !important;
+    color: transparent;
+    caret-color: var(--text-primary);
   }
 }
 
@@ -1901,14 +1933,14 @@ textarea {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.visible {
     opacity: 1;
@@ -1920,17 +1952,21 @@ textarea {
 }
 
 .folder-vars-dialog {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.02) 0%,
+              var(--bg-secondary) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   width: 600px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  transform: scale(0.95) translateY(10px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+              0 8px 24px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: scale(0.92) translateY(20px);
   opacity: 0;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.visible {
     transform: scale(1) translateY(0);
@@ -1944,10 +1980,12 @@ textarea {
 }
 
 .folder-vars-dialog-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
-  border-radius: 12px 12px 0 0;
+  padding: 24px 28px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.05) 0%,
+              rgba(var(--primary-color-rgb), 0.02) 100%);
+  border-radius: 16px 16px 0 0;
 }
 
 .folder-vars-dialog-title-container {
@@ -2233,13 +2271,15 @@ textarea {
 }
 
 .folder-vars-dialog-footer {
-  padding: 16px 24px;
-  border-top: 1px solid var(--border-color);
+  padding: 20px 28px;
+  border-top: 2px solid rgba(255, 255, 255, 0.08);
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  background: var(--bg-tertiary);
-  border-radius: 0 0 12px 12px;
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.02) 0%,
+              rgba(var(--primary-color-rgb), 0.05) 100%);
+  border-radius: 0 0 16px 16px;
 }
 
 .folder-vars-cancel-btn {

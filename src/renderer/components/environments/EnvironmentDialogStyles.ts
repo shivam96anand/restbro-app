@@ -9,26 +9,38 @@ export class EnvironmentDialogStyles {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10000;
+    animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   `;
 
   static readonly dialog = `
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                var(--bg-secondary) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
     width: 700px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                0 8px 24px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   `;
 
   static readonly header = `
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 24px 28px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.05) 0%,
+                rgba(var(--primary-color-rgb), 0.02) 100%);
+    border-radius: 16px 16px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -36,9 +48,10 @@ export class EnvironmentDialogStyles {
 
   static readonly title = `
     margin: 0;
-    color: var(--text-primary);
-    font-size: 18px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 20px;
     font-weight: 600;
+    letter-spacing: -0.01em;
   `;
 
   static readonly buttonsContainer = `
@@ -57,13 +70,16 @@ export class EnvironmentDialogStyles {
   `;
 
   static readonly addButton = `
-    padding: 6px 12px;
-    background: var(--primary-color);
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, rgba(var(--primary-color-rgb), 0.8) 100%);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     color: white;
     cursor: pointer;
     font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.3);
   `;
 
   static readonly body = `
@@ -198,30 +214,39 @@ export class EnvironmentDialogStyles {
   `;
 
   static readonly footer = `
-    padding: 16px 24px;
-    border-top: 1px solid var(--border-color);
+    padding: 20px 28px;
+    border-top: 2px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(var(--primary-color-rgb), 0.05) 100%);
+    border-radius: 0 0 16px 16px;
     display: flex;
-    gap: 8px;
+    gap: 12px;
     justify-content: flex-end;
   `;
 
   static readonly cancelButton = `
-    padding: 8px 16px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: var(--text-primary);
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
   `;
 
   static readonly saveButton = `
-    padding: 8px 16px;
-    background: var(--primary-color);
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, rgba(var(--primary-color-rgb), 0.8) 100%);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     color: white;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
   `;
 }

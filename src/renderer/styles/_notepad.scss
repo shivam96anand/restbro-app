@@ -185,28 +185,39 @@
 
 .notepad-context-menu {
   position: fixed;
-  background: #1c1f26;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.03) 0%,
+              var(--bg-tertiary) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   min-width: 180px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  padding: 6px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
+              0 4px 8px rgba(0, 0, 0, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 8px;
   display: flex;
   flex-direction: column;
   z-index: 9999;
+  backdrop-filter: blur(16px);
 
   button {
     text-align: left;
     background: none;
     border: none;
-    color: var(--text-primary);
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 11px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: linear-gradient(135deg,
+                  rgba(255, 255, 255, 0.08) 0%,
+                  rgba(255, 255, 255, 0.12) 100%);
+      transform: translateX(3px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
   }
 }
