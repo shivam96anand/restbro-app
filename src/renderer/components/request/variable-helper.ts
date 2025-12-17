@@ -238,31 +238,36 @@ export function addVariableHighlighting(
 
   // Create or get highlight container
   let container = inputElement.parentElement?.querySelector('.variable-highlight-container') as HTMLDivElement;
-  if (!container) {
+  const isNewContainer = !container;
+  
+  if (isNewContainer) {
     container = document.createElement('div');
     container.className = 'variable-highlight-container';
     inputElement.parentElement?.appendChild(container);
+  }
 
-    // Position container to overlay the input
-    const updatePosition = () => {
-      const rect = inputElement.getBoundingClientRect();
-      const parentRect = inputElement.parentElement!.getBoundingClientRect();
-      container.style.left = `${rect.left - parentRect.left}px`;
-      container.style.top = `${rect.top - parentRect.top}px`;
-      container.style.width = `${rect.width}px`;
-      container.style.height = `${rect.height}px`;
-    };
-    updatePosition();
+  // CRITICAL FIX: Always update position and size, not just on creation
+  // This ensures the overlay stays aligned when DOM reflows or tabs switch
+  const updatePosition = () => {
+    const rect = inputElement.getBoundingClientRect();
+    const parentRect = inputElement.parentElement!.getBoundingClientRect();
+    container.style.left = `${rect.left - parentRect.left}px`;
+    container.style.top = `${rect.top - parentRect.top}px`;
+    container.style.width = `${rect.width}px`;
+    container.style.height = `${rect.height}px`;
+  };
+  updatePosition();
 
-    // Match input typography so overlay text is identical size/weight
-    const computed = window.getComputedStyle(inputElement);
-    container.style.fontSize = computed.fontSize;
-    container.style.fontFamily = computed.fontFamily;
-    container.style.fontWeight = computed.fontWeight;
-    container.style.lineHeight = computed.lineHeight;
-    container.style.letterSpacing = computed.letterSpacing;
-    container.style.padding = computed.padding;
+  // Match input typography so overlay text is identical size/weight
+  const computed = window.getComputedStyle(inputElement);
+  container.style.fontSize = computed.fontSize;
+  container.style.fontFamily = computed.fontFamily;
+  container.style.fontWeight = computed.fontWeight;
+  container.style.lineHeight = computed.lineHeight;
+  container.style.letterSpacing = computed.letterSpacing;
+  container.style.padding = computed.padding;
 
+  if (isNewContainer) {
     // CRITICAL FIX: Sync scroll position between input and overlay
     // This allows the overlay to scroll naturally with the input text
     const syncScroll = () => {
