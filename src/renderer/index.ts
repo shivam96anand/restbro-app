@@ -153,9 +153,15 @@ class ApiCourierRenderer {
       if (updatedRequest) {
         const activeTab = this.tabsManager.getActiveTab();
 
+        console.log('[AppInitializer] Request updated. Tab has collectionId:', !!activeTab?.collectionId);
+        console.log('[AppInitializer] Updated request has auth.config.accessToken:', !!updatedRequest.auth?.config?.accessToken);
+
         // If this tab belongs to a collection, save the changes back to the collection
         if (activeTab && activeTab.collectionId) {
+          console.log('[AppInitializer] Saving request to collection:', activeTab.collectionId);
           this.collectionsManager.updateCollectionRequest(activeTab.collectionId, updatedRequest);
+        } else {
+          console.warn('[AppInitializer] Cannot save request - tab has no collectionId. Token will NOT persist!');
         }
       }
     });

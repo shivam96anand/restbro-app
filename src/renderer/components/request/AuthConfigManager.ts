@@ -140,7 +140,15 @@ export class AuthConfigManager {
 
       if (auth.type === 'oauth2') {
         // Delegate OAuth2 loading to OAuth2Manager
-        this.oauth2Manager.loadConfig(auth.config);
+        // CRITICAL FIX: Use multiple requestAnimationFrame to ensure DOM is fully rendered
+        // and all elements (including token info panel) are ready
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              this.oauth2Manager.loadConfig(auth.config);
+            });
+          });
+        });
       } else {
         // Load non-OAuth2 auth config
         setTimeout(() => {

@@ -1361,28 +1361,36 @@
 .oauth-token-info {
   margin-top: 20px;
   padding: 16px;
-  background-color: var(--bg-secondary, #f8f9fa);
-  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  border: 2px solid var(--border-color);
   border-radius: 6px;
 
   &.valid {
-    border-color: #10b981; // Green border for valid tokens
+    border-color: var(--success-color); // Green border for valid tokens
   }
 
   &.expired {
-    border-color: #ef4444; // Red border for expired tokens
+    border-color: var(--error-color); // Red border for expired tokens
   }
 
   .token-info-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     margin-bottom: 12px;
+
+    h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
 
     .token-icon {
       width: 16px;
       height: 16px;
-      color: var(--success-color, #22c55e);
+      color: var(--success-color);
     }
 
     .token-title {
@@ -1407,13 +1415,14 @@
     .token-label {
       color: var(--text-secondary);
       font-weight: 500;
-      min-width: 80px;
+      min-width: 100px;
+      flex-shrink: 0;
     }
 
     .token-value {
       color: var(--text-primary);
-      font-family: 'Monaco', 'Menlo', monospace;
-      background-color: var(--bg-tertiary);
+      font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+      background-color: var(--bg-secondary);
       padding: 4px 8px;
       border-radius: 3px;
       border: 1px solid var(--border-color);
@@ -1427,7 +1436,7 @@
         cursor: pointer;
 
         &:hover {
-          background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+          background-color: var(--hover-color);
         }
       }
     }
@@ -1487,18 +1496,51 @@
     }
   }
 
+  .token-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .token-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  .token-status {
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.valid {
+      color: var(--success-color);
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    &.expired {
+      color: var(--error-color);
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+  }
+
   .token-expiry {
     &.expires-soon {
       .token-value {
-        color: var(--warning-color, #f59e0b);
-        border-color: var(--warning-color, #f59e0b);
+        color: var(--warning-color);
+        border-color: var(--warning-color);
       }
     }
 
     &.expired {
       .token-value {
-        color: var(--error-color, #ef4444);
-        border-color: var(--error-color, #ef4444);
+        color: var(--error-color);
+        border-color: var(--error-color);
       }
     }
   }

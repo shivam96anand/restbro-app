@@ -103,6 +103,9 @@ export class OAuth2Manager {
           expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
         };
 
+        console.log('[OAuth2Manager] Calling onConfigUpdate with token:', !!updatedConfig.accessToken);
+        console.log('[OAuth2Manager] Updated config keys:', Object.keys(updatedConfig));
+
         // Update the request with the token
         this.onConfigUpdate(updatedConfig);
 
@@ -154,6 +157,7 @@ export class OAuth2Manager {
    * Loads OAuth configuration into the UI
    */
   loadConfig(config: Record<string, string>): void {
+    console.log('[OAuth2Manager] Loading config with token:', config.accessToken ? 'YES' : 'NO');
     this.uiRenderer.loadConfigToDOM(config);
 
     // Show OAuth status and refresh button if token exists

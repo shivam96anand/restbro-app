@@ -229,6 +229,11 @@ export class NotepadManager {
         preview: false,
         inlineSuggest: false,
       },
+      unicodeHighlight: {
+        ambiguousCharacters: false,
+        invisibleCharacters: false,
+        nonBasicASCII: false,
+      },
     });
 
     this.editor.onDidChangeModelContent(() => {

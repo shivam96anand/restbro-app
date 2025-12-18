@@ -87,9 +87,14 @@ export class UIHelpers {
     const tokenExpiry = document.getElementById('oauth-token-expiry');
     const tokenStatus = document.getElementById('oauth-token-status');
 
-    if (!tokenInfo || !tokenDisplay || !tokenExpiry || !tokenStatus) return;
+    if (!tokenInfo || !tokenDisplay || !tokenExpiry || !tokenStatus) {
+      console.warn('[UIHelpers] Token info elements not found in DOM');
+      return;
+    }
 
     if (config.accessToken) {
+      console.log('[UIHelpers] Displaying token info');
+      
       // Show token panel
       tokenInfo.style.display = 'block';
 
@@ -109,23 +114,26 @@ export class UIHelpers {
           tokenExpiry.textContent = expiresAt.toLocaleString();
           tokenStatus.textContent = 'Valid';
           tokenStatus.className = 'token-status valid';
+          tokenStatus.style.color = 'var(--success-color)';
           tokenInfo.className = 'oauth-token-info valid';
-          tokenInfo.style.borderColor = '#10b981';
+          tokenInfo.style.borderColor = '';
           tokenInfo.style.backgroundColor = '';
         } else {
           tokenExpiry.textContent = expiresAt.toLocaleString();
           tokenStatus.textContent = 'Expired';
           tokenStatus.className = 'token-status expired';
+          tokenStatus.style.color = 'var(--error-color)';
           tokenInfo.className = 'oauth-token-info expired';
-          tokenInfo.style.borderColor = '#ef4444';
+          tokenInfo.style.borderColor = '';
           tokenInfo.style.backgroundColor = '';
         }
       } else {
         tokenExpiry.textContent = 'No expiration';
         tokenStatus.textContent = 'Valid';
         tokenStatus.className = 'token-status valid';
+        tokenStatus.style.color = 'var(--success-color)';
         tokenInfo.className = 'oauth-token-info valid';
-        tokenInfo.style.borderColor = '#10b981';
+        tokenInfo.style.borderColor = '';
         tokenInfo.style.backgroundColor = '';
       }
     } else {
