@@ -48,12 +48,28 @@
 }
 
 #theme-dropdown {
-  background-color: var(--bg-tertiary);
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.08) 0%,
+              var(--bg-tertiary) 100%);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+  border-radius: 6px;
   padding: 4px 8px;
   font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  }
 }
 
 .main-container {

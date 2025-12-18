@@ -36,7 +36,6 @@ export class CollectionsSearch {
       <input type="text" id="collections-search" class="search-input" placeholder="Search collections">
       <span class="search-icon">🔍</span>
       <div class="search-actions"></div>
-      <button class="help-btn" id="collections-help" title="Keyboard shortcuts">?</button>
     `;
 
     collectionsTree.parentNode?.insertBefore(searchContainer, collectionsTree);
@@ -65,13 +64,6 @@ export class CollectionsSearch {
           searchInput.value = '';
           this.handleSearchInput('', getCurrentExpandedFolders());
         }
-      });
-    }
-
-    const helpButton = document.getElementById('collections-help');
-    if (helpButton) {
-      helpButton.addEventListener('click', () => {
-        this.onShowKeyboardShortcuts();
       });
     }
   }

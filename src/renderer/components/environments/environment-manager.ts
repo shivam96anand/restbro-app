@@ -52,14 +52,26 @@ export class EnvironmentManager {
     select.id = 'environment-dropdown';
     select.style.cssText = `
       padding: 4px 8px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.08) 0%, var(--bg-tertiary) 100%);
+      border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+      border-radius: 6px;
       color: var(--text-primary);
       font-size: 13px;
       cursor: pointer;
       min-width: 150px;
+      transition: all 0.2s ease;
+      font-weight: 500;
     `;
+
+    // Add hover effect
+    select.addEventListener('mouseenter', () => {
+      select.style.borderColor = 'var(--primary-color)';
+      select.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.1)';
+    });
+    select.addEventListener('mouseleave', () => {
+      select.style.borderColor = 'var(--border-color)';
+      select.style.boxShadow = 'none';
+    });
 
     // Create manage button
     const manageBtn = document.createElement('button');
@@ -67,15 +79,29 @@ export class EnvironmentManager {
     manageBtn.title = 'Manage Environments';
     manageBtn.style.cssText = `
       padding: 4px 8px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1) 0%, var(--bg-tertiary) 100%);
+      border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+      border-radius: 6px;
       color: var(--text-primary);
       font-size: 14px;
       cursor: pointer;
       line-height: 1;
-      transition: background 0.2s;
+      transition: all 0.2s ease;
     `;
+
+    // Add hover effect for manage button
+    manageBtn.addEventListener('mouseenter', () => {
+      manageBtn.style.background = 'var(--primary-color)';
+      manageBtn.style.borderColor = 'var(--primary-color)';
+      manageBtn.style.transform = 'translateY(-1px) rotate(15deg)';
+      manageBtn.style.boxShadow = '0 2px 8px rgba(var(--primary-color-rgb), 0.25)';
+    });
+    manageBtn.addEventListener('mouseleave', () => {
+      manageBtn.style.background = 'var(--bg-tertiary)';
+      manageBtn.style.borderColor = 'var(--border-color)';
+      manageBtn.style.transform = 'none';
+      manageBtn.style.boxShadow = 'none';
+    });
 
     manageBtn.addEventListener('click', () => {
       this.dialogs.showManageDialog(this.environments, this.activeEnvironmentId).then(result => {

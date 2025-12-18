@@ -164,9 +164,7 @@
   display: flex;
   gap: 6px;
   padding: 10px 16px;
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.02) 0%,
-              var(--bg-secondary) 100%);
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
   align-items: center;
   flex-wrap: wrap;
@@ -189,13 +187,12 @@
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
     &:hover {
       background: linear-gradient(135deg,
                   var(--primary-color) 0%,
                   var(--primary-dark) 100%);
-      border-color: transparent;
+      border-color: var(--primary-light);
       color: white;
       transform: translateY(-1px);
       box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);

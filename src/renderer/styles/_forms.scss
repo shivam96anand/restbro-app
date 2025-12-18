@@ -541,12 +541,35 @@
 }
 
 .method-select {
-  background-color: var(--bg-tertiary);
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.12) 0%,
+              var(--bg-tertiary) 100%);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 8px 12px;
-  width: 100px;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+  border-radius: 6px;
+  padding: 8px 8px;
+  min-width: 65px;
+  max-width: 90px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.2) 0%,
+                var(--bg-tertiary) 100%);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+  }
 }
 
 .url-input-wrapper {
@@ -567,6 +590,9 @@
     white-space: nowrap;
     font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
     font-size: 13px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
 
     // Hide scrollbar but keep scrolling functionality
     scrollbar-width: none; // Firefox
@@ -582,16 +608,30 @@
 .url-input {
   flex: 1;
   width: 100%;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 8px 12px;
   position: relative;
   z-index: 1; // Below overlay so variable spans can receive hover
+  transition: all 0.2s ease;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
 
   &::placeholder {
     color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  &:hover {
+    border-color: var(--primary-color);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
   }
 }
 
@@ -1513,16 +1553,17 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   text-align: center;
   font-size: 15px;
   font-weight: 500;
   background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.02) 0%,
-              transparent 100%);
-  border-radius: 8px;
+              rgba(var(--primary-color-rgb), 0.05) 0%,
+              rgba(var(--primary-color-rgb), 0.02) 100%);
+  border-radius: 12px;
   margin: 16px;
-  border: 1px dashed var(--border-color);
+  border: 2px dashed rgba(var(--primary-color-rgb), 0.3);
+  opacity: 0.8;
 }
 
 .response-meta {
