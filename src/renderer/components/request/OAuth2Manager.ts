@@ -12,6 +12,8 @@ export class OAuth2Manager {
   private uiRenderer: OAuth2UIRenderer;
   private onConfigUpdate: (config: Record<string, string>) => void;
   private currentCollectionId?: string;
+  private isLoadingConfig = false; // Suppress onConfigUpdate while loading persisted config
+  private currentConfig: Record<string, string> = {}; // Last known config including tokens
 
   constructor(
     onConfigUpdate: (config: Record<string, string>) => void,
@@ -22,6 +24,13 @@ export class OAuth2Manager {
     this.variableResolver = variableResolver;
     this.uiHelpers = uiHelpers;
     this.uiRenderer = new OAuth2UIRenderer();
+  }
+
+  /**
+   * Temporarily disable config updates while populating the UI
+   */
+  setLoadingState(isLoading: boolean): void {
+    this.isLoadingConfig = isLoading;
   }
 
   /**
@@ -58,8 +67,18 @@ export class OAuth2Manager {
     inputs.forEach(input => {
       if ((input as HTMLElement).dataset.field) {
         input.addEventListener('input', () => {
-          const config = this.uiRenderer.getConfigFromDOM();
-          this.onConfigUpdate(config);
+          if (this.isLoadingConfig) {
+            console.log('[OAuth2Manager] Skipping onConfigUpdate during load');
+            return;
+          }
+          const domConfig = this.uiRenderer.getConfigFromDOM();
+          // Merge with currentConfig to avoid losing tokens on field edits
+          const mergedConfig = {
+            ...this.currentConfig,
+            ...domConfig
+          };
+          this.currentConfig = mergedConfig;
+          this.onConfigUpdate(mergedConfig);
         });
       }
     });
@@ -103,6 +122,7 @@ export class OAuth2Manager {
           expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
         };
 
+        this.currentConfig = updatedConfig;
         console.log('[OAuth2Manager] Calling onConfigUpdate with token:', !!updatedConfig.accessToken);
         console.log('[OAuth2Manager] Updated config keys:', Object.keys(updatedConfig));
 
@@ -136,12 +156,14 @@ export class OAuth2Manager {
   private handleClearToken(): void {
     // Get current config and clear token-related fields
     const config = this.uiRenderer.getConfigFromDOM();
-    this.onConfigUpdate({
+    const clearedConfig = {
       ...config,
       accessToken: '',
       refreshToken: '',
       expiresAt: ''
-    });
+    };
+    this.currentConfig = clearedConfig;
+    this.onConfigUpdate(clearedConfig);
 
     // Hide the clear button and token info
     this.uiHelpers.showClearButton(false);
@@ -158,6 +180,7 @@ export class OAuth2Manager {
    */
   loadConfig(config: Record<string, string>): void {
     console.log('[OAuth2Manager] Loading config with token:', config.accessToken ? 'YES' : 'NO');
+    this.currentConfig = { ...config };
     this.uiRenderer.loadConfigToDOM(config);
 
     // Show OAuth status and refresh button if token exists
@@ -215,13 +238,15 @@ export class OAuth2Manager {
       const result = await (window as any).electronAPI.oauth.refreshToken(resolvedConfig);
 
       if (result.success) {
+        const refreshedConfig = {
+          ...auth.config,
+          accessToken: result.data.accessToken,
+          expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
+        };
+        this.currentConfig = refreshedConfig;
         return {
           type: 'oauth2',
-          config: {
-            ...auth.config,
-            accessToken: result.data.accessToken,
-            expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
-          }
+          config: refreshedConfig
         };
       }
     } catch (error) {
@@ -257,6 +282,7 @@ export class OAuth2Manager {
           expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
         };
 
+        this.currentConfig = updatedConfig;
         // Update the UI as well
         this.uiHelpers.showClearButton(true);
         this.uiHelpers.updateTokenInfo(updatedConfig);

@@ -10,6 +10,7 @@ export class AuthConfigManager {
   private uiHelpers: UIHelpers;
   private onAuthUpdate: (auth: { type: string; config: Record<string, string> }) => void;
   private authConfigInputListener?: (event: Event) => void;
+  private isLoading: boolean = false; // Flag to suppress updates during loading
 
   constructor(
     onAuthUpdate: (auth: { type: string; config: Record<string, string> }) => void,
@@ -102,6 +103,12 @@ export class AuthConfigManager {
    * Updates auth configuration from DOM inputs
    */
   private updateFromDOM(authType: string): void {
+    // Don't update during loading to prevent overwriting saved config
+    if (this.isLoading) {
+      console.log('[AuthConfigManager] Suppressing update during loading');
+      return;
+    }
+
     const authConfig = document.getElementById('auth-config');
     if (!authConfig) return;
 
@@ -127,6 +134,10 @@ export class AuthConfigManager {
    * Loads authentication configuration into the UI
    */
   load(auth: { type: string; config: Record<string, string> }, collectionId?: string): void {
+    // Set loading flag to suppress spurious updates
+    this.isLoading = true;
+    console.log('[AuthConfigManager] Starting load with isLoading=true');
+
     // Set collectionId in OAuth2Manager for variable resolution
     this.oauth2Manager.setCollectionId(collectionId);
     console.log('[AuthConfigManager] Loaded auth with collectionId:', collectionId);
@@ -139,6 +150,8 @@ export class AuthConfigManager {
       this.uiHelpers.toggleOAuthStatus(auth.type === 'oauth2');
 
       if (auth.type === 'oauth2') {
+        // Prevent field listeners from overwriting saved tokens during load
+        this.oauth2Manager.setLoadingState(true);
         // Delegate OAuth2 loading to OAuth2Manager
         // CRITICAL FIX: Use multiple requestAnimationFrame to ensure DOM is fully rendered
         // and all elements (including token info panel) are ready
@@ -146,6 +159,10 @@ export class AuthConfigManager {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               this.oauth2Manager.loadConfig(auth.config);
+              // Clear loading flag after config is loaded
+              this.isLoading = false;
+              this.oauth2Manager.setLoadingState(false);
+              console.log('[AuthConfigManager] OAuth2 load complete, isLoading=false');
             });
           });
         });
@@ -175,6 +192,9 @@ export class AuthConfigManager {
                       input.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                   });
+                  // Clear loading flag after config is loaded
+                  this.isLoading = false;
+                  console.log('[AuthConfigManager] Non-OAuth2 load complete, isLoading=false');
                 });
               });
             });
@@ -188,6 +208,7 @@ export class AuthConfigManager {
    * Clears authentication configuration
    */
   clear(): void {
+    this.isLoading = false; // Reset flag when clearing
     const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
     if (authTypeSelect) {
       authTypeSelect.value = 'none';

@@ -14,6 +14,7 @@ export class RequestManager {
   private readonly CACHE_TTL = 500; // Cache for 500ms
   private requestStateCache: Map<string, RequestStateCache> = new Map();
   private readonly REQUEST_CACHE_TTL = 5000; // Cache request state for 5 seconds
+  private currentTabId?: string;
 
   constructor() {
     this.formHandler = new RequestFormHandler(
@@ -32,6 +33,7 @@ export class RequestManager {
 
   private updateRequest(updates: Partial<ApiRequest>): void {
     this.dataManager.updateCurrentRequest(updates);
+    this.refreshCacheForActiveTab();
   }
 
   initialize(): void {
@@ -78,12 +80,14 @@ export class RequestManager {
   }
 
   private async loadRequest(tabId: string | null, request: ApiRequest | null, collectionId?: string, activeDetailsTab?: string): Promise<void> {
+    this.currentTabId = tabId || undefined;
     this.dataManager.setCurrentRequest(request);
 
     // Always clear UI state before loading a request so previous tab data doesn't linger
     this.clearForm();
 
     if (!request || !tabId) {
+      this.currentTabId = undefined;
       this.formHandler.showEmptyState();
       return;
     }
@@ -91,8 +95,15 @@ export class RequestManager {
     // Check if we have a cached state for this tab
     const cachedState = this.getCachedRequestState(tabId);
     if (cachedState) {
+      // Always prefer the fresh request payload passed from tabs (it may have a newer token)
+      const mergedCachedState = {
+        ...cachedState,
+        request: request
+      };
+      // Update the cache immediately so future switches stay in sync
+      this.requestStateCache.set(tabId, { ...mergedCachedState, timestamp: Date.now() });
       // Load synchronously from cache for instant display
-      this.loadRequestFromCache(cachedState, activeDetailsTab);
+      this.loadRequestFromCache(mergedCachedState, activeDetailsTab);
       return;
     }
 
@@ -227,6 +238,24 @@ export class RequestManager {
       collectionId,
       variableContext,
       activeDetailsTab,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Keep cached request in sync with latest edits so tab switches don't replay stale auth (tokens).
+   */
+  private refreshCacheForActiveTab(): void {
+    if (!this.currentTabId) return;
+    const cached = this.requestStateCache.get(this.currentTabId);
+    if (!cached) return;
+
+    const currentRequest = this.dataManager.getCurrentRequest();
+    if (!currentRequest) return;
+
+    this.requestStateCache.set(this.currentTabId, {
+      ...cached,
+      request: currentRequest,
       timestamp: Date.now()
     });
   }
