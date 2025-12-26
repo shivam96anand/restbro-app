@@ -26,30 +26,37 @@ export class MonacoJsonEditor {
     this.initialize(options.value);
   }
 
-  private getCurrentThemeColor(): string {
+  private getCssHexVariable(name: string): string {
     const color = getComputedStyle(document.documentElement)
-      .getPropertyValue('--primary-color')
+      .getPropertyValue(name)
       .trim();
     return color.replace('#', '');
   }
 
   private updateMonacoTheme(): void {
-    const themeColor = this.getCurrentThemeColor();
+    const themeColor = this.getCssHexVariable('--primary-color');
+    const valueColor = this.getCssHexVariable('--text-primary') || 'ffffff';
+    const bracketColor = this.getCssHexVariable('--json-bracket') || 'da70d6';
+    const editorBackground = this.getCssHexVariable('--bg-primary') || '1a1a1a';
+    const lineNumberColor = this.getCssHexVariable('--json-line-number') || '6e6e6e';
 
     monaco.editor.defineTheme('api-courier-json', {
       base: 'vs-dark',
       inherit: true,
       rules: [
         { token: 'string.key.json', foreground: themeColor, fontStyle: 'bold' },
-        { token: 'string.value.json', foreground: 'ffffff' },
-        { token: 'number.json', foreground: 'ffffff' },
-        { token: 'keyword.json', foreground: 'ffffff' },
-        { token: 'delimiter.bracket.json', foreground: 'da70d6', fontStyle: 'bold' },
+        { token: 'string.value.json', foreground: valueColor },
+        { token: 'string.json', foreground: valueColor },
+        { token: 'number.json', foreground: valueColor },
+        { token: 'keyword.json', foreground: valueColor },
+        { token: 'delimiter.bracket.json', foreground: bracketColor, fontStyle: 'bold' },
+        { token: 'delimiter.colon.json', foreground: valueColor },
+        { token: 'delimiter.comma.json', foreground: bracketColor },
       ],
       colors: {
-        'editor.background': '#1a1a1a',
+        'editor.background': `#${editorBackground}`,
         'editor.foreground': '#ffffff',
-        'editorLineNumber.foreground': '#6e6e6e',
+        'editorLineNumber.foreground': `#${lineNumberColor}`,
         'editor.selectionBackground': '#404040',
         'editor.lineHighlightBackground': '#2d2d2d',
       }
