@@ -33,6 +33,14 @@
   border-radius: 999px;
   font-weight: 600;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.validity-badge .ui-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .validity-badge.valid {

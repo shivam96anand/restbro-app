@@ -1,4 +1,5 @@
 import { Collection } from '../../../shared/types';
+import { createIconElement } from '../../utils/icons';
 
 export class ImportDialog {
   private onImport: (preview: any) => Promise<boolean>;
@@ -94,7 +95,7 @@ export class ImportDialog {
         gap: 12px;
       `;
 
-      const createStat = (label: string, value: number, icon: string) => {
+      const createStat = (label: string, value: number, icon: Parameters<typeof createIconElement>[0]) => {
         const stat = document.createElement('div');
         stat.style.cssText = `
           text-align: center;
@@ -104,11 +105,13 @@ export class ImportDialog {
         `;
 
         const iconEl = document.createElement('div');
-        iconEl.textContent = icon;
         iconEl.style.cssText = `
-          font-size: 24px;
-          margin-bottom: 4px;
+          width: 24px;
+          height: 24px;
+          margin: 0 auto 4px auto;
+          color: var(--text-secondary);
         `;
+        iconEl.appendChild(createIconElement(icon, { style: { width: '100%', height: '100%' } }));
 
         const valueEl = document.createElement('div');
         valueEl.textContent = String(value);
@@ -132,9 +135,9 @@ export class ImportDialog {
         return stat;
       };
 
-      summaryStats.appendChild(createStat('Folders', preview.summary.folders, '📁'));
-      summaryStats.appendChild(createStat('Requests', preview.summary.requests, '🌐'));
-      summaryStats.appendChild(createStat('Environments', preview.summary.environments, '🌍'));
+      summaryStats.appendChild(createStat('Folders', preview.summary.folders, 'folder'));
+      summaryStats.appendChild(createStat('Requests', preview.summary.requests, 'file'));
+      summaryStats.appendChild(createStat('Environments', preview.summary.environments, 'globe'));
 
       summarySection.appendChild(summaryTitle);
       summarySection.appendChild(summaryStats);
@@ -178,9 +181,9 @@ export class ImportDialog {
             gap: 6px;
           `;
 
-          const icon = document.createElement('span');
-          icon.textContent = item.type === 'folder' ? '📁' : '🌐';
-          icon.style.fontSize = '14px';
+          const icon = createIconElement(item.type === 'folder' ? 'folder' : 'file', {
+            style: { width: '14px', height: '14px' }
+          });
 
           const name = document.createElement('span');
           name.textContent = item.name;
@@ -252,8 +255,7 @@ export class ImportDialog {
           `;
 
           const envIcon = document.createElement('span');
-          envIcon.textContent = '🌍';
-          envIcon.style.fontSize = '16px';
+          envIcon.appendChild(createIconElement('globe', { style: { width: '16px', height: '16px' } }));
 
           const envName = document.createElement('span');
           envName.textContent = env.name;

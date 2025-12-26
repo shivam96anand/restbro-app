@@ -1,4 +1,5 @@
 import { RequestTab } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 export class TabsEventHandler {
   private onCreateNewTab: () => void;
@@ -132,12 +133,14 @@ export class TabsEventHandler {
 
     const menuOptions = [
       {
-        label: '🔄 Duplicate Tab',
+        label: 'Duplicate Tab',
+        icon: 'duplicate',
         action: () => onDuplicateTab(tab.id),
         destructive: false
       },
       {
-        label: '📋 Copy Request URL',
+        label: 'Copy Request URL',
+        icon: 'clipboard',
         action: () => onCopyRequestUrl(tab.id),
         destructive: false
       },
@@ -147,17 +150,20 @@ export class TabsEventHandler {
         destructive: false
       },
       {
-        label: '❌ Close Tab',
+        label: 'Close Tab',
+        icon: 'close',
         action: () => this.onCloseTab(tab.id),
         destructive: false
       },
       {
-        label: '🗑️ Close All Tabs',
+        label: 'Close All Tabs',
+        icon: 'trash',
         action: () => onCloseAllTabs(),
         destructive: true
       },
       {
-        label: '↩️ Close Other Tabs',
+        label: 'Close Other Tabs',
+        icon: 'layers',
         action: () => onCloseOtherTabs(tab.id),
         destructive: false
       }
@@ -174,24 +180,17 @@ export class TabsEventHandler {
           item.classList.add('destructive');
         }
 
-        // Parse emoji icon from label
-        const emojiMatch = option.label.match(/^(\p{Emoji})\s*/u);
-        if (emojiMatch) {
+        if (option.icon) {
           const iconSpan = document.createElement('span');
           iconSpan.className = 'context-menu-icon';
-          iconSpan.textContent = emojiMatch[1];
+          iconSpan.innerHTML = iconHtml(option.icon);
           item.appendChild(iconSpan);
-
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'context-menu-label';
-          labelSpan.textContent = option.label.replace(emojiMatch[0], '');
-          item.appendChild(labelSpan);
-        } else {
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'context-menu-label';
-          labelSpan.textContent = option.label;
-          item.appendChild(labelSpan);
         }
+
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'context-menu-label';
+        labelSpan.textContent = option.label;
+        item.appendChild(labelSpan);
 
         if (option.action) {
           item.addEventListener('click', () => {

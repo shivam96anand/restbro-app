@@ -1,6 +1,7 @@
 import { Collection } from '../../../shared/types';
 import { CollectionTreeState } from './collections-search';
 import { createIconElement, getMethodIcon, getIcon } from './collections-icons';
+import { iconHtml, IconName } from '../../utils/icons';
 
 export class CollectionsRenderer {
   private findCollectionById: (id: string) => Collection | undefined;
@@ -27,7 +28,7 @@ export class CollectionsRenderer {
       if (treeState.searchTerm) {
         tree.innerHTML = `
           <div class="empty-state">
-            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-icon">${iconHtml('search')}</div>
             <div class="empty-state-message">No collections match your search.</div>
           </div>
         `;
@@ -291,7 +292,7 @@ export class CollectionsRenderer {
   showContextMenu(
     event: MouseEvent,
     collection: Collection,
-    actions: Array<{ label: string; action: (() => void) | null; destructive?: boolean }>
+    actions: Array<{ label: string; action: (() => void) | null; destructive?: boolean; icon?: IconName }>
   ): void {
     // Remove any existing context menus
     const existingMenus = document.querySelectorAll('.context-menu');
@@ -314,24 +315,17 @@ export class CollectionsRenderer {
           item.classList.add('destructive');
         }
 
-        // Parse emoji icon from label
-        const emojiMatch = action.label.match(/^(\p{Emoji})\s*/u);
-        if (emojiMatch) {
+        if (action.icon) {
           const iconSpan = document.createElement('span');
           iconSpan.className = 'context-menu-icon';
-          iconSpan.textContent = emojiMatch[1];
+          iconSpan.innerHTML = iconHtml(action.icon);
           item.appendChild(iconSpan);
-
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'context-menu-label';
-          labelSpan.textContent = action.label.replace(emojiMatch[0], '');
-          item.appendChild(labelSpan);
-        } else {
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'context-menu-label';
-          labelSpan.textContent = action.label;
-          item.appendChild(labelSpan);
         }
+
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'context-menu-label';
+        labelSpan.textContent = action.label;
+        item.appendChild(labelSpan);
 
         if (action.action) {
           item.addEventListener('click', () => {

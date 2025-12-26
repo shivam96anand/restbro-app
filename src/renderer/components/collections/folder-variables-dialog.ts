@@ -4,6 +4,7 @@
  */
 
 import { Collection } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 export interface FolderVariablesDialogResult {
   variables: Record<string, string>;
@@ -38,7 +39,7 @@ export class FolderVariablesDialog {
 
       const icon = document.createElement('span');
       icon.className = 'folder-vars-dialog-icon';
-      icon.textContent = '📁';
+      icon.innerHTML = iconHtml('folder');
 
       const title = document.createElement('h2');
       title.className = 'folder-vars-dialog-title';
@@ -113,7 +114,7 @@ export class FolderVariablesDialog {
           const emptyState = document.createElement('div');
           emptyState.className = 'folder-vars-empty';
           emptyState.innerHTML = `
-            <span class="folder-vars-empty-icon">📋</span>
+            <span class="folder-vars-empty-icon">${iconHtml('clipboard')}</span>
             <span class="folder-vars-empty-text">No variables defined</span>
             <span class="folder-vars-empty-hint">Click "Add Variable" to create one</span>
           `;

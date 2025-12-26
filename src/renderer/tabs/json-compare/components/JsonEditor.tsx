@@ -224,7 +224,21 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
         <div className="json-editor-header">
           <span className="editor-label">{label}</span>
           <span className={`validity-badge ${isValid ? 'valid' : 'invalid'}`}>
-            {isValid ? 'Valid ✓' : 'Invalid ✕'}
+            {isValid ? (
+              <>
+                <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12l4 4 10-10" />
+                </svg>
+                Valid
+              </>
+            ) : (
+              <>
+                <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6l-12 12" />
+                </svg>
+                Invalid
+              </>
+            )}
           </span>
         </div>
         {!isValid && errorMsg && (

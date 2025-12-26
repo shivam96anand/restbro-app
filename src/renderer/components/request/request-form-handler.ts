@@ -1,4 +1,5 @@
 import { ApiRequest, Environment, Globals } from '../../../shared/types';
+import { createIconElement } from '../../utils/icons';
 import { detectVariables, buildFolderVars, addVariableHighlighting } from './variable-helper';
 import { setupAutocomplete } from './variable-autocomplete';
 
@@ -369,12 +370,13 @@ export class RequestFormHandler {
       `;
 
       const icon = document.createElement('div');
-      icon.textContent = '📄';
       icon.style.cssText = `
-        font-size: 48px;
         margin-bottom: 16px;
         opacity: 0.5;
+        width: 48px;
+        height: 48px;
       `;
+      icon.appendChild(createIconElement('file', { style: { width: '100%', height: '100%' } }));
 
       const title = document.createElement('h3');
       title.textContent = 'No Request Selected';

@@ -371,6 +371,11 @@
       justify-content: center;
       flex-shrink: 0;
       opacity: 0.85;
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
     }
 
     .context-menu-label {
@@ -491,10 +496,18 @@
   }
 
   .empty-state-icon {
-    font-size: 56px;
+    width: 56px;
+    height: 56px;
     opacity: 0.25;
     margin-bottom: 8px;
     filter: grayscale(20%);
+    display: inline-flex;
+
+    .ui-icon,
+    svg {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   .empty-state-cta {
@@ -1223,7 +1236,6 @@
       border: none;
       cursor: pointer;
       color: var(--text-secondary);
-      font-size: 12px;
       width: 20px;
       height: 20px;
       display: flex;
@@ -1231,6 +1243,11 @@
       justify-content: center;
       border-radius: 2px;
       transition: all 0.12s ease;
+
+      .ui-icon {
+        width: 16px;
+        height: 16px;
+      }
 
       &:hover {
         color: var(--text-primary);
@@ -1554,35 +1571,31 @@
   font-size: 13px;
   font-weight: 500;
   animation: slideInFromTop 0.3s ease;
+  align-items: center;
+  gap: 8px;
+
+  .status-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+  }
 
   &.status-loading {
     background-color: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
     color: #3b82f6;
-
-    .status-text::before {
-      content: '⏳ ';
-    }
   }
 
   &.status-success {
     background-color: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.3);
     color: #22c55e;
-
-    .status-text::before {
-      content: '✓ ';
-    }
   }
 
   &.status-error {
     background-color: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #ef4444;
-
-    .status-text::before {
-      content: '✗ ';
-    }
   }
 
   .status-text {
@@ -1814,9 +1827,9 @@ pre, code, .json-viewer, .json-content {
     align-items: center;
     gap: 4px;
 
-    &::before {
-      content: '📍';
-      font-size: 10px;
+    .ui-icon {
+      width: 12px;
+      height: 12px;
     }
   }
 
@@ -2099,7 +2112,15 @@ textarea {
 }
 
 .folder-vars-dialog-icon {
-  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+
+  .ui-icon,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .folder-vars-dialog-title {
@@ -2282,8 +2303,16 @@ textarea {
 }
 
 .folder-vars-empty-icon {
-  font-size: 32px;
+  width: 32px;
+  height: 32px;
   opacity: 0.4;
+  display: inline-flex;
+
+  .ui-icon,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .folder-vars-empty-text {
@@ -2492,7 +2521,15 @@ textarea {
 }
 
 .var-edit-icon {
-  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+
+  .ui-icon,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .var-edit-close-btn {
@@ -2563,7 +2600,15 @@ textarea {
 }
 
 .var-edit-source-icon {
-  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+
+  .ui-icon,
+  svg {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .var-edit-input {

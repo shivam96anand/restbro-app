@@ -1,4 +1,5 @@
 import { ApiResponse } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 export class ResponseActions {
   private actionsContainer: HTMLElement | null = null;
@@ -28,15 +29,15 @@ export class ResponseActions {
       this.actionsContainer.style.display = 'none';
       
       this.actionsContainer.innerHTML = `
-        <button id="enlarge-btn" title="Fullscreen view">🔍</button>
-        <button id="copy-btn" title="Copy response">📋</button>
-        <button id="export-btn" title="Export JSON">📤</button>
-        <button id="search-btn" title="Search in response">🔍</button>
-        <button id="collapse-btn" title="Collapse all">📁</button>
-        <button id="expand-btn" title="Expand all">📂</button>
-        <button id="top-btn" title="Scroll to top">⬆️</button>
-        <button id="bottom-btn" title="Scroll to bottom">⬇️</button>
-        <button id="ask-ai-btn" title="Ask AI about this response">🤖</button>
+        <button id="enlarge-btn" class="response-action-btn" title="Fullscreen view">${iconHtml('maximize')}</button>
+        <button id="copy-btn" class="response-action-btn" title="Copy response">${iconHtml('clipboard')}</button>
+        <button id="export-btn" class="response-action-btn" title="Export JSON">${iconHtml('export')}</button>
+        <button id="search-btn" class="response-action-btn" title="Search in response">${iconHtml('search')}</button>
+        <button id="collapse-btn" class="response-action-btn" title="Collapse all">${iconHtml('collapse')}</button>
+        <button id="expand-btn" class="response-action-btn" title="Expand all">${iconHtml('expand')}</button>
+        <button id="top-btn" class="response-action-btn" title="Scroll to top">${iconHtml('arrow-up')}</button>
+        <button id="bottom-btn" class="response-action-btn" title="Scroll to bottom">${iconHtml('arrow-down')}</button>
+        <button id="ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI about this response">${iconHtml('bot')}</button>
       `;
       
       container.appendChild(this.actionsContainer);

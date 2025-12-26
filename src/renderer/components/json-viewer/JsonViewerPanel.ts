@@ -1,4 +1,5 @@
 import { JsonViewer } from '../JsonViewer';
+import { iconHtml } from '../../utils/icons';
 
 export interface JsonViewerPanelEvents {
   onStatusUpdate: (type: 'info' | 'success' | 'warning' | 'error', message: string) => void;
@@ -37,10 +38,10 @@ export class JsonViewerPanel {
         <button id="viewer-enlarge-btn" class="response-action-btn" title="Open in fullscreen mode">Enlarge</button>
         <button id="viewer-ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI about this JSON">Ask AI</button>
       </div>
-      <div class="json-viewer-content-wrapper">
-        <div id="json-viewer-tab-container"></div>
-        <div class="empty-state" id="viewer-empty-state">
-          <div class="empty-state-icon">📄</div>
+        <div class="json-viewer-content-wrapper">
+          <div id="json-viewer-tab-container"></div>
+          <div class="empty-state" id="viewer-empty-state">
+          <div class="empty-state-icon">${iconHtml('file')}</div>
           <div class="empty-state-text">
             <h4>No JSON to display</h4>
             <p>Paste JSON content or upload a file to get started</p>

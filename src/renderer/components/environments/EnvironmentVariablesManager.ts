@@ -3,6 +3,7 @@
  */
 
 import { Environment } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 
 export class EnvironmentVariablesManager {
@@ -64,7 +65,7 @@ export class EnvironmentVariablesManager {
     valueInput.style.cssText = EnvironmentDialogStyles.varInput;
 
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '✕';
+    deleteBtn.innerHTML = iconHtml('close');
     deleteBtn.style.cssText = EnvironmentDialogStyles.deleteVarButton;
 
     deleteBtn.addEventListener('click', () => {

@@ -35,6 +35,11 @@
 .btn-import {
   padding: 0 8px;
   font-size: 14px;
+
+  .ui-icon {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .send-btn {
@@ -189,6 +194,11 @@
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+
+    .ui-icon {
+      width: 14px;
+      height: 14px;
+    }
 
     &:hover {
       background: linear-gradient(135deg,

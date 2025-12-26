@@ -2,6 +2,8 @@
  * UIHelpers - Utility functions for UI interactions
  * Handles toast notifications, password visibility toggles, token copying, and token info display
  */
+import { iconHtml } from '../../utils/icons';
+
 export class UIHelpers {
   /**
    * Shows a toast notification message
@@ -46,7 +48,7 @@ export class UIHelpers {
     if (passwordInput && eyeButton) {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
-      eyeButton.textContent = isPassword ? '🙈' : '👁';
+      eyeButton.innerHTML = iconHtml(isPassword ? 'eye-off' : 'eye');
       eyeButton.title = isPassword ? 'Hide password' : 'Show password';
     }
   }
@@ -157,6 +159,7 @@ export class UIHelpers {
     }
 
     const statusText = oauthStatus.querySelector('.status-text');
+    const statusIcon = oauthStatus.querySelector('.status-icon') as HTMLElement | null;
     if (statusText) {
       // Enhance network error messages with helpful hints
       let displayMessage = message;
@@ -174,6 +177,16 @@ export class UIHelpers {
       statusText.textContent = displayMessage;
     }
 
+    if (statusIcon) {
+      if (type === 'loading') {
+        statusIcon.innerHTML = iconHtml('clock', 'ui-icon--spin');
+      } else if (type === 'success') {
+        statusIcon.innerHTML = iconHtml('check');
+      } else {
+        statusIcon.innerHTML = iconHtml('warning');
+      }
+    }
+
     // Remove all status classes
     oauthStatus.classList.remove('status-loading', 'status-success', 'status-error');
 
@@ -181,7 +194,7 @@ export class UIHelpers {
     oauthStatus.classList.add(`status-${type}`);
 
     // Show the status box
-    oauthStatus.style.display = 'block';
+    oauthStatus.style.display = 'flex';
 
     // Clear any existing timeout
     const existingTimeout = (oauthStatus as any)._hideTimeout;

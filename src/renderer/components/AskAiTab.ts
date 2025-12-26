@@ -1,4 +1,5 @@
 import { AiSession, AiMessage, AiContext, ApiRequest, ApiResponse, AI_MAX_CONTEXT_CHARS } from '../../shared/types';
+import { iconHtml } from '../utils/icons';
 
 declare const apiCourier: {
   ai: {
@@ -172,7 +173,7 @@ export class AskAiTab {
         <aside class="ask-ai-sidebar">
           <div class="sidebar-header">
             <h3>Conversations</h3>
-            <button class="btn-new-session" title="New Chat">➕</button>
+            <button class="btn-new-session" title="New Chat">${iconHtml('plus')}</button>
           </div>
           <div class="sessions-search">
             <input type="text" placeholder="Search conversations..." value="${this.escapeHtml(this.state.searchQuery)}" />
@@ -228,8 +229,8 @@ export class AskAiTab {
           </div>
         </div>
         <div class="session-actions">
-          <button class="session-rename" data-session-id="${session.id}" title="Rename">✏️</button>
-          <button class="session-delete" data-session-id="${session.id}" title="Delete">🗑️</button>
+          <button class="session-rename" data-session-id="${session.id}" title="Rename">${iconHtml('edit')}</button>
+          <button class="session-delete" data-session-id="${session.id}" title="Delete">${iconHtml('trash')}</button>
         </div>
       </div>
     `).join('');
@@ -242,7 +243,7 @@ export class AskAiTab {
     return `
       <div class="engine-status-banner">
         <div class="status-content">
-          <span class="status-icon">${isUnknown ? '⏳' : '⚠️'}</span>
+          <span class="status-icon">${isUnknown ? iconHtml('clock', 'ui-icon--spin') : iconHtml('warning')}</span>
           <div class="status-text">
             <div class="status-title">${isUnknown ? 'Checking AI Engine...' : 'AI Engine Unavailable'}</div>
             <div class="status-subtitle">${this.state.engineError || 'Make sure your local LLM server is running on port 9999'}</div>
@@ -266,7 +267,7 @@ export class AskAiTab {
     return `
       <div class="context-panel ${this.state.showContextPanel ? 'expanded' : 'collapsed'}">
         <div class="context-header">
-          <h4>📋 Request Context</h4>
+          <h4>${iconHtml('clipboard', 'ui-icon--sm')} Request Context</h4>
           <button class="btn-toggle-context">
             ${this.state.showContextPanel ? '▼ Hide' : '▶ Show'}
           </button>
@@ -289,7 +290,7 @@ export class AskAiTab {
             ` : ''}
             ${ctx.fileContent ? `
               <div class="context-section">
-                <h5>📄 Uploaded File: ${this.escapeHtml(ctx.fileName || 'file')}</h5>
+                <h5>${iconHtml('file', 'ui-icon--sm')} Uploaded File: ${this.escapeHtml(ctx.fileName || 'file')}</h5>
                 <div class="details-content">
                   <pre>${this.escapeHtml(ctx.fileContent.slice(0, 500))}${ctx.fileContent.length > 500 ? '...' : ''}</pre>
                 </div>
@@ -359,7 +360,7 @@ export class AskAiTab {
   private renderEmptyChat(): string {
     return `
       <div class="welcome-message">
-        <div class="welcome-icon">💬</div>
+        <div class="welcome-icon">${iconHtml('chat', 'ui-icon--xl')}</div>
         <h3>Start the Conversation</h3>
         <p>Ask questions about your API request or response. The AI has access to the full context shown above.</p>
       </div>
@@ -429,7 +430,7 @@ export class AskAiTab {
   private renderWelcome(): string {
     return `
       <div class="welcome-message">
-        <div class="welcome-icon">🤖</div>
+        <div class="welcome-icon">${iconHtml('bot', 'ui-icon--xl')}</div>
         <h3>Welcome to AI Assistant</h3>
         <p>Start a new conversation or click "Ask AI" from an API response to get insights and help debugging your APIs.</p>
       </div>
@@ -467,7 +468,7 @@ export class AskAiTab {
       <div class="input-area">
         <div class="input-container">
           <div class="file-upload-zone" id="file-upload-zone" title="Drop a file here or click to upload">
-            📎
+            ${iconHtml('paperclip')}
           </div>
           <input type="file" id="file-input" style="display: none;" accept=".json,.yaml,.yml,.txt,.md,.xml" />
           <textarea
@@ -478,7 +479,7 @@ export class AskAiTab {
           ></textarea>
           <div class="input-actions">
             <button class="btn-send" ${disabled ? 'disabled' : ''}>
-              ${this.state.isSending ? '⏳' : '📤'} Send
+              ${this.state.isSending ? iconHtml('clock', 'ui-icon--spin') : iconHtml('send')} Send
             </button>
           </div>
         </div>
@@ -864,7 +865,7 @@ export class AskAiTab {
       errorEl.className = 'error-message';
       errorEl.innerHTML = `
         <div class="error-content">
-          <span class="error-icon">⚠️</span>
+          <span class="error-icon">${iconHtml('warning')}</span>
           <span>${this.escapeHtml(message)}</span>
         </div>
       `;

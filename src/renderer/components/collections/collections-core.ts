@@ -171,26 +171,26 @@ export class CollectionsCore {
 
     if (collection.type === 'folder') {
       actions.push(
-        { label: '📁 Add Folder', action: () => this.showCreateDialog('folder', collectionId) },
-        { label: '📄 Add Request', action: () => this.showCreateDialog('request', collectionId) },
+        { label: 'Add Folder', icon: 'folder', action: () => this.showCreateDialog('folder', collectionId) },
+        { label: 'Add Request', icon: 'file', action: () => this.showCreateDialog('request', collectionId) },
         { label: '---', action: null },
-        { label: '⚙️ Manage Variables', action: () => this.showFolderVariablesDialog(collectionId) },
+        { label: 'Manage Variables', icon: 'settings', action: () => this.showFolderVariablesDialog(collectionId) },
         { label: '---', action: null },
-        { label: '📋 Duplicate Folder', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
-        { label: '📤 Export Folder', action: () => this.operations.exportCollection(collectionId) },
+        { label: 'Duplicate Folder', icon: 'duplicate', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
+        { label: 'Export Folder', icon: 'export', action: () => this.operations.exportCollection(collectionId) },
         { label: '---', action: null }
       );
     } else {
       actions.push(
-        { label: '📋 Duplicate Request', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
-        { label: '📤 Export Request', action: () => this.operations.exportCollection(collectionId) },
+        { label: 'Duplicate Request', icon: 'duplicate', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
+        { label: 'Export Request', icon: 'export', action: () => this.operations.exportCollection(collectionId) },
         { label: '---', action: null }
       );
     }
 
     actions.push(
-      { label: '✏️ Rename', action: () => this.operations.renameCollection(collectionId).then(() => this.renderCollections()) },
-      { label: '🗑️ Delete', action: () => this.operations.deleteCollection(collectionId).then(() => this.renderCollections()), destructive: true }
+      { label: 'Rename', icon: 'edit', action: () => this.operations.renameCollection(collectionId).then(() => this.renderCollections()) },
+      { label: 'Delete', icon: 'trash', action: () => this.operations.deleteCollection(collectionId).then(() => this.renderCollections()), destructive: true }
     );
 
     this.renderer.showContextMenu(event, collection, actions);

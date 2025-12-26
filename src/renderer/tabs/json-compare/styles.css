@@ -79,8 +79,9 @@
   transition: all 0.2s ease;
 }
 
-.compare-action-btn .icon {
-  font-size: 13px;
+.compare-action-btn .ui-icon {
+  width: 13px;
+  height: 13px;
 }
 
 .compare-action-btn:hover {

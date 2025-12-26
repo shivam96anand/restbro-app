@@ -1,4 +1,5 @@
 import { Collection } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 export interface CollectionTreeState {
   expandedFolders: Set<string>;
@@ -34,7 +35,7 @@ export class CollectionsSearch {
     searchContainer.className = 'search-container';
     searchContainer.innerHTML = `
       <input type="text" id="collections-search" class="search-input" placeholder="Search collections">
-      <span class="search-icon">🔍</span>
+      ${iconHtml('search', 'search-icon')}
       <div class="search-actions"></div>
     `;
 

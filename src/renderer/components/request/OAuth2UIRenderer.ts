@@ -2,6 +2,8 @@
  * OAuth2UIRenderer - Handles rendering of OAuth 2.0 UI elements
  * Manages HTML generation and event listener attachment for OAuth components
  */
+import { iconHtml } from '../../utils/icons';
+
 export class OAuth2UIRenderer {
   /**
    * Renders the complete OAuth 2.0 configuration UI
@@ -34,7 +36,9 @@ export class OAuth2UIRenderer {
             <label>Client Secret <span class="required">*</span>:</label>
             <div class="password-field">
               <input type="password" data-field="clientSecret" placeholder="Client Secret" required id="oauth-client-secret">
-              <button type="button" class="eye-button" id="oauth-eye-button" title="Toggle password visibility">👁</button>
+              <button type="button" class="eye-button" id="oauth-eye-button" title="Toggle password visibility">
+                ${iconHtml('eye')}
+              </button>
             </div>
           </div>
         </div>

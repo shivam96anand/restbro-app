@@ -45,9 +45,11 @@
     right: 85px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
     color: var(--text-secondary);
     pointer-events: none;
+    width: 12px;
+    height: 12px;
+    display: inline-flex;
   }
 
   .search-actions {

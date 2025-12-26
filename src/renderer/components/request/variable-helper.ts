@@ -4,6 +4,7 @@
  */
 
 import { Environment, Collection } from '../../../shared/types';
+import { createIconElement } from '../../utils/icons';
 
 /**
  * Global tooltip state to ensure only one tooltip is visible at a time
@@ -153,7 +154,8 @@ export function createVariableTooltip(
 
   const sourceDiv = document.createElement('div');
   sourceDiv.className = 'variable-tooltip-source';
-  sourceDiv.textContent = source;
+  sourceDiv.appendChild(createIconElement('pin', { style: { width: '12px', height: '12px' } }));
+  sourceDiv.appendChild(document.createTextNode(source));
 
   tooltip.appendChild(nameDiv);
   tooltip.appendChild(valueDiv);

@@ -1,6 +1,8 @@
 import { Environment } from '../../../shared/types';
 import { EnvironmentDialogs } from './environment-dialogs';
 
+import { iconHtml } from '../../utils/icons';
+
 export class EnvironmentManager {
   private environments: Environment[] = [];
   private activeEnvironmentId?: string;
@@ -75,7 +77,7 @@ export class EnvironmentManager {
 
     // Create manage button
     const manageBtn = document.createElement('button');
-    manageBtn.textContent = '⚙️';
+    manageBtn.innerHTML = iconHtml('settings');
     manageBtn.title = 'Manage Environments';
     manageBtn.style.cssText = `
       padding: 4px 8px;
@@ -86,6 +88,9 @@ export class EnvironmentManager {
       font-size: 14px;
       cursor: pointer;
       line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s ease;
     `;
 

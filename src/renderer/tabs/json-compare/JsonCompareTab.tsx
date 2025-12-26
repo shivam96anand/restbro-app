@@ -117,16 +117,30 @@ const JsonCompareTab: React.FC = () => {
 
           <div className="header-actions">
             <button className="compare-action-btn" onClick={handleSwap} title="Swap sides">
-              <span className="icon">⇆</span> Swap
+              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 7h10M13 3l4 4-4 4M17 17H7M11 13l-4 4 4 4" />
+              </svg>
+              Swap
             </button>
             <button className="compare-action-btn" onClick={handleClear} title="Clear both editors">
-              <span className="icon">✕</span> Clear
+              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6l-12 12" />
+              </svg>
+              Clear
             </button>
             <button className="compare-action-btn" onClick={handleCopyLeft} title="Copy left JSON">
-              <span className="icon">⧉</span> Copy left
+              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 8h10v10H8z" />
+                <path d="M6 6h10v10" />
+              </svg>
+              Copy left
             </button>
             <button className="compare-action-btn" onClick={handleCopyRight} title="Copy right JSON">
-              <span className="icon">⧉</span> Copy right
+              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 8h10v10H8z" />
+                <path d="M6 6h10v10" />
+              </svg>
+              Copy right
             </button>
           </div>
         </div>

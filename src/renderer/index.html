@@ -33,33 +33,56 @@
             <nav class="sidebar">
                 <div class="sidebar-feedback">
                     <button id="feedback-btn" class="feedback-btn" title="Share feedback">
-                        <span class="feedback-icon">💬</span>
+                        <svg class="ui-icon feedback-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 5h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H9l-5 4v-4H6a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4z"/>
+                            <path d="M8 11h8M8 14h6"/>
+                        </svg>
                         <span class="feedback-label">Feedback</span>
                     </button>
                 </div>
                 <div class="nav-tabs">
                     <button class="nav-tab active" data-tab="api">
-                        <span class="nav-icon">🚀</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3c3.7 0 6.8 3.1 6.8 6.8 0 4.6-3.6 8.6-6.8 10.9-3.2-2.3-6.8-6.3-6.8-10.9C5.2 6.1 8.3 3 12 3z"/>
+                            <path d="M9 10h6M12 7v6"/>
+                        </svg>
                         <span class="nav-label">API</span>
                     </button>
                     <button class="nav-tab" data-tab="json-viewer">
-                        <span class="nav-icon">📄</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8 3h6l5 5v13H8z"/>
+                            <path d="M14 3v5h5"/>
+                            <path d="M10 13h7M10 17h7M10 9h2"/>
+                        </svg>
                         <span class="nav-label">JSON Viewer</span>
                     </button>
                     <button class="nav-tab" data-tab="json-compare">
-                        <span class="nav-icon">🔍</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="5"/>
+                            <path d="M16 16l4 4"/>
+                            <path d="M7 7l8 8"/>
+                        </svg>
                         <span class="nav-label">JSON Compare</span>
                     </button>
                     <button class="nav-tab" data-tab="notepad">
-                        <span class="nav-icon">📝</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 3h9l3 3v15H6z"/>
+                            <path d="M15 3v3h3"/>
+                            <path d="M9 10h6M9 14h6M9 18h4"/>
+                        </svg>
                         <span class="nav-label">Notepad</span>
                     </button>
                     <button class="nav-tab" data-tab="load-testing">
-                        <span class="nav-icon">⚡</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M13 3L6 14h5l-1 7 7-11h-5l1-7z"/>
+                        </svg>
                         <span class="nav-label">Load Testing</span>
                     </button>
                     <button class="nav-tab" data-tab="ask-ai">
-                        <span class="nav-icon">🤖</span>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="4" y="7" width="16" height="11" rx="3"/>
+                            <path d="M12 4v3M8 12h.01M16 12h.01M9 15h6"/>
+                        </svg>
                         <span class="nav-label">Ask AI</span>
                     </button>
                 </div>
@@ -75,8 +98,13 @@
 
                     <div class="api-layout">
                         <div class="collections-panel">
-                            <div class="collections-toolbar">
-                                <button class="btn-import" id="btn-import" title="Import Collection">📥</button>
+                        <div class="collections-toolbar">
+                                <button class="btn-import" id="btn-import" title="Import Collection">
+                                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3v10M12 13l-4-4M12 13l4-4"/>
+                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                                    </svg>
+                                </button>
                                 <button class="btn-add" id="add-collection" title="Add Collection">+</button>
                             </div>
                             <div class="collections-tree" id="collections-tree">
@@ -137,6 +165,7 @@
                                         </select>
                                         <div id="auth-config" class="auth-config"></div>
                                         <div id="oauth-status" class="oauth-status" style="display: none;">
+                                            <span class="status-icon" aria-hidden="true"></span>
                                             <span class="status-text"></span>
                                         </div>
                                     </div>

@@ -4,6 +4,7 @@
  */
 
 import { Environment, Collection } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 export interface VariableEditResult {
   variableName: string;
@@ -48,7 +49,7 @@ export class VariableEditDialog {
 
       const title = document.createElement('h3');
       title.className = 'var-edit-dialog-title';
-      title.innerHTML = `<span class="var-edit-icon">✏️</span> Edit Variable`;
+      title.innerHTML = `<span class="var-edit-icon">${iconHtml('edit')}</span> Edit Variable`;
 
       const closeBtn = document.createElement('button');
       closeBtn.className = 'var-edit-close-btn';
@@ -80,7 +81,7 @@ export class VariableEditDialog {
       // Current source info
       const sourceInfo = document.createElement('div');
       sourceInfo.className = 'var-edit-source-info';
-      sourceInfo.innerHTML = `<span class="var-edit-source-icon">📍</span> ${source}`;
+      sourceInfo.innerHTML = `<span class="var-edit-source-icon">${iconHtml('pin')}</span> ${source}`;
 
       // Value input
       const valueGroup = document.createElement('div');

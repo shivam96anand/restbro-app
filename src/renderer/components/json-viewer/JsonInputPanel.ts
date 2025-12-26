@@ -4,6 +4,8 @@ export interface JsonInputPanelEvents {
   onClearViewer: () => void;
 }
 
+import { iconHtml } from '../../utils/icons';
+
 export class JsonInputPanel {
   private container: HTMLElement;
   private events: JsonInputPanelEvents;
@@ -51,7 +53,7 @@ export class JsonInputPanel {
           <div id="upload-section" class="input-section">
             <div class="upload-area" id="upload-area">
               <div class="upload-content">
-                <div class="upload-icon">📁</div>
+                <div class="upload-icon">${iconHtml('folder')}</div>
                 <div class="upload-text">
                   <strong>Drop JSON file here</strong><br>
                   or click to browse

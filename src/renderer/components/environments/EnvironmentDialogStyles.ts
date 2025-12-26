@@ -188,7 +188,9 @@ export class EnvironmentDialogStyles {
     border-radius: 4px;
     color: var(--error-color);
     cursor: pointer;
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   `;
 
   static readonly addVarButton = `

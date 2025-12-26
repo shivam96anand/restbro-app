@@ -1,4 +1,5 @@
 import { LoadTestForm } from './LoadTestForm';
+import { iconHtml } from '../../utils/icons';
 import { RunProgress } from './RunProgress';
 import { RunSummary } from './RunSummary';
 
@@ -183,7 +184,7 @@ export class LoadTestPage {
     errorDiv.className = 'load-test-error';
     errorDiv.innerHTML = `
       <div class="error-message">
-        <span class="error-icon">⚠️</span>
+        <span class="error-icon">${iconHtml('warning')}</span>
         <span class="error-text">${message}</span>
       </div>
     `;
