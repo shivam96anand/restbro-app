@@ -28,6 +28,7 @@ export class JsonViewerPanel {
       </div>
       <div class="viewer-actions" id="viewer-actions">
         <button id="viewer-copy-btn" class="response-action-btn" title="Copy JSON to clipboard">Copy</button>
+        <button id="viewer-export-btn" class="response-action-btn" title="Export JSON">Export</button>
         <button id="viewer-search-btn" class="response-action-btn" title="Search within JSON">Search</button>
         <button id="viewer-collapse-btn" class="response-action-btn" title="Collapse all JSON nodes">Collapse</button>
         <button id="viewer-expand-btn" class="response-action-btn" title="Expand all JSON nodes">Expand</button>
@@ -52,6 +53,7 @@ export class JsonViewerPanel {
   private setupEventListeners(): void {
     // Viewer action buttons
     this.container.querySelector('#viewer-copy-btn')?.addEventListener('click', () => this.copyJson());
+    this.container.querySelector('#viewer-export-btn')?.addEventListener('click', () => this.exportJson());
     this.container.querySelector('#viewer-search-btn')?.addEventListener('click', () => this.events.onSearchToggle());
     this.container.querySelector('#viewer-collapse-btn')?.addEventListener('click', () => this.collapseAll());
     this.container.querySelector('#viewer-expand-btn')?.addEventListener('click', () => this.expandAll());
@@ -108,6 +110,15 @@ export class JsonViewerPanel {
     }).catch(() => {
       this.events.onStatusUpdate('error', 'Failed to copy to clipboard');
     });
+  }
+
+  private exportJson(): void {
+    if (!this.jsonViewer) {
+      this.events.onStatusUpdate('warning', 'No JSON to export');
+      return;
+    }
+
+    this.jsonViewer.exportJson();
   }
 
   private collapseAll(): void {

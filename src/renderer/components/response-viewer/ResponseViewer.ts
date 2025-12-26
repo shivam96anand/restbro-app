@@ -306,6 +306,12 @@ export class ResponseViewer {
     }
   }
 
+  public exportJson(): void {
+    if (this.jsonViewer && this.currentFormatter === 'json') {
+      this.jsonViewer.exportJson();
+    }
+  }
+
   public clear(): void {
     const bodyElement = document.getElementById('response-body');
     const headersElement = document.getElementById('response-headers');

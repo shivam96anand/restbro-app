@@ -67,6 +67,7 @@ export class ResponseManager {
     this.search.onNavigate((direction) => this.handleSearchNavigate(direction));
 
     this.actions.onCopy(() => this.copyJsonResponse());
+    this.actions.onExport(() => this.exportJsonResponse());
     this.actions.onFullscreen(() => this.toggleFullscreen());
     this.actions.onSearch(() => this.toggleFloatingSearch());
     this.actions.onCollapse(() => this.collapseAll());
@@ -348,6 +349,15 @@ export class ResponseManager {
     } catch (error) {
       this.showToast('Failed to copy response');
     }
+  }
+
+  private exportJsonResponse(): void {
+    if (!this.state.currentResponse || !this.isJsonResponse()) {
+      this.showToast('No JSON response to export');
+      return;
+    }
+
+    this.viewer.exportJson();
   }
 
   private toggleFloatingSearch(): void {

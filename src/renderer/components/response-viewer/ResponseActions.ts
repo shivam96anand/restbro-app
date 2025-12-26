@@ -9,6 +9,7 @@ export class ResponseActions {
   private onExpandCallback: (() => void) | null = null;
   private onScrollTopCallback: (() => void) | null = null;
   private onScrollBottomCallback: (() => void) | null = null;
+  private onExportCallback: (() => void) | null = null;
   private onAskAiCallback: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
@@ -29,6 +30,7 @@ export class ResponseActions {
       this.actionsContainer.innerHTML = `
         <button id="enlarge-btn" title="Fullscreen view">🔍</button>
         <button id="copy-btn" title="Copy response">📋</button>
+        <button id="export-btn" title="Export JSON">📤</button>
         <button id="search-btn" title="Search in response">🔍</button>
         <button id="collapse-btn" title="Collapse all">📁</button>
         <button id="expand-btn" title="Expand all">📂</button>
@@ -46,6 +48,7 @@ export class ResponseActions {
 
     const enlargeBtn = this.actionsContainer.querySelector('#enlarge-btn');
     const copyBtn = this.actionsContainer.querySelector('#copy-btn');
+    const exportBtn = this.actionsContainer.querySelector('#export-btn');
     const searchBtn = this.actionsContainer.querySelector('#search-btn');
     const collapseBtn = this.actionsContainer.querySelector('#collapse-btn');
     const expandBtn = this.actionsContainer.querySelector('#expand-btn');
@@ -55,6 +58,7 @@ export class ResponseActions {
 
     enlargeBtn?.addEventListener('click', () => this.onFullscreenCallback?.());
     copyBtn?.addEventListener('click', () => this.onCopyCallback?.());
+    exportBtn?.addEventListener('click', () => this.onExportCallback?.());
     searchBtn?.addEventListener('click', () => this.onSearchCallback?.());
     collapseBtn?.addEventListener('click', () => this.onCollapseCallback?.());
     expandBtn?.addEventListener('click', () => this.onExpandCallback?.());
@@ -105,6 +109,10 @@ export class ResponseActions {
     this.onCopyCallback = callback;
   }
 
+  public onExport(callback: () => void): void {
+    this.onExportCallback = callback;
+  }
+
   public onFullscreen(callback: () => void): void {
     this.onFullscreenCallback = callback;
   }
@@ -142,6 +150,7 @@ export class ResponseActions {
     this.onExpandCallback = null;
     this.onScrollTopCallback = null;
     this.onScrollBottomCallback = null;
+    this.onExportCallback = null;
     this.onAskAiCallback = null;
   }
 }
