@@ -1,0 +1,108 @@
+// Variable Autocomplete Styles
+// Styles for variable autocomplete suggestions dropdown
+
+.variable-autocomplete-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 350px;
+
+  // Custom scrollbar for better UX
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+.variable-autocomplete-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 12px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover,
+  &.selected {
+    background: rgba(var(--primary-color-rgb), 0.15);
+  }
+
+  &.empty {
+    color: var(--text-secondary);
+    cursor: default;
+    font-size: 12px;
+    justify-content: center;
+    align-items: center;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  .variable-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    padding-right: 8px;
+  }
+
+  .variable-name {
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .variable-value {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.4;
+    max-width: 100%;
+  }
+
+  .variable-badge {
+    background: rgba(var(--primary-color-rgb), 0.2);
+    color: var(--primary-color);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    align-self: flex-start;
+    height: fit-content;
+    line-height: 1.2;
+  }
+}

@@ -1,0 +1,293 @@
+// Variable Highlighting Styles
+// Styles for variable tooltips, highlighting in inputs, and variable-related overlays
+
+// Variable highlighting and tooltips
+.variable-tooltip {
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+              0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  pointer-events: auto;
+  max-width: 400px;
+  min-width: 200px;
+  animation: tooltipFadeIn 0.15s ease-out;
+
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .variable-tooltip-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--primary-color);
+    margin-bottom: 6px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: '{{';
+      opacity: 0.5;
+    }
+
+    &::after {
+      content: '}}';
+      opacity: 0.5;
+    }
+  }
+
+  .variable-tooltip-value {
+    font-size: 12px;
+    color: var(--text-primary);
+    word-break: break-all;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    border: 1px solid var(--border-color);
+
+    &.undefined {
+      color: var(--error-color);
+      font-style: italic;
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  .variable-tooltip-source {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .ui-icon {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .variable-tooltip-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .variable-tooltip-copy,
+  .variable-tooltip-edit {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .variable-tooltip-copy {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+      background: var(--hover-color);
+      border-color: var(--primary-color);
+    }
+
+    &.copied {
+      background: var(--success-color);
+      color: white;
+      border-color: var(--success-color);
+      pointer-events: none;
+    }
+  }
+
+  .variable-tooltip-edit {
+    background: var(--primary-color);
+    color: white;
+
+    &:hover {
+      background: var(--primary-dark);
+      filter: brightness(1.1);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Variable highlighting in inputs
+.url-input,
+input[type="text"],
+textarea {
+  position: relative;
+
+  &:focus {
+    .variable-highlight {
+      background-color: rgba(var(--primary-color-rgb), 0.2);
+    }
+  }
+}
+
+// Variable highlight overlay container
+.variable-highlight-container {
+  position: absolute;
+  pointer-events: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: inherit;
+  border: 1px solid transparent;
+  color: transparent;
+  z-index: 3;
+
+  span {
+    color: var(--text-primary);
+  }
+
+  .variable-highlight {
+    color: var(--primary-color);
+    font-weight: inherit;
+    background: none;
+    padding: 0;
+
+    &.undefined {
+      color: var(--error-color);
+      text-decoration: underline dotted var(--error-color);
+    }
+  }
+}
+
+// Inline variable color coding for input fields
+input[type="text"],
+input[type="password"],
+textarea {
+  &.has-variables-inline {
+    position: relative;
+    z-index: 2;
+    background: transparent !important;
+    color: transparent;
+    caret-color: var(--text-primary);
+  }
+}
+
+// Variable background layer for inputs with variables
+.variable-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .variable-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    padding: inherit;
+    white-space: pre;
+    overflow: hidden;
+    z-index: 1;
+    color: transparent;
+    display: flex;
+    align-items: center;
+
+    .variable-token {
+      color: var(--primary-color);
+      font-weight: 600;
+      background-color: rgba(var(--primary-color-rgb), 0.15);
+      border-radius: 3px;
+      padding: 0 2px;
+
+      &.undefined {
+        color: var(--error-color);
+        background-color: rgba(239, 68, 68, 0.15);
+      }
+    }
+  }
+
+  input,
+  textarea {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+  }
+}
+
+// Hide native text when overlay is active to prevent double-render, keep caret visible
+.has-variable-overlay {
+  color: transparent !important;
+  caret-color: var(--text-primary);
+  background: transparent;
+}
+
+// Indicator that field contains variables
+.has-variables {
+  position: relative;
+
+  &::after {
+    content: '{{}}';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--text-muted);
+    pointer-events: none;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  }
+}

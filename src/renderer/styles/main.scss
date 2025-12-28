@@ -22,8 +22,44 @@
 // Button components
 @import 'buttons';
 
-// Form components
-@import 'forms';
+// Collections components (toolbar, tree, items)
+@import 'collections';
+
+// Context menu and create menu components
+@import 'context-menu';
+
+// Request form components (request line, method select, URL input, tabs)
+@import 'request-form';
+
+// Key-value editor components (rows, body type selector)
+@import 'key-value-editor';
+
+// Body editor components (monaco editor, syntax highlighting)
+@import 'body-editor';
+
+// Authentication components (auth config, OAuth fields)
+@import 'auth';
+
+// OAuth token information and status
+@import 'oauth-token';
+
+// Response components (content, meta, placeholders, errors)
+@import 'response';
+
+// Variable highlighting components (tooltips, overlays)
+@import 'variable-highlighting';
+
+// Dialog components (folder variables dialog)
+@import 'dialogs';
+
+// Folder variables dialog content and footer
+@import 'folder-vars-content';
+
+// Variable edit dialog
+@import 'variable-edit-dialog';
+
+// Variable autocomplete dropdown
+@import 'autocomplete';
 
 // Search components
 @import 'search';

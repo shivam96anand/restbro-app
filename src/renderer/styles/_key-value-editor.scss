@@ -1,0 +1,148 @@
+// Key-Value Editor Styles
+// Styles for key-value editor rows, body type selector, and related form controls
+
+.key-value-editor {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kv-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  transition: all 0.12s ease;
+  position: relative;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: transparent;
+
+  &:hover {
+    background: rgba(var(--primary-color-rgb), 0.03);
+
+    .remove-btn {
+      opacity: 1;
+    }
+  }
+
+  .kv-checkbox {
+    flex: 0 0 auto;
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    filter: grayscale(40%);
+
+    input:not(.kv-checkbox) {
+      color: var(--text-disabled, rgba(128, 128, 128, 0.7));
+      background-color: var(--bg-disabled, rgba(128, 128, 128, 0.06));
+      font-style: italic;
+    }
+  }
+
+  input:not(.kv-checkbox) {
+    flex: 1;
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    transition: all 0.12s ease;
+    position: relative;
+    z-index: 1;
+
+    &.has-variable-overlay {
+      background: transparent !important;
+      color: transparent;
+      caret-color: var(--text-primary);
+      z-index: 2;
+    }
+
+    &::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.6;
+      font-style: normal;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+      background: linear-gradient(135deg,
+                  rgba(var(--primary-color-rgb), 0.04) 0%,
+                  rgba(0, 0, 0, 0.2) 100%);
+    }
+  }
+
+  .remove-btn {
+    opacity: 0;
+    transition: all 0.12s ease;
+  }
+}
+
+.body-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+  padding: 6px 10px;
+  background: rgba(var(--primary-color-rgb), 0.04);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  width: 100%;
+}
+
+.body-type-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  .title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.body-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.body-type-select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  min-width: 120px;
+  transition: border-color 0.12s ease;
+
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+    outline: none;
+  }
+}

@@ -1,0 +1,150 @@
+// Response Styles
+// Styles for response content, meta information, placeholders, and error styling
+
+.response-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.response-section {
+  display: none;
+
+  &.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+}
+
+.response-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.05) 0%,
+              rgba(var(--primary-color-rgb), 0.02) 100%);
+  border-radius: 12px;
+  margin: 16px;
+  border: 2px dashed rgba(var(--primary-color-rgb), 0.3);
+  opacity: 0.8;
+}
+
+.response-meta {
+  display: inline-flex !important;
+  gap: 4px;
+  align-items: center;
+  min-height: 24px;
+
+  // Separator bullet - show inline without badge styling
+  .meta-separator {
+    display: inline-flex !important;
+    padding: 0 4px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+  }
+
+  // Badge styling for status/time/size spans (not separators)
+  span:not(.meta-separator) {
+    display: inline-flex !important;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  // Empty state - ensure visibility
+  &:empty::before {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 1px;
+  }
+}
+
+.status-success {
+  color: var(--success-color);
+}
+
+.status-error {
+  color: var(--error-color);
+}
+
+.status-warning {
+  color: var(--warning-color);
+}
+
+.status-secondary {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 16px;
+  text-align: center;
+}
+
+pre, code, .json-viewer, .json-content {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+// Error Response Styling
+.response-body-error {
+  .json-viewer {
+    .error-title {
+      color: var(--error-color, #ef4444);
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .error-message {
+      color: var(--text-primary);
+      margin: 8px 0;
+    }
+
+    .error-suggestions {
+      color: var(--text-secondary);
+      font-size: 12px;
+
+      ul {
+        margin: 8px 0;
+        padding-left: 16px;
+
+        li {
+          margin: 4px 0;
+          color: var(--text-secondary);
+        }
+      }
+    }
+
+    .error-details {
+      color: var(--text-muted, var(--text-secondary));
+      font-size: 11px;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+    }
+  }
+}

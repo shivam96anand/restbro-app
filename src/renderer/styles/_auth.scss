@@ -1,0 +1,249 @@
+// Auth Styles
+// Styles for authentication configuration, OAuth fields, token info, and status indicators
+
+#auth-type {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px 10px;
+  width: 160px;
+  font-size: 11px;
+  margin-bottom: 10px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+}
+
+.auth-config {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  input {
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+
+    &::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+      background: linear-gradient(135deg,
+                  rgba(var(--primary-color-rgb), 0.04) 0%,
+                  rgba(0, 0, 0, 0.2) 100%);
+    }
+  }
+}
+
+// OAuth 2.0 Styles
+.oauth-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.oauth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  position: relative;
+
+  label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  input, select {
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.02) 0%,
+                rgba(0, 0, 0, 0.15) 100%);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    min-height: 16px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+
+    &::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.08);
+    }
+  }
+
+  // Password field with eye button
+  .password-field {
+    position: relative;
+    width: 100%;
+
+    input {
+      padding-right: 32px;
+      width: 100%;
+    }
+
+    .eye-button {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      transition: all 0.12s ease;
+
+      .ui-icon {
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover {
+        color: var(--text-primary);
+        background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+      }
+    }
+  }
+
+  .select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid var(--text-secondary);
+      pointer-events: none;
+    }
+  }
+
+  .oauth-grant-type {
+    appearance: none;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px 32px 8px 12px;
+    border-radius: 4px;
+    width: 100%;
+  }
+}
+
+.oauth-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.oauth-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background-color: var(--primary-hover, var(--primary-color));
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.oauth-refresh-token {
+    background-color: var(--secondary-color, #6b7280);
+  }
+}
+
+// OAuth Advanced Options
+.oauth-essential-fields {
+  margin-bottom: 15px;
+}
+
+.oauth-auth-code-fields {
+  margin-bottom: 15px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.oauth-advanced-section {
+  margin-top: 15px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+}
+
+.oauth-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+
+  &:hover {
+    background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+  }
+
+  .toggle-icon {
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: transform 0.15s ease;
+  }
+
+  span:last-child {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+}
+
+.oauth-advanced-content {
+  margin-top: 10px;
+  padding-left: 20px;
+  border-left: 2px solid var(--border-color);
+}

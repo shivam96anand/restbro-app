@@ -1,0 +1,295 @@
+// Collections Component Styles
+// Styles for collection toolbar, tree, items, and actions
+
+// Collections toolbar - compact button row
+.collections-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px 6px 12px;
+  border-bottom: none;
+  background: linear-gradient(135deg,
+              rgba(var(--primary-color-rgb), 0.03) 0%,
+              var(--bg-secondary) 100%);
+  justify-content: flex-end;
+}
+
+.collections-tree { flex: 1; padding: 8px 12px; overflow-y: auto; overflow-x: hidden; }
+
+// Collection tree components
+.collection-container { position: relative; }
+
+.collection-item {
+  position: relative;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  outline: none;
+
+  &:hover {
+    background-color: rgba(var(--primary-color-rgb), 0.06);
+    transform: translateX(2px);
+
+    .collection-actions {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .collection-name {
+      color: var(--text-primary);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  &.selected {
+    background: linear-gradient(135deg,
+                rgba(var(--primary-color-rgb), 0.14) 0%,
+                rgba(var(--primary-color-rgb), 0.08) 100%);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.2),
+                inset 3px 0 0 var(--primary-color);
+
+    .collection-actions {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .collection-name {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .folder-toggle {
+      color: var(--primary-color);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+  }
+
+  &.folder {
+    font-weight: 500;
+    cursor: pointer;
+    .collection-content { cursor: pointer; }
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+  }
+
+  &.drag-over {
+    background-color: rgba(var(--primary-color-rgb), 0.2);
+    border: 2px dashed var(--primary-color);
+  }
+
+  &.drag-over-top {
+    position: relative;
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--primary-color);
+      border-radius: 2px;
+      box-shadow: 0 0 4px rgba(var(--primary-color-rgb), 0.6);
+      z-index: 10;
+    }
+  }
+
+  &.drag-over-bottom {
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--primary-color);
+      border-radius: 2px;
+      box-shadow: 0 0 4px rgba(var(--primary-color-rgb), 0.6);
+      z-index: 10;
+    }
+  }
+}
+
+.collection-content {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  min-height: 38px;
+  width: 100%;
+  gap: 2px;
+}
+
+.folder-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--text-secondary);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+  &:hover { background-color: var(--hover-color); color: var(--text-primary) !important; }
+}
+
+.folder-spacer { width: 20px; flex-shrink: 0; }
+
+.collection-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 16px;
+  margin-right: 6px;
+  font-size: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  .collection-item.folder & {
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+.collection-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+  cursor: pointer;
+
+  &.search-highlight {
+    background-color: rgba(255, 255, 0, 0.3);
+    padding: 1px 2px;
+    border-radius: 2px;
+  }
+
+  .collection-item.folder & {
+    &:hover {
+      color: var(--primary-color) !important;
+      text-decoration: underline;
+    }
+  }
+
+  .collection-item.selected.folder & {
+    &:hover {
+      color: white !important;
+      text-decoration: underline;
+    }
+  }
+}
+
+.collection-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 8px;
+  transition: all 0.15s ease;
+  &:hover { background: var(--primary-color); color: white; transform: scale(1.1); }
+}
+
+.collection-children {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+    opacity: 0.4;
+  }
+}
+
+// HTTP Method Badge Styles
+.method-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 5px !important;
+  margin-right: 6px;
+  border-radius: 4px !important;
+  font-size: 9px !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+  flex-shrink: 0;
+  min-width: 32px;
+  background-color: var(--primary-color);
+}
+
+// Folder Item Count Badge
+.folder-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: 6px;
+  padding: 3px 8px;
+  background: rgba(var(--primary-color-rgb), 0.1);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  min-width: 22px;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.15);
+
+  .collection-item.selected & {
+    background: rgba(var(--primary-color-rgb), 0.25);
+    color: var(--primary-color);
+    border-color: rgba(var(--primary-color-rgb), 0.3);
+  }
+}
+
+.empty-folder-indicator {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.7;
+  flex-shrink: 0;
+
+  .collection-item.selected & {
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
