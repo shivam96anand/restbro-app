@@ -64,8 +64,13 @@
 // Search components
 @import 'search';
 
-// JSON viewer styles
-@import 'json-viewer';
+// JSON viewer styles (split into modular components)
+@import 'json-viewer-core';
+@import 'json-viewer-nodes';
+@import 'json-viewer-modal';
+@import 'json-viewer-layout';
+@import 'json-viewer-input';
+@import 'json-viewer-monaco';
 
 // Load testing styles
 @import 'loadtest';

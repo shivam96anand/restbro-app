@@ -1,0 +1,181 @@
+// JSON Viewer Input Styles
+// Styles for input textarea, upload area, status, and buttons
+
+.json-input-textarea {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  min-height: 200px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+  }
+}
+
+.input-actions-bottom {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    &.btn-primary {
+      background: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      color: white;
+
+      &:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(var(--primary-color-rgb), 0.3);
+      }
+
+      &:active {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(var(--primary-color-rgb), 0.3);
+      }
+    }
+
+    &.btn-secondary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+
+      &:hover {
+        background: rgba(var(--primary-color-rgb), 0.2);
+        border-color: rgba(var(--primary-color-rgb), 0.35);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
+}
+
+.upload-area {
+  flex: 1;
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    border-color: rgba(var(--primary-color-rgb), 0.5);
+    background: rgba(var(--primary-color-rgb), 0.08);
+    transform: translateY(-2px);
+  }
+
+  &.drag-over {
+    border-color: rgba(var(--primary-color-rgb), 0.8);
+    background: rgba(var(--primary-color-rgb), 0.15);
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(var(--primary-color-rgb), 0.2);
+  }
+}
+
+.upload-content {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  display: inline-flex;
+
+  .ui-icon { width: 100%; height: 100%; }
+}
+
+.upload-text {
+  font-size: 14px;
+  line-height: 1.5;
+
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
+.upload-info {
+  text-align: center;
+  margin-top: 8px;
+
+  small {
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+}
+
+.json-status {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+
+  &.status-info {
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
+  }
+
+  &.status-success {
+    color: var(--success-color);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  &.status-warning {
+    color: var(--warning-color);
+    background: rgba(251, 191, 36, 0.08);
+  }
+
+  &.status-error {
+    color: var(--error-color);
+    background: rgba(239, 68, 68, 0.08);
+  }
+}

@@ -1,0 +1,183 @@
+// JSON Node Styles
+// Styles for JSON nodes, keys, values, brackets, and search highlights
+
+.json-viewer {
+  .json-node {
+    display: flex;
+    align-items: flex-start;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    cursor: pointer;
+    padding: 1px 4px;
+    line-height: 16px;
+    border-radius: 4px;
+    margin: 0;
+    position: relative;
+    box-sizing: border-box;
+    will-change: transform;
+    contain: layout style;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    word-spacing: -0.1em;
+    letter-spacing: -0.02em;
+    transition: background-color 0.1s ease-out;
+
+    &:hover {
+      background-color: var(--hover-color);
+      transform: translateZ(0);
+    }
+
+    .node-content {
+      flex: 1;
+      white-space: nowrap;
+      span { display: inline; }
+    }
+
+    .expand-icon {
+      color: var(--json-expand-icon);
+      display: inline-block;
+      width: 12px;
+      cursor: pointer;
+      user-select: none;
+      vertical-align: top;
+    }
+
+    .key {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-left: 2px;
+    }
+
+    .separator { color: var(--text-primary); margin: 0 2px; }
+    .comma { color: var(--json-bracket); margin-left: 0; }
+
+    .value {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+
+      &.value-string { color: white; }
+      &.value-number { color: white; }
+      &.value-boolean { color: white; }
+      &.value-null { color: white; font-style: italic; }
+    }
+
+    // Search highlights
+    .value .search-highlight,
+    .key .search-highlight,
+    .search-highlight {
+      background-color: #ffeb3b !important;
+      color: #000 !important;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+      border: 1px solid rgba(255, 193, 7, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .value .search-highlight-active,
+    .key .search-highlight-active,
+    .search-highlight-active {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+      color: #000 !important;
+      border: 2px solid #f57c00;
+      box-shadow:
+        0 0 12px rgba(255, 152, 0, 0.8),
+        0 0 24px rgba(245, 124, 0, 0.5),
+        0 0 0 3px rgba(255, 152, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      padding: 3px 6px;
+      border-radius: 4px;
+      transform: scale(1.1);
+      z-index: 100;
+      position: relative;
+      font-weight: 900;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      animation: pulse-active 1s ease-in-out infinite;
+    }
+
+    .bracket { color: var(--json-bracket); font-weight: bold; }
+
+    .preview {
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-left: 2px;
+      user-select: none;
+    }
+
+    @keyframes pulse-active {
+      0%, 100% {
+        box-shadow:
+          0 0 12px rgba(255, 152, 0, 0.8),
+          0 0 24px rgba(245, 124, 0, 0.5),
+          0 0 0 3px rgba(255, 152, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        transform: scale(1.1);
+      }
+      50% {
+        box-shadow:
+          0 0 16px rgba(255, 152, 0, 1),
+          0 0 32px rgba(245, 124, 0, 0.7),
+          0 0 0 4px rgba(255, 152, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        transform: scale(1.12);
+      }
+    }
+
+    &.json-node-object,
+    &.json-node-array {
+      .expand-icon { visibility: visible; }
+    }
+
+    &.json-node-string,
+    &.json-node-number,
+    &.json-node-boolean,
+    &.json-node-null {
+      .expand-icon { visibility: hidden; }
+    }
+  }
+
+  .json-node-bracket {
+    display: flex;
+    align-items: flex-start;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    cursor: pointer;
+    padding: 1px 4px;
+    line-height: 16px;
+    border-radius: 4px;
+    margin: 0;
+    position: relative;
+    box-sizing: border-box;
+    will-change: transform;
+    contain: layout style;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    word-spacing: -0.1em;
+    letter-spacing: -0.02em;
+    transition: background-color 0.1s ease-out;
+
+    &:hover { background-color: var(--hover-color); }
+
+    .node-content {
+      flex: 1;
+      white-space: nowrap;
+      span { display: inline; }
+    }
+
+    .expand-icon {
+      color: var(--json-expand-icon);
+      display: inline-block;
+      width: 12px;
+      cursor: pointer;
+      user-select: none;
+      vertical-align: top;
+      visibility: hidden;
+    }
+
+    .bracket { color: var(--json-bracket); font-weight: bold; }
+    .comma { color: var(--json-bracket); margin-left: 0; }
+  }
+}

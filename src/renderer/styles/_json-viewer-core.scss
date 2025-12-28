@@ -1,0 +1,91 @@
+// JSON Viewer Core Styles
+// Styles for JSON viewer nodes, values, and search highlights
+
+.json-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: transparent;
+  overflow: hidden;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  line-height: 16px;
+  word-spacing: -0.1em;
+  letter-spacing: -0.02em;
+
+  .json-viewer-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+
+    .line-numbers {
+      display: none; // Hidden by default
+      background-color: transparent;
+      padding: 4px 0;
+      width: 40px;
+      flex-shrink: 0;
+      user-select: none;
+      border-right: 1px solid var(--border-color);
+      margin-right: 8px;
+      overflow: hidden;
+      will-change: scroll-position;
+      contain: layout style;
+      scroll-behavior: auto;
+
+      .line-number {
+        text-align: right;
+        color: var(--text-secondary);
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 12px;
+        line-height: 16px;
+        word-spacing: -0.1em;
+        letter-spacing: -0.02em;
+        opacity: 0.6;
+        padding: 1px 4px;
+        margin: 0;
+        box-sizing: border-box;
+        white-space: nowrap;
+        display: block;
+      }
+    }
+
+    .json-content {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+      background-color: transparent;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+
+      .json-nodes-container {
+        position: relative;
+        padding: 4px 0 100px 0;
+        will-change: scroll-position;
+        contain: layout;
+        min-height: 100%;
+      }
+    }
+  }
+
+  .json-content {
+    &::-webkit-scrollbar { width: 6px; height: 6px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+      &:hover { background: var(--primary-color); }
+    }
+  }
+
+  .search-highlight {
+    background-color: var(--json-search-highlight);
+    border-radius: 2px;
+  }
+
+  .search-current {
+    background-color: var(--json-search-current);
+    color: white;
+    border-radius: 2px;
+  }
+}
