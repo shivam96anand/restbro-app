@@ -114,6 +114,7 @@ export interface AppState {
   globals: Globals;
   collectionsUIState?: CollectionsUIState;
   notepad?: NotepadState;
+  mockServers?: MockServersState;
 }
 
 // Load Testing Types
@@ -274,3 +275,106 @@ export interface AiSessionsState {
 
 // Token limit for Qwen 7B model (conservative estimate: ~12K chars ≈ 4K tokens)
 export const AI_MAX_CONTEXT_CHARS = 12000;
+
+// =====================================
+// Mock Server Types
+// =====================================
+
+export type MockResponseType = 'json' | 'text' | 'binary' | 'file';
+
+export type MockHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface MockRouteHeader {
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
+export interface MockRoute {
+  id: string;
+  enabled: boolean;
+  method: MockHttpMethod;
+  path: string; // exact match, e.g., "/products"
+  statusCode: number;
+  headers: MockRouteHeader[];
+  delayMs?: number;
+  responseType: MockResponseType;
+  body: string; // JSON string, plain text, base64 for binary, or file path for file
+  contentType?: string; // optional override for content-type header
+}
+
+export interface MockServerDefinition {
+  id: string;
+  name: string;
+  host: string; // default "127.0.0.1"
+  port: number | null; // null until user sets it
+  routes: MockRoute[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Runtime status (not persisted)
+export interface MockServerRuntimeStatus {
+  serverId: string;
+  isRunning: boolean;
+  error?: string;
+}
+
+// Store state for mock servers
+export interface MockServersState {
+  servers: MockServerDefinition[];
+}
+
+// IPC DTOs
+export interface MockServerIpcResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  details?: unknown;
+}
+
+export interface MockServerListResponse {
+  servers: MockServerDefinition[];
+  runtimeStatus: MockServerRuntimeStatus[];
+}
+
+export interface MockServerCreateParams {
+  name: string;
+  host?: string;
+  port?: number | null;
+}
+
+export interface MockServerUpdateParams {
+  serverId: string;
+  name?: string;
+  host?: string;
+  port?: number | null;
+}
+
+export interface MockRouteCreateParams {
+  serverId: string;
+  route: Omit<MockRoute, 'id'>;
+}
+
+export interface MockRouteUpdateParams {
+  serverId: string;
+  routeId: string;
+  updates: Partial<Omit<MockRoute, 'id'>>;
+}
+
+export interface MockRouteDeleteParams {
+  serverId: string;
+  routeId: string;
+}
+
+export interface MockRouteToggleParams {
+  serverId: string;
+  routeId: string;
+  enabled: boolean;
+}
+
+export interface MockServerStatusChangedEvent {
+  serverId: string;
+  isRunning: boolean;
+  error?: string;
+}

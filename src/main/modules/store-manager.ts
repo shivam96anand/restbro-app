@@ -1,9 +1,9 @@
 import { app } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { AppState, AppTheme, Globals, CollectionsUIState, NotepadState } from '../../shared/types';
+import { AppState, AppTheme, Globals, CollectionsUIState, NotepadState, MockServersState } from '../../shared/types';
 
-const defaultNavOrder = ['api', 'json-viewer', 'json-compare', 'notepad', 'load-testing', 'ask-ai'];
+const defaultNavOrder = ['api', 'json-viewer', 'json-compare', 'notepad', 'load-testing', 'mock-server', 'ask-ai'];
 
 const defaultTheme: AppTheme = {
   name: 'blue',
@@ -25,6 +25,10 @@ const defaultNotepadState: NotepadState = {
   untitledCounter: 1,
 };
 
+const defaultMockServersState: MockServersState = {
+  servers: [],
+};
+
 const defaultState: AppState = {
   collections: [],
   openTabs: [],
@@ -35,6 +39,7 @@ const defaultState: AppState = {
   globals: defaultGlobals,
   collectionsUIState: defaultCollectionsUIState,
   notepad: defaultNotepadState,
+  mockServers: defaultMockServersState,
 };
 
 class StoreManager {
@@ -66,6 +71,7 @@ class StoreManager {
           collectionsUIState: loadedData.collectionsUIState || defaultCollectionsUIState,
           notepad: loadedData.notepad || defaultNotepadState,
           navOrder: loadedData.navOrder || defaultNavOrder,
+          mockServers: loadedData.mockServers || defaultMockServersState,
         };
       } catch (error) {
         console.error('Failed to read database file, using default state:', error);

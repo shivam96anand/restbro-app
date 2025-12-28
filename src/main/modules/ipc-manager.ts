@@ -8,7 +8,24 @@ import { loadTestEngine } from './loadtest-engine';
 import { loadTestExporter } from './loadtest-export';
 import { oauthManager } from './oauth';
 import { aiEngine } from './ai-engine';
-import { Collection, ApiRequest, AppState, LoadTestConfig, LoadTestSummary, OAuthConfig, CollectionsUIState, AiContext, AiSendMessageParams } from '../../shared/types';
+import { mockServerManager } from './mock-server-manager';
+import {
+  Collection,
+  ApiRequest,
+  AppState,
+  LoadTestConfig,
+  LoadTestSummary,
+  OAuthConfig,
+  CollectionsUIState,
+  AiContext,
+  AiSendMessageParams,
+  MockServerCreateParams,
+  MockServerUpdateParams,
+  MockRouteCreateParams,
+  MockRouteUpdateParams,
+  MockRouteDeleteParams,
+  MockRouteToggleParams,
+} from '../../shared/types';
 import { randomUUID } from 'crypto';
 import { detectAndParse, generatePreview, parseJsonFile, ImportPreview } from './importers';
 
@@ -411,6 +428,69 @@ class IpcManager {
 
     ipcMain.handle(IPC_CHANNELS.AI_CHECK_ENGINE, async () => {
       return await aiEngine.checkEngine();
+    });
+
+    // Mock Server IPC handlers
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_LIST, () => {
+      return mockServerManager.list();
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_CREATE_SERVER, (_, params: MockServerCreateParams) => {
+      return mockServerManager.createServer(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_UPDATE_SERVER, (_, params: MockServerUpdateParams) => {
+      return mockServerManager.updateServer(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_DELETE_SERVER, (_, serverId: string) => {
+      return mockServerManager.deleteServer(serverId);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_START_SERVER, async (_, serverId: string) => {
+      return await mockServerManager.startServer(serverId);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_STOP_SERVER, async (_, serverId: string) => {
+      return await mockServerManager.stopServer(serverId);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_ADD_ROUTE, (_, params: MockRouteCreateParams) => {
+      return mockServerManager.addRoute(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_UPDATE_ROUTE, (_, params: MockRouteUpdateParams) => {
+      return mockServerManager.updateRoute(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_DELETE_ROUTE, (_, params: MockRouteDeleteParams) => {
+      return mockServerManager.deleteRoute(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_TOGGLE_ROUTE, (_, params: MockRouteToggleParams) => {
+      return mockServerManager.toggleRoute(params);
+    });
+
+    ipcMain.handle(IPC_CHANNELS.MOCKSERVER_PICK_FILE, async () => {
+      try {
+        const result = await dialog.showOpenDialog({
+          properties: ['openFile'],
+          filters: [
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+          return { success: true, data: { canceled: true, filePath: null } };
+        }
+
+        return { success: true, data: { canceled: false, filePath: result.filePaths[0] } };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to open file dialog',
+        };
+      }
     });
   }
 }

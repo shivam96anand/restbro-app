@@ -3,6 +3,7 @@ import { windowManager } from './modules/window-manager';
 import { storeManager } from './modules/store-manager';
 import { ipcManager } from './modules/ipc-manager';
 import { aiEngine } from './modules/ai-engine';
+import { mockServerManager } from './modules/mock-server-manager';
 
 class ApiCourierApp {
   private isQuitting = false;
@@ -48,6 +49,7 @@ class ApiCourierApp {
 
   private async gracefulShutdown(): Promise<void> {
     console.log('Graceful shutdown: flushing database...');
+    await mockServerManager.stopAllServers();
     await storeManager.flush();
     await aiEngine.flush();
     console.log('Database flushed successfully');

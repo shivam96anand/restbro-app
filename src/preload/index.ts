@@ -52,6 +52,20 @@ const IPC_CHANNELS = {
   NOTEPAD_OPEN_FILE: 'notepad:open-file',
   NOTEPAD_READ_FILE: 'notepad:read-file',
   NOTEPAD_REVEAL: 'notepad:reveal',
+
+  // Mock Server channels
+  MOCKSERVER_LIST: 'mockserver:list',
+  MOCKSERVER_CREATE_SERVER: 'mockserver:create-server',
+  MOCKSERVER_UPDATE_SERVER: 'mockserver:update-server',
+  MOCKSERVER_DELETE_SERVER: 'mockserver:delete-server',
+  MOCKSERVER_START_SERVER: 'mockserver:start-server',
+  MOCKSERVER_STOP_SERVER: 'mockserver:stop-server',
+  MOCKSERVER_ADD_ROUTE: 'mockserver:add-route',
+  MOCKSERVER_UPDATE_ROUTE: 'mockserver:update-route',
+  MOCKSERVER_DELETE_ROUTE: 'mockserver:delete-route',
+  MOCKSERVER_TOGGLE_ROUTE: 'mockserver:toggle-route',
+  MOCKSERVER_PICK_FILE: 'mockserver:pick-file',
+  MOCKSERVER_STATUS_CHANGED: 'mockserver:status-changed',
 } as const;
 
 // Define types inline to avoid import issues
@@ -261,6 +275,98 @@ interface ApiResponse {
   timestamp: number;
 }
 
+// Mock Server Types
+type MockResponseType = 'json' | 'text' | 'binary' | 'file';
+type MockHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+interface MockRouteHeader {
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
+interface MockRoute {
+  id: string;
+  enabled: boolean;
+  method: MockHttpMethod;
+  path: string;
+  statusCode: number;
+  headers: MockRouteHeader[];
+  delayMs?: number;
+  responseType: MockResponseType;
+  body: string;
+  contentType?: string;
+}
+
+interface MockServerDefinition {
+  id: string;
+  name: string;
+  host: string;
+  port: number | null;
+  routes: MockRoute[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface MockServerRuntimeStatus {
+  serverId: string;
+  isRunning: boolean;
+  error?: string;
+}
+
+interface MockServerIpcResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  details?: unknown;
+}
+
+interface MockServerListResponse {
+  servers: MockServerDefinition[];
+  runtimeStatus: MockServerRuntimeStatus[];
+}
+
+interface MockServerCreateParams {
+  name: string;
+  host?: string;
+  port?: number | null;
+}
+
+interface MockServerUpdateParams {
+  serverId: string;
+  name?: string;
+  host?: string;
+  port?: number | null;
+}
+
+interface MockRouteCreateParams {
+  serverId: string;
+  route: Omit<MockRoute, 'id'>;
+}
+
+interface MockRouteUpdateParams {
+  serverId: string;
+  routeId: string;
+  updates: Partial<Omit<MockRoute, 'id'>>;
+}
+
+interface MockRouteDeleteParams {
+  serverId: string;
+  routeId: string;
+}
+
+interface MockRouteToggleParams {
+  serverId: string;
+  routeId: string;
+  enabled: boolean;
+}
+
+interface MockServerStatusChangedEvent {
+  serverId: string;
+  isRunning: boolean;
+  error?: string;
+}
+
 const apiCourierAPI = {
   store: {
     get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
@@ -362,6 +468,35 @@ const apiCourierAPI = {
     },
     checkEngine: (): Promise<{ available: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_CHECK_ENGINE),
+  },
+
+  mockServer: {
+    list: (): Promise<MockServerIpcResponse<MockServerListResponse>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_LIST),
+    createServer: (params: MockServerCreateParams): Promise<MockServerIpcResponse<MockServerDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_CREATE_SERVER, params),
+    updateServer: (params: MockServerUpdateParams): Promise<MockServerIpcResponse<MockServerDefinition>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_UPDATE_SERVER, params),
+    deleteServer: (serverId: string): Promise<MockServerIpcResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_DELETE_SERVER, serverId),
+    startServer: (serverId: string): Promise<MockServerIpcResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_START_SERVER, serverId),
+    stopServer: (serverId: string): Promise<MockServerIpcResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_STOP_SERVER, serverId),
+    addRoute: (params: MockRouteCreateParams): Promise<MockServerIpcResponse<MockRoute>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_ADD_ROUTE, params),
+    updateRoute: (params: MockRouteUpdateParams): Promise<MockServerIpcResponse<MockRoute>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_UPDATE_ROUTE, params),
+    deleteRoute: (params: MockRouteDeleteParams): Promise<MockServerIpcResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_DELETE_ROUTE, params),
+    toggleRoute: (params: MockRouteToggleParams): Promise<MockServerIpcResponse<MockRoute>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_TOGGLE_ROUTE, params),
+    pickFile: (): Promise<MockServerIpcResponse<{ canceled: boolean; filePath: string | null }>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_PICK_FILE),
+    onStatusChanged: (callback: (event: MockServerStatusChangedEvent) => void): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED, (_, event) => callback(event));
+      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED);
+    },
   },
 };
 

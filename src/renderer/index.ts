@@ -7,6 +7,7 @@ import { RequestManager } from './components/request-manager';
 import { ResponseManager } from './components/response-manager';
 import { HistoryManager } from './components/history-manager';
 import { LoadTestManager } from './components/loadtest-manager';
+import { MockServerTabManager } from './components/MockServerTabManager';
 import { JsonViewerTab } from './components/JsonViewerTab';
 import { JsonCompareTabManager } from './components/JsonCompareTab';
 import { AskAiTab } from './components/AskAiTab';
@@ -31,6 +32,7 @@ class ApiCourierRenderer {
   private responseManager: ResponseManager;
   private historyManager: HistoryManager;
   private loadTestManager: LoadTestManager;
+  private mockServerManager: MockServerTabManager;
   private jsonViewerTab: JsonViewerTab;
   private jsonCompareTab: JsonCompareTabManager;
   private askAiTab: AskAiTab;
@@ -55,6 +57,7 @@ class ApiCourierRenderer {
     this.responseManager = new ResponseManager(responseContainer);
     this.historyManager = new HistoryManager();
     this.loadTestManager = new LoadTestManager();
+    this.mockServerManager = new MockServerTabManager();
     this.jsonViewerTab = new JsonViewerTab();
     this.jsonCompareTab = new JsonCompareTabManager();
     this.askAiTab = new AskAiTab(askAiContainer);
@@ -75,6 +78,7 @@ class ApiCourierRenderer {
     this.historyManager.initialize();
     this.environmentManager.initialize();
     await this.loadTestManager.initialize();
+    await this.mockServerManager.initialize();
     this.askAiTab.initialize();
     await this.notepadManager.initialize();
     resizeManager.initialize();

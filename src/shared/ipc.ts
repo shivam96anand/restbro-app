@@ -49,6 +49,20 @@ export const IPC_CHANNELS = {
   NOTEPAD_OPEN_FILE: 'notepad:open-file',
   NOTEPAD_READ_FILE: 'notepad:read-file',
   NOTEPAD_REVEAL: 'notepad:reveal',
+
+  // Mock Server channels
+  MOCKSERVER_LIST: 'mockserver:list',
+  MOCKSERVER_CREATE_SERVER: 'mockserver:create-server',
+  MOCKSERVER_UPDATE_SERVER: 'mockserver:update-server',
+  MOCKSERVER_DELETE_SERVER: 'mockserver:delete-server',
+  MOCKSERVER_START_SERVER: 'mockserver:start-server',
+  MOCKSERVER_STOP_SERVER: 'mockserver:stop-server',
+  MOCKSERVER_ADD_ROUTE: 'mockserver:add-route',
+  MOCKSERVER_UPDATE_ROUTE: 'mockserver:update-route',
+  MOCKSERVER_DELETE_ROUTE: 'mockserver:delete-route',
+  MOCKSERVER_TOGGLE_ROUTE: 'mockserver:toggle-route',
+  MOCKSERVER_PICK_FILE: 'mockserver:pick-file',
+  MOCKSERVER_STATUS_CHANGED: 'mockserver:status-changed',
 } as const;
 
 export type IpcChannelKey = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
