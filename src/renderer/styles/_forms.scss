@@ -544,6 +544,7 @@
   flex-direction: column;
   gap: 12px;
   background: var(--bg-primary);
+  min-height: 0;
 }
 
 .request-line {
@@ -890,7 +891,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 420px;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   border-radius: 0 0 4px 4px;
   position: relative;

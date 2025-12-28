@@ -272,7 +272,7 @@ export class RequestBodyEditor {
       });
       this.events.onContentTypeChange?.(null);
     } else {
-      bodyEditorContainer.style.display = 'block';
+      bodyEditorContainer.style.display = 'flex';
 
       if (selection === 'form-urlencoded') {
         this.currentBodyType = 'form-urlencoded';

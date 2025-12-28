@@ -408,7 +408,7 @@ export class RequestFormHandler {
     const requestForm = document.querySelector('.request-form') as HTMLElement;
     const emptyState = document.getElementById('request-empty-state');
 
-    if (requestForm) requestForm.style.display = 'block';
+    if (requestForm) requestForm.style.display = 'flex';
     if (emptyState) emptyState.style.display = 'none';
   }
 
