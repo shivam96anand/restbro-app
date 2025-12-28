@@ -1,5 +1,13 @@
-import { AiSession, AiMessage, AiContext, ApiRequest, ApiResponse, AI_MAX_CONTEXT_CHARS } from '../../shared/types';
+// Ask AI Tab - Main Class (Orchestrates AI chat functionality)
+
+import { AiSession, AiContext, AskAiState, ApiRequest, ApiResponse, createInitialState } from './ask-ai/types';
+import { AI_MAX_CONTEXT_CHARS } from '../../shared/types';
 import { iconHtml } from '../utils/icons';
+import { escapeHtml, calculateContextSize, showSizeWarning } from './ask-ai/utils';
+import { renderSessionsList, renderEngineStatusBanner, renderWelcome, renderQuickSuggestions, renderInputArea } from './ask-ai/render-sidebar';
+import { renderContextPanel, renderChatMessages } from './ask-ai/render-chat';
+import { setupEventListeners, updateStreamingMessage, showError, updateEngineStatusBanner } from './ask-ai/event-handlers';
+import { sendMessageToAI } from './ask-ai/messaging';
 
 declare const apiCourier: {
   ai: {
@@ -7,51 +15,17 @@ declare const apiCourier: {
     createSession: (context?: AiContext) => Promise<AiSession>;
     deleteSession: (sessionId: string) => Promise<boolean>;
     updateSession: (sessionId: string, updates: { title?: string; context?: AiContext }) => Promise<AiSession | null>;
-    sendMessage: (params: { sessionId: string; message: string; context?: AiContext }) => Promise<{
-      success: boolean;
-      message?: AiMessage;
-      error?: string;
-      tokenLimitExceeded?: boolean;
-      requestId?: string;
-    }>;
     onMessageStream: (callback: (data: { requestId: string; chunk: string }) => void) => () => void;
     checkEngine: () => Promise<{ available: boolean; error?: string }>;
   };
 };
-
-interface AskAiState {
-  sessions: AiSession[];
-  activeSessionId: string | null;
-  isLoading: boolean;
-  isSending: boolean;
-  engineStatus: 'unknown' | 'available' | 'unavailable';
-  engineError?: string;
-  searchQuery: string;
-  showContextPanel: boolean;
-  activeContextTab: 'params' | 'headers' | 'body' | 'auth' | 'response';
-  renamingSessionId: string | null;
-  streamingContent: string;
-  currentRequestId: string | null;
-}
 
 export class AskAiTab {
   private container: HTMLElement;
   private isInitialized = false;
   private eventListenersAttached = false;
   private streamCleanup: (() => void) | null = null;
-  private state: AskAiState = {
-    sessions: [],
-    activeSessionId: null,
-    isLoading: true,
-    isSending: false,
-    engineStatus: 'unknown',
-    searchQuery: '',
-    showContextPanel: false,
-    activeContextTab: 'body',
-    renamingSessionId: null,
-    streamingContent: '',
-    currentRequestId: null,
-  };
+  private state: AskAiState = createInitialState();
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -63,26 +37,42 @@ export class AskAiTab {
     await this.loadSessions();
     await this.checkEngineStatus();
     if (!this.eventListenersAttached) {
-      this.setupEventListeners();
+      this.attachEventListeners();
       this.setupStreamListener();
       this.eventListenersAttached = true;
     }
     this.isInitialized = true;
   }
 
+  private attachEventListeners(): void {
+    setupEventListeners({
+      container: this.container,
+      state: this.state,
+      render: () => this.render(),
+      getActiveSession: () => this.getActiveSession(),
+      scrollToBottom: () => this.scrollToBottom(),
+      checkEngineStatus: () => this.checkEngineStatus(),
+      createNewSession: () => this.createNewSession(),
+      selectSession: (id) => this.selectSession(id),
+      deleteSession: (id) => this.deleteSession(id),
+      startRenameSession: (id) => this.startRenameSession(id),
+      finishRenameSession: (id, title) => this.finishRenameSession(id, title),
+      cancelRenameSession: () => this.cancelRenameSession(),
+      handleFileUpload: (file) => this.handleFileUpload(file),
+      sendMessage: () => this.sendMessage(),
+      renderSessionsList: () => renderSessionsList(this.state),
+    });
+  }
+
   private setupStreamListener(): void {
     this.streamCleanup = apiCourier.ai.onMessageStream((data) => {
-      // Accept streaming chunks while we're actively sending a message
       if (this.state.isSending) {
-        // Store the request ID from the first chunk
         if (!this.state.currentRequestId && data.requestId) {
           this.state.currentRequestId = data.requestId;
         }
-
-        // Only process chunks for the current request
         if (data.requestId === this.state.currentRequestId) {
           this.state.streamingContent += data.chunk;
-          this.updateStreamingMessage();
+          updateStreamingMessage(this.container, this.state.streamingContent, () => this.scrollToBottom());
         }
       }
     });
@@ -99,14 +89,12 @@ export class AskAiTab {
     if (request) context.request = request;
     if (response) context.response = response;
 
-    // Check size limit before proceeding
-    const size = this.calculateContextSize(context);
+    const size = calculateContextSize(context);
     if (size > AI_MAX_CONTEXT_CHARS) {
-      this.showSizeWarning(size);
+      showSizeWarning(size, AI_MAX_CONTEXT_CHARS);
       return;
     }
 
-    // Create new session with context
     try {
       const session = await apiCourier.ai.createSession(context);
       this.state.sessions.unshift(session);
@@ -118,25 +106,7 @@ export class AskAiTab {
       console.error('Failed to create session with context:', error);
     }
 
-    // Switch to Ask AI tab
-    const event = new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } });
-    document.dispatchEvent(event);
-  }
-
-  private calculateContextSize(context: AiContext): number {
-    let size = 0;
-    if (context.request) size += JSON.stringify(context.request).length;
-    if (context.response) {
-      size += (context.response.body?.length || 0) + JSON.stringify(context.response.headers).length + 200;
-    }
-    if (context.fileContent) size += context.fileContent.length;
-    return size;
-  }
-
-  private showSizeWarning(size: number): void {
-    const sizeKb = Math.round(size / 1000);
-    const maxKb = AI_MAX_CONTEXT_CHARS / 1000;
-    alert(`Content too large (${sizeKb}K chars). Maximum allowed: ${maxKb}K chars.\n\nThe response or file is too big for AI analysis. Try with a smaller dataset.`);
+    document.dispatchEvent(new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } }));
   }
 
   private async loadSessions(): Promise<void> {
@@ -157,11 +127,11 @@ export class AskAiTab {
       const result = await apiCourier.ai.checkEngine();
       this.state.engineStatus = result.available ? 'available' : 'unavailable';
       this.state.engineError = result.error;
-      this.updateEngineStatusBanner();
+      updateEngineStatusBanner(this.container, this.state, () => renderEngineStatusBanner(this.state));
     } catch (error) {
       this.state.engineStatus = 'unavailable';
       this.state.engineError = error instanceof Error ? error.message : 'Unknown error';
-      this.updateEngineStatusBanner();
+      updateEngineStatusBanner(this.container, this.state, () => renderEngineStatusBanner(this.state));
     }
   }
 
@@ -176,535 +146,45 @@ export class AskAiTab {
             <button class="btn-new-session" title="New Chat">${iconHtml('plus')}</button>
           </div>
           <div class="sessions-search">
-            <input type="text" placeholder="Search conversations..." value="${this.escapeHtml(this.state.searchQuery)}" />
+            <input type="text" placeholder="Search conversations..." value="${escapeHtml(this.state.searchQuery)}" />
           </div>
           <div class="sessions-list">
-            ${this.renderSessionsList()}
+            ${renderSessionsList(this.state)}
           </div>
         </aside>
         <main class="ask-ai-main">
-          ${this.renderEngineStatusBanner()}
-          ${activeSession ? this.renderContextPanel(activeSession) : ''}
+          ${renderEngineStatusBanner(this.state)}
+          ${activeSession ? renderContextPanel(activeSession, this.state) : ''}
           <div class="chat-area">
-            ${activeSession ? this.renderChatMessages(activeSession) : this.renderWelcome()}
+            ${activeSession ? renderChatMessages(activeSession, this.state) : renderWelcome()}
           </div>
-          ${activeSession ? this.renderQuickSuggestions() : ''}
-          ${this.renderInputArea()}
+          ${renderQuickSuggestions(activeSession)}
+          ${renderInputArea(this.state)}
         </main>
       </div>
     `;
   }
 
-  private renderSessionsList(): string {
-    const filtered = this.state.sessions.filter(s =>
-      s.title.toLowerCase().includes(this.state.searchQuery.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-      return `
-        <div class="empty-sessions">
-          <p>${this.state.searchQuery ? 'No matching conversations' : 'No conversations yet'}</p>
-          <p>Start a new chat or use Ask AI from an API response</p>
-        </div>
-      `;
-    }
-
-    return filtered.map(session => `
-      <div class="session-item ${session.id === this.state.activeSessionId ? 'active' : ''}" data-session-id="${session.id}">
-        <div class="session-main">
-          ${this.state.renamingSessionId === session.id ? `
-            <input
-              type="text"
-              class="session-title-input"
-              value="${this.escapeAttr(session.title)}"
-              data-session-id="${session.id}"
-              autofocus
-            />
-          ` : `
-            <div class="session-title" title="${this.escapeAttr(session.title)}">${this.escapeHtml(session.title)}</div>
-          `}
-          <div class="session-meta">
-            <span>${session.messages.length} messages</span>
-            <span>${this.formatDate(session.updatedAt)}</span>
-          </div>
-        </div>
-        <div class="session-actions">
-          <button class="session-rename" data-session-id="${session.id}" title="Rename">${iconHtml('edit')}</button>
-          <button class="session-delete" data-session-id="${session.id}" title="Delete">${iconHtml('trash')}</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  private renderEngineStatusBanner(): string {
-    if (this.state.engineStatus === 'available') return '';
-
-    const isUnknown = this.state.engineStatus === 'unknown';
-    return `
-      <div class="engine-status-banner">
-        <div class="status-content">
-          <span class="status-icon">${isUnknown ? iconHtml('clock', 'ui-icon--spin') : iconHtml('warning')}</span>
-          <div class="status-text">
-            <div class="status-title">${isUnknown ? 'Checking AI Engine...' : 'AI Engine Unavailable'}</div>
-            <div class="status-subtitle">${this.state.engineError || 'Make sure your local LLM server is running on port 9999'}</div>
-          </div>
-        </div>
-        <div class="status-actions">
-          <button class="btn-check-engine">Retry</button>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderContextPanel(session: AiSession): string {
-    if (!session.context || (!session.context.request && !session.context.fileContent)) {
-      return '';
-    }
-
-    const ctx = session.context;
-    const req = ctx.request;
-
-    return `
-      <div class="context-panel ${this.state.showContextPanel ? 'expanded' : 'collapsed'}">
-        <div class="context-header">
-          <h4>${iconHtml('clipboard', 'ui-icon--sm')} Request Context</h4>
-          <button class="btn-toggle-context">
-            ${this.state.showContextPanel ? '▼ Hide' : '▶ Show'}
-          </button>
-        </div>
-        ${this.state.showContextPanel ? `
-          <div class="context-content">
-            ${req ? `
-              <div class="request-line">
-                <span class="method-badge method-${req.method.toLowerCase()}">${req.method}</span>
-                <span class="request-url">${this.escapeHtml(req.url)}</span>
-              </div>
-              ${req.body?.content ? `
-                <div class="context-section">
-                  <h5>Request Body</h5>
-                  <div class="details-content">
-                    <pre>${this.escapeHtml(req.body.content.slice(0, 500))}${req.body.content.length > 500 ? '...' : ''}</pre>
-                  </div>
-                </div>
-              ` : ''}
-            ` : ''}
-            ${ctx.fileContent ? `
-              <div class="context-section">
-                <h5>${iconHtml('file', 'ui-icon--sm')} Uploaded File: ${this.escapeHtml(ctx.fileName || 'file')}</h5>
-                <div class="details-content">
-                  <pre>${this.escapeHtml(ctx.fileContent.slice(0, 500))}${ctx.fileContent.length > 500 ? '...' : ''}</pre>
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  private renderContextTabContent(ctx: AiContext): string {
-    const req = ctx.request;
-    const res = ctx.response;
-    const tab = this.state.activeContextTab;
-
-    if (tab === 'params' && req) {
-      const params = this.formatKeyValuePairs(req.params);
-      return `<div class="tab-content"><pre>${params || '<span class="empty-content">No params</span>'}</pre></div>`;
-    }
-    if (tab === 'headers' && req) {
-      const headers = this.formatKeyValuePairs(req.headers);
-      return `<div class="tab-content"><pre>${headers || '<span class="empty-content">No headers</span>'}</pre></div>`;
-    }
-    if (tab === 'body' && req) {
-      const body = req.body?.content;
-      return `<div class="tab-content"><pre>${body ? this.escapeHtml(body) : '<span class="empty-content">No body</span>'}</pre></div>`;
-    }
-    if (tab === 'auth' && req) {
-      const auth = req.auth;
-      if (!auth || auth.type === 'none') {
-        return `<div class="tab-content"><div class="empty-content">No auth</div></div>`;
-      }
-      return `<div class="tab-content"><pre>Type: ${auth.type}\n${JSON.stringify(auth.config, null, 2)}</pre></div>`;
-    }
-    if (tab === 'response' && res) {
-      return `
-        <div class="tab-content">
-          <div class="summary-line">
-            <span class="status-badge status-${res.status < 400 ? 'success' : 'error'}">${res.status} ${res.statusText}</span>
-            <span>${res.time}ms</span>
-            <span>${this.formatBytes(res.size)}</span>
-          </div>
-          <pre>${this.escapeHtml(res.body?.slice(0, 1000) || '')}${(res.body?.length || 0) > 1000 ? '\n...(truncated)' : ''}</pre>
-        </div>
-      `;
-    }
-    return '<div class="tab-content"><div class="empty-content">No data</div></div>';
-  }
-
-  private renderChatMessages(session: AiSession): string {
-    if (session.messages.length === 0) {
-      return this.renderEmptyChat();
-    }
-
-    const messagesHtml = session.messages.map(msg => this.renderMessage(msg)).join('');
-    const streamingHtml = this.state.isSending && this.state.streamingContent
-      ? this.renderStreamingMessage(this.state.streamingContent)
-      : '';
-    const typingHtml = this.state.isSending && !this.state.streamingContent
-      ? this.renderTypingIndicator()
-      : '';
-
-    return `<div class="chat-messages">${messagesHtml}${streamingHtml}${typingHtml}</div>`;
-  }
-
-  private renderEmptyChat(): string {
-    return `
-      <div class="welcome-message">
-        <div class="welcome-icon">${iconHtml('chat', 'ui-icon--xl')}</div>
-        <h3>Start the Conversation</h3>
-        <p>Ask questions about your API request or response. The AI has access to the full context shown above.</p>
-      </div>
-    `;
-  }
-
-  private renderMessage(msg: AiMessage): string {
-    const formattedContent = this.formatMessageContent(msg.content);
-    return `
-      <div class="message ${msg.role}">
-        <div class="message-content">
-          <div class="message-text">${formattedContent}</div>
-        </div>
-        <div class="message-actions">
-          <button class="copy-message" data-content="${this.escapeAttr(msg.content)}" title="Copy to clipboard">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderStreamingMessage(content: string): string {
-    const formattedContent = this.formatMessageContent(content);
-    return `
-      <div class="message assistant streaming">
-        <div class="message-content">
-          <div class="message-text">${formattedContent}<span class="streaming-cursor">▋</span></div>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderTypingIndicator(): string {
-    return `
-      <div class="typing-indicator">
-        <div class="message-content">
-          <span class="typing-text">AI is thinking</span>
-          <div class="typing-dots">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  private updateStreamingMessage(): void {
-    const chatMessages = this.container.querySelector('.chat-messages');
-    if (!chatMessages) return;
-
-    const streamingMsg = chatMessages.querySelector('.message.streaming');
-    if (streamingMsg) {
-      const messageText = streamingMsg.querySelector('.message-text');
-      if (messageText) {
-        const formattedContent = this.formatMessageContent(this.state.streamingContent);
-        messageText.innerHTML = formattedContent + '<span class="streaming-cursor">▋</span>';
-        this.scrollToBottom();
-      }
-    }
-  }
-
-  private renderWelcome(): string {
-    return `
-      <div class="welcome-message">
-        <div class="welcome-icon">${iconHtml('bot', 'ui-icon--xl')}</div>
-        <h3>Welcome to AI Assistant</h3>
-        <p>Start a new conversation or click "Ask AI" from an API response to get insights and help debugging your APIs.</p>
-      </div>
-    `;
-  }
-
-  private renderQuickSuggestions(): string {
-    const session = this.getActiveSession();
-    if (!session || session.messages.length > 0) return '';
-
-    const suggestions = [
-      'Explain this response',
-      'What does this status code mean?',
-      'Are there any issues?',
-      'Summarize the data',
-    ];
-
-    return `
-      <div class="quick-suggestions">
-        <div class="suggestions-header">Quick questions:</div>
-        <div class="suggestions-buttons">
-          ${suggestions.map(s => `<button class="suggestion-btn">${s}</button>`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderInputArea(): string {
-    const disabled = this.state.engineStatus !== 'available' || this.state.isSending;
-    const placeholder = this.state.engineStatus !== 'available'
-      ? 'AI engine unavailable...'
-      : 'Ask a question about your API...';
-
-    return `
-      <div class="input-area">
-        <div class="input-container">
-          <div class="file-upload-zone" id="file-upload-zone" title="Drop a file here or click to upload">
-            ${iconHtml('paperclip')}
-          </div>
-          <input type="file" id="file-input" style="display: none;" accept=".json,.yaml,.yml,.txt,.md,.xml" />
-          <textarea
-            id="message-input"
-            placeholder="${placeholder}"
-            ${disabled ? 'disabled' : ''}
-            rows="1"
-          ></textarea>
-          <div class="input-actions">
-            <button class="btn-send" ${disabled ? 'disabled' : ''}>
-              ${this.state.isSending ? iconHtml('clock', 'ui-icon--spin') : iconHtml('send')} Send
-            </button>
-          </div>
-        </div>
-        <div class="input-help">
-          <span><kbd>Enter</kbd> to send</span>
-          <span><kbd>Shift+Enter</kbd> for new line</span>
-        </div>
-      </div>
-    `;
-  }
-
-  private setupEventListeners(): void {
-    this.container.addEventListener('click', (e) => this.handleClick(e));
-    this.container.addEventListener('input', (e) => this.handleInput(e));
-    this.container.addEventListener('keydown', (e) => this.handleKeydown(e));
-    this.container.addEventListener('blur', (e) => this.handleBlur(e), true);
-
-    // File drop zone
-    this.container.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      const zone = this.container.querySelector('#file-upload-zone');
-      zone?.classList.add('dragover');
-    });
-
-    this.container.addEventListener('dragleave', () => {
-      const zone = this.container.querySelector('#file-upload-zone');
-      zone?.classList.remove('dragover');
-    });
-
-    this.container.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const zone = this.container.querySelector('#file-upload-zone');
-      zone?.classList.remove('dragover');
-      const file = (e as DragEvent).dataTransfer?.files[0];
-      if (file) this.handleFileUpload(file);
-    });
-  }
-
-  private handleClick(e: Event): void {
-    const target = e.target as HTMLElement;
-
-    // New session button
-    if (target.classList.contains('btn-new-session')) {
-      this.createNewSession();
-      return;
-    }
-
-    // Session item (but not delete or rename button)
-    const sessionItem = target.closest('.session-item') as HTMLElement;
-    if (sessionItem && !target.classList.contains('session-delete') && !target.classList.contains('session-rename') && !target.classList.contains('session-title-input')) {
-      const sessionId = sessionItem.dataset.sessionId;
-      if (sessionId && this.state.renamingSessionId !== sessionId) this.selectSession(sessionId);
-      return;
-    }
-
-    // Session rename
-    if (target.classList.contains('session-rename')) {
-      e.stopPropagation();
-      const sessionId = (target as HTMLElement).dataset.sessionId;
-      if (sessionId) this.startRenameSession(sessionId);
-      return;
-    }
-
-    // Session delete
-    if (target.classList.contains('session-delete')) {
-      e.stopPropagation();
-      const sessionId = (target as HTMLElement).dataset.sessionId;
-      if (sessionId) this.deleteSession(sessionId);
-      return;
-    }
-
-    // Engine check button
-    if (target.classList.contains('btn-check-engine')) {
-      this.checkEngineStatus();
-      return;
-    }
-
-    // Toggle context panel
-    if (target.classList.contains('btn-toggle-context')) {
-      this.state.showContextPanel = !this.state.showContextPanel;
-      this.render();
-      return;
-    }
-
-    // Context tabs
-    if (target.classList.contains('tab-button')) {
-      const tab = target.dataset.tab as AskAiState['activeContextTab'];
-      if (tab) {
-        this.state.activeContextTab = tab;
-        this.render();
-      }
-      return;
-    }
-
-    // Send button
-    if (target.classList.contains('btn-send')) {
-      this.sendMessage();
-      return;
-    }
-
-    // Suggestion button
-    if (target.classList.contains('suggestion-btn')) {
-      const input = this.container.querySelector('#message-input') as HTMLTextAreaElement;
-      if (input) {
-        input.value = target.textContent || '';
-        this.sendMessage();
-      }
-      return;
-    }
-
-    // Copy message
-    if (target.classList.contains('copy-message') || target.closest('.copy-message')) {
-      const btn = target.classList.contains('copy-message') ? target : target.closest('.copy-message') as HTMLElement;
-      const content = btn?.dataset.content;
-      if (content) {
-        navigator.clipboard.writeText(content);
-        btn.classList.add('copied');
-        setTimeout(() => { btn.classList.remove('copied'); }, 2000);
-      }
-      return;
-    }
-
-    // File upload zone click
-    if (target.id === 'file-upload-zone' || target.closest('#file-upload-zone')) {
-      const fileInput = this.container.querySelector('#file-input') as HTMLInputElement;
-      fileInput?.click();
-      return;
-    }
-  }
-
-  private handleInput(e: Event): void {
-    const target = e.target as HTMLElement;
-
-    // Search input
-    if (target.closest('.sessions-search')) {
-      this.state.searchQuery = (target as HTMLInputElement).value;
-      this.renderSessionsList();
-      const listEl = this.container.querySelector('.sessions-list');
-      if (listEl) listEl.innerHTML = this.renderSessionsList();
-      return;
-    }
-
-    // File input
-    if (target.id === 'file-input') {
-      const file = (target as HTMLInputElement).files?.[0];
-      if (file) this.handleFileUpload(file);
-      return;
-    }
-
-    // Auto-resize textarea
-    if (target.id === 'message-input') {
-      const textarea = target as HTMLTextAreaElement;
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    }
-  }
-
-  private handleKeydown(e: KeyboardEvent): void {
-    const target = e.target as HTMLElement;
-
-    if (target.id === 'message-input') {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.sendMessage();
-      }
-    }
-
-    // Handle rename input
-    if (target.classList.contains('session-title-input')) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const input = target as HTMLInputElement;
-        const sessionId = input.dataset.sessionId;
-        if (sessionId) this.finishRenameSession(sessionId, input.value.trim());
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        this.cancelRenameSession();
-      }
-    }
-  }
-
-  private handleBlur(e: FocusEvent): void {
-    const target = e.target as HTMLElement;
-
-    // Handle rename input blur
-    if (target.classList.contains('session-title-input')) {
-      const input = target as HTMLInputElement;
-      const sessionId = input.dataset.sessionId;
-      if (sessionId && this.state.renamingSessionId === sessionId) {
-        this.finishRenameSession(sessionId, input.value.trim());
-      }
-    }
-  }
-
   private startRenameSession(sessionId: string): void {
     this.state.renamingSessionId = sessionId;
     this.render();
-    // Focus the input after render
     setTimeout(() => {
       const input = this.container.querySelector('.session-title-input') as HTMLInputElement;
-      if (input) {
-        input.focus();
-        input.select();
-      }
+      if (input) { input.focus(); input.select(); }
     }, 0);
   }
 
   private async finishRenameSession(sessionId: string, newTitle: string): Promise<void> {
-    if (!newTitle) {
-      this.cancelRenameSession();
-      return;
-    }
-
+    if (!newTitle) { this.cancelRenameSession(); return; }
     const session = this.state.sessions.find(s => s.id === sessionId);
     if (session && session.title !== newTitle) {
       try {
-        const updatedSession = await apiCourier.ai.updateSession(sessionId, { title: newTitle });
-        if (updatedSession) {
-          session.title = updatedSession.title;
-        }
+        const updated = await apiCourier.ai.updateSession(sessionId, { title: newTitle });
+        if (updated) session.title = updated.title;
       } catch (error) {
         console.error('Failed to rename session:', error);
       }
     }
-
     this.state.renamingSessionId = null;
     this.render();
   }
@@ -715,40 +195,23 @@ export class AskAiTab {
   }
 
   private async handleFileUpload(file: File): Promise<void> {
-    // Check file size (10MB limit)
     const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert('File too large. Maximum size is 10MB.');
-      return;
-    }
+    if (file.size > maxSize) { alert('File too large. Maximum size is 10MB.'); return; }
 
     try {
       const content = await file.text();
+      if (content.length > AI_MAX_CONTEXT_CHARS) { showSizeWarning(content.length, AI_MAX_CONTEXT_CHARS); return; }
 
-      // Check content size against AI limit
-      if (content.length > AI_MAX_CONTEXT_CHARS) {
-        this.showSizeWarning(content.length);
-        return;
-      }
-
-      // Create or update session with file context
-      const context: AiContext = {
-        fileContent: content,
-        fileName: file.name,
-      };
-
+      const context: AiContext = { fileContent: content, fileName: file.name };
       if (this.state.activeSessionId) {
-        // Update existing session
         await apiCourier.ai.updateSession(this.state.activeSessionId, { context });
         const session = this.getActiveSession();
         if (session) session.context = context;
       } else {
-        // Create new session
         const session = await apiCourier.ai.createSession(context);
         this.state.sessions.unshift(session);
         this.state.activeSessionId = session.id;
       }
-
       this.state.showContextPanel = true;
       this.render();
     } catch (error) {
@@ -778,7 +241,6 @@ export class AskAiTab {
 
   private async deleteSession(sessionId: string): Promise<void> {
     if (!confirm('Delete this conversation?')) return;
-
     try {
       await apiCourier.ai.deleteSession(sessionId);
       this.state.sessions = this.state.sessions.filter(s => s.id !== sessionId);
@@ -792,105 +254,10 @@ export class AskAiTab {
   }
 
   private async sendMessage(): Promise<void> {
-    const input = this.container.querySelector('#message-input') as HTMLTextAreaElement;
-    const message = input?.value.trim();
-    if (!message || this.state.isSending) return;
-
-    // Ensure we have an active session
-    if (!this.state.activeSessionId) {
-      await this.createNewSession();
-    }
-
-    const sessionId = this.state.activeSessionId;
-    if (!sessionId) return;
-
-    // Clear input and show sending state
-    input.value = '';
-    input.style.height = 'auto';
-    this.state.isSending = true;
-    this.state.streamingContent = '';
-    this.state.currentRequestId = null;
-
-    // Add user message to UI immediately
-    const session = this.getActiveSession();
-    if (session) {
-      session.messages.push({
-        id: 'temp-' + Date.now(),
-        role: 'user',
-        content: message,
-        timestamp: Date.now(),
-      });
-    }
-    this.render();
-    this.scrollToBottom();
-
-    try {
-      const result = await apiCourier.ai.sendMessage({ sessionId, message });
-
-      if (result.success && result.message && session) {
-        // Remove temp message and add real ones
-        session.messages = session.messages.filter(m => !m.id.startsWith('temp-'));
-        session.messages.push({
-          id: 'user-' + Date.now(),
-          role: 'user',
-          content: message,
-          timestamp: Date.now(),
-        });
-        session.messages.push(result.message);
-      } else if (session) {
-        // Remove temp message on error
-        session.messages = session.messages.filter(m => !m.id.startsWith('temp-'));
-        // Show error
-        this.showError(result.error || 'Failed to get AI response');
-      }
-    } catch (error) {
-      if (session) {
-        session.messages = session.messages.filter(m => !m.id.startsWith('temp-'));
-      }
-      this.showError(error instanceof Error ? error.message : 'Failed to send message');
-    } finally {
-      this.state.isSending = false;
-      this.state.streamingContent = '';
-      this.state.currentRequestId = null;
-      this.render();
-      this.scrollToBottom();
-    }
-  }
-
-  private showError(message: string): void {
-    // Temporarily add error to chat
-    const chatArea = this.container.querySelector('.chat-messages');
-    if (chatArea) {
-      const errorEl = document.createElement('div');
-      errorEl.className = 'error-message';
-      errorEl.innerHTML = `
-        <div class="error-content">
-          <span class="error-icon">${iconHtml('warning')}</span>
-          <span>${this.escapeHtml(message)}</span>
-        </div>
-      `;
-      chatArea.appendChild(errorEl);
-      this.scrollToBottom();
-    }
-  }
-
-  private updateEngineStatusBanner(): void {
-    const banner = this.container.querySelector('.engine-status-banner');
-    if (banner) {
-      banner.outerHTML = this.renderEngineStatusBanner();
-    } else if (this.state.engineStatus !== 'available') {
-      // Insert banner if needed
-      const main = this.container.querySelector('.ask-ai-main');
-      if (main) {
-        main.insertAdjacentHTML('afterbegin', this.renderEngineStatusBanner());
-      }
-    }
-
-    // Update input disabled state
-    const input = this.container.querySelector('#message-input') as HTMLTextAreaElement;
-    const sendBtn = this.container.querySelector('.btn-send') as HTMLButtonElement;
-    if (input) input.disabled = this.state.engineStatus !== 'available';
-    if (sendBtn) sendBtn.disabled = this.state.engineStatus !== 'available';
+    await sendMessageToAI(
+      this.container, this.state, () => this.getActiveSession(),
+      () => this.createNewSession(), () => this.render(), () => this.scrollToBottom()
+    );
   }
 
   private getActiveSession(): AiSession | undefined {
@@ -899,81 +266,11 @@ export class AskAiTab {
 
   private scrollToBottom(): void {
     const chatArea = this.container.querySelector('.chat-messages');
-    if (chatArea) {
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-  }
-
-  private formatMessageContent(content: string): string {
-    // Escape HTML first
-    let formatted = this.escapeHtml(content);
-    
-    // Handle code blocks
-    formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-      return `<div class="code-block"><code>${code.trim()}</code></div>`;
-    });
-
-    // Handle inline code
-    formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-
-    // Handle bold **text**
-    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // Handle italic *text* (but not if already part of bold)
-    formatted = formatted.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
-
-    // Handle numbered lists (1. 2. 3.)
-    formatted = formatted.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-num">$1.</span> $2</div>');
-
-    // Handle line breaks
-    formatted = formatted.replace(/\n/g, '<br>');
-
-    return formatted;
-  }
-
-  private formatKeyValuePairs(data: unknown): string {
-    if (!data) return '';
-    if (Array.isArray(data)) {
-      return data
-        .filter((p: { enabled?: boolean }) => p.enabled !== false)
-        .map((p: { key: string; value: string }) => `${p.key}: ${p.value}`)
-        .join('\n');
-    }
-    return Object.entries(data as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n');
-  }
-
-  private formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  private formatDate(timestamp: number): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
-  }
-
-  private escapeHtml(str: string): string {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  private escapeAttr(str: string): string {
-    return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
   }
 
   destroy(): void {
-    if (this.streamCleanup) {
-      this.streamCleanup();
-      this.streamCleanup = null;
-    }
+    if (this.streamCleanup) { this.streamCleanup(); this.streamCleanup = null; }
     this.isInitialized = false;
   }
 }
