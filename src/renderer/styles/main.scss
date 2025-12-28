@@ -72,11 +72,21 @@
 @import 'json-viewer-input';
 @import 'json-viewer-monaco';
 
-// Load testing styles
-@import 'loadtest';
+// Load testing styles (split into modular components)
+@import 'loadtest-container';
+@import 'loadtest-form';
+@import 'loadtest-adhoc-editor';
+@import 'loadtest-progress';
+@import 'loadtest-results';
+@import 'loadtest-buttons';
 
-// Mock Server styles
-@import 'mock-server';
+// Mock Server styles (split into modular components)
+@import 'mock-server-container';
+@import 'mock-server-sidebar';
+@import 'mock-server-main';
+@import 'mock-server-routes';
+@import 'mock-server-route-editor';
+@import 'mock-server-buttons';
 
 // Ask AI styles (split into modular components)
 @import 'ai-coming-soon';

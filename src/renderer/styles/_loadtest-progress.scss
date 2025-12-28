@@ -1,0 +1,126 @@
+// Load Testing - Progress and Stats Display Styles
+
+.load-test-progress {
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(12, 12, 12, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+
+    .test-info {
+      .info-row {
+        display: flex;
+        margin-bottom: 8px;
+
+        .info-label {
+          min-width: 80px;
+          color: var(--text-secondary);
+          font-size: 13px;
+        }
+
+        .info-value {
+          color: var(--text-primary);
+          font-size: 13px;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  .progress-section {
+    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(12, 12, 12, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+  }
+
+  .progress-bar-container {
+    margin-bottom: 24px;
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .progress-bar {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+
+      .progress-fill {
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+        height: 100%;
+        transition: width 0.3s ease;
+        border-radius: 999px;
+        box-shadow: 0 0 10px rgba(var(--primary-color-rgb), 0.5);
+      }
+    }
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      border-color: rgba(var(--primary-color-rgb), 0.3);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+  }
+
+  .timing-info {
+    .timing-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+
+      .timing-label {
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .timing-value {
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 500;
+      }
+    }
+  }
+}
