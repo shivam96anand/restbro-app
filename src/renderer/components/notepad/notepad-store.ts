@@ -75,7 +75,7 @@ export class NotepadStore {
       title,
       content: initial?.content ?? '',
       filePath: initial?.filePath,
-      isDirty: !initial?.filePath, // New unsaved files start dirty
+      isDirty: false, // Only mark dirty after user edits
       createdAt: now,
       updatedAt: now,
     };

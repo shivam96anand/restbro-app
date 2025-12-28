@@ -22,6 +22,9 @@ export class NotepadManager {
   private isApplyingState = false;
   private isMac = navigator.platform.toLowerCase().includes('mac');
   private contentTimer: number | null = null;
+  private fontSize = 14;
+  private readonly minFontSize = 10;
+  private readonly maxFontSize = 24;
 
   private cursorPosition = { lineNumber: 1, column: 1 };
 
@@ -57,8 +60,13 @@ export class NotepadManager {
     this.container.innerHTML = `
       <div class="notepad-layout">
         <div class="notepad-topbar">
-          <div class="notepad-tabs" id="notepad-tab-strip"></div>
+          <div class="notepad-tabs-area">
+            <div class="notepad-tabs" id="notepad-tab-strip"></div>
+            <button class="notepad-tab add" id="np-add-tab" title="New Tab">+</button>
+          </div>
           <div class="notepad-actions">
+            <button class="np-btn icon" id="np-zoom-out" title="Zoom Out">A-</button>
+            <button class="np-btn icon" id="np-zoom-in" title="Zoom In">A+</button>
             <button class="np-btn ghost" id="np-new-tab" title="New Tab (Ctrl/Cmd+N)">+ New</button>
             <button class="np-btn ghost" id="np-open-file" title="Open File (Ctrl/Cmd+O)">Open</button>
             <button class="np-btn primary" id="np-save" title="Save (Ctrl/Cmd+S)">Save</button>
@@ -114,6 +122,9 @@ export class NotepadManager {
     this.dirtyModal = this.container.querySelector('#notepad-dirty-modal') as HTMLElement;
 
     // Top actions
+    this.container.querySelector('#np-zoom-out')?.addEventListener('click', () => this.adjustZoom(-1));
+    this.container.querySelector('#np-zoom-in')?.addEventListener('click', () => this.adjustZoom(1));
+    this.container.querySelector('#np-add-tab')?.addEventListener('click', () => this.createTab());
     this.container.querySelector('#np-new-tab')?.addEventListener('click', () => this.createTab());
     this.container.querySelector('#np-open-file')?.addEventListener('click', () => this.openFile());
     this.container.querySelector('#np-save')?.addEventListener('click', () => this.saveActiveTab());
@@ -138,6 +149,9 @@ export class NotepadManager {
         event.preventDefault();
         this.openFile();
       } else if (event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        this.createTab();
+      } else if (event.key.toLowerCase() === 't') {
         event.preventDefault();
         this.createTab();
       } else if (event.key.toLowerCase() === 'w') {
@@ -214,7 +228,7 @@ export class NotepadManager {
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
-      fontSize: 14,
+      fontSize: this.fontSize,
       lineNumbers: 'on',
       wordWrap: 'on',
       padding: { top: 12, bottom: 12 },
@@ -359,13 +373,6 @@ export class NotepadManager {
       this.tabStrip.appendChild(button);
     });
 
-    // New tab pill
-    const addBtn = document.createElement('button');
-    addBtn.className = 'notepad-tab add';
-    addBtn.textContent = '+';
-    addBtn.title = 'New Tab';
-    addBtn.addEventListener('click', () => this.createTab());
-    this.tabStrip.appendChild(addBtn);
   }
 
   private loadActiveTabIntoEditor(): void {
@@ -373,6 +380,13 @@ export class NotepadManager {
     if (!activeTab) return;
     this.applyContentToEditor(activeTab.content);
     this.updateStatusBar(activeTab);
+  }
+
+  private adjustZoom(delta: number): void {
+    this.fontSize = Math.min(this.maxFontSize, Math.max(this.minFontSize, this.fontSize + delta));
+    if (this.editor) {
+      this.editor.updateOptions({ fontSize: this.fontSize });
+    }
   }
 
   private applyContentToEditor(content: string): void {

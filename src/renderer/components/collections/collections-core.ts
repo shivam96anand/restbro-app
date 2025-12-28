@@ -77,6 +77,11 @@ export class CollectionsCore {
 
   private setupKeyboardShortcuts(): void {
     document.addEventListener('keydown', (e) => {
+      const apiTab = document.getElementById('api-tab');
+      if (!apiTab?.classList.contains('active')) {
+        return;
+      }
+
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }

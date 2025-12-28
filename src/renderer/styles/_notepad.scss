@@ -24,6 +24,14 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.notepad-tabs-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
 .notepad-tabs {
   display: flex;
   align-items: center;
@@ -130,6 +138,13 @@
   &.ghost {
     background: rgba(255, 255, 255, 0.02);
     border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  &.icon {
+    padding: 6px 8px;
+    min-width: 30px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
   }
 }
 
