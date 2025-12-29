@@ -105,7 +105,6 @@ export class AuthConfigManager {
   private updateFromDOM(authType: string): void {
     // Don't update during loading to prevent overwriting saved config
     if (this.isLoading) {
-      console.log('[AuthConfigManager] Suppressing update during loading');
       return;
     }
 
@@ -136,11 +135,9 @@ export class AuthConfigManager {
   load(auth: { type: string; config: Record<string, string> }, collectionId?: string): void {
     // Set loading flag to suppress spurious updates
     this.isLoading = true;
-    console.log('[AuthConfigManager] Starting load with isLoading=true');
 
     // Set collectionId in OAuth2Manager for variable resolution
     this.oauth2Manager.setCollectionId(collectionId);
-    console.log('[AuthConfigManager] Loaded auth with collectionId:', collectionId);
 
     const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
 
@@ -159,7 +156,6 @@ export class AuthConfigManager {
           // Clear loading flag after config is loaded
           this.isLoading = false;
           this.oauth2Manager.setLoadingState(false);
-          console.log('[AuthConfigManager] OAuth2 load complete, isLoading=false');
         });
       } else {
         // Load non-OAuth2 auth config
@@ -177,7 +173,6 @@ export class AuthConfigManager {
 
             // Clear loading flag after config is loaded
             this.isLoading = false;
-            console.log('[AuthConfigManager] Non-OAuth2 load complete, isLoading=false');
           }
         });
       }

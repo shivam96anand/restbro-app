@@ -38,7 +38,6 @@ export class OAuth2Manager {
    */
   setCollectionId(collectionId?: string): void {
     this.currentCollectionId = collectionId;
-    console.log('[OAuth2Manager] Set collectionId:', collectionId);
   }
 
   /**
@@ -68,7 +67,6 @@ export class OAuth2Manager {
       if ((input as HTMLElement).dataset.field) {
         input.addEventListener('input', () => {
           if (this.isLoadingConfig) {
-            console.log('[OAuth2Manager] Skipping onConfigUpdate during load');
             return;
           }
           const domConfig = this.uiRenderer.getConfigFromDOM();
@@ -88,8 +86,6 @@ export class OAuth2Manager {
    * Handles getting a new OAuth token
    */
   private async handleGetToken(): Promise<void> {
-    console.log('[OAuth2Manager] Get Token button clicked');
-
     const authConfig = document.getElementById('auth-config');
     if (!authConfig) {
       console.error('[OAuth2Manager] Auth config element not found');
@@ -97,22 +93,17 @@ export class OAuth2Manager {
     }
 
     const config = this.uiRenderer.getConfigFromDOM();
-    console.log('[OAuth2Manager] Config from DOM (with variables):', { ...config, clientSecret: config.clientSecret ? '***' : undefined });
 
     try {
       this.uiHelpers.updateOAuthStatus('Getting token...', 'loading');
 
       // Resolve variables in the config
       const resolvedConfig = await this.variableResolver.resolveConfig(config, this.currentCollectionId);
-      console.log('[OAuth2Manager] Resolved config:', { ...resolvedConfig, clientSecret: resolvedConfig.clientSecret ? '***' : undefined });
-      console.log('[OAuth2Manager] Starting OAuth flow...');
 
       // Call OAuth flow through IPC
       const result = await (window as any).electronAPI.oauth.startFlow(resolvedConfig);
-      console.log('[OAuth2Manager] OAuth flow result:', { success: result.success, error: result.error });
 
       if (result.success) {
-        console.log('[OAuth2Manager] Token obtained successfully');
         this.uiHelpers.showClearButton(true);
 
         const updatedConfig = {
@@ -123,8 +114,6 @@ export class OAuth2Manager {
         };
 
         this.currentConfig = updatedConfig;
-        console.log('[OAuth2Manager] Calling onConfigUpdate with token:', !!updatedConfig.accessToken);
-        console.log('[OAuth2Manager] Updated config keys:', Object.keys(updatedConfig));
 
         // Update the request with the token
         this.onConfigUpdate(updatedConfig);
@@ -172,7 +161,6 @@ export class OAuth2Manager {
    * Loads OAuth configuration into the UI
    */
   loadConfig(config: Record<string, string>): void {
-    console.log('[OAuth2Manager] Loading config with token:', config.accessToken ? 'YES' : 'NO');
     this.currentConfig = { ...config };
     this.uiRenderer.loadConfigToDOM(config);
 
@@ -220,7 +208,6 @@ export class OAuth2Manager {
     try {
       // Resolve environment variables before refreshing
       const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
-      console.log('[OAuth2Manager] Auto-refreshing token with resolved config');
 
       const result = await (window as any).electronAPI.oauth.refreshToken(resolvedConfig);
 
@@ -257,7 +244,6 @@ export class OAuth2Manager {
     try {
       // Resolve environment variables before getting token
       const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
-      console.log('[OAuth2Manager] Auto-getting token with resolved config');
 
       const result = await (window as any).electronAPI.oauth.startFlow(resolvedConfig);
 

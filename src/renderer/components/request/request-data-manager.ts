@@ -87,15 +87,7 @@ export class RequestDataManager {
   updateCurrentRequest(updates: Partial<ApiRequest>): void {
     if (!this.currentRequest) return;
 
-    console.log('[RequestDataManager] Updating request with:', {
-      hasAuth: !!updates.auth,
-      authType: updates.auth?.type,
-      hasAccessToken: !!(updates.auth as any)?.config?.accessToken
-    });
-
     this.currentRequest = { ...this.currentRequest, ...updates };
-
-    console.log('[RequestDataManager] Current request after update has token:', !!(this.currentRequest.auth as any)?.config?.accessToken);
 
     const event = new CustomEvent('request-updated', {
       detail: { request: this.currentRequest }
