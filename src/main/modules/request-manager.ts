@@ -1,6 +1,6 @@
 import { ApiRequest, ApiResponse } from '../../shared/types';
 import { oauthManager } from './oauth';
-import { composeFinalRequest, buildFolderVars } from './variables';
+import { composeFinalRequest, buildFolderVars, scanUnresolvedVars } from './variables';
 import { storeManager } from './store-manager';
 import * as http from 'http';
 import * as https from 'https';
@@ -22,11 +22,45 @@ class RequestManager {
       ? state.environments.find((e) => e.id === state.activeEnvironmentId)
       : undefined;
 
+    // Fix collectionId if it points to a request-type collection
+    // buildFolderVars() only processes folder-type collections, so we need the parent folder ID
+    let collectionIdForVars = request.collectionId;
+    if (collectionIdForVars) {
+      const collection = state.collections.find(c => c.id === collectionIdForVars);
+      if (collection) {
+        console.log('[Request Manager] Collection info:', {
+          collectionId: collection.id,
+          collectionName: collection.name,
+          collectionType: collection.type,
+          parentId: collection.parentId
+        });
+        if (collection.type === 'request' && collection.parentId) {
+          console.log('[Request Manager] Using parentId for variable resolution:', collection.parentId);
+          collectionIdForVars = collection.parentId;
+        }
+      } else {
+        console.warn('[Request Manager] Collection not found:', collectionIdForVars);
+      }
+    }
+
     // Build folder variables from ancestor chain
     const folderVars = buildFolderVars(
-      request.collectionId,
+      collectionIdForVars,
       state.collections
     );
+
+    // Debug logging for variable resolution
+    console.log('[Request Manager] Variable resolution context:', {
+      requestId: request.id,
+      originalCollectionId: request.collectionId,
+      resolvedCollectionId: collectionIdForVars,
+      requestVars: Object.keys(request.variables || {}),
+      folderVarsKeys: Object.keys(folderVars),
+      folderVarsValues: folderVars, // Show actual values to confirm resolution
+      envVars: Object.keys(activeEnv?.variables || {}),
+      globalVars: Object.keys(state.globals?.variables || {}),
+    });
+    console.log('[Request Manager] URL before resolution:', request.url);
 
     const resolvedRequest = composeFinalRequest(
       request,
@@ -34,6 +68,7 @@ class RequestManager {
       state.globals,
       folderVars
     );
+    console.log('[Request Manager] URL after resolution:', resolvedRequest.url);
 
     // Create a request object with resolved values
     const requestWithResolved: ApiRequest = {
@@ -47,6 +82,31 @@ class RequestManager {
 
     // Handle OAuth token refresh if needed
     const updatedRequest = await this.handleOAuthRefresh(requestWithResolved);
+
+    // Check for unresolved variables in URL before attempting request
+    const opts = {
+      requestVars: request.variables || {},
+      folderVars: folderVars || {},
+      envVars: activeEnv?.variables || {},
+      globalVars: state.globals?.variables || {},
+    };
+    const unresolvedVars = scanUnresolvedVars(updatedRequest.url, opts);
+    if (unresolvedVars.length > 0) {
+      const endTime = Date.now();
+      const errorBody = RequestErrorFormatter.formatUnresolvedVariablesError(
+        updatedRequest.url,
+        unresolvedVars
+      );
+      return Promise.resolve({
+        status: 400,
+        statusText: 'Unresolved Variables',
+        headers: { 'Content-Type': 'application/json' },
+        body: errorBody,
+        time: endTime - startTime,
+        size: Buffer.byteLength(errorBody),
+        timestamp: endTime,
+      });
+    }
 
     return new Promise<ApiResponse>((resolve, reject) => {
       let settled = false;
@@ -118,7 +178,7 @@ class RequestManager {
 
         req.end();
       } catch (error) {
-        this.handleGeneralError(error, request.url, startTime, safeResolve);
+        this.handleGeneralError(error, updatedRequest.url, startTime, safeResolve);
       }
     });
   }

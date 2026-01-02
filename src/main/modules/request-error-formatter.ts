@@ -46,6 +46,28 @@ export class RequestErrorFormatter {
     return JSON.stringify(errorInfo, null, 2);
   }
 
+  public static formatUnresolvedVariablesError(
+    url: string,
+    unresolvedVars: string[]
+  ): string {
+    const errorInfo = {
+      error: 'Unresolved Variables',
+      message: 'URL contains unresolved variables',
+      url,
+      unresolvedVariables: unresolvedVars,
+      details: `The following variables could not be resolved: ${unresolvedVars.join(', ')}`,
+      suggestions: [
+        'Check that the variables are defined in your active environment',
+        'Verify the variable names match exactly (case-sensitive)',
+        'Ensure you have selected an environment if using environment variables',
+        'Check global variables in Settings if they should be global',
+      ],
+      timestamp: new Date().toISOString(),
+    };
+
+    return JSON.stringify(errorInfo, null, 2);
+  }
+
   public static getErrorStatusCode(error: any): number {
     // Network errors
     if (error.code === 'ENOTFOUND') return 0; // DNS resolution failed

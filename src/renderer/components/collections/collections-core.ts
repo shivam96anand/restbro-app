@@ -248,7 +248,8 @@ export class CollectionsCore {
       const event = new CustomEvent('open-request-in-tab', {
         detail: {
           request: collection.request,
-          collectionId: collection.id
+          // Use parentId for request-type collections so folder variable resolution can walk the parent chain
+          collectionId: collection.parentId || collection.id
         }
       });
       document.dispatchEvent(event);
