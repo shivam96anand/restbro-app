@@ -31,7 +31,6 @@ export function buildFolderVars(
   collections: any[]
 ): Record<string, string> {
   if (!collectionId) {
-    console.log('[buildFolderVars] No collectionId provided');
     return {};
   }
 
@@ -48,14 +47,6 @@ export function buildFolderVars(
     currentId = collection.parentId;
   }
 
-  console.log('[buildFolderVars] Ancestor chain:', ancestorChain.map(a => ({
-    id: a.id,
-    name: a.name,
-    type: a.type,
-    hasVariables: !!a.variables,
-    variableKeys: a.variables ? Object.keys(a.variables) : []
-  })));
-
   // Merge variables from root to child (so child overrides parent)
   for (let i = ancestorChain.length - 1; i >= 0; i--) {
     const ancestor = ancestorChain[i];
@@ -64,7 +55,6 @@ export function buildFolderVars(
     }
   }
 
-  console.log('[buildFolderVars] Final folder vars:', Object.keys(folderVars));
   return folderVars;
 }
 
@@ -83,15 +73,6 @@ export function resolveTemplate(input: string, opts: ResolveOptions = {}): strin
     maxDepth = 5
   } = opts;
 
-  console.log('[resolveTemplate] Input:', input);
-  console.log('[resolveTemplate] Options:', {
-    requestVars: Object.keys(requestVars),
-    folderVars: Object.keys(folderVars),
-    folderVarsValues: folderVars,
-    envVars: Object.keys(envVars),
-    globalVars: Object.keys(globalVars),
-  });
-
   let output = input;
 
   // Iteratively resolve up to maxDepth to handle nested variables
@@ -99,26 +80,19 @@ export function resolveTemplate(input: string, opts: ResolveOptions = {}): strin
     let changed = false;
 
     output = output.replace(VAR_RE, (match, varName, defaultValue) => {
-      console.log('[resolveTemplate] Processing match:', { match, varName, defaultValue });
-      
       // Check precedence: request > env > folder > global
       let value: string | undefined;
 
       if (varName in requestVars) {
         value = requestVars[varName];
-        console.log('[resolveTemplate] Found in requestVars:', value);
       } else if (varName in envVars) {
         value = envVars[varName];
-        console.log('[resolveTemplate] Found in envVars:', value);
       } else if (varName in folderVars) {
         value = folderVars[varName];
-        console.log('[resolveTemplate] Found in folderVars:', value);
       } else if (varName in globalVars) {
         value = globalVars[varName];
-        console.log('[resolveTemplate] Found in globalVars:', value);
       } else if (systemVars && varName in systemVars) {
         value = systemVars[varName];
-        console.log('[resolveTemplate] Found in systemVars:', value);
       } else {
         const systemValue = resolveSystemVariable(varName);
         if (systemValue !== undefined) {
@@ -126,16 +100,13 @@ export function resolveTemplate(input: string, opts: ResolveOptions = {}): strin
           if (systemVars) {
             systemVars[varName] = systemValue;
           }
-          console.log('[resolveTemplate] Found system variable:', value);
         }
       }
 
       if (value === undefined && defaultValue !== undefined) {
         value = defaultValue;
-        console.log('[resolveTemplate] Using default value:', value);
       } else if (value === undefined) {
         // Variable not found and no default - keep placeholder
-        console.log('[resolveTemplate] Variable not found, keeping placeholder:', match);
         return match;
       }
 
@@ -145,17 +116,13 @@ export function resolveTemplate(input: string, opts: ResolveOptions = {}): strin
       }
 
       changed = changed || value !== match;
-      console.log('[resolveTemplate] Replacing with:', value);
       return String(value);
     });
-
-    console.log('[resolveTemplate] After depth', depth, ':', output);
 
     // Stop if nothing changed (no more substitutions possible)
     if (!changed) break;
   }
 
-  console.log('[resolveTemplate] Final output:', output);
   return output;
 }
 

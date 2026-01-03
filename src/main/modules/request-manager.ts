@@ -27,19 +27,8 @@ class RequestManager {
     let collectionIdForVars = request.collectionId;
     if (collectionIdForVars) {
       const collection = state.collections.find(c => c.id === collectionIdForVars);
-      if (collection) {
-        console.log('[Request Manager] Collection info:', {
-          collectionId: collection.id,
-          collectionName: collection.name,
-          collectionType: collection.type,
-          parentId: collection.parentId
-        });
-        if (collection.type === 'request' && collection.parentId) {
-          console.log('[Request Manager] Using parentId for variable resolution:', collection.parentId);
-          collectionIdForVars = collection.parentId;
-        }
-      } else {
-        console.warn('[Request Manager] Collection not found:', collectionIdForVars);
+      if (collection && collection.type === 'request' && collection.parentId) {
+        collectionIdForVars = collection.parentId;
       }
     }
 
@@ -49,26 +38,12 @@ class RequestManager {
       state.collections
     );
 
-    // Debug logging for variable resolution
-    console.log('[Request Manager] Variable resolution context:', {
-      requestId: request.id,
-      originalCollectionId: request.collectionId,
-      resolvedCollectionId: collectionIdForVars,
-      requestVars: Object.keys(request.variables || {}),
-      folderVarsKeys: Object.keys(folderVars),
-      folderVarsValues: folderVars, // Show actual values to confirm resolution
-      envVars: Object.keys(activeEnv?.variables || {}),
-      globalVars: Object.keys(state.globals?.variables || {}),
-    });
-    console.log('[Request Manager] URL before resolution:', request.url);
-
     const resolvedRequest = composeFinalRequest(
       request,
       activeEnv,
       state.globals,
       folderVars
     );
-    console.log('[Request Manager] URL after resolution:', resolvedRequest.url);
 
     // Create a request object with resolved values
     const requestWithResolved: ApiRequest = {
@@ -346,7 +321,7 @@ class RequestManager {
           };
         }
       } catch (error) {
-        console.warn('Failed to refresh OAuth token:', error);
+        // OAuth refresh failed - continue with existing token
       }
     }
 
