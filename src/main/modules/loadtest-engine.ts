@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { LoadTestConfig, LoadTestProgressTick, LoadSample, LoadTestSummary, ApiRequest, LoadTestTarget } from '../../shared/types';
 import { requestManager } from './request-manager';
 import { storeManager } from './store-manager';
+import { oauthManager } from './oauth';
 
 interface ActiveRun {
   id: string;
@@ -15,6 +16,8 @@ interface ActiveRun {
   startedAt: number;
   cancelled: boolean;
   tokenBucket: number;
+  resolvedRequest?: ApiRequest;
+  oauthRefreshPromise?: Promise<ApiRequest>;
   timer?: NodeJS.Timeout;
   progressTimer?: NodeJS.Timeout;
 }
@@ -44,6 +47,7 @@ class LoadTestEngine extends EventEmitter {
       tokenBucket: 0,
     };
 
+    await this.prepareRunTarget(run);
     this.activeRuns.set(runId, run);
     this.scheduleRequests(run);
     this.startProgressReporting(run);
@@ -122,7 +126,7 @@ class LoadTestEngine extends EventEmitter {
   }
 
   private async dispatchRequest(run: ActiveRun): Promise<void> {
-    const requestData = await this.resolveTarget(run.config.target);
+    const requestData = await this.getRequestForRun(run);
 
     run.sent++;
     run.inFlight++;
@@ -179,7 +183,11 @@ class LoadTestEngine extends EventEmitter {
     if (target.kind === 'collection') {
       const state = storeManager.getState();
       const collection = this.findRequestInCollections(state.collections, target.requestId);
-      return collection?.request || null;
+      if (!collection?.request) return null;
+      return {
+        ...collection.request,
+        collectionId: collection.parentId || collection.id,
+      };
     } else {
       // Convert LoadTestTargetAdHoc to ApiRequest
       return {
@@ -198,12 +206,113 @@ class LoadTestEngine extends EventEmitter {
           contentType: target.body.contentType,
         } : undefined,
         auth: target.auth ? {
-          type: target.auth.type === 'apikey' ? 'api-key' :
-                target.auth.type === 'oauth2' ? 'bearer' : target.auth.type,
+          type: target.auth.type === 'apikey' ? 'api-key' : target.auth.type,
           config: target.auth.data as Record<string, string> || {},
         } : undefined,
+        collectionId: target.collectionId,
       };
     }
+  }
+
+  private async prepareRunTarget(run: ActiveRun): Promise<void> {
+    const request = await this.resolveTarget(run.config.target);
+    if (!request) {
+      throw new Error('Failed to resolve target request');
+    }
+    run.resolvedRequest = await this.ensureOAuthToken(request);
+  }
+
+  private async getRequestForRun(run: ActiveRun): Promise<ApiRequest | null> {
+    if (!run.resolvedRequest) {
+      await this.prepareRunTarget(run);
+    }
+
+    if (!run.resolvedRequest) return null;
+
+    if (run.resolvedRequest.auth?.type !== 'oauth2') {
+      return run.resolvedRequest;
+    }
+
+    if (!this.shouldRefreshToken(run.resolvedRequest.auth.config)) {
+      return run.resolvedRequest;
+    }
+
+    if (!run.oauthRefreshPromise) {
+      run.oauthRefreshPromise = this.ensureOAuthToken(run.resolvedRequest)
+        .finally(() => {
+          run.oauthRefreshPromise = undefined;
+        });
+    }
+
+    run.resolvedRequest = await run.oauthRefreshPromise;
+    return run.resolvedRequest;
+  }
+
+  private shouldRefreshToken(config: Record<string, string>): boolean {
+    if (!config.accessToken) return true;
+    if (!config.expiresAt) return false;
+
+    const expiresAt = new Date(config.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt)) return false;
+
+    const refreshThresholdMs = 30000;
+    return Date.now() + refreshThresholdMs >= expiresAt;
+  }
+
+  private async ensureOAuthToken(request: ApiRequest): Promise<ApiRequest> {
+    if (!request.auth || request.auth.type !== 'oauth2') {
+      return request;
+    }
+
+    const config = request.auth.config as any;
+    if (config.accessToken && !config.expiresAt) {
+      return request;
+    }
+    const tokenInfo = oauthManager.getTokenInfo(config);
+
+    if (tokenInfo.isValid && !this.shouldRefreshToken(config)) {
+      return request;
+    }
+
+    if (config.refreshToken) {
+      try {
+        const refreshResult = await oauthManager.refreshToken(config);
+        if (refreshResult.success && refreshResult.data) {
+          return {
+            ...request,
+            auth: {
+              ...request.auth,
+              config: {
+                ...request.auth.config,
+                accessToken: refreshResult.data.accessToken,
+                refreshToken: refreshResult.data.refreshToken || config.refreshToken,
+                expiresAt: new Date(Date.now() + refreshResult.data.expiresIn * 1000).toISOString(),
+              },
+            },
+          };
+        }
+      } catch {
+        // Fall through to a new token request.
+      }
+    }
+
+    const startResult = await oauthManager.startFlow(config);
+    if (!startResult.success || !startResult.data) {
+      throw new Error(startResult.error || 'Failed to obtain OAuth token');
+    }
+
+    return {
+      ...request,
+      auth: {
+        ...request.auth,
+        config: {
+          ...request.auth.config,
+          accessToken: startResult.data.accessToken,
+          refreshToken: startResult.data.refreshToken || request.auth.config.refreshToken,
+          expiresAt: new Date(Date.now() + startResult.data.expiresIn * 1000).toISOString(),
+        },
+      },
+    };
   }
 
   private findRequestInCollections(collections: any[], requestId: string): any {

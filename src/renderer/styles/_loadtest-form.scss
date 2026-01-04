@@ -128,6 +128,131 @@
     margin-top: 16px;
   }
 
+  .loadtest-collection-picker {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .loadtest-collection-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+
+  .loadtest-collection-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .loadtest-collection-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .loadtest-collections-tree {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .loadtest-collections-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 10px 6px;
+  }
+
+  .loadtest-collection-container {
+    position: relative;
+  }
+
+  .loadtest-collection-item {
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+
+    &:hover {
+      background-color: rgba(var(--primary-color-rgb), 0.08);
+    }
+
+    &.selected {
+      background: linear-gradient(135deg,
+                  rgba(var(--primary-color-rgb), 0.18) 0%,
+                  rgba(var(--primary-color-rgb), 0.08) 100%);
+      box-shadow: inset 3px 0 0 var(--primary-color);
+    }
+
+    &.folder {
+      font-weight: 500;
+    }
+  }
+
+  .loadtest-collection-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .loadtest-folder-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: var(--text-secondary);
+
+    .ui-icon {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .loadtest-collection-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+
+    .ui-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .loadtest-folder-spacer {
+    width: 18px;
+  }
+
+  .loadtest-collection-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+  }
+
+  .loadtest-collection-children {
+    position: relative;
+    margin-left: 10px;
+    border-left: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+
+  .loadtest-collection-picker.is-collapsed {
+    .loadtest-collections-tree {
+      display: none;
+    }
+  }
+
   .form-actions {
     text-align: center;
     margin-top: 32px;
@@ -161,4 +286,3 @@
     }
   }
 }
-

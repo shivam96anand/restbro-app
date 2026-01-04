@@ -71,7 +71,60 @@ export class RequestBuilder {
         `${headerPrefix} ${request.auth.config.accessToken}`;
     }
 
+    if (request.auth?.type === 'bearer' && request.auth.config.token) {
+      cleanHeaders['Authorization'] = `Bearer ${request.auth.config.token}`;
+    }
+
+    if (request.auth?.type === 'api-key' && request.auth.config.location === 'header') {
+      const key = request.auth.config.key || 'X-API-Key';
+      if (request.auth.config.value) {
+        cleanHeaders[key] = request.auth.config.value;
+      }
+    }
+
+    if (request.auth?.type === 'basic' && request.auth.config.username && request.auth.config.password) {
+      const credentials = `${request.auth.config.username}:${request.auth.config.password}`;
+      const encoded = Buffer.from(credentials, 'utf8').toString('base64');
+      cleanHeaders['Authorization'] = `Basic ${encoded}`;
+    }
+
     return cleanHeaders;
+  }
+
+  public static buildAuthQueryParams(request: ApiRequest): Record<string, string> {
+    if (request.auth?.type === 'api-key' && request.auth.config.location === 'query') {
+      const key = request.auth.config.key || 'api_key';
+      const value = request.auth.config.value || '';
+      if (key.trim() && value.trim()) {
+        return { [key]: value };
+      }
+    }
+
+    return {};
+  }
+
+  public static mergeParams(
+    params?: KeyValuePair[] | Record<string, string>,
+    extraParams?: Record<string, string>
+  ): KeyValuePair[] | Record<string, string> | undefined {
+    if (!extraParams || Object.keys(extraParams).length === 0) {
+      return params;
+    }
+
+    if (!params) {
+      return extraParams;
+    }
+
+    if (Array.isArray(params)) {
+      const extras = Object.entries(extraParams).map(([key, value]) => ({
+        key,
+        value,
+        enabled: true,
+      }));
+      return [...params, ...extras];
+    }
+
+    return { ...params, ...extraParams };
   }
 
   public static buildBody(request: ApiRequest): {

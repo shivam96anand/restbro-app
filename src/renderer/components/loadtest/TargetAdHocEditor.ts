@@ -15,6 +15,7 @@ interface LoadTestTargetAdHoc {
     type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
     content: string;
   };
+  collectionId?: string;
 }
 
 export class TargetAdHocEditor {
@@ -105,12 +106,7 @@ export class TargetAdHocEditor {
 
     const editor = this.container.querySelector(`#${editorId}`);
     if (!editor) return;
-
-    const row = document.createElement('div');
-    row.className = 'kv-row';
-    row.innerHTML = TargetAdHocTemplates.getKeyValueRow();
-
-    editor.appendChild(row);
+    editor.insertAdjacentHTML('beforeend', TargetAdHocTemplates.getKeyValueRow());
   }
 
   private setupAuthConfig(): void {
@@ -131,7 +127,25 @@ export class TargetAdHocEditor {
       case 'apikey':
         authConfig.innerHTML = TargetAdHocTemplates.getApiKeyAuthTemplate();
         break;
+      case 'oauth2':
+        authConfig.innerHTML = TargetAdHocTemplates.getOAuth2AuthTemplate();
+        this.setupOAuth2Listeners();
+        break;
     }
+  }
+
+  private setupOAuth2Listeners(): void {
+    if (!this.container) return;
+    const grantType = this.container.querySelector('#target-oauth-grant-type') as HTMLSelectElement | null;
+    const authCodeFields = this.container.querySelector('#target-oauth-auth-code-fields') as HTMLElement | null;
+    if (!grantType || !authCodeFields) return;
+
+    const updateVisibility = () => {
+      authCodeFields.style.display = grantType.value === 'authorization_code' ? 'block' : 'none';
+    };
+
+    grantType.addEventListener('change', updateVisibility);
+    updateVisibility();
   }
 
   private toggleBodyEditor(type: string): void {

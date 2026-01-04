@@ -164,6 +164,7 @@ interface LoadTestTargetAdHoc {
   headers?: Record<string, string>;
   auth?: { type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2'; data?: unknown };
   body?: RequestBody;
+  collectionId?: string;
 }
 
 type LoadTestTarget = LoadTestTargetFromCollection | LoadTestTargetAdHoc;

@@ -104,10 +104,12 @@ class RequestManager {
       };
 
       try {
+        const authQueryParams = RequestBuilder.buildAuthQueryParams(updatedRequest);
+        const mergedParams = RequestBuilder.mergeParams(updatedRequest.params, authQueryParams);
         // Build URL with query parameters
         const urlString = RequestBuilder.buildUrlWithParams(
           updatedRequest.url,
-          updatedRequest.params
+          mergedParams
         );
 
         const parsedUrl = new URL(urlString);

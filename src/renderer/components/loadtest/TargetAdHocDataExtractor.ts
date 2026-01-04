@@ -15,6 +15,7 @@ interface LoadTestTargetAdHoc {
     type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
     content: string;
   };
+  collectionId?: string;
 }
 
 export class TargetAdHocDataExtractor {
@@ -44,7 +45,7 @@ export class TargetAdHocDataExtractor {
   /**
    * Extract auth configuration
    */
-  static getAuthConfig(container: HTMLElement): { type: 'none' | 'basic' | 'bearer' | 'apikey'; data?: any } {
+  static getAuthConfig(container: HTMLElement): { type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2'; data?: any } {
     const authType = (container.querySelector('#target-auth-type') as HTMLSelectElement).value;
 
     if (authType === 'none') {
@@ -71,6 +72,22 @@ export class TargetAdHocDataExtractor {
         data.key = key?.value || '';
         data.value = value?.value || '';
         data.location = location?.value || 'header';
+        break;
+      case 'oauth2':
+        data.grantType = (container.querySelector('#target-oauth-grant-type') as HTMLSelectElement | null)?.value || 'client_credentials';
+        data.tokenUrl = (container.querySelector('#target-oauth-token-url') as HTMLInputElement | null)?.value || '';
+        data.clientId = (container.querySelector('#target-oauth-client-id') as HTMLInputElement | null)?.value || '';
+        data.clientSecret = (container.querySelector('#target-oauth-client-secret') as HTMLInputElement | null)?.value || '';
+        data.authUrl = (container.querySelector('#target-oauth-auth-url') as HTMLInputElement | null)?.value || '';
+        data.redirectUri = (container.querySelector('#target-oauth-redirect-uri') as HTMLInputElement | null)?.value || '';
+        data.scope = (container.querySelector('#target-oauth-scope') as HTMLInputElement | null)?.value || '';
+        data.resource = (container.querySelector('#target-oauth-resource') as HTMLInputElement | null)?.value || '';
+        data.audience = (container.querySelector('#target-oauth-audience') as HTMLInputElement | null)?.value || '';
+        data.headerPrefix = (container.querySelector('#target-oauth-header-prefix') as HTMLInputElement | null)?.value || '';
+        data.credentials = (container.querySelector('#target-oauth-credentials') as HTMLSelectElement | null)?.value || '';
+        data.accessToken = (container.querySelector('#target-oauth-access-token') as HTMLInputElement | null)?.value || '';
+        data.refreshToken = (container.querySelector('#target-oauth-refresh-token') as HTMLInputElement | null)?.value || '';
+        data.expiresAt = (container.querySelector('#target-oauth-expires-at') as HTMLInputElement | null)?.value || '';
         break;
     }
 
@@ -131,6 +148,15 @@ export class TargetAdHocDataExtractor {
         new URL(target.url);
       } catch {
         errors.push('Invalid URL format');
+      }
+    }
+
+    if (target.auth?.type === 'oauth2') {
+      const data = target.auth.data as Record<string, string> | undefined;
+      const hasToken = !!data?.accessToken;
+      const hasConfig = !!data?.tokenUrl && !!data?.clientId;
+      if (!hasToken && !hasConfig) {
+        errors.push('OAuth2 requires an access token or token URL and client ID');
       }
     }
 

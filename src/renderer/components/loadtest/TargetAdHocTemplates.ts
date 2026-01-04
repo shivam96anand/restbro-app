@@ -47,6 +47,7 @@ export class TargetAdHocTemplates {
               <option value="basic">Basic Auth</option>
               <option value="bearer">Bearer Token</option>
               <option value="apikey">API Key</option>
+              <option value="oauth2">OAuth 2.0</option>
             </select>
             <div id="target-auth-config" class="auth-config"></div>
           </div>
@@ -97,6 +98,82 @@ export class TargetAdHocTemplates {
         <option value="header">Header</option>
         <option value="query">Query Parameter</option>
       </select>
+    `;
+  }
+
+  static getOAuth2AuthTemplate(): string {
+    return `
+      <div class="oauth-config">
+        <div class="oauth-field">
+          <label>Grant Type</label>
+          <select id="target-oauth-grant-type" class="form-input">
+            <option value="client_credentials">Client Credentials</option>
+            <option value="authorization_code">Authorization Code</option>
+            <option value="device_code">Device Code</option>
+          </select>
+        </div>
+
+        <div class="oauth-field">
+          <label>Token URL</label>
+          <input type="text" id="target-oauth-token-url" placeholder="https://example.com/oauth/token">
+        </div>
+        <div class="oauth-field">
+          <label>Client ID</label>
+          <input type="text" id="target-oauth-client-id" placeholder="Client ID">
+        </div>
+        <div class="oauth-field">
+          <label>Client Secret</label>
+          <input type="password" id="target-oauth-client-secret" placeholder="Client Secret">
+        </div>
+
+        <div class="oauth-auth-code-fields" id="target-oauth-auth-code-fields" style="display: none;">
+          <div class="oauth-field">
+            <label>Authorization URL</label>
+            <input type="text" id="target-oauth-auth-url" placeholder="https://example.com/oauth/authorize">
+          </div>
+          <div class="oauth-field">
+            <label>Redirect URI</label>
+            <input type="text" id="target-oauth-redirect-uri" placeholder="http://localhost:8080/callback" value="http://localhost:8080/callback">
+          </div>
+        </div>
+
+        <div class="oauth-field">
+          <label>Scope</label>
+          <input type="text" id="target-oauth-scope" placeholder="read write (optional)">
+        </div>
+        <div class="oauth-field">
+          <label>Resource</label>
+          <input type="text" id="target-oauth-resource" placeholder="https://api.example.com (optional)">
+        </div>
+        <div class="oauth-field">
+          <label>Audience</label>
+          <input type="text" id="target-oauth-audience" placeholder="api.example.com (optional)">
+        </div>
+        <div class="oauth-field">
+          <label>Header Prefix</label>
+          <input type="text" id="target-oauth-header-prefix" placeholder="Bearer" value="Bearer">
+        </div>
+        <div class="oauth-field">
+          <label>Send Credentials</label>
+          <select id="target-oauth-credentials" class="form-input">
+            <option value="headers">As Headers</option>
+            <option value="body">In Request Body</option>
+          </select>
+        </div>
+
+        <div class="oauth-field">
+          <label>Access Token</label>
+          <input type="text" id="target-oauth-access-token" placeholder="Optional access token">
+        </div>
+        <div class="oauth-field">
+          <label>Refresh Token</label>
+          <input type="text" id="target-oauth-refresh-token" placeholder="Optional refresh token">
+        </div>
+        <div class="oauth-field">
+          <label>Expires At</label>
+          <input type="text" id="target-oauth-expires-at" placeholder="2025-01-01T00:00:00Z (optional)">
+        </div>
+      </div>
     `;
   }
 }

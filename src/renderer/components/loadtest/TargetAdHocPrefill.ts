@@ -73,6 +73,39 @@ export class TargetAdHocPrefill {
             if (value) value.value = auth.data.value || '';
             if (location) location.value = auth.data.location || 'header';
             break;
+          case 'oauth2':
+            const grantType = container.querySelector('#target-oauth-grant-type') as HTMLSelectElement;
+            const tokenUrl = container.querySelector('#target-oauth-token-url') as HTMLInputElement;
+            const clientId = container.querySelector('#target-oauth-client-id') as HTMLInputElement;
+            const clientSecret = container.querySelector('#target-oauth-client-secret') as HTMLInputElement;
+            const authUrl = container.querySelector('#target-oauth-auth-url') as HTMLInputElement;
+            const redirectUri = container.querySelector('#target-oauth-redirect-uri') as HTMLInputElement;
+            const scope = container.querySelector('#target-oauth-scope') as HTMLInputElement;
+            const resource = container.querySelector('#target-oauth-resource') as HTMLInputElement;
+            const audience = container.querySelector('#target-oauth-audience') as HTMLInputElement;
+            const headerPrefix = container.querySelector('#target-oauth-header-prefix') as HTMLInputElement;
+            const credentials = container.querySelector('#target-oauth-credentials') as HTMLSelectElement;
+            const accessToken = container.querySelector('#target-oauth-access-token') as HTMLInputElement;
+            const refreshToken = container.querySelector('#target-oauth-refresh-token') as HTMLInputElement;
+            const expiresAt = container.querySelector('#target-oauth-expires-at') as HTMLInputElement;
+            if (grantType) grantType.value = auth.data.grantType || 'client_credentials';
+            if (tokenUrl) tokenUrl.value = auth.data.tokenUrl || '';
+            if (clientId) clientId.value = auth.data.clientId || '';
+            if (clientSecret) clientSecret.value = auth.data.clientSecret || '';
+            if (authUrl) authUrl.value = auth.data.authUrl || '';
+            if (redirectUri) redirectUri.value = auth.data.redirectUri || 'http://localhost:8080/callback';
+            if (scope) scope.value = auth.data.scope || '';
+            if (resource) resource.value = auth.data.resource || '';
+            if (audience) audience.value = auth.data.audience || '';
+            if (headerPrefix) headerPrefix.value = auth.data.headerPrefix || 'Bearer';
+            if (credentials) credentials.value = auth.data.credentials || 'headers';
+            if (accessToken) accessToken.value = auth.data.accessToken || '';
+            if (refreshToken) refreshToken.value = auth.data.refreshToken || '';
+            if (expiresAt) expiresAt.value = auth.data.expiresAt || '';
+            if (grantType) {
+              grantType.dispatchEvent(new Event('change'));
+            }
+            break;
         }
       }, 0);
     }

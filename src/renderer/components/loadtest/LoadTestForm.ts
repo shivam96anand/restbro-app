@@ -1,4 +1,6 @@
 import { TargetAdHocEditor } from './TargetAdHocEditor';
+import { ApiRequest, Collection } from '../../../shared/types';
+import { iconHtml } from '../../utils/icons';
 
 interface LoadTestConfig {
   rpm: number;
@@ -12,7 +14,10 @@ interface LoadTestConfig {
 export class LoadTestForm {
   private container: HTMLElement | null = null;
   private targetEditor: TargetAdHocEditor;
-  private collections: any[] = [];
+  private collections: Collection[] = [];
+  private expandedFolders = new Set<string>();
+  private selectedRequestId: string | null = null;
+  private selectedCollectionId: string | null = null;
 
   public onStart: ((config: LoadTestConfig) => void) | null = null;
 
@@ -23,41 +28,114 @@ export class LoadTestForm {
   async loadCollections(): Promise<void> {
     try {
       const state = await window.apiCourier.store.get();
-      this.collections = this.flattenCollections(state.collections || []);
-      this.updateCollectionDropdown();
+      this.collections = state.collections || [];
+      this.renderCollectionTree();
     } catch (error) {
       console.error('Failed to load collections:', error);
     }
   }
 
-  private updateCollectionDropdown(): void {
+  private renderCollectionTree(): void {
     if (!this.container) return;
 
-    const collectionSelect = this.container.querySelector('#collection-select');
-    if (!collectionSelect) return;
+    const tree = this.container.querySelector('#collection-tree') as HTMLElement | null;
+    if (!tree) return;
 
-    collectionSelect.innerHTML = `
-      <option value="">Select a request...</option>
-      ${this.collections.map(col =>
-        `<option value="${col.id}">${col.name}</option>`
-      ).join('')}
-    `;
+    const rootCollections = this.collections
+      .filter(c => !c.parentId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    if (rootCollections.length === 0) {
+      tree.innerHTML = `
+        <div class="loadtest-collections-empty">
+          No collections found. Create a folder or request to get started.
+        </div>
+      `;
+      return;
+    }
+
+    tree.innerHTML = '';
+    rootCollections.forEach(collection => {
+      const element = this.createCollectionElement(collection, 0);
+      tree.appendChild(element);
+    });
   }
 
-  private flattenCollections(collections: any[], result: any[] = []): any[] {
-    for (const collection of collections) {
-      if (collection.type === 'request' && collection.request) {
-        result.push({
-          id: collection.request.id,
-          name: collection.name,
-          request: collection.request
+  private createCollectionElement(collection: Collection, depth: number): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'loadtest-collection-container';
+
+    const item = document.createElement('div');
+    item.className = 'loadtest-collection-item';
+    item.dataset.collectionId = collection.id;
+    item.dataset.collectionType = collection.type;
+
+    if (collection.type === 'folder') {
+      item.classList.add('folder');
+    }
+
+    if (collection.type === 'request' && collection.request?.id === this.selectedRequestId) {
+      item.classList.add('selected');
+    }
+
+    const baseIndent = 10;
+    const indentPerLevel = 18;
+    item.style.paddingLeft = `${depth * indentPerLevel + baseIndent}px`;
+
+    const content = document.createElement('div');
+    content.className = 'loadtest-collection-content';
+
+    if (collection.type === 'folder') {
+      const isExpanded = this.expandedFolders.has(collection.id);
+      const toggle = document.createElement('span');
+      toggle.className = 'loadtest-folder-toggle';
+      toggle.dataset.folderId = collection.id;
+      toggle.innerHTML = iconHtml(isExpanded ? 'chevron-down' : 'chevron-right');
+      content.appendChild(toggle);
+
+      const icon = document.createElement('span');
+      icon.className = 'loadtest-collection-icon';
+      icon.innerHTML = iconHtml(isExpanded ? 'folder-open' : 'folder-closed');
+      content.appendChild(icon);
+    } else if (depth > 0) {
+      const spacer = document.createElement('span');
+      spacer.className = 'loadtest-folder-spacer';
+      content.appendChild(spacer);
+    }
+
+    if (collection.type === 'request' && collection.request) {
+      const methodBadge = document.createElement('span');
+      methodBadge.className = 'method-badge';
+      methodBadge.textContent = collection.request.method;
+      content.appendChild(methodBadge);
+      item.dataset.requestId = collection.request.id;
+    }
+
+    const name = document.createElement('span');
+    name.className = 'loadtest-collection-name';
+    name.textContent = collection.name;
+    content.appendChild(name);
+
+    item.appendChild(content);
+    container.appendChild(item);
+
+    if (collection.type === 'folder' && this.expandedFolders.has(collection.id)) {
+      const children = this.collections
+        .filter(child => child.parentId === collection.id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      if (children.length > 0) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'loadtest-collection-children';
+        children.forEach(child => {
+          const childElement = this.createCollectionElement(child, depth + 1);
+          childrenContainer.appendChild(childElement);
         });
-      }
-      if (collection.children) {
-        this.flattenCollections(collection.children, result);
+        container.appendChild(childrenContainer);
       }
     }
-    return result;
+
+    return container;
   }
 
   async render(container: HTMLElement): Promise<void> {
@@ -104,9 +182,13 @@ export class LoadTestForm {
             </div>
 
             <div id="collection-selector" class="target-option" style="display: none;">
-              <select id="collection-select" class="form-input">
-                <option value="">Select a request...</option>
-              </select>
+              <div class="loadtest-collection-picker">
+                <div class="loadtest-collection-header">
+                  <div class="loadtest-collection-title">Select a request</div>
+                  <div class="loadtest-collection-hint">Expand a folder to browse requests.</div>
+                </div>
+                <div id="collection-tree" class="loadtest-collections-tree"></div>
+              </div>
             </div>
 
             <div id="adhoc-editor" class="target-option">
@@ -174,6 +256,38 @@ export class LoadTestForm {
       this.handleStart();
     });
 
+    const collectionTree = this.container.querySelector('#collection-tree');
+    collectionTree?.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const item = target.closest('.loadtest-collection-item') as HTMLElement | null;
+      if (!item) return;
+
+      const collectionId = item.dataset.collectionId;
+      const collectionType = item.dataset.collectionType;
+      const requestId = item.dataset.requestId;
+
+      if (!collectionId || !collectionType) return;
+
+      if (collectionType === 'folder') {
+        if (this.expandedFolders.has(collectionId)) {
+          this.expandedFolders.delete(collectionId);
+        } else {
+          this.expandedFolders.add(collectionId);
+        }
+        this.renderCollectionTree();
+        return;
+      }
+
+      if (collectionType === 'request' && requestId) {
+        this.selectRequestFromCollections(requestId, collectionId);
+      }
+    });
+
+    const collectionHeader = this.container.querySelector('.loadtest-collection-header');
+    collectionHeader?.addEventListener('click', () => {
+      this.toggleCollectionPicker();
+    });
+
     // Form validation on input
     const inputs = this.container.querySelectorAll('input, select');
     inputs.forEach(input => {
@@ -191,7 +305,7 @@ export class LoadTestForm {
 
     if (type === 'collection') {
       collectionSelector?.setAttribute('style', 'display: block;');
-      adhocEditor?.setAttribute('style', 'display: none;');
+      adhocEditor?.setAttribute('style', 'display: block;');
     } else {
       collectionSelector?.setAttribute('style', 'display: none;');
       adhocEditor?.setAttribute('style', 'display: block;');
@@ -205,6 +319,70 @@ export class LoadTestForm {
     if (editorContainer) {
       this.targetEditor.render(editorContainer as HTMLElement);
     }
+  }
+
+  private selectRequestFromCollections(requestId: string, collectionId: string): void {
+    const collection = this.collections.find(col => col.id === collectionId);
+    if (!collection || !collection.request) return;
+
+    this.selectedRequestId = requestId;
+    this.selectedCollectionId = collection.parentId || collection.id;
+    const target = this.requestToTarget(collection.request, this.selectedCollectionId);
+    this.targetEditor.prefillTarget(target);
+    this.setCollectionPickerCollapsed(true);
+    this.renderCollectionTree();
+  }
+
+  private toggleCollectionPicker(): void {
+    if (!this.container) return;
+    const picker = this.container.querySelector('.loadtest-collection-picker');
+    if (!picker) return;
+    picker.classList.toggle('is-collapsed');
+  }
+
+  private setCollectionPickerCollapsed(isCollapsed: boolean): void {
+    if (!this.container) return;
+    const picker = this.container.querySelector('.loadtest-collection-picker');
+    if (!picker) return;
+    picker.classList.toggle('is-collapsed', isCollapsed);
+  }
+
+  private requestToTarget(request: ApiRequest, collectionId?: string): any {
+    const toRecord = (pairs?: ApiRequest['params'] | ApiRequest['headers']): Record<string, string> => {
+      if (!pairs) return {};
+      if (Array.isArray(pairs)) {
+        return pairs.reduce<Record<string, string>>((acc, pair) => {
+          if (pair.enabled && pair.key.trim() && pair.value.trim()) {
+            acc[pair.key.trim()] = pair.value.trim();
+          }
+          return acc;
+        }, {});
+      }
+      return Object.entries(pairs).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (key.trim() && value.trim()) {
+          acc[key.trim()] = value.trim();
+        }
+        return acc;
+      }, {});
+    };
+
+    const auth = request.auth
+      ? {
+          type: request.auth.type === 'api-key' ? 'apikey' : request.auth.type,
+          data: { ...request.auth.config }
+        }
+      : { type: 'none' };
+
+    return {
+      kind: 'adhoc',
+      method: request.method,
+      url: request.url,
+      params: toRecord(request.params),
+      headers: toRecord(request.headers),
+      auth,
+      body: request.body ? { ...request.body } : { type: 'none', content: '' },
+      collectionId
+    };
   }
 
   private handleStart(): void {
@@ -228,7 +406,6 @@ export class LoadTestForm {
     const durationValue = this.container.querySelector('#duration-value') as HTMLInputElement;
     const durationUnit = this.container.querySelector('#duration-unit') as HTMLSelectElement;
     const targetType = this.container.querySelector('input[name="target-type"]:checked') as HTMLInputElement;
-    const collectionSelect = this.container.querySelector('#collection-select') as HTMLSelectElement;
     const followRedirects = this.container.querySelector('#follow-redirects') as HTMLInputElement;
     const insecureTLS = this.container.querySelector('#insecure-tls') as HTMLInputElement;
     const timeout = this.container.querySelector('#timeout-input') as HTMLInputElement;
@@ -239,10 +416,8 @@ export class LoadTestForm {
 
     let target: any;
     if (targetType.value === 'collection') {
-      target = {
-        kind: 'collection',
-        requestId: collectionSelect.value
-      };
+      target = this.targetEditor.getTarget();
+      target.collectionId = this.selectedCollectionId;
     } else {
       target = this.targetEditor.getTarget();
     }
@@ -268,8 +443,11 @@ export class LoadTestForm {
       errors.push('Duration must be between 1 second and 24 hours');
     }
 
-    if (config.target.kind === 'collection' && !config.target.requestId) {
-      errors.push('Please select a request from collections');
+    if (this.container) {
+      const targetType = this.container.querySelector('input[name="target-type"]:checked') as HTMLInputElement;
+      if (targetType?.value === 'collection' && !this.selectedRequestId) {
+        errors.push('Please select a request from collections');
+      }
     }
 
     if (config.target.kind === 'adhoc') {
@@ -329,9 +507,7 @@ export class LoadTestForm {
 
     if (config.target.kind === 'collection') {
       const collectionRadio = this.container.querySelector('input[value="collection"]') as HTMLInputElement;
-      const collectionSelect = this.container.querySelector('#collection-select') as HTMLSelectElement;
       collectionRadio.checked = true;
-      collectionSelect.value = config.target.requestId;
       this.toggleTargetSelector('collection');
     } else {
       const adhocRadio = this.container.querySelector('input[value="adhoc"]') as HTMLInputElement;
