@@ -257,6 +257,16 @@
   background-color: var(--primary-color);
 }
 
+.active-request-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
 // Folder Item Count Badge
 .folder-count-badge {
   display: inline-flex;

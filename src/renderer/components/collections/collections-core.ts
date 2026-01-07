@@ -10,6 +10,7 @@ import { buildFolderVars } from '../request/variable-helper';
 export class CollectionsCore {
   private collections: Collection[] = [];
   private selectedCollectionId?: string;
+  private activeRequestId?: string;
   private treeState: CollectionTreeState = {
     expandedFolders: new Set(),
     searchTerm: '',
@@ -250,9 +251,12 @@ export class CollectionsCore {
 
   private selectCollection(collectionId: string): void {
     this.selectedCollectionId = collectionId;
+    const collection = this.operations.findCollectionById(collectionId);
+    if (collection?.type === 'request' && collection.request) {
+      this.activeRequestId = collection.request.id;
+    }
     this.renderCollections();
 
-    const collection = this.operations.findCollectionById(collectionId);
     if (collection && collection.type === 'request' && collection.request) {
       const event = new CustomEvent('open-request-in-tab', {
         detail: {
@@ -274,6 +278,7 @@ export class CollectionsCore {
       this.collections,
       this.treeState,
       this.selectedCollectionId,
+      this.activeRequestId,
       filteredCollections
     );
   }
@@ -310,10 +315,13 @@ export class CollectionsCore {
   }
 
   updateCollectionRequest(collectionId: string, updatedRequest: ApiRequest): void {
-    const collection = this.operations.findCollectionById(collectionId);
-    if (collection && collection.type === 'request' && collection.request) {
-      collection.request = { ...collection.request, ...updatedRequest };
-      collection.updatedAt = new Date();
+    // The collectionId passed might be a folder ID, so we need to find the actual request collection
+    // by searching for the request by its ID
+    const requestCollection = this.findRequestCollectionByRequestId(this.collections, updatedRequest.id);
+
+    if (requestCollection && requestCollection.type === 'request' && requestCollection.request) {
+      requestCollection.request = { ...requestCollection.request, ...updatedRequest };
+      requestCollection.updatedAt = new Date();
 
       const event = new CustomEvent('collections-changed', {
         detail: { collections: this.collections }
@@ -322,9 +330,29 @@ export class CollectionsCore {
     }
   }
 
+  private findRequestCollectionByRequestId(collections: Collection[], requestId: string): Collection | null {
+    for (const collection of collections) {
+      if (collection.type === 'request' && collection.request?.id === requestId) {
+        return collection;
+      }
+      if (collection.children) {
+        const found = this.findRequestCollectionByRequestId(collection.children, requestId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
   setSelectedCollection(collectionId: string): void {
     if (this.selectedCollectionId !== collectionId) {
       this.selectedCollectionId = collectionId;
+      this.renderCollections();
+    }
+  }
+
+  setActiveRequest(requestId?: string): void {
+    if (this.activeRequestId !== requestId) {
+      this.activeRequestId = requestId;
       this.renderCollections();
     }
   }

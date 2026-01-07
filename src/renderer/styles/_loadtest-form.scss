@@ -4,7 +4,7 @@
   // Two-column layout for main sections
   .form-main-grid {
     display: grid;
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 20px;
     margin-bottom: 16px;
 
@@ -25,6 +25,18 @@
       margin-bottom: 0;
     }
 
+    &.compact-advanced {
+      padding: 18px;
+
+      h3 {
+        margin-bottom: 14px;
+      }
+
+      .form-grid {
+        gap: 12px;
+      }
+    }
+
     h3 {
       font-size: 15px;
       font-weight: 600;
@@ -34,6 +46,12 @@
       padding-bottom: 12px;
       letter-spacing: 0.02em;
     }
+  }
+
+  .form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .form-grid {
@@ -256,6 +274,10 @@
   .form-actions {
     text-align: center;
     margin-top: 32px;
+  }
+
+  .form-actions-inline {
+    margin-top: 6px;
   }
 
   .validation-errors {

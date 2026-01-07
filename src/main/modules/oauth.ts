@@ -130,6 +130,14 @@ export class OAuthManager {
 
   private async handleClientCredentialsFlow(config: OAuthConfig): Promise<OAuthResult> {
     try {
+      console.log('[OAuth] Client Credentials Flow:', {
+        hasClientId: !!config.clientId,
+        clientIdLength: config.clientId?.length || 0,
+        hasClientSecret: !!config.clientSecret,
+        clientSecretLength: config.clientSecret?.length || 0,
+        hasTokenUrl: !!config.tokenUrl,
+        credentials: (config as any).credentials || 'headers (default)'
+      });
       const response = await this.makeTokenRequest(config.tokenUrl, config);
       return { success: true, data: response };
     } catch (error) {
@@ -267,7 +275,7 @@ export class OAuthManager {
       params.append('grant_type', config.grantType === 'authorization_code' ? 'authorization_code' : 'client_credentials');
       params.append('client_id', config.clientId);
 
-      // Add optional fields only if they have values
+      // Add optional fields
       if (config.scope && config.scope.trim()) {
         params.append('scope', config.scope.trim());
       }
@@ -281,23 +289,30 @@ export class OAuthManager {
       }
 
       if (credentials === 'body') {
-        // Send credentials in request body
+        // Send client_secret in request body
         if (config.clientSecret && config.clientSecret.trim()) {
           params.append('client_secret', config.clientSecret);
         }
-        requestBody = params.toString();
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
       } else {
-        // Send credentials in Authorization header (default/recommended)
-        requestBody = params.toString();
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
+        // Send credentials in Authorization header
         if (config.clientSecret && config.clientSecret.trim()) {
-          const auth = btoa(`${config.clientId}:${config.clientSecret}`);
+          const auth = Buffer.from(`${config.clientId}:${config.clientSecret}`, 'utf-8').toString('base64');
           headers['Authorization'] = `Basic ${auth}`;
         }
       }
+
+      requestBody = params.toString();
+      headers['Content-Type'] = 'application/x-www-form-urlencoded';
     }
+
+    // Debug logging (redact client_secret)
+    console.log('[OAuth] Token request:', {
+      url: tokenUrl,
+      hasAuthHeader: !!headers['Authorization'],
+      authHeaderPrefix: headers['Authorization']?.substring(0, 15) || 'none',
+      bodyParams: requestBody.replace(/client_secret=[^&]*/g, 'client_secret=[REDACTED]'),
+      credentialsMode: (configOrParams as any).credentials || 'headers (default)'
+    });
 
     const response = await fetch(tokenUrl, {
       method: 'POST',

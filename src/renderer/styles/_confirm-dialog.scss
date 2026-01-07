@@ -1,0 +1,110 @@
+// Confirm dialog styles
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  &.visible {
+    opacity: 1;
+  }
+
+  &.closing {
+    opacity: 0;
+  }
+}
+
+.confirm-dialog {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+  transition: all 0.15s ease;
+
+  &.visible {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  &.closing {
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+  }
+}
+
+.confirm-dialog-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  border-radius: 12px 12px 0 0;
+}
+
+.confirm-dialog-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.confirm-dialog-body {
+  padding: 14px 20px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.confirm-dialog-footer {
+  padding: 16px 20px 18px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirm-dialog-button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+
+  &.confirm {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+
+    &:hover {
+      filter: brightness(1.05);
+    }
+  }
+
+  &.destructive {
+    background: var(--error-color);
+    border-color: var(--error-color);
+    color: white;
+
+    &:hover {
+      filter: brightness(1.05);
+    }
+  }
+}

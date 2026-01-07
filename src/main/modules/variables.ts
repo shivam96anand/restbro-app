@@ -63,6 +63,11 @@ export function buildFolderVars(
  * Supports nested variables and default values
  */
 export function resolveTemplate(input: string, opts: ResolveOptions = {}): string {
+  // Handle undefined/null input gracefully
+  if (input === undefined || input === null) {
+    return '';
+  }
+
   const {
     requestVars = {},
     folderVars = {},
@@ -136,6 +141,10 @@ export function resolveObject(
   const resolved: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(obj)) {
+    // Skip entries with undefined/null keys or values
+    if (key === undefined || key === null || value === undefined || value === null) {
+      continue;
+    }
     resolved[resolveTemplate(key, opts)] = resolveTemplate(value, opts);
   }
 
@@ -150,8 +159,8 @@ export function resolveKeyValueArray(
   opts: ResolveOptions = {}
 ): KeyValuePair[] {
   return arr.map(({ key, value, enabled }) => ({
-    key: resolveTemplate(key, opts),
-    value: resolveTemplate(value, opts),
+    key: resolveTemplate(key || '', opts),
+    value: resolveTemplate(value || '', opts),
     enabled
   }));
 }

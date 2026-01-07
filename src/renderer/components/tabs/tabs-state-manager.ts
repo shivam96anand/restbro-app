@@ -1,4 +1,5 @@
 import { RequestTab, ApiRequest, ApiResponse } from '../../../shared/types';
+import { showConfirmDialog } from '../../utils/confirm-dialog';
 
 export class TabsStateManager {
   private tabs: RequestTab[] = [];
@@ -181,26 +182,38 @@ export class TabsStateManager {
   closeAllTabs(): void {
     if (this.tabs.length === 0) return;
 
-    const confirmed = confirm(`Are you sure you want to close all ${this.tabs.length} tabs?`);
-    if (!confirmed) return;
-
-    this.tabs = [];
-    this.activeTabId = undefined;
-    this.onNotifyTabChange();
-    this.saveState();
+    void showConfirmDialog({
+      title: 'Close all tabs?',
+      message: `You are about to close ${this.tabs.length} tabs.`,
+      confirmLabel: 'Close All',
+      cancelLabel: 'Cancel',
+      destructive: true
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      this.tabs = [];
+      this.activeTabId = undefined;
+      this.onNotifyTabChange();
+      this.saveState();
+    });
   }
 
   closeOtherTabs(keepTabId: string): void {
     const tabsToClose = this.tabs.filter(tab => tab.id !== keepTabId);
     if (tabsToClose.length === 0) return;
 
-    const confirmed = confirm(`Are you sure you want to close ${tabsToClose.length} other tabs?`);
-    if (!confirmed) return;
-
-    this.tabs = this.tabs.filter(tab => tab.id === keepTabId);
-    this.activeTabId = keepTabId;
-    this.onNotifyTabChange();
-    this.saveState();
+    void showConfirmDialog({
+      title: 'Close other tabs?',
+      message: `You are about to close ${tabsToClose.length} other tabs.`,
+      confirmLabel: 'Close Others',
+      cancelLabel: 'Cancel',
+      destructive: true
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      this.tabs = this.tabs.filter(tab => tab.id === keepTabId);
+      this.activeTabId = keepTabId;
+      this.onNotifyTabChange();
+      this.saveState();
+    });
   }
 
   duplicateTab(tabId: string): void {

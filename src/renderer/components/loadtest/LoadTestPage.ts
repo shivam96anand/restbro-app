@@ -42,6 +42,7 @@ export class LoadTestPage {
   private summary: RunSummary;
 
   private currentRunId: string | null = null;
+  private currentConfig: any = null;
   private progressCleanup: (() => void) | null = null;
   private summaryCleanup: (() => void) | null = null;
 
@@ -83,6 +84,7 @@ export class LoadTestPage {
 
   private async startLoadTest(config: any): Promise<void> {
     try {
+      this.currentConfig = config;
       const result = await window.apiCourier.loadtest.start(config);
       this.currentRunId = result.runId;
       this.showProgress(config);
@@ -176,7 +178,9 @@ export class LoadTestPage {
 
   private async runAgain(config: any): Promise<void> {
     await this.renderForm();
-    this.form.prefillConfig(config);
+    if (this.currentConfig) {
+      this.form.prefillConfig(this.currentConfig);
+    }
   }
 
   private showError(message: string): void {

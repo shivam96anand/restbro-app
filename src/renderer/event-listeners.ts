@@ -102,9 +102,11 @@ export function setupEventListeners(deps: EventListenersDeps): void {
     // If the active tab belongs to a collection, select that collection
     if (activeTab && activeTab.collectionId) {
       collectionsManager.setSelectedCollection(activeTab.collectionId);
+      collectionsManager.setActiveRequest(activeTab.request?.id);
     } else if (!activeTab) {
       // If no active tab, clear collection selection
       collectionsManager.clearSelection();
+      collectionsManager.setActiveRequest(undefined);
     }
   });
 

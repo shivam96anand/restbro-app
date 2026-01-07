@@ -144,87 +144,91 @@ export class LoadTestForm {
     container.innerHTML = `
       <div class="load-test-form">
         <div class="form-main-grid">
-          <div class="form-section compact">
-            <h3>Test Configuration</h3>
-            <div class="form-grid">
-              <div class="form-field">
-                <label for="rpm-input">Requests per Minute</label>
-                <input type="number" id="rpm-input" min="1" max="10000" value="60" class="form-input">
-                <small class="form-help">Maximum 10,000 RPM</small>
-              </div>
-
-              <div class="form-field">
-                <label for="duration-input">Duration</label>
-                <div class="duration-input-group">
-                  <input type="number" id="duration-value" min="1" value="5" class="form-input duration-value">
-                  <select id="duration-unit" class="form-input duration-unit">
-                    <option value="seconds">Seconds</option>
-                    <option value="minutes" selected>Minutes</option>
-                  </select>
+          <div class="form-column">
+            <div class="form-section compact">
+              <h3>Test Configuration</h3>
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="rpm-input">Requests per Minute</label>
+                  <input type="number" id="rpm-input" min="1" max="10000" value="60" class="form-input">
+                  <small class="form-help">Maximum 10,000 RPM</small>
                 </div>
-                <small class="form-help">1 second to 24 hours maximum</small>
-              </div>
-            </div>
-          </div>
 
-          <div class="form-section compact">
-            <h3>Target Request</h3>
-          <div class="target-selector">
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" name="target-type" value="collection" class="target-radio">
-                <span class="radio-text">From Collections</span>
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="target-type" value="adhoc" class="target-radio" checked>
-                <span class="radio-text">Ad-hoc Request</span>
-              </label>
-            </div>
-
-            <div id="collection-selector" class="target-option" style="display: none;">
-              <div class="loadtest-collection-picker">
-                <div class="loadtest-collection-header">
-                  <div class="loadtest-collection-title">Select a request</div>
-                  <div class="loadtest-collection-hint">Expand a folder to browse requests.</div>
+                <div class="form-field">
+                  <label for="duration-input">Duration</label>
+                  <div class="duration-input-group">
+                    <input type="number" id="duration-value" min="1" value="5" class="form-input duration-value">
+                    <select id="duration-unit" class="form-input duration-unit">
+                      <option value="seconds">Seconds</option>
+                      <option value="minutes" selected>Minutes</option>
+                    </select>
+                  </div>
+                  <small class="form-help">1 second to 24 hours maximum</small>
                 </div>
-                <div id="collection-tree" class="loadtest-collections-tree"></div>
               </div>
             </div>
 
-            <div id="adhoc-editor" class="target-option">
-              <!-- Target editor will be rendered here -->
+            <div class="form-section compact compact-advanced">
+              <h3>Advanced Options</h3>
+              <div class="form-grid two-column">
+                <div class="form-field">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="follow-redirects" checked>
+                    <span class="checkbox-text">Follow Redirects</span>
+                  </label>
+                </div>
+
+                <div class="form-field">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="insecure-tls">
+                    <span class="checkbox-text">Allow Insecure TLS</span>
+                  </label>
+                </div>
+
+                <div class="form-field">
+                  <label for="timeout-input">Request Timeout (ms)</label>
+                  <input type="number" id="timeout-input" min="1000" max="300000" value="30000" class="form-input">
+                  <small class="form-help">1-300 seconds</small>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div class="form-column">
+            <div class="form-section compact">
+              <h3>Target Request</h3>
+              <div class="target-selector">
+                <div class="radio-group">
+                  <label class="radio-label">
+                    <input type="radio" name="target-type" value="collection" class="target-radio">
+                    <span class="radio-text">From Collections</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="target-type" value="adhoc" class="target-radio" checked>
+                    <span class="radio-text">Ad-hoc Request</span>
+                  </label>
+                </div>
+
+                <div id="collection-selector" class="target-option" style="display: none;">
+                  <div class="loadtest-collection-picker">
+                    <div class="loadtest-collection-header">
+                      <div class="loadtest-collection-title">Select a request</div>
+                      <div class="loadtest-collection-hint">Expand a folder to browse requests.</div>
+                    </div>
+                    <div id="collection-tree" class="loadtest-collections-tree"></div>
+                  </div>
+                </div>
+
+                <div id="adhoc-editor" class="target-option">
+                  <!-- Target editor will be rendered here -->
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions form-actions-inline">
+              <button id="start-test-btn" class="btn btn-primary" type="button">Start Load Test</button>
+            </div>
           </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Advanced Options</h3>
-          <div class="form-grid two-column">
-            <div class="form-field">
-              <label class="checkbox-label">
-                <input type="checkbox" id="follow-redirects" checked>
-                <span class="checkbox-text">Follow Redirects</span>
-              </label>
-            </div>
-
-            <div class="form-field">
-              <label class="checkbox-label">
-                <input type="checkbox" id="insecure-tls">
-                <span class="checkbox-text">Allow Insecure TLS</span>
-              </label>
-            </div>
-
-            <div class="form-field">
-              <label for="timeout-input">Request Timeout (ms)</label>
-              <input type="number" id="timeout-input" min="1000" max="300000" value="30000" class="form-input">
-              <small class="form-help">1-300 seconds</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button id="start-test-btn" class="btn btn-primary" type="button">Start Load Test</button>
         </div>
 
         <div id="validation-errors" class="validation-errors" style="display: none;"></div>
@@ -327,6 +331,18 @@ export class LoadTestForm {
 
     this.selectedRequestId = requestId;
     this.selectedCollectionId = collection.parentId || collection.id;
+
+    // Update the header to show selected request
+    if (this.container) {
+      const titleEl = this.container.querySelector('.loadtest-collection-title');
+      const hintEl = this.container.querySelector('.loadtest-collection-hint');
+      if (titleEl && hintEl) {
+        titleEl.textContent = collection.name;
+        hintEl.textContent = `${collection.request.method} ${collection.request.url}`;
+      }
+    }
+
+    // Prefill the target editor (for preview only, won't be used when building config)
     const target = this.requestToTarget(collection.request, this.selectedCollectionId);
     this.targetEditor.prefillTarget(target);
     this.setCollectionPickerCollapsed(true);
@@ -415,10 +431,14 @@ export class LoadTestForm {
     const durationSec = durationUnit.value === 'minutes' ? duration * 60 : duration;
 
     let target: any;
-    if (targetType.value === 'collection') {
-      target = this.targetEditor.getTarget();
-      target.collectionId = this.selectedCollectionId;
+    if (targetType.value === 'collection' && this.selectedRequestId) {
+      // Use proper collection target that will be resolved from saved request
+      target = {
+        kind: 'collection',
+        requestId: this.selectedRequestId
+      };
     } else {
+      // Use ad-hoc target from the editor
       target = this.targetEditor.getTarget();
     }
 
@@ -509,11 +529,36 @@ export class LoadTestForm {
       const collectionRadio = this.container.querySelector('input[value="collection"]') as HTMLInputElement;
       collectionRadio.checked = true;
       this.toggleTargetSelector('collection');
+
+      // Restore the selected request
+      const requestId = config.target.requestId;
+      if (requestId) {
+        const collection = this.findRequestCollectionById(requestId);
+        if (collection) {
+          this.selectRequestFromCollections(requestId, collection.id);
+        }
+      }
     } else {
       const adhocRadio = this.container.querySelector('input[value="adhoc"]') as HTMLInputElement;
       adhocRadio.checked = true;
       this.toggleTargetSelector('adhoc');
       this.targetEditor.prefillTarget(config.target);
     }
+  }
+
+  private findRequestCollectionById(requestId: string): any {
+    const findInCollections = (collections: any[]): any => {
+      for (const col of collections) {
+        if (col.request?.id === requestId) {
+          return col;
+        }
+        if (col.children) {
+          const found = findInCollections(col.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findInCollections(this.collections);
   }
 }

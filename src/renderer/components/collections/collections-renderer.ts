@@ -14,6 +14,7 @@ export class CollectionsRenderer {
     collections: Collection[],
     treeState: CollectionTreeState,
     selectedCollectionId: string | undefined,
+    activeRequestId: string | undefined,
     filteredCollections?: Collection[]
   ): void {
     const tree = document.getElementById('collections-tree');
@@ -75,6 +76,7 @@ export class CollectionsRenderer {
         collections,
         treeState,
         selectedCollectionId,
+        activeRequestId,
         filteredCollections
       );
       tree.appendChild(element);
@@ -87,6 +89,7 @@ export class CollectionsRenderer {
     allCollections: Collection[],
     treeState: CollectionTreeState,
     selectedCollectionId: string | undefined,
+    activeRequestId: string | undefined,
     filteredCollections?: Collection[]
   ): HTMLElement {
     const element = document.createElement('div');
@@ -145,6 +148,13 @@ export class CollectionsRenderer {
       methodBadge.textContent = collection.request.method;
       methodBadge.title = `${collection.request.method} request`;
       contentWrapper.appendChild(methodBadge);
+
+      if (collection.request.id === activeRequestId) {
+        const activeIndicator = document.createElement('span');
+        activeIndicator.className = 'active-request-indicator';
+        activeIndicator.title = 'Active request';
+        contentWrapper.appendChild(activeIndicator);
+      }
     }
 
     const name = document.createElement('span');
@@ -208,6 +218,7 @@ export class CollectionsRenderer {
               allCollections,
               treeState,
               selectedCollectionId,
+              activeRequestId,
               filteredCollections
             );
             childrenContainer.appendChild(childElement);

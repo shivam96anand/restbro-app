@@ -53,7 +53,7 @@ export class RunSummary {
             </div>
           </div>
           <div class="summary-actions">
-            <button id="run-again-btn" class="btn btn-primary">Run Again</button>
+            <button id="run-again-btn" class="btn btn-primary">Back</button>
             <button id="export-csv-btn" class="btn btn-secondary">Export CSV</button>
             <button id="export-pdf-btn" class="btn btn-secondary">Export PDF</button>
           </div>

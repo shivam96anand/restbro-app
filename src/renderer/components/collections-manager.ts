@@ -32,6 +32,10 @@ export class CollectionsManager {
     this.core.setSelectedCollection(collectionId);
   }
 
+  setActiveRequest(requestId?: string): void {
+    this.core.setActiveRequest(requestId);
+  }
+
   clearSelection(): void {
     this.core.clearSelection();
   }

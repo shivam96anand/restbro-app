@@ -184,6 +184,15 @@ class LoadTestEngine extends EventEmitter {
       const state = storeManager.getState();
       const collection = this.findRequestInCollections(state.collections, target.requestId);
       if (!collection?.request) return null;
+
+      console.log('[LoadTest] Resolved request from collection:', {
+        hasAuth: !!collection.request.auth,
+        authType: collection.request.auth?.type,
+        hasAccessToken: !!(collection.request.auth?.config as any)?.accessToken,
+        accessTokenLength: ((collection.request.auth?.config as any)?.accessToken?.length || 0),
+        tokenUrl: (collection.request.auth?.config as any)?.tokenUrl
+      });
+
       return {
         ...collection.request,
         collectionId: collection.parentId || collection.id,
@@ -265,14 +274,27 @@ class LoadTestEngine extends EventEmitter {
     }
 
     const config = request.auth.config as any;
+    console.log('[LoadTest] ensureOAuthToken check:', {
+      hasAccessToken: !!config.accessToken,
+      accessTokenLength: config.accessToken?.length || 0,
+      hasExpiresAt: !!config.expiresAt,
+      expiresAt: config.expiresAt,
+      grantType: config.grantType
+    });
+
     if (config.accessToken && !config.expiresAt) {
+      console.log('[LoadTest] Using existing token (no expiry set)');
       return request;
     }
     const tokenInfo = oauthManager.getTokenInfo(config);
+    console.log('[LoadTest] Token validity:', tokenInfo);
 
     if (tokenInfo.isValid && !this.shouldRefreshToken(config)) {
+      console.log('[LoadTest] Token is valid, using existing token');
       return request;
     }
+
+    console.log('[LoadTest] Token invalid or expired, requesting new token');
 
     if (config.refreshToken) {
       try {
