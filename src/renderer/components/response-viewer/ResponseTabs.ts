@@ -147,6 +147,11 @@ export class ResponseTabs {
     if (timestampElement) {
       timestampElement.textContent = '--:--:-- --';
     }
+
+    // Remove status classes from tabs container
+    if (this.tabsContainer) {
+      this.tabsContainer.classList.remove('status-2xx', 'status-3xx', 'status-4xx', 'status-5xx');
+    }
   }
 
   public destroy(): void {

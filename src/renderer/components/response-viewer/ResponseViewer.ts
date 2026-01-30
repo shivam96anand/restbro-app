@@ -195,6 +195,24 @@ export class ResponseViewer {
 
     // Update timestamp separately
     this.updateResponseTimestamp(response.timestamp);
+
+    // Add status class to response-tabs container for background color
+    const tabsContainer = document.querySelector('.response-tabs');
+    if (tabsContainer) {
+      // Remove existing status classes
+      tabsContainer.classList.remove('status-2xx', 'status-3xx', 'status-4xx', 'status-5xx');
+      
+      // Add appropriate status class
+      if (response.status >= 200 && response.status < 300) {
+        tabsContainer.classList.add('status-2xx');
+      } else if (response.status >= 300 && response.status < 400) {
+        tabsContainer.classList.add('status-3xx');
+      } else if (response.status >= 400 && response.status < 500) {
+        tabsContainer.classList.add('status-4xx');
+      } else if (response.status >= 500) {
+        tabsContainer.classList.add('status-5xx');
+      }
+    }
   }
 
   private formatResponseTime(timeMs: number): string {
