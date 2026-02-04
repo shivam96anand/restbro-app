@@ -176,6 +176,8 @@ textarea {
 }
 
 // Variable highlight overlay container
+// Default: on top of input so hover tooltips work on variable spans
+// When input is focused: behind input so cursor/typing works
 .variable-highlight-container {
   position: absolute;
   pointer-events: none;
@@ -189,7 +191,12 @@ textarea {
   padding: inherit;
   border: 1px solid transparent;
   color: transparent;
-  z-index: 3;
+  z-index: 3; // Above input by default for tooltip hover
+
+  // When input is focused, drop behind so typing works
+  &.input-focused {
+    z-index: 1;
+  }
 
   span {
     color: var(--text-primary);
@@ -269,10 +276,19 @@ textarea {
 }
 
 // Hide native text when overlay is active to prevent double-render, keep caret visible
+// Default: input below overlay (z-index: 2 < overlay's z-index: 3) so tooltips work on hover
+// When focused: input above overlay (z-index: 4 > overlay.input-focused's z-index: 1) so cursor visible
 .has-variable-overlay {
   color: transparent !important;
-  caret-color: var(--text-primary);
-  background: transparent;
+  caret-color: #ffffff !important;
+  caret-color: var(--text-primary, #ffffff) !important;
+  background: transparent !important;
+  position: relative;
+  z-index: 2;
+
+  &:focus {
+    z-index: 4; // Jump above overlay when focused for cursor visibility
+  }
 }
 
 // Indicator that field contains variables

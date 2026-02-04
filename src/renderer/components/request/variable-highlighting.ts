@@ -45,7 +45,8 @@ export function addVariableHighlighting(
     container = document.createElement('div');
     container.className = 'variable-highlight-container';
     container.dataset.for = highlightId;
-    inputElement.parentElement?.appendChild(container);
+    // Insert BEFORE the input so overlay renders behind (lower in stacking order)
+    inputElement.parentElement?.insertBefore(container, inputElement);
   }
 
   // CRITICAL FIX: Always update position and size, not just on creation
@@ -97,11 +98,18 @@ export function addVariableHighlighting(
     // Update position on window resize
     window.addEventListener('resize', updatePosition);
 
-    // Remove tooltip when input gains focus (user is typing)
+    // When input gains focus: hide tooltip and drop overlay behind input
     const focusHandler = () => {
       removeGlobalTooltip();
+      container.classList.add('input-focused');
     };
     inputElement.addEventListener('focus', focusHandler);
+
+    // When input loses focus: raise overlay back up for tooltip hover
+    const blurHandler = () => {
+      container.classList.remove('input-focused');
+    };
+    inputElement.addEventListener('blur', blurHandler);
 
     // Remove tooltip when clicking anywhere in the document
     const clickHandler = (e: MouseEvent) => {
@@ -115,6 +123,7 @@ export function addVariableHighlighting(
     // Store cleanup for these listeners too
     (container as any).__inputCleanup = () => {
       inputElement.removeEventListener('focus', focusHandler);
+      inputElement.removeEventListener('blur', blurHandler);
       document.removeEventListener('click', clickHandler);
     };
   } else {

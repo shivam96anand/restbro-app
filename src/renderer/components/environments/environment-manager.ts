@@ -109,13 +109,16 @@ export class EnvironmentManager {
     });
 
     manageBtn.addEventListener('click', () => {
-      this.dialogs.showManageDialog(this.environments, this.activeEnvironmentId).then(result => {
+      this.dialogs.showManageDialog(this.environments, this.activeEnvironmentId).then(async result => {
         if (result) {
           this.setEnvironments(result.environments);
           if (result.activeEnvironmentId !== undefined) {
             this.setActiveEnvironment(result.activeEnvironmentId);
           }
-          this.saveState();
+          await this.saveState(result.globals);
+          // Notify other components that environments/variables changed
+          // This refreshes variable context for autocomplete and highlighting
+          document.dispatchEvent(new CustomEvent('environment-changed'));
         }
       });
     });
@@ -128,10 +131,12 @@ export class EnvironmentManager {
       manageBtn.style.background = 'var(--bg-tertiary)';
     });
 
-    select.addEventListener('change', () => {
+    select.addEventListener('change', async () => {
       const selectedId = select.value === '' ? undefined : select.value;
       this.setActiveEnvironment(selectedId);
-      this.saveState();
+      await this.saveState();
+      // Notify other components that the environment changed (after save completes)
+      document.dispatchEvent(new CustomEvent('environment-changed'));
     });
 
     container.appendChild(label);
@@ -241,12 +246,18 @@ export class EnvironmentManager {
     this.saveState();
   }
 
-  private async saveState(): Promise<void> {
+  private async saveState(globals?: { variables: Record<string, string> }): Promise<void> {
     try {
-      await window.apiCourier.store.set({
+      const updates: Record<string, any> = {
         environments: this.environments,
         activeEnvironmentId: this.activeEnvironmentId,
-      });
+      };
+      if (globals) {
+        updates.globals = globals;
+        // Dispatch event to notify other components that globals changed
+        document.dispatchEvent(new CustomEvent('globals-updated'));
+      }
+      await window.apiCourier.store.set(updates);
     } catch (error) {
       console.error('Failed to save environments:', error);
     }

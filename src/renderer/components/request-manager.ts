@@ -52,6 +52,9 @@ export class RequestManager {
 
     this.formHandler.showEmptyState();
 
+    // Load initial variable context for autocomplete to work immediately
+    this.refreshCurrentVariableContext();
+
     document.addEventListener('tab-changed', (e: Event) => {
       const customEvent = e as CustomEvent;
       const activeTab = customEvent.detail.activeTab;
@@ -67,6 +70,7 @@ export class RequestManager {
     document.addEventListener('environment-changed', () => {
       this.invalidateStoreCache();
       this.invalidateRequestStateCache();
+      this.refreshCurrentVariableContext();
     });
 
     document.addEventListener('collection-updated', () => {
@@ -77,6 +81,7 @@ export class RequestManager {
     document.addEventListener('globals-updated', () => {
       this.invalidateStoreCache();
       this.invalidateRequestStateCache();
+      this.refreshCurrentVariableContext();
     });
   }
 
@@ -286,6 +291,36 @@ export class RequestManager {
   private invalidateStoreCache(): void {
     this.storeCache = null;
     this.storeCacheTime = 0;
+  }
+
+  /**
+   * Refresh variable context for current request when environment or globals change
+   */
+  private async refreshCurrentVariableContext(): Promise<void> {
+    // Get collection ID from current cached state if available
+    let collectionId: string | undefined;
+    if (this.currentTabId) {
+      const cachedState = this.requestStateCache.get(this.currentTabId);
+      collectionId = cachedState?.collectionId;
+    }
+
+    // Load fresh variable context (always, even if no request is active)
+    const variableContext = await this.loadVariableContext(collectionId);
+
+    // Update editors with new context
+    this.editorsManager.setVariableContext(
+      variableContext.activeEnvironment,
+      variableContext.globals,
+      variableContext.folderVars
+    );
+    this.formHandler.setVariableContext(variableContext);
+
+    // Refresh highlighting if there's an active request
+    if (this.currentTabId && this.dataManager.getCurrentRequest()) {
+      requestAnimationFrame(() => {
+        this.formHandler.refreshAllInputHighlighting();
+      });
+    }
   }
 
   private clearForm(): void {

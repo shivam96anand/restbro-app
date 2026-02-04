@@ -57,11 +57,13 @@
   position: relative;
 
   // Variable highlight container gets appended here by JS
+  // Default: on top of input (z-index: 3) so hover tooltips work on variable spans
+  // When input is focused: behind input (z-index: 1) so cursor/typing works
   .variable-highlight-container {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 2;
+    z-index: 3; // Above input by default for tooltip hover
     display: flex;
     align-items: center;
     padding: 8px 12px;
@@ -79,6 +81,11 @@
     &::-webkit-scrollbar {
       display: none;
     }
+
+    // When input is focused, drop behind so typing works
+    &.input-focused {
+      z-index: 1;
+    }
   }
 }
 
@@ -91,7 +98,7 @@
   border-radius: 6px;
   padding: 8px 12px;
   position: relative;
-  z-index: 1;
+  z-index: 2; // Below overlay by default, above when focused
   transition: all 0.2s ease;
   font-family: var(--font-mono);
   font-size: 13px;
@@ -109,6 +116,7 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    z-index: 4; // Jump above overlay when focused for cursor visibility
   }
 }
 

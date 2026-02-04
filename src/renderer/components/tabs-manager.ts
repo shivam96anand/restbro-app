@@ -30,7 +30,41 @@ export class TabsManager {
   initialize(): void {
     this.eventHandler.setupTabEvents();
     this.eventHandler.setupEventListeners();
+    this.setupKeyboardShortcuts();
     this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+  }
+
+  private isApiTabActive(): boolean {
+    const apiTab = document.getElementById('api-tab');
+    return apiTab?.classList.contains('active') ?? false;
+  }
+
+  private setupKeyboardShortcuts(): void {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (!this.isApiTabActive()) return;
+
+      const key = e.key.toLowerCase();
+
+      // Ctrl+Tab / Ctrl+Shift+Tab for tab navigation
+      if (key === 'tab' && e.ctrlKey) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          this.switchToPrevTab();
+        } else {
+          this.switchToNextTab();
+        }
+        return;
+      }
+
+      // Cmd+W (Mac) or Ctrl+W (Windows) to close active tab
+      const modifierKey = isMac ? e.metaKey : e.ctrlKey;
+      if (modifierKey && key === 'w') {
+        e.preventDefault();
+        this.closeActiveTab();
+      }
+    });
   }
 
   private createNewTabAndRender(): void {
@@ -89,6 +123,23 @@ export class TabsManager {
 
   private closeOtherTabsAndRender(keepTabId: string): void {
     this.stateManager.closeOtherTabs(keepTabId);
+    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+  }
+
+  closeActiveTab(): void {
+    const activeTabId = this.stateManager.getActiveTabId();
+    if (activeTabId) {
+      this.closeTabAndRender(activeTabId);
+    }
+  }
+
+  switchToNextTab(): void {
+    this.stateManager.switchToNextTab();
+    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+  }
+
+  switchToPrevTab(): void {
+    this.stateManager.switchToPrevTab();
     this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
   }
 

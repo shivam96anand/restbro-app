@@ -1,7 +1,7 @@
-import { Environment } from '../../../shared/types';
+import { Environment, Globals } from '../../../shared/types';
 import { modal } from '../../utils/modal';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
-import { EnvironmentDialogUI, EnvironmentDialogState } from './EnvironmentDialogUI';
+import { EnvironmentDialogUI, EnvironmentDialogState, DialogTab } from './EnvironmentDialogUI';
 
 export class EnvironmentDialogs {
   private onShowError: (message: string) => void;
@@ -17,7 +17,16 @@ export class EnvironmentDialogs {
   async showManageDialog(
     environments: Environment[],
     activeEnvironmentId?: string
-  ): Promise<{ environments: Environment[]; activeEnvironmentId?: string } | null> {
+  ): Promise<{ environments: Environment[]; activeEnvironmentId?: string; globals?: Globals } | null> {
+    // Load globals from store
+    let loadedGlobals: Globals = { variables: {} };
+    try {
+      const storeState = await window.apiCourier.store.get();
+      loadedGlobals = storeState.globals || { variables: {} };
+    } catch (error) {
+      console.error('Failed to load globals:', error);
+    }
+
     return new Promise((resolve) => {
       // Create overlay and dialog containers
       const { overlay, dialog, body } = this.createDialogStructure();
@@ -27,12 +36,29 @@ export class EnvironmentDialogs {
         workingEnvs: [...environments.map(e => ({ ...e, variables: { ...e.variables } }))],
         workingActiveId: activeEnvironmentId,
         selectedEnvId: environments[0]?.id || null,
+        workingGlobals: { variables: { ...loadedGlobals.variables } },
+        activeTab: 'environments',
       };
 
       // Render function
       const renderBody = () => {
         body.innerHTML = '';
 
+        // Create tabs
+        const tabs = EnvironmentDialogUI.createTabs(state.activeTab, (tab: DialogTab) => {
+          state.activeTab = tab;
+          renderBody();
+        });
+        body.appendChild(tabs);
+
+        if (state.activeTab === 'globals') {
+          // Render globals panel
+          const globalsPanel = EnvironmentDialogUI.createGlobalsPanel(state.workingGlobals);
+          body.appendChild(globalsPanel);
+          return;
+        }
+
+        // Render environments tab
         if (state.workingEnvs.length === 0) {
           body.appendChild(EnvironmentDialogUI.createEmptyState());
           return;
@@ -114,6 +140,7 @@ export class EnvironmentDialogs {
           resolve({
             environments: state.workingEnvs,
             activeEnvironmentId: state.workingActiveId,
+            globals: state.workingGlobals,
           });
         }
       );

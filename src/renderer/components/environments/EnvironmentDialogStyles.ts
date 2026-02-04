@@ -251,4 +251,41 @@ export class EnvironmentDialogStyles {
     transition: all 0.2s ease;
     box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
   `;
+
+  static readonly tabsContainer = `
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+  `;
+
+  static getTabStyle(isActive: boolean): string {
+    return `
+      padding: 10px 20px;
+      background: ${isActive ? 'var(--bg-tertiary)' : 'transparent'};
+      border: none;
+      border-bottom: 2px solid ${isActive ? 'var(--primary-color)' : 'transparent'};
+      color: ${isActive ? 'var(--text-primary)' : 'var(--text-secondary)'};
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    `;
+  }
+
+  static readonly globalsPanel = `
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  `;
+
+  static readonly globalsDescription = `
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(var(--primary-color-rgb), 0.05);
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+  `;
 }

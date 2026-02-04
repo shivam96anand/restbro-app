@@ -2,14 +2,19 @@
  * UI builders for environment management dialog
  */
 
-import { Environment } from '../../../shared/types';
+import { Environment, Globals } from '../../../shared/types';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 import { EnvironmentVariablesManager } from './EnvironmentVariablesManager';
+import { iconHtml } from '../../utils/icons';
+
+export type DialogTab = 'environments' | 'globals';
 
 export interface EnvironmentDialogState {
   workingEnvs: Environment[];
   workingActiveId?: string;
   selectedEnvId: string | null;
+  workingGlobals: Globals;
+  activeTab: DialogTab;
 }
 
 export class EnvironmentDialogUI {
@@ -204,5 +209,134 @@ export class EnvironmentDialogUI {
     footer.appendChild(saveBtn);
 
     return footer;
+  }
+
+  /**
+   * Creates the tabs for switching between Environments and Globals
+   */
+  static createTabs(
+    activeTab: DialogTab,
+    onTabChange: (tab: DialogTab) => void
+  ): HTMLDivElement {
+    const tabsContainer = document.createElement('div');
+    tabsContainer.style.cssText = EnvironmentDialogStyles.tabsContainer;
+
+    const envTab = document.createElement('button');
+    envTab.textContent = 'Environments';
+    envTab.style.cssText = EnvironmentDialogStyles.getTabStyle(activeTab === 'environments');
+    envTab.addEventListener('click', () => onTabChange('environments'));
+
+    const globalsTab = document.createElement('button');
+    globalsTab.textContent = 'Globals';
+    globalsTab.style.cssText = EnvironmentDialogStyles.getTabStyle(activeTab === 'globals');
+    globalsTab.addEventListener('click', () => onTabChange('globals'));
+
+    tabsContainer.appendChild(envTab);
+    tabsContainer.appendChild(globalsTab);
+
+    return tabsContainer;
+  }
+
+  /**
+   * Creates the globals panel for editing global variables
+   */
+  static createGlobalsPanel(globals: Globals): HTMLDivElement {
+    const panel = document.createElement('div');
+    panel.style.cssText = EnvironmentDialogStyles.globalsPanel;
+
+    // Description
+    const description = document.createElement('div');
+    description.style.cssText = EnvironmentDialogStyles.globalsDescription;
+    description.textContent = 'Global variables are available in all requests, regardless of the selected environment. They have the lowest priority and will be overridden by environment or folder variables with the same name.';
+    panel.appendChild(description);
+
+    // Variables label
+    const varsLabel = document.createElement('div');
+    varsLabel.textContent = 'Variables:';
+    varsLabel.style.cssText = EnvironmentDialogStyles.varsLabel;
+    panel.appendChild(varsLabel);
+
+    // Variables container
+    const varsContainer = document.createElement('div');
+    varsContainer.style.cssText = EnvironmentDialogStyles.varsContainer;
+
+    const renderVars = () => {
+      varsContainer.innerHTML = '';
+
+      Object.entries(globals.variables).forEach(([key, value]) => {
+        const varRow = this.createGlobalVariableRow(key, value, globals, renderVars);
+        varsContainer.appendChild(varRow);
+      });
+
+      // Add variable button
+      const addVarBtn = document.createElement('button');
+      addVarBtn.textContent = '+ Add Variable';
+      addVarBtn.style.cssText = EnvironmentDialogStyles.addVarButton;
+      addVarBtn.addEventListener('click', () => {
+        const newKey = `global${Object.keys(globals.variables).length + 1}`;
+        globals.variables[newKey] = '';
+        renderVars();
+      });
+      varsContainer.appendChild(addVarBtn);
+    };
+
+    renderVars();
+    panel.appendChild(varsContainer);
+
+    return panel;
+  }
+
+  /**
+   * Creates a single global variable row
+   */
+  private static createGlobalVariableRow(
+    key: string,
+    value: string,
+    globals: Globals,
+    renderVars: () => void
+  ): HTMLDivElement {
+    const varRow = document.createElement('div');
+    varRow.style.cssText = EnvironmentDialogStyles.varRow;
+
+    const keyInput = document.createElement('input');
+    keyInput.type = 'text';
+    keyInput.value = key;
+    keyInput.placeholder = 'Key';
+    keyInput.style.cssText = EnvironmentDialogStyles.varInput;
+
+    const valueInput = document.createElement('input');
+    valueInput.type = 'text';
+    valueInput.value = value;
+    valueInput.placeholder = 'Value';
+    valueInput.style.cssText = EnvironmentDialogStyles.varInput;
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerHTML = iconHtml('close');
+    deleteBtn.style.cssText = EnvironmentDialogStyles.deleteVarButton;
+
+    deleteBtn.addEventListener('click', () => {
+      delete globals.variables[key];
+      renderVars();
+    });
+
+    // Update on key change
+    keyInput.addEventListener('blur', () => {
+      if (keyInput.value && keyInput.value !== key) {
+        delete globals.variables[key];
+        globals.variables[keyInput.value] = valueInput.value;
+        renderVars();
+      }
+    });
+
+    // Update on value change
+    valueInput.addEventListener('input', () => {
+      globals.variables[key] = valueInput.value;
+    });
+
+    varRow.appendChild(keyInput);
+    varRow.appendChild(valueInput);
+    varRow.appendChild(deleteBtn);
+
+    return varRow;
   }
 }

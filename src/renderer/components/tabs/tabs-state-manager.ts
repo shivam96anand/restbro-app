@@ -65,6 +65,26 @@ export class TabsStateManager {
     this.saveState();
   }
 
+  switchToNextTab(): void {
+    if (this.tabs.length <= 1) return;
+    const currentIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % this.tabs.length;
+    this.activeTabId = this.tabs[nextIndex].id;
+    this.onNotifyTabChange();
+    this.saveState();
+  }
+
+  switchToPrevTab(): void {
+    if (this.tabs.length <= 1) return;
+    const currentIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
+    this.activeTabId = this.tabs[prevIndex].id;
+    this.onNotifyTabChange();
+    this.saveState();
+  }
+
   closeTab(tabId: string): void {
     const tabIndex = this.tabs.findIndex(tab => tab.id === tabId);
     if (tabIndex === -1) return;
