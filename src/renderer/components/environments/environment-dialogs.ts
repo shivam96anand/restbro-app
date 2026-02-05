@@ -19,10 +19,10 @@ export class EnvironmentDialogs {
     activeEnvironmentId?: string
   ): Promise<{ environments: Environment[]; activeEnvironmentId?: string; globals?: Globals } | null> {
     // Load globals from store
-    let loadedGlobals: Globals = { variables: {} };
+    let loadedGlobals: Globals = { variables: {}, variableDescriptions: {} };
     try {
       const storeState = await window.apiCourier.store.get();
-      loadedGlobals = storeState.globals || { variables: {} };
+      loadedGlobals = storeState.globals || { variables: {}, variableDescriptions: {} };
     } catch (error) {
       console.error('Failed to load globals:', error);
     }
@@ -33,10 +33,17 @@ export class EnvironmentDialogs {
 
       // Initialize state
       const state: EnvironmentDialogState = {
-        workingEnvs: [...environments.map(e => ({ ...e, variables: { ...e.variables } }))],
+        workingEnvs: [...environments.map(e => ({
+          ...e,
+          variables: { ...e.variables },
+          variableDescriptions: { ...(e.variableDescriptions || {}) },
+        }))],
         workingActiveId: activeEnvironmentId,
         selectedEnvId: environments[0]?.id || null,
-        workingGlobals: { variables: { ...loadedGlobals.variables } },
+        workingGlobals: {
+          variables: { ...loadedGlobals.variables },
+          variableDescriptions: { ...(loadedGlobals.variableDescriptions || {}) },
+        },
         activeTab: 'environments',
       };
 
@@ -136,6 +143,27 @@ export class EnvironmentDialogs {
           resolve(null);
         },
         () => {
+          const DRAFT_PREFIX = '__apicourier_draft__';
+          state.workingEnvs.forEach(env => {
+            const descriptions = env.variableDescriptions || {};
+            Object.keys(env.variables).forEach((key) => {
+              if (!key || key.startsWith(DRAFT_PREFIX)) {
+                delete env.variables[key];
+                delete descriptions[key];
+              }
+            });
+            env.variableDescriptions = descriptions;
+          });
+
+          const globalDescriptions = state.workingGlobals.variableDescriptions || {};
+          Object.keys(state.workingGlobals.variables).forEach((key) => {
+            if (!key || key.startsWith(DRAFT_PREFIX)) {
+              delete state.workingGlobals.variables[key];
+              delete globalDescriptions[key];
+            }
+          });
+          state.workingGlobals.variableDescriptions = globalDescriptions;
+
           cleanup();
           resolve({
             environments: state.workingEnvs,

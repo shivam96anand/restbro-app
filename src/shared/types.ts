@@ -75,10 +75,12 @@ export interface Environment {
   id: string;
   name: string;
   variables: Record<string, string>;
+  variableDescriptions?: Record<string, string>;
 }
 
 export interface Globals {
   variables: Record<string, string>;
+  variableDescriptions?: Record<string, string>;
 }
 
 export interface CollectionsUIState {

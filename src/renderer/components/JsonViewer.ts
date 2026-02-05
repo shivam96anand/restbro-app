@@ -280,8 +280,15 @@ export class JsonViewer {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
-    // Get all selected node elements
     const range = selection.getRangeAt(0);
+
+    // If the selection is within text (not spanning whole node elements),
+    // allow default browser copy behavior for partial text selection
+    if (this.isPartialTextSelection(range)) {
+      return; // Let browser handle the copy naturally
+    }
+
+    // Get all selected node elements
     const selectedNodes = this.getSelectedNodes(range);
 
     if (selectedNodes.length === 0) return;
@@ -295,6 +302,54 @@ export class JsonViewer {
     // Format and set clipboard data
     const formattedJson = JSON.stringify(jsonToCopy, null, 2);
     e.clipboardData?.setData('text/plain', formattedJson);
+  }
+
+  /**
+   * Check if the selection is a partial text selection within a single value element.
+   * Returns true if user is selecting part of a string/number/etc value text,
+   * which should use default browser copy.
+   */
+  private isPartialTextSelection(range: Range): boolean {
+    // If selection is collapsed (no actual selection), let browser handle it
+    if (range.collapsed) return true;
+
+    const startContainer = range.startContainer;
+    const endContainer = range.endContainer;
+
+    // Both start and end must be in text nodes
+    if (startContainer.nodeType !== Node.TEXT_NODE || endContainer.nodeType !== Node.TEXT_NODE) {
+      return false;
+    }
+
+    // Find the closest .json-node ancestors
+    const startNode = (startContainer.parentElement)?.closest('.json-node');
+    const endNode = (endContainer.parentElement)?.closest('.json-node');
+
+    // If both are in the same node element
+    if (startNode && endNode && startNode === endNode) {
+      // Check if the selection doesn't span the entire text content of the node
+      const selectionText = range.toString();
+      const nodeElement = startNode as HTMLElement;
+
+      // Get the value or key element within this node
+      // Values use classes: .value, .value-string, .value-number, etc.
+      // Keys use class: .key
+      const valueElement = nodeElement.querySelector('.value, .key');
+
+      if (valueElement) {
+        const fullText = valueElement.textContent || '';
+        // If selection is different from the full value text, it's a partial selection
+        if (selectionText !== fullText && selectionText.length < fullText.length) {
+          return true;
+        }
+      }
+
+      // Even if no value element found, if we're in the same node and selection
+      // is within text nodes, treat it as partial selection
+      return true;
+    }
+
+    return false;
   }
 
   private getSelectedNodes(range: Range): JsonNode[] {
