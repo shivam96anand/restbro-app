@@ -187,6 +187,15 @@ export class OAuth2UIRenderer {
       const isVisible = advancedContent.style.display !== 'none';
       advancedContent.style.display = isVisible ? 'none' : 'block';
       toggleIcon.textContent = isVisible ? '▶' : '▼';
+
+      if (!isVisible) {
+        requestAnimationFrame(() => {
+          const event = new CustomEvent('oauth-advanced-toggled', {
+            detail: { visible: true }
+          });
+          document.dispatchEvent(event);
+        });
+      }
     }
   }
 

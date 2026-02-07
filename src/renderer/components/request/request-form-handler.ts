@@ -52,6 +52,13 @@ export class RequestFormHandler {
     document.addEventListener('auth-inputs-rendered', () => {
       this.variableHandler.initializeAuthTooltips();
     });
+
+    // Refresh variable overlays when OAuth advanced options are revealed
+    document.addEventListener('oauth-advanced-toggled', () => {
+      requestAnimationFrame(() => {
+        this.variableHandler.refreshAuthInputHighlighting();
+      });
+    });
   }
 
   /**
