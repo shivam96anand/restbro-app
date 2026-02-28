@@ -118,7 +118,11 @@ export class ResponseViewer {
         this.detectedJsonBody = false;
       }
     } else {
-      this.setupPlainTextView(bodyElement, response.body);
+      if (response.status >= 400) {
+        this.setupErrorBodyView(bodyElement, response.body, response.status, response.statusText);
+      } else {
+        this.setupPlainTextView(bodyElement, response.body);
+      }
       this.currentFormatter = 'plain';
       this.parsedJsonData = null;
       this.detectedJsonBody = false;
@@ -214,6 +218,88 @@ export class ResponseViewer {
     container.innerHTML = '';
     container.appendChild(notice);
     container.appendChild(preElement);
+  }
+
+  private setupErrorBodyView(container: HTMLElement, content: string, status: number, statusText: string): void {
+    this.disposeMonaco();
+    this.parsedJsonData = null;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display: flex; flex-direction: column; gap: 12px; padding: 16px;';
+
+    // Extract a human-readable message from HTML body if present
+    const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const rawMessage = (h1Match?.[1] || titleMatch?.[1] || '').replace(/&[a-z#0-9]+;/gi, ' ').trim();
+    const humanMessage = rawMessage.toLowerCase() !== `${status} ${statusText}`.toLowerCase() ? rawMessage : '';
+
+    const isServerError = status >= 500;
+    const accentColor = isServerError ? 'var(--error-color, #ef4444)' : 'var(--warning-color, #f59e0b)';
+    const bgColor = isServerError ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)';
+    const borderColor = isServerError ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)';
+
+    const banner = document.createElement('div');
+    banner.style.cssText = [
+      'display:flex', 'align-items:flex-start', 'gap:12px',
+      `padding:14px 16px`,
+      `background:${bgColor}`,
+      `border:1px solid ${borderColor}`,
+      `border-left:4px solid ${accentColor}`,
+      'border-radius:8px'
+    ].join(';');
+
+    const icon = document.createElement('div');
+    icon.style.cssText = `font-size:20px; line-height:1; flex-shrink:0; margin-top:2px; color:${accentColor};`;
+    icon.textContent = isServerError ? '✕' : '!';
+
+    const textWrapper = document.createElement('div');
+    textWrapper.style.flex = '1';
+
+    const statusLine = document.createElement('div');
+    statusLine.style.cssText = `font-size:15px; font-weight:600; color:${accentColor}; margin-bottom:2px; font-family:var(--font-mono);`;
+    statusLine.textContent = `${status} ${statusText}`;
+    textWrapper.appendChild(statusLine);
+
+    if (humanMessage) {
+      const msgLine = document.createElement('div');
+      msgLine.style.cssText = 'font-size:13px; color:var(--text-secondary); margin-top:4px;';
+      msgLine.textContent = humanMessage;
+      textWrapper.appendChild(msgLine);
+    }
+
+    banner.appendChild(icon);
+    banner.appendChild(textWrapper);
+    wrapper.appendChild(banner);
+
+    // Collapsible raw body
+    const rawIsHtml = /<html[\s>]/i.test(content);
+    const details = document.createElement('details');
+
+    const summary = document.createElement('summary');
+    summary.style.cssText = [
+      'cursor:pointer', 'user-select:none',
+      'padding:6px 8px', 'border-radius:4px',
+      'color:var(--text-secondary)', 'font-size:12px',
+      'list-style:none', 'display:flex', 'align-items:center', 'gap:6px'
+    ].join(';');
+    summary.textContent = rawIsHtml ? '▶  Raw HTML response' : '▶  Raw response body';
+    summary.addEventListener('click', () => {
+      requestAnimationFrame(() => {
+        summary.textContent = details.open
+          ? (rawIsHtml ? '▼  Raw HTML response' : '▼  Raw response body')
+          : (rawIsHtml ? '▶  Raw HTML response' : '▶  Raw response body');
+      });
+    });
+
+    const preElement = this.buildPlainTextElement(content);
+    preElement.style.marginTop = '6px';
+
+    details.appendChild(summary);
+    details.appendChild(preElement);
+    wrapper.appendChild(details);
+
+    container.innerHTML = '';
+    container.appendChild(wrapper);
   }
 
   private setupPlainTextView(container: HTMLElement, content: string): void {

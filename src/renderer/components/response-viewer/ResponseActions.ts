@@ -27,6 +27,7 @@ export class ResponseActions {
       this.actionsContainer.style.display = 'none';
 
       this.actionsContainer.innerHTML = `
+        <button id="enlarge-btn" class="response-action-btn" title="Fullscreen">Enlarge</button>
         <button id="search-btn" class="response-action-btn" title="Search (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+F)">Search</button>
         <button id="copy-btn" class="response-action-btn" title="Copy response">Copy</button>
         <button id="export-btn" class="response-action-btn" title="Export JSON">Export</button>
@@ -34,7 +35,6 @@ export class ResponseActions {
         <button id="expand-btn" class="response-action-btn" title="Expand all">Expand</button>
         <button id="top-btn" class="response-action-btn" title="Scroll to top">Top</button>
         <button id="bottom-btn" class="response-action-btn" title="Scroll to bottom">Bottom</button>
-        <button id="enlarge-btn" class="response-action-btn" title="Fullscreen">Enlarge</button>
         <button id="ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI">Ask AI</button>
       `;
       
