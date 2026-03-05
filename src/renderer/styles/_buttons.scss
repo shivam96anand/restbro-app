@@ -237,20 +237,21 @@
 // Response action buttons - Modern pill style
 .response-actions {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   padding: 6px 10px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   flex-shrink: 0;
   z-index: 10;
+  min-width: 0;
 
   .response-action-btn {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 4px 9px;
+    padding: 4px 8px;
     border-radius: 16px;
     cursor: pointer;
     font-size: 10px;
@@ -259,11 +260,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: auto;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
     height: auto;
     white-space: nowrap;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.15px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     .ui-icon {
       width: 12px;

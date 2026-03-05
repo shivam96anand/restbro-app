@@ -1,6 +1,8 @@
 .diff-table-wrapper {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  flex: 1 1 auto;
   height: 100%;
   background: rgba(13, 13, 13, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.04);
@@ -8,6 +10,7 @@
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
   overflow: hidden;
   backdrop-filter: blur(18px);
+  min-height: 0;
 }
 
 .diff-table-controls {
@@ -184,6 +187,10 @@
   flex: 0 0 26.5%;
   position: relative;
   min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 8px;
 }
 
 .value-cell.clickable {
@@ -208,7 +215,7 @@
   color: var(--text-primary);
   max-width: 100%;
   overflow: auto;
-  max-height: 60px;
+  max-height: 52px;
   background: rgba(0, 0, 0, 0.35);
   padding: 6px 8px;
   border-radius: 8px;
@@ -216,9 +223,8 @@
 }
 
 .jump-pill {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
+  position: static;
+  align-self: center;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -227,6 +233,8 @@
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid rgba(59, 130, 246, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .value-cell.right .jump-pill {
@@ -264,4 +272,15 @@
   padding: 40px;
   color: var(--text-secondary);
   font-size: 14px;
+  min-height: 140px;
+}
+
+.diff-table-list-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.diff-table-list-viewport > div {
+  overflow-x: hidden !important;
 }

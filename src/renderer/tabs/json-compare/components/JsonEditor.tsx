@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import * as monaco from 'monaco-editor';
 import type { DiffDecoration } from '../types';
+import { findTextRangeForPath } from '../utils/diffMap';
 import './JsonEditor.css';
 
 interface JsonEditorProps {
@@ -271,6 +272,19 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
 
           targetRange = matches[0].range;
           searchStartLine = targetRange.startLineNumber + 1;
+        }
+
+        // Numeric-only paths (e.g. "/0") or unresolved paths need offset-based fallback.
+        if (!targetRange) {
+          const fallback = findTextRangeForPath(model.getValue(), path);
+          if (fallback) {
+            targetRange = new monaco.Range(
+              fallback.startLine,
+              fallback.startColumn,
+              fallback.endLine,
+              fallback.endColumn
+            );
+          }
         }
 
         if (targetRange) {

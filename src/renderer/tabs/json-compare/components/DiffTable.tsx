@@ -2,7 +2,7 @@
  * Virtualized table component for displaying JSON differences
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as VirtualList } from 'react-window';
 import type { DiffRow, DiffChangeType } from '../types';
 import './DiffTable.css';
@@ -15,21 +15,40 @@ interface DiffTableProps {
 const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<DiffChangeType[]>(['added', 'removed', 'changed']);
+  const listViewportRef = useRef<HTMLDivElement>(null);
+  const rowHeight = 72;
+  const [listViewportHeight, setListViewportHeight] = useState(rowHeight * 5);
 
-  const normalizeSearch = (value: string) => value.toLowerCase();
-  const stringifyValue = (value: unknown): string => {
-    if (value === undefined || value === null) {
-      return '';
-    }
-    if (typeof value === 'string') {
-      return value;
-    }
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
+  const normalizePath = (path: string) => path.toLowerCase();
+  const matchesPathKeywords = (path: string, rawFilter: string) => {
+    const keywords = rawFilter.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (keywords.length === 0) return true;
+    const normalizedPath = normalizePath(path);
+    return keywords.every(keyword => normalizedPath.includes(keyword));
   };
+
+  useEffect(() => {
+    const viewportEl = listViewportRef.current;
+    if (!viewportEl) return;
+
+    const updateHeight = () => {
+      const nextHeight = Math.floor(viewportEl.clientHeight);
+      if (nextHeight > 0) {
+        setListViewportHeight(nextHeight);
+      }
+    };
+
+    updateHeight();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => window.removeEventListener('resize', updateHeight);
+    }
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(viewportEl);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Filter rows
   const filteredRows = useMemo(() => {
@@ -39,11 +58,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
 
       // Search filter
       if (searchFilter) {
-        const lower = normalizeSearch(searchFilter);
-        const matchPath = (row.path || '').toLowerCase().includes(lower);
-        const matchLeft = stringifyValue(row.leftValue).toLowerCase().includes(lower);
-        const matchRight = stringifyValue(row.rightValue).toLowerCase().includes(lower);
-        return matchPath || matchLeft || matchRight;
+        return matchesPathKeywords(row.path || '', searchFilter);
       }
 
       return true;
@@ -183,11 +198,8 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
     );
   };
 
-  const estimatedHeight = filteredRows.length * 82;
-  const rowHeight = 66;
-  const maxVisibleRows = 5;
-  const visibleRows = Math.min(filteredRows.length, maxVisibleRows);
-  const listHeight = (visibleRows > 0 ? visibleRows : maxVisibleRows) * rowHeight;
+  const contentHeight = filteredRows.length * rowHeight;
+  const listHeight = Math.max(rowHeight, Math.min(contentHeight || rowHeight, listViewportHeight));
 
   return (
     <div className="diff-table-wrapper">
@@ -195,7 +207,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
       <div className="diff-table-controls">
         <input
           type="text"
-          placeholder="Filter by path or value..."
+          placeholder="Filter by path keywords..."
           className="filter-input"
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
@@ -231,15 +243,17 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
       </div>
 
       {/* Virtualized Table Body */}
-      {filteredRows.length > 0 ? (
-        <VirtualList height={listHeight} itemCount={filteredRows.length} itemSize={rowHeight} width="100%" overscanCount={5}>
-          {Row}
-        </VirtualList>
-      ) : (
-        <div className="empty-table-state">
-          <p>{rows.length === 0 ? 'No differences found' : 'No matches for current filters'}</p>
-        </div>
-      )}
+      <div className="diff-table-list-viewport" ref={listViewportRef}>
+        {filteredRows.length > 0 ? (
+          <VirtualList height={listHeight} itemCount={filteredRows.length} itemSize={rowHeight} width="100%" overscanCount={6}>
+            {Row}
+          </VirtualList>
+        ) : (
+          <div className="empty-table-state">
+            <p>{rows.length === 0 ? 'No differences found' : 'No matches for current filters'}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

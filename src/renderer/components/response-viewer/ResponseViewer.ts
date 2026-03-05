@@ -191,8 +191,9 @@ export class ResponseViewer {
 
     const jsonContainer = document.createElement('div');
     jsonContainer.id = 'response-monaco-json-container';
+    jsonContainer.style.width = '100%';
     jsonContainer.style.height = '100%';
-    jsonContainer.style.minHeight = '400px';
+    jsonContainer.style.minHeight = '0';
 
     container.appendChild(jsonContainer);
 

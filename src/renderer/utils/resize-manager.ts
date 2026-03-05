@@ -6,6 +6,7 @@ export class ResizeManager {
 
   initialize(): void {
     this.setupResizeHandles();
+    window.addEventListener('resize', () => this.rebalanceLayoutWidths());
   }
 
   private setupResizeHandles(): void {
@@ -54,25 +55,46 @@ export class ResizeManager {
     const panelType = this.currentHandle.dataset.panel;
 
     if (panelType === 'collections') {
-      const minWidth = 200;
-      const maxWidth = 400;
-      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      const minWidth = this.getMinWidth(panel, 200);
+      const cssMaxWidth = this.getMaxWidth(panel, 400);
+      const layout = panel.closest('.api-layout') as HTMLElement | null;
+      const requestPanel = layout?.querySelector('.request-panel') as HTMLElement | null;
+      const responsePanel = layout?.querySelector('.response-panel') as HTMLElement | null;
+      const requestMinWidth = this.getMinWidth(requestPanel, 300);
+      const responseMinWidth = this.getMinWidth(responsePanel, 300);
+      const dynamicMaxWidth = layout
+        ? layout.clientWidth - requestMinWidth - responseMinWidth
+        : cssMaxWidth;
+      const maxWidth = Math.min(cssMaxWidth, dynamicMaxWidth);
+      const clampedWidth = this.clamp(newWidth, minWidth, Math.max(minWidth, maxWidth));
       panel.style.width = clampedWidth + 'px';
+      panel.style.flex = 'none';
     } else if (panelType === 'request') {
-      const minWidth = 300;
-      const maxWidth = window.innerWidth - 200 - 300; // Leave space for collections and response
-      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      const minWidth = this.getMinWidth(panel, 300);
+      const layout = panel.closest('.api-layout') as HTMLElement | null;
+      const collectionsPanel = layout?.querySelector('.collections-panel') as HTMLElement | null;
+      const responsePanel = layout?.querySelector('.response-panel') as HTMLElement | null;
+      const collectionsWidth = collectionsPanel?.offsetWidth ?? 200;
+      const responseMinWidth = this.getMinWidth(responsePanel, 300);
+      const maxWidth = layout
+        ? layout.clientWidth - collectionsWidth - responseMinWidth
+        : window.innerWidth - 200 - 300;
+      const clampedWidth = this.clamp(newWidth, minWidth, Math.max(minWidth, maxWidth));
       panel.style.width = clampedWidth + 'px';
       panel.style.flex = 'none'; // Override flex when manually resized
     } else if (panelType === 'json-input') {
-      const minWidth = 250;
-      const maxWidth = window.innerWidth - 300; // Leave minimum space for viewer panel
-      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+      const minWidth = this.getMinWidth(panel, 250);
+      const layout = panel.parentElement as HTMLElement | null;
+      const viewerPanel = panel.parentElement?.querySelector('.json-viewer-panel') as HTMLElement | null;
+      const viewerMinWidth = this.getMinWidth(viewerPanel, 300);
+      const maxWidth = layout
+        ? layout.clientWidth - viewerMinWidth
+        : window.innerWidth - 300;
+      const clampedWidth = this.clamp(newWidth, minWidth, Math.max(minWidth, maxWidth));
       panel.style.width = clampedWidth + 'px';
       panel.style.flex = 'none'; // Override flex when manually resized
 
       // Update the viewer panel to take remaining space
-      const viewerPanel = panel.parentElement?.querySelector('.json-viewer-panel') as HTMLElement;
       if (viewerPanel) {
         viewerPanel.style.width = `calc(100% - ${clampedWidth}px)`;
         viewerPanel.style.flex = 'none';
@@ -92,6 +114,64 @@ export class ResizeManager {
 
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
+
+    // Trigger a final relayout for editors/viewers after drag ends.
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  private rebalanceLayoutWidths(): void {
+    const layout = document.querySelector('.api-layout') as HTMLElement | null;
+    if (!layout) return;
+
+    const collectionsPanel = layout.querySelector('.collections-panel') as HTMLElement | null;
+    const requestPanel = layout.querySelector('.request-panel') as HTMLElement | null;
+    const responsePanel = layout.querySelector('.response-panel') as HTMLElement | null;
+    if (!collectionsPanel || !requestPanel || !responsePanel) return;
+
+    const layoutWidth = layout.clientWidth;
+    const collectionsMinWidth = this.getMinWidth(collectionsPanel, 200);
+    const collectionsMaxWidth = this.getMaxWidth(collectionsPanel, 500);
+    const requestMinWidth = this.getMinWidth(requestPanel, 300);
+    const responseMinWidth = this.getMinWidth(responsePanel, 300);
+
+    const maxCollectionsByLayout = layoutWidth - requestMinWidth - responseMinWidth;
+    const collectionsMax = Math.max(
+      collectionsMinWidth,
+      Math.min(collectionsMaxWidth, maxCollectionsByLayout)
+    );
+    if (collectionsPanel.offsetWidth > collectionsMax) {
+      collectionsPanel.style.width = `${collectionsMax}px`;
+      collectionsPanel.style.flex = 'none';
+    }
+
+    const requestMax = Math.max(
+      requestMinWidth,
+      layoutWidth - collectionsPanel.offsetWidth - responseMinWidth
+    );
+    if (requestPanel.offsetWidth > requestMax) {
+      requestPanel.style.width = `${requestMax}px`;
+      requestPanel.style.flex = 'none';
+    }
+  }
+
+  private getMinWidth(element: HTMLElement | null, fallback: number): number {
+    if (!element) return fallback;
+    const value = parseFloat(getComputedStyle(element).minWidth);
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  private getMaxWidth(element: HTMLElement | null, fallback: number): number {
+    if (!element) return fallback;
+    const rawMaxWidth = getComputedStyle(element).maxWidth;
+    if (rawMaxWidth === 'none') {
+      return Number.POSITIVE_INFINITY;
+    }
+    const value = parseFloat(rawMaxWidth);
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
   }
 }
 

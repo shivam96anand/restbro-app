@@ -7,8 +7,28 @@ import { create, DiffPatcher } from 'jsondiffpatch';
 import { buildDiffRows } from '../utils/diffMap';
 import type { WorkerRequest, WorkerResponse, DiffResult, DiffStats } from '../types';
 
+function computeObjectHash(obj: unknown): string {
+  if (!obj || typeof obj !== 'object') {
+    return JSON.stringify(obj);
+  }
+
+  const record = obj as Record<string, unknown>;
+  const directId = record.id ?? record._id ?? record.uuid ?? record.guid;
+  if (typeof directId === 'string' || typeof directId === 'number') {
+    return String(directId);
+  }
+
+  const product = record.product as Record<string, unknown> | undefined;
+  const nestedProductId = product?.id;
+  if (typeof nestedProductId === 'string' || typeof nestedProductId === 'number') {
+    return String(nestedProductId);
+  }
+
+  return JSON.stringify(obj);
+}
+
 const differ: DiffPatcher = create({
-  objectHash: (obj: unknown) => (obj as { id?: string })?.id || JSON.stringify(obj),
+  objectHash: computeObjectHash,
   arrays: { detectMove: true },
   textDiff: { minLength: Infinity }
 });
