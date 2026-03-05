@@ -256,37 +256,34 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
           return;
         }
 
-        // Walk each path segment, searching for "key": after the previous match.
-        // Numeric segments (array indices) are skipped since they have no key to search.
-        const lineCount = model.getLineCount();
-        let searchStartLine = 1;
         let targetRange: monaco.Range | null = null;
 
-        for (const seg of segments) {
-          if (!isNaN(Number(seg))) continue; // array index — no key to find
-
-          const searchRange = new monaco.Range(
-            searchStartLine, 1, lineCount, model.getLineMaxColumn(lineCount)
+        // Prefer exact path → range mapping so array-item navigation lands on the precise element.
+        const exact = findTextRangeForPath(model.getValue(), path);
+        if (exact) {
+          targetRange = new monaco.Range(
+            exact.startLine,
+            exact.startColumn,
+            exact.endLine,
+            exact.endColumn
           );
-          // Escape special regex chars in the key name
-          const escaped = seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const matches = model.findMatches(`"${escaped}"\\s*:`, searchRange, true, false, null, false);
-          if (matches.length === 0) break;
+        } else {
+          // Fallback: key-name walk (best effort when exact parsing fails)
+          const lineCount = model.getLineCount();
+          let searchStartLine = 1;
 
-          targetRange = matches[0].range;
-          searchStartLine = targetRange.startLineNumber + 1;
-        }
+          for (const seg of segments) {
+            if (!isNaN(Number(seg))) continue; // array index — no key to find
 
-        // Numeric-only paths (e.g. "/0") or unresolved paths need offset-based fallback.
-        if (!targetRange) {
-          const fallback = findTextRangeForPath(model.getValue(), path);
-          if (fallback) {
-            targetRange = new monaco.Range(
-              fallback.startLine,
-              fallback.startColumn,
-              fallback.endLine,
-              fallback.endColumn
+            const searchRange = new monaco.Range(
+              searchStartLine, 1, lineCount, model.getLineMaxColumn(lineCount)
             );
+            const escaped = seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const matches = model.findMatches(`"${escaped}"\\s*:`, searchRange, true, false, null, false);
+            if (matches.length === 0) break;
+
+            targetRange = matches[0].range;
+            searchStartLine = targetRange.startLineNumber + 1;
           }
         }
 

@@ -76,8 +76,7 @@ export function buildDiffRows(delta: Delta | undefined, basePath: string[] = [])
 }
 
 /**
- * Approximate text range finder using simple offset-based search
- * Not perfect but fast enough for large JSONs
+ * Exact text range finder using a JSON parser that records offsets per JSON Pointer path.
  */
 export function findTextRangeForPath(
   jsonText: string,
@@ -93,7 +92,7 @@ export function findTextRangeForPath(
     return { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: lines[lines.length - 1].length + 1 };
   }
 
-  // Build a simple position map
+  // Build position map
   const positions = buildPositionMap(jsonText);
 
   // Find matching path
@@ -104,63 +103,193 @@ export function findTextRangeForPath(
 }
 
 /**
- * Build approximate position map for JSON keys/values
+ * Build exact position map for JSON values by parsing text once.
  */
 function buildPositionMap(jsonText: string): PathPosition[] {
   const positions: PathPosition[] = [];
-  const stack: string[] = [];
   let i = 0;
 
+  const isWhitespace = (ch: string) => ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t';
+  const skipWhitespace = () => {
+    while (i < jsonText.length && isWhitespace(jsonText[i])) i++;
+  };
+
+  const parseStringToken = (): { value: string; start: number; end: number } => {
+    if (jsonText[i] !== '"') throw new Error('Invalid JSON string');
+
+    const start = i;
+    i++; // opening quote
+    let value = '';
+
+    while (i < jsonText.length) {
+      const ch = jsonText[i];
+      if (ch === '"') {
+        i++; // closing quote
+        return { value, start, end: i };
+      }
+
+      if (ch === '\\') {
+        i++;
+        if (i >= jsonText.length) throw new Error('Invalid escape sequence');
+        const esc = jsonText[i];
+        switch (esc) {
+          case '"': value += '"'; break;
+          case '\\': value += '\\'; break;
+          case '/': value += '/'; break;
+          case 'b': value += '\b'; break;
+          case 'f': value += '\f'; break;
+          case 'n': value += '\n'; break;
+          case 'r': value += '\r'; break;
+          case 't': value += '\t'; break;
+          case 'u': {
+            const hex = jsonText.slice(i + 1, i + 5);
+            if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new Error('Invalid unicode escape');
+            value += String.fromCharCode(parseInt(hex, 16));
+            i += 4;
+            break;
+          }
+          default:
+            throw new Error('Invalid escape sequence');
+        }
+        i++;
+        continue;
+      }
+
+      value += ch;
+      i++;
+    }
+
+    throw new Error('Unterminated JSON string');
+  };
+
+  const parsePrimitive = (path: string[], start: number): void => {
+    if (jsonText.startsWith('true', i)) {
+      i += 4;
+    } else if (jsonText.startsWith('false', i)) {
+      i += 5;
+    } else if (jsonText.startsWith('null', i)) {
+      i += 4;
+    } else {
+      const numberMatch = jsonText.slice(i).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+      if (!numberMatch) throw new Error('Invalid JSON primitive');
+      i += numberMatch[0].length;
+    }
+
+    if (path.length > 0) {
+      positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+    }
+  };
+
+  const parseValue = (path: string[]): void => {
+    skipWhitespace();
+    const start = i;
+    const ch = jsonText[i];
+
+    if (ch === '{') {
+      parseObject(path, start);
+      return;
+    }
+    if (ch === '[') {
+      parseArray(path, start);
+      return;
+    }
+    if (ch === '"') {
+      const token = parseStringToken();
+      if (path.length > 0) {
+        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: token.end });
+      }
+      return;
+    }
+
+    parsePrimitive(path, start);
+  };
+
+  const parseObject = (path: string[], start: number): void => {
+    i++; // {
+    skipWhitespace();
+
+    if (jsonText[i] === '}') {
+      i++;
+      if (path.length > 0) {
+        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+      }
+      return;
+    }
+
+    while (i < jsonText.length) {
+      skipWhitespace();
+      const keyToken = parseStringToken();
+      skipWhitespace();
+      if (jsonText[i] !== ':') throw new Error('Invalid object: missing colon');
+      i++; // :
+
+      parseValue([...path, keyToken.value]);
+      skipWhitespace();
+
+      if (jsonText[i] === ',') {
+        i++;
+        continue;
+      }
+      if (jsonText[i] === '}') {
+        i++;
+        if (path.length > 0) {
+          positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+        }
+        return;
+      }
+
+      throw new Error('Invalid object: missing comma or closing brace');
+    }
+
+    throw new Error('Unterminated object');
+  };
+
+  const parseArray = (path: string[], start: number): void => {
+    i++; // [
+    skipWhitespace();
+
+    if (jsonText[i] === ']') {
+      i++;
+      if (path.length > 0) {
+        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+      }
+      return;
+    }
+
+    let index = 0;
+    while (i < jsonText.length) {
+      parseValue([...path, String(index)]);
+      index++;
+      skipWhitespace();
+
+      if (jsonText[i] === ',') {
+        i++;
+        continue;
+      }
+      if (jsonText[i] === ']') {
+        i++;
+        if (path.length > 0) {
+          positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+        }
+        return;
+      }
+
+      throw new Error('Invalid array: missing comma or closing bracket');
+    }
+
+    throw new Error('Unterminated array');
+  };
+
   try {
-    const parsed = JSON.parse(jsonText);
-    traverseWithOffsets(parsed, jsonText, stack, positions);
+    parseValue([]);
+    skipWhitespace();
+    if (i !== jsonText.length) {
+      return [];
+    }
+    return positions;
   } catch {
     // Invalid JSON - return empty
     return [];
-  }
-
-  return positions;
-}
-
-function traverseWithOffsets(obj: unknown, text: string, stack: string[], positions: PathPosition[]): void {
-  if (typeof obj !== 'object' || obj === null) return;
-
-  if (Array.isArray(obj)) {
-    obj.forEach((item, idx) => {
-      stack.push(String(idx));
-      const path = toJsonPointer(stack);
-      // Approximate: find index in text
-      const valueStr = JSON.stringify(item);
-      const offset = text.indexOf(valueStr);
-      if (offset >= 0) {
-        positions.push({ path, startOffset: offset, endOffset: offset + valueStr.length });
-      }
-      traverseWithOffsets(item, text, stack, positions);
-      stack.pop();
-    });
-  } else {
-    Object.keys(obj).forEach(key => {
-      stack.push(key);
-      const path = toJsonPointer(stack);
-      const value = (obj as Record<string, unknown>)[key];
-
-      // Find key position (approximate)
-      const keyPattern = `"${key}"`;
-      let searchStart = 0;
-      for (let depth = 0; depth < stack.length - 1; depth++) searchStart = text.indexOf('{', searchStart) + 1;
-      const keyOffset = text.indexOf(keyPattern, searchStart);
-
-      if (keyOffset >= 0) {
-        const valueStr = JSON.stringify(value);
-        const valueOffset = text.indexOf(valueStr, keyOffset);
-        if (valueOffset >= 0) {
-          positions.push({ path, startOffset: valueOffset, endOffset: valueOffset + valueStr.length });
-        }
-      }
-
-      traverseWithOffsets(value, text, stack, positions);
-      stack.pop();
-    });
   }
 }
 
