@@ -154,7 +154,7 @@ export class OAuthManager {
       });
 
       const deviceCodeUrl = config.authUrl.replace('/authorize', '/device');
-      const deviceResponse = await fetch(deviceCodeUrl, {
+      const deviceResponse = await net.fetch(deviceCodeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: deviceCodeParams
@@ -314,7 +314,7 @@ export class OAuthManager {
       credentialsMode: (configOrParams as any).credentials || 'headers (default)'
     });
 
-    const response = await fetch(tokenUrl, {
+    const response = await net.fetch(tokenUrl, {
       method: 'POST',
       headers,
       body: requestBody
