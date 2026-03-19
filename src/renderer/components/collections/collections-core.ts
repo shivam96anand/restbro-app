@@ -207,7 +207,7 @@ export class CollectionsCore {
     const exportBtn = document.getElementById('btn-export-collections');
     if (!exportBtn) return;
     exportBtn.addEventListener('click', () => {
-      this.operations.exportAllCollections();
+      this.operations.showExportDialog();
     });
   }
 

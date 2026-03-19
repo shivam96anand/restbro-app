@@ -291,10 +291,23 @@ class IpcManager {
           activeEnvironmentId = preview.environments[0].id;
         }
 
+        // Merge imported globals if present
+        const updatedGlobals = { ...state.globals };
+        if (preview.globals?.variables && Object.keys(preview.globals.variables).length > 0) {
+          updatedGlobals.variables = { ...(updatedGlobals.variables || {}), ...preview.globals.variables };
+          if (preview.globals.variableDescriptions) {
+            updatedGlobals.variableDescriptions = {
+              ...(updatedGlobals.variableDescriptions || {}),
+              ...preview.globals.variableDescriptions,
+            };
+          }
+        }
+
         storeManager.setState({
           collections: updatedCollections,
           environments: updatedEnvironments,
           activeEnvironmentId,
+          globals: updatedGlobals,
         });
 
         return { success: true };

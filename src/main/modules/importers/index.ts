@@ -2,7 +2,7 @@
  * Importer Registry and File Type Detection
  */
 
-import { Collection, Environment } from '../../../shared/types';
+import { Collection, Environment, Globals } from '../../../shared/types';
 import {
   mapPostmanCollection,
   mapPostmanEnvironment,
@@ -10,13 +10,22 @@ import {
   isPostmanEnvironment,
 } from './postman';
 import { mapInsomniaExport, isInsomniaExport } from './insomnia';
+import { isApiCourierExport, mapApiCourierExport } from './api-courier';
 import * as yaml from 'js-yaml';
 
+export type ImportKind =
+  | 'api-courier-export'
+  | 'postman-collection'
+  | 'postman-environment'
+  | 'insomnia'
+  | 'unknown';
+
 export interface ImportResult {
-  kind: 'postman-collection' | 'postman-environment' | 'insomnia' | 'unknown';
+  kind: ImportKind;
   name: string;
   rootFolder?: Collection;
   environments: Environment[];
+  globals?: Globals;
 }
 
 export interface ImportPreview {
@@ -28,12 +37,26 @@ export interface ImportPreview {
   };
   rootFolder?: Collection;
   environments: Environment[];
+  kind?: ImportKind;
+  globals?: Globals;
 }
 
 /**
  * Detects the type of import file and parses it
  */
 export function detectAndParse(jsonData: any): ImportResult {
+  // Detect API Courier native export first
+  if (isApiCourierExport(jsonData)) {
+    const { rootFolder, environments, globals } = mapApiCourierExport(jsonData);
+    return {
+      kind: 'api-courier-export',
+      name: rootFolder.name,
+      rootFolder,
+      environments,
+      globals,
+    };
+  }
+
   // Detect Insomnia Export
   if (isInsomniaExport(jsonData)) {
     const { rootFolder, environments } = mapInsomniaExport(jsonData);
@@ -107,12 +130,17 @@ export function generatePreview(importResult: ImportResult): ImportPreview {
     }
   }
 
-  return {
+  const preview: ImportPreview = {
     name: previewName,
     summary,
     rootFolder: importResult.rootFolder,
     environments: importResult.environments,
+    kind: importResult.kind,
   };
+  if (importResult.globals) {
+    preview.globals = importResult.globals;
+  }
+  return preview;
 }
 
 /**

@@ -1,5 +1,6 @@
-import { Collection } from '../../../shared/types';
+import { Collection, Environment, Globals } from '../../../shared/types';
 import { CollectionsDialogs } from './collections-dialogs';
+import { showExportDialog } from './export-dialog';
 
 export class CollectionsOperations {
   private collections: Collection[] = [];
@@ -249,12 +250,11 @@ export class CollectionsOperations {
     const collection = this.findCollectionById(collectionId);
     if (!collection) return;
 
-    const exportData = {
-      version: '1.0',
-      type: 'api-courier-export',
-      timestamp: new Date().toISOString(),
-      collection: this.buildExportData(collection)
-    };
+    const exportData = this.buildApiCourierExportPayload(
+      [this.buildExportData(collection)],
+      [],
+      undefined
+    );
 
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -267,6 +267,66 @@ export class CollectionsOperations {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Shows export dialog and downloads a single JSON file with selected collections,
+   * environments, and optionally globals (api-courier-export format).
+   */
+  async showExportDialog(): Promise<void> {
+    const state = await window.apiCourier.store.get();
+    const collections = state.collections ?? [];
+    const environments = (state.environments ?? []) as Environment[];
+    const globals = state.globals as Globals | undefined;
+
+    const selection = await showExportDialog({
+      collections,
+      environments,
+      globals,
+    });
+
+    if (!selection) return;
+
+    const rootCollections = selection.collectionIds
+      .map((id) => this.findCollectionById(id))
+      .filter((c): c is Collection => c != null);
+
+    const collectionTrees = rootCollections.map((c) => this.buildExportData(c));
+    const selectedEnvs = environments.filter((e) => selection.environmentIds.includes(e.id));
+    const exportData = this.buildApiCourierExportPayload(
+      collectionTrees,
+      selectedEnvs,
+      selection.includeGlobals ? globals : undefined
+    );
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `api-courier-export-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  private buildApiCourierExportPayload(
+    collectionTrees: any[],
+    environments: Environment[],
+    globals?: Globals
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
+      version: '1.0',
+      type: 'api-courier-export',
+      timestamp: new Date().toISOString(),
+      collections: collectionTrees,
+      environments,
+    };
+    if (globals?.variables && Object.keys(globals.variables).length > 0) {
+      payload.globals = globals;
+    }
+    return payload;
   }
 
   async exportAllCollections(): Promise<void> {
@@ -323,11 +383,14 @@ export class CollectionsOperations {
       name: collection.name,
       type: collection.type,
       request: collection.request,
+      variables: collection.variables,
       children: []
     };
 
     if (collection.type === 'folder') {
-      const children = this.collections.filter(c => c.parentId === collection.id);
+      const children = this.collections
+        .filter(c => c.parentId === collection.id)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       data.children = children.map(child => this.buildExportData(child));
     }
 

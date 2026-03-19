@@ -382,8 +382,17 @@ export function getSystemVariableDefinitions(): SystemVariableDefinition[] {
 }
 
 export function resolveSystemVariable(name: string): string | undefined {
+  const normalizedName = name.startsWith('$') ? name.slice(1) : name;
+
+  // Keep direct "$timestamp" compatibility aligned with the test plan
+  // without changing existing bare "timestamp" behavior.
+  if (name === '$timestamp') {
+    return Date.now().toString();
+  }
+
   const match = SYSTEM_VARIABLES.find(def =>
-    def.name === name || (def.aliases && def.aliases.includes(name))
+    def.name === normalizedName ||
+    (def.aliases && def.aliases.includes(normalizedName))
   );
   return match ? match.generator() : undefined;
 }

@@ -3,42 +3,34 @@
  */
 
 import { ApiRequest, KeyValuePair } from '../../shared/types';
-import { URL } from 'url';
 
 export class RequestBuilder {
   public static buildUrlWithParams(
     baseUrl: string,
     params?: KeyValuePair[] | Record<string, string>
   ): string {
-    if (!params) {
+    const paramEntries = this.collectEntries(params);
+    if (paramEntries.length === 0) {
       return baseUrl;
     }
 
-    // Convert to Record format, filtering by enabled flag
-    let paramsRecord: Record<string, string>;
-    if (Array.isArray(params)) {
-      paramsRecord = {};
-      params.forEach(({ key, value, enabled }) => {
-        if (enabled && key.trim() && value.trim()) {
-          paramsRecord[key.trim()] = value.trim();
-        }
-      });
-    } else {
-      paramsRecord = params;
-    }
+    const hashIndex = baseUrl.indexOf('#');
+    const hash = hashIndex >= 0 ? baseUrl.slice(hashIndex) : '';
+    const urlWithoutHash =
+      hashIndex >= 0 ? baseUrl.slice(0, hashIndex) : baseUrl;
+    const queryIndex = urlWithoutHash.indexOf('?');
+    const path =
+      queryIndex >= 0 ? urlWithoutHash.slice(0, queryIndex) : urlWithoutHash;
+    const queryString =
+      queryIndex >= 0 ? urlWithoutHash.slice(queryIndex + 1) : '';
+    const searchParams = new URLSearchParams(queryString);
 
-    if (Object.keys(paramsRecord).length === 0) {
-      return baseUrl;
-    }
-
-    const urlObj = new URL(baseUrl);
-    Object.entries(paramsRecord).forEach(([key, value]) => {
-      if (key.trim() && value.trim()) {
-        urlObj.searchParams.set(key.trim(), value.trim());
-      }
+    paramEntries.forEach(([key, value]) => {
+      searchParams.set(key, value);
     });
 
-    return urlObj.toString();
+    const query = searchParams.toString();
+    return `${query ? `${path}?${query}` : path}${hash}`;
   }
 
   public static buildHeaders(request: ApiRequest): Record<string, string> {
@@ -64,25 +56,35 @@ export class RequestBuilder {
     // Add OAuth Authorization header if applicable
     if (
       request.auth?.type === 'oauth2' &&
-      request.auth.config.accessToken
+      request.auth.config.accessToken &&
+      !this.hasHeader(cleanHeaders, 'Authorization')
     ) {
       const headerPrefix = request.auth.config.headerPrefix || 'Bearer';
       cleanHeaders['Authorization'] =
         `${headerPrefix} ${request.auth.config.accessToken}`;
     }
 
-    if (request.auth?.type === 'bearer' && request.auth.config.token) {
+    if (
+      request.auth?.type === 'bearer' &&
+      request.auth.config.token &&
+      !this.hasHeader(cleanHeaders, 'Authorization')
+    ) {
       cleanHeaders['Authorization'] = `Bearer ${request.auth.config.token}`;
     }
 
     if (request.auth?.type === 'api-key' && request.auth.config.location === 'header') {
       const key = request.auth.config.key || 'X-API-Key';
-      if (request.auth.config.value) {
+      if (request.auth.config.value && !this.hasHeader(cleanHeaders, key)) {
         cleanHeaders[key] = request.auth.config.value;
       }
     }
 
-    if (request.auth?.type === 'basic' && request.auth.config.username && request.auth.config.password) {
+    if (
+      request.auth?.type === 'basic' &&
+      request.auth.config.username &&
+      request.auth.config.password &&
+      !this.hasHeader(cleanHeaders, 'Authorization')
+    ) {
       const credentials = `${request.auth.config.username}:${request.auth.config.password}`;
       const encoded = Buffer.from(credentials, 'utf8').toString('base64');
       cleanHeaders['Authorization'] = `Basic ${encoded}`;
@@ -195,10 +197,44 @@ export class RequestBuilder {
     switch (body.type) {
       case 'json':
         return 'application/json';
+      case 'form-data':
+        return 'multipart/form-data';
       case 'form-urlencoded':
         return 'application/x-www-form-urlencoded';
       default:
         return undefined;
     }
+  }
+
+  private static collectEntries(
+    pairs?: KeyValuePair[] | Record<string, string>
+  ): Array<[string, string]> {
+    if (!pairs) {
+      return [];
+    }
+
+    if (Array.isArray(pairs)) {
+      return pairs.flatMap(({ key, value, enabled }) => {
+        const cleanKey = key.trim();
+        const cleanValue = value.trim();
+        return enabled && cleanKey && cleanValue
+          ? [[cleanKey, cleanValue]]
+          : [];
+      });
+    }
+
+    return Object.entries(pairs).flatMap(([key, value]) => {
+      const cleanKey = key.trim();
+      const cleanValue = value.trim();
+      return cleanKey && cleanValue ? [[cleanKey, cleanValue]] : [];
+    });
+  }
+
+  private static hasHeader(
+    headers: Record<string, string>,
+    headerName: string
+  ): boolean {
+    const expected = headerName.toLowerCase();
+    return Object.keys(headers).some((key) => key.toLowerCase() === expected);
   }
 }

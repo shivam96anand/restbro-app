@@ -98,7 +98,11 @@ export function mapAuth(authConfig: any): { type: 'none' | 'basic' | 'bearer' | 
     // API Key auth
     if (authConfig.key) config.key = String(authConfig.key);
     if (authConfig.value) config.value = String(authConfig.value);
-    if (authConfig.in) config.in = String(authConfig.in);
+    if (authConfig.in) {
+      const location = String(authConfig.in);
+      config.location = location;
+      config.in = location;
+    }
   }
 
   return { type, config };
@@ -107,8 +111,9 @@ export function mapAuth(authConfig: any): { type: 'none' | 'basic' | 'bearer' | 
 /**
  * Sanitizes collection/folder/request names
  */
-export function sanitizeName(name: string): string {
-  return (name || 'Unnamed').trim();
+export function sanitizeName(name?: string | null): string {
+  const sanitized = (name || '').trim();
+  return sanitized || 'Untitled';
 }
 
 /**
