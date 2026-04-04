@@ -97,7 +97,7 @@ export class CollectionsRenderer {
     element.dataset.collectionId = collection.id;
     element.draggable = true;
 
-    const baseIndent = 12;
+    const baseIndent = 4;
     const indentPerLevel = 20;
     element.style.paddingLeft = (depth * indentPerLevel + baseIndent) + 'px';
 
