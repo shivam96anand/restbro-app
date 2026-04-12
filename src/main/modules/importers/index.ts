@@ -110,9 +110,17 @@ export function generatePreview(importResult: ImportResult): ImportPreview {
   const previewName = importResult.name;
 
   if (importResult.rootFolder) {
-    const counts = countCollectionItems(importResult.rootFolder);
-    summary.folders = counts.folders;
-    summary.requests = counts.requests;
+    // Skip the synthetic root wrapper; count only its children
+    const children = importResult.rootFolder.children ?? [];
+    let folders = 0;
+    let requests = 0;
+    children.forEach((child) => {
+      const counts = countCollectionItems(child);
+      folders += counts.folders;
+      requests += counts.requests;
+    });
+    summary.folders = folders;
+    summary.requests = requests;
   }
 
   const preview: ImportPreview = {
