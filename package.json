@@ -134,7 +134,12 @@
     },
     "dmg": {
       "title": "${productName} ${version}",
-      "artifactName": "${productName}-${version}-universal.${ext}"
+      "artifactName": "${productName}-${version}-universal.${ext}",
+      "contents": [
+        { "x": 180, "y": 170, "type": "file" },
+        { "x": 480, "y": 170, "type": "link", "path": "/Applications" }
+      ],
+      "window": { "width": 660, "height": 400 }
     }
   }
 }

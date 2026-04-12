@@ -28,11 +28,7 @@ class WindowManager {
       this.mainWindow = null;
     });
 
-    if (app.isPackaged) {
-      this.mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-    } else {
-      this.mainWindow.loadFile(join(__dirname, '../../../renderer/index.html'));
-    }
+    this.mainWindow.loadFile(join(__dirname, '../../../renderer/index.html'));
 
     return this.mainWindow;
   }
