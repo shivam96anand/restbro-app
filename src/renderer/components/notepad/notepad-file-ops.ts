@@ -17,7 +17,8 @@ export interface FileOperationsContext {
  */
 export async function openFile(ctx: FileOperationsContext): Promise<void> {
   const result = await window.apiCourier.notepad.openFile();
-  if (result?.canceled || !result.filePath || result.content === undefined) return;
+  if (result?.canceled || !result.filePath || result.content === undefined)
+    return;
 
   const existing = ctx.store.getTabByFilePath(result.filePath);
   if (existing) {
@@ -53,7 +54,7 @@ export async function saveTabById(
   tabId: string,
   forceSaveAs = false
 ): Promise<boolean> {
-  const tab = ctx.store.getState().tabs.find(t => t.id === tabId);
+  const tab = ctx.store.getState().tabs.find((t) => t.id === tabId);
   if (!tab) return false;
   return saveTab(ctx, tab, forceSaveAs);
 }
@@ -68,7 +69,10 @@ export async function saveTab(
 ): Promise<boolean> {
   try {
     const activeTabId = ctx.getActiveTabId();
-    const latestContent = tab.id === activeTabId ? ctx.getEditorValue() || tab.content : tab.content;
+    const latestContent =
+      tab.id === activeTabId
+        ? ctx.getEditorValue() || tab.content
+        : tab.content;
     if (latestContent !== tab.content) {
       ctx.store.updateContent(tab.id, latestContent, false);
       tab = { ...tab, content: latestContent };

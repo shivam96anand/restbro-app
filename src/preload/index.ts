@@ -156,7 +156,14 @@ interface BackupInfo {
 }
 
 // Load Testing Types
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+  | 'HEAD'
+  | 'OPTIONS';
 
 interface RequestBody {
   type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
@@ -174,7 +181,10 @@ interface LoadTestTargetAdHoc {
   url: string;
   params?: Record<string, string | number | boolean>;
   headers?: Record<string, string>;
-  auth?: { type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2'; data?: unknown };
+  auth?: {
+    type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2';
+    data?: unknown;
+  };
   body?: RequestBody;
   collectionId?: string;
 }
@@ -405,16 +415,21 @@ interface MockServerStatusChangedEvent {
 const apiCourierAPI = {
   store: {
     get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
-    set: (updates: Partial<AppState>): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.STORE_SET, updates),
+    set: (updates: Partial<AppState>): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STORE_SET, updates),
   },
 
   request: {
-    send: (request: ApiRequest) => ipcRenderer.invoke(IPC_CHANNELS.REQUEST_SEND, request),
-    cancel: (requestId: string) => ipcRenderer.invoke(IPC_CHANNELS.REQUEST_CANCEL, requestId),
+    send: (request: ApiRequest) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REQUEST_SEND, request),
+    cancel: (requestId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REQUEST_CANCEL, requestId),
   },
 
   collection: {
-    create: (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>): Promise<Collection> =>
+    create: (
+      collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>
+    ): Promise<Collection> =>
       ipcRenderer.invoke(IPC_CHANNELS.COLLECTION_CREATE, collection),
     update: (id: string, updates: Partial<Collection>): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.COLLECTION_UPDATE, id, updates),
@@ -429,15 +444,26 @@ const apiCourierAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.LOADTEST_CANCEL, { runId }),
     exportCsv: (runId: string): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.LOADTEST_EXPORT_CSV, { runId }),
-    exportPdf: (runId: string, summary: LoadTestSummary): Promise<{ ok: boolean; error?: string }> =>
+    exportPdf: (
+      runId: string,
+      summary: LoadTestSummary
+    ): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.LOADTEST_EXPORT_PDF, { runId, summary }),
-    onProgress: (callback: (progress: LoadTestProgressTick) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.LOADTEST_PROGRESS, (_, progress) => callback(progress));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.LOADTEST_PROGRESS);
+    onProgress: (
+      callback: (progress: LoadTestProgressTick) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.LOADTEST_PROGRESS, (_, progress) =>
+        callback(progress)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.LOADTEST_PROGRESS);
     },
     onSummary: (callback: (summary: LoadTestSummary) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.LOADTEST_SUMMARY, (_, summary) => callback(summary));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.LOADTEST_SUMMARY);
+      ipcRenderer.on(IPC_CHANNELS.LOADTEST_SUMMARY, (_, summary) =>
+        callback(summary)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.LOADTEST_SUMMARY);
     },
   },
 
@@ -446,21 +472,29 @@ const apiCourierAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.OAUTH_START_FLOW, config),
     refreshToken: (config: OAuthConfig): Promise<OAuthResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.OAUTH_REFRESH_TOKEN, config),
-    getTokenInfo: (config: OAuthConfig): Promise<{ isValid: boolean; expiresIn?: number }> =>
+    getTokenInfo: (
+      config: OAuthConfig
+    ): Promise<{ isValid: boolean; expiresIn?: number }> =>
       ipcRenderer.invoke(IPC_CHANNELS.OAUTH_GET_TOKEN_INFO, config),
   },
 
   files: {
     openDialog: (): Promise<{ canceled: boolean; filePaths: string[] }> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_OPEN_DIALOG),
-    readContent: (filePath: string): Promise<{ success: boolean; content: string; filePath: string }> =>
+    readContent: (
+      filePath: string
+    ): Promise<{ success: boolean; content: string; filePath: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_READ_CONTENT, filePath),
-    readBinary: (filePath: string): Promise<{ success: boolean; content: string; filePath: string }> =>
+    readBinary: (
+      filePath: string
+    ): Promise<{ success: boolean; content: string; filePath: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_READ_BINARY, filePath),
   },
 
   import: {
-    parsePreview: (fileContent: string): Promise<{ success: boolean; preview?: any; error?: string }> =>
+    parsePreview: (
+      fileContent: string
+    ): Promise<{ success: boolean; preview?: any; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.IMPORT_PARSE_PREVIEW, fileContent),
     commit: (preview: any): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.IMPORT_COMMIT, preview),
@@ -488,15 +522,25 @@ const apiCourierAPI = {
   },
 
   system: {
-    openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
+    openExternal: (url: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
   },
 
   notepad: {
-    saveFile: (args: { filePath?: string; content: string; defaultName?: string }): Promise<{ filePath?: string; canceled?: boolean }> =>
+    saveFile: (args: {
+      filePath?: string;
+      content: string;
+      defaultName?: string;
+    }): Promise<{ filePath?: string; canceled?: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_SAVE_FILE, args),
-    openFile: (): Promise<{ filePath?: string; content?: string; canceled?: boolean }> =>
-      ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_OPEN_FILE),
-    readFile: (filePath: string): Promise<{ content?: string; canceled?: boolean }> =>
+    openFile: (): Promise<{
+      filePath?: string;
+      content?: string;
+      canceled?: boolean;
+    }> => ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_OPEN_FILE),
+    readFile: (
+      filePath: string
+    ): Promise<{ content?: string; canceled?: boolean }> =>
       ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_READ_FILE, filePath),
     revealInFolder: (filePath: string): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_REVEAL, filePath),
@@ -509,13 +553,21 @@ const apiCourierAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.AI_CREATE_SESSION, context),
     deleteSession: (sessionId: string): Promise<boolean> =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_DELETE_SESSION, sessionId),
-    updateSession: (sessionId: string, updates: { title?: string; context?: AiContext }): Promise<AiSession | null> =>
+    updateSession: (
+      sessionId: string,
+      updates: { title?: string; context?: AiContext }
+    ): Promise<AiSession | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_UPDATE_SESSION, sessionId, updates),
     sendMessage: (params: AiSendMessageParams): Promise<AiSendMessageResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_SEND_MESSAGE, params),
-    onMessageStream: (callback: (data: { requestId: string; chunk: string }) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.AI_MESSAGE_STREAM, (_, data) => callback(data));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.AI_MESSAGE_STREAM);
+    onMessageStream: (
+      callback: (data: { requestId: string; chunk: string }) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.AI_MESSAGE_STREAM, (_, data) =>
+        callback(data)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.AI_MESSAGE_STREAM);
     },
     checkEngine: (): Promise<{ available: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.AI_CHECK_ENGINE),
@@ -524,9 +576,13 @@ const apiCourierAPI = {
   mockServer: {
     list: (): Promise<MockServerIpcResponse<MockServerListResponse>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_LIST),
-    createServer: (params: MockServerCreateParams): Promise<MockServerIpcResponse<MockServerDefinition>> =>
+    createServer: (
+      params: MockServerCreateParams
+    ): Promise<MockServerIpcResponse<MockServerDefinition>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_CREATE_SERVER, params),
-    updateServer: (params: MockServerUpdateParams): Promise<MockServerIpcResponse<MockServerDefinition>> =>
+    updateServer: (
+      params: MockServerUpdateParams
+    ): Promise<MockServerIpcResponse<MockServerDefinition>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_UPDATE_SERVER, params),
     deleteServer: (serverId: string): Promise<MockServerIpcResponse<void>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_DELETE_SERVER, serverId),
@@ -534,19 +590,33 @@ const apiCourierAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_START_SERVER, serverId),
     stopServer: (serverId: string): Promise<MockServerIpcResponse<void>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_STOP_SERVER, serverId),
-    addRoute: (params: MockRouteCreateParams): Promise<MockServerIpcResponse<MockRoute>> =>
+    addRoute: (
+      params: MockRouteCreateParams
+    ): Promise<MockServerIpcResponse<MockRoute>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_ADD_ROUTE, params),
-    updateRoute: (params: MockRouteUpdateParams): Promise<MockServerIpcResponse<MockRoute>> =>
+    updateRoute: (
+      params: MockRouteUpdateParams
+    ): Promise<MockServerIpcResponse<MockRoute>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_UPDATE_ROUTE, params),
-    deleteRoute: (params: MockRouteDeleteParams): Promise<MockServerIpcResponse<void>> =>
+    deleteRoute: (
+      params: MockRouteDeleteParams
+    ): Promise<MockServerIpcResponse<void>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_DELETE_ROUTE, params),
-    toggleRoute: (params: MockRouteToggleParams): Promise<MockServerIpcResponse<MockRoute>> =>
+    toggleRoute: (
+      params: MockRouteToggleParams
+    ): Promise<MockServerIpcResponse<MockRoute>> =>
       ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_TOGGLE_ROUTE, params),
-    pickFile: (): Promise<MockServerIpcResponse<{ canceled: boolean; filePath: string | null }>> =>
-      ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_PICK_FILE),
-    onStatusChanged: (callback: (event: MockServerStatusChangedEvent) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED, (_, event) => callback(event));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED);
+    pickFile: (): Promise<
+      MockServerIpcResponse<{ canceled: boolean; filePath: string | null }>
+    > => ipcRenderer.invoke(IPC_CHANNELS.MOCKSERVER_PICK_FILE),
+    onStatusChanged: (
+      callback: (event: MockServerStatusChangedEvent) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED, (_, event) =>
+        callback(event)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.MOCKSERVER_STATUS_CHANGED);
     },
   },
 
@@ -560,17 +630,37 @@ const apiCourierAPI = {
   update: {
     install: (): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL),
-    onAvailable: (callback: (data: { version: string }) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_AVAILABLE, (_, data) => callback(data));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_AVAILABLE);
+    onAvailable: (
+      callback: (data: { version: string }) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.UPDATE_AVAILABLE, (_, data) =>
+        callback(data)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_AVAILABLE);
     },
-    onDownloadProgress: (callback: (data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS, (_, data) => callback(data));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS);
+    onDownloadProgress: (
+      callback: (data: {
+        percent: number;
+        bytesPerSecond: number;
+        transferred: number;
+        total: number;
+      }) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS, (_, data) =>
+        callback(data)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS);
     },
-    onDownloaded: (callback: (data: { version: string }) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_DOWNLOADED, (_, data) => callback(data));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOADED);
+    onDownloaded: (
+      callback: (data: { version: string }) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.UPDATE_DOWNLOADED, (_, data) =>
+        callback(data)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOADED);
     },
     onError: (callback: (data: { message: string }) => void): (() => void) => {
       ipcRenderer.on(IPC_CHANNELS.UPDATE_ERROR, (_, data) => callback(data));

@@ -23,7 +23,7 @@ export class RequestEditorsManager {
   private bodyEditor: RequestBodyEditor | null = null;
   private activeEditor: EditorType = 'json';
   private onRequestUpdate: (updates: Partial<ApiRequest>) => void;
-  
+
   // New modular components
   private authConfigManager!: AuthConfigManager;
   private oauth2Manager!: OAuth2Manager;
@@ -40,41 +40,63 @@ export class RequestEditorsManager {
   private initializeComponents(): void {
     const config: RequestEditorsConfig = {
       factoryConfig: {
-        jsonConfig: { enableValidation: true, enableBeautify: true, theme: 'default' },
-        rawConfig: { enableLineNumbers: true, enableWordWrap: true, theme: 'default' },
-        formDataConfig: { enableFileUpload: true, maxFileSize: 10485760, allowedFileTypes: ['*'] },
+        jsonConfig: {
+          enableValidation: true,
+          enableBeautify: true,
+          theme: 'default',
+        },
+        rawConfig: {
+          enableLineNumbers: true,
+          enableWordWrap: true,
+          theme: 'default',
+        },
+        formDataConfig: {
+          enableFileUpload: true,
+          maxFileSize: 10485760,
+          allowedFileTypes: ['*'],
+        },
         urlEncodedConfig: { enableValidation: true, showPreview: true },
-        binaryConfig: { maxFileSize: 10485760, allowedFileTypes: ['*'], showPreview: true }
+        binaryConfig: {
+          maxFileSize: 10485760,
+          allowedFileTypes: ['*'],
+          showPreview: true,
+        },
       },
       stateConfig: {
         persistState: true,
         debounceMs: 300,
-        defaultEditor: 'json'
+        defaultEditor: 'json',
       },
       validatorConfig: {
         validateOnChange: true,
         showInlineErrors: true,
         validationRules: {
-          'json': [],
-          'raw': [],
+          json: [],
+          raw: [],
           'form-data': [],
           'x-www-form-urlencoded': [],
-          'binary': []
-        }
+          binary: [],
+        },
       },
       syncConfig: {
         autoSyncHeaders: true,
         syncContentType: true,
-        syncContentLength: false
-      }
+        syncContentLength: false,
+      },
     };
 
     // Find container elements from DOM
-    const editorsContainer = document.getElementById('request-editors') || document.body;
-    const paramsContainer = document.getElementById('params-section') || document.body;
-    const headersContainer = document.getElementById('headers-section') || document.body;
+    const editorsContainer =
+      document.getElementById('request-editors') || document.body;
+    const paramsContainer =
+      document.getElementById('params-section') || document.body;
+    const headersContainer =
+      document.getElementById('headers-section') || document.body;
 
-    this.factory = new RequestEditorFactory(editorsContainer, config.factoryConfig);
+    this.factory = new RequestEditorFactory(
+      editorsContainer,
+      config.factoryConfig
+    );
     this.state = new RequestEditorState(config.stateConfig);
     this.validator = new RequestEditorValidator(config.validatorConfig);
     this.sync = new RequestEditorSync(config.syncConfig);
@@ -89,8 +111,8 @@ export class RequestEditorsManager {
         this.onRequestUpdate({
           auth: {
             type: 'oauth2',
-            config
-          }
+            config,
+          },
         });
       },
       this.variableResolver,
@@ -102,8 +124,8 @@ export class RequestEditorsManager {
       this.uiHelpers
     );
 
-    this.soapCertsManager = new SoapCertsManager(
-      (soapCerts) => this.onRequestUpdate({ soapCerts })
+    this.soapCertsManager = new SoapCertsManager((soapCerts) =>
+      this.onRequestUpdate({ soapCerts })
     );
 
     this.setupEventListeners();
@@ -112,11 +134,15 @@ export class RequestEditorsManager {
   private setupEventListeners(): void {
     this.factory.onEditorChange((editor) => this.handleEditorChange());
     this.state.onStateChange((state) => this.handleStateChange(state));
-    this.validator.onValidationChange((result) => this.handleValidationChange(result));
+    this.validator.onValidationChange((result) =>
+      this.handleValidationChange(result)
+    );
     this.sync.onHeaderSync((headers) => this.handleHeaderSync(headers));
-    
+
     this.paramsManager.onUpdate((params) => this.onRequestUpdate({ params }));
-    this.headersManager.onUpdate((headers) => this.onRequestUpdate({ headers }));
+    this.headersManager.onUpdate((headers) =>
+      this.onRequestUpdate({ headers })
+    );
   }
 
   private handleEditorChange(): void {
@@ -157,18 +183,28 @@ export class RequestEditorsManager {
     this.state.setActiveEditor(type);
   }
 
-  public setContent(body: { type: string; content: any; format?: string; contentType?: string }): void {
+  public setContent(body: {
+    type: string;
+    content: any;
+    format?: string;
+    contentType?: string;
+  }): void {
     if (this.bodyEditor) {
       this.bodyEditor.setBody({
         type: body.type as any,
         content: body.content,
         format: body.format as any,
-        contentType: body.contentType
+        contentType: body.contentType,
       });
     }
   }
 
-  public getContent(): { type: string; content: any; format?: string; contentType?: string } | null {
+  public getContent(): {
+    type: string;
+    content: any;
+    format?: string;
+    contentType?: string;
+  } | null {
     if (this.bodyEditor) {
       return this.bodyEditor.getBody();
     }
@@ -189,7 +225,9 @@ export class RequestEditorsManager {
   }
 
   setupBodyEditor(): void {
-    const bodySection = document.getElementById('request-body-editor-host') || document.getElementById('body-section');
+    const bodySection =
+      document.getElementById('request-body-editor-host') ||
+      document.getElementById('body-section');
     if (!bodySection) return;
 
     // Initialize the enhanced body editor (keeping existing implementation)
@@ -209,7 +247,7 @@ export class RequestEditorsManager {
         if (type === 'error') {
           console.error('Body editor error:', message);
         }
-      }
+      },
     });
   }
 
@@ -256,12 +294,18 @@ export class RequestEditorsManager {
     const params: Record<string, string> = {};
     const rows = paramsEditor.querySelectorAll('.kv-row');
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-      if (checkbox && checkbox.checked && keyInput && valueInput && keyInput.value.trim()) {
+      if (
+        checkbox &&
+        checkbox.checked &&
+        keyInput &&
+        valueInput &&
+        keyInput.value.trim()
+      ) {
         params[keyInput.value.trim()] = valueInput.value.trim();
       }
     });
@@ -276,12 +320,18 @@ export class RequestEditorsManager {
     const headers: Record<string, string> = {};
     const rows = headersEditor.querySelectorAll('.kv-row');
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
 
-      if (checkbox && checkbox.checked && keyInput && valueInput && keyInput.value.trim()) {
+      if (
+        checkbox &&
+        checkbox.checked &&
+        keyInput &&
+        valueInput &&
+        keyInput.value.trim()
+      ) {
         headers[keyInput.value.trim()] = valueInput.value.trim();
       }
     });
@@ -297,11 +347,19 @@ export class RequestEditorsManager {
     this.headersManager.loadHeaders(headers);
   }
 
-  loadBody(body: { type: string; content: string; format?: string; contentType?: string }): void {
+  loadBody(body: {
+    type: string;
+    content: string;
+    format?: string;
+    contentType?: string;
+  }): void {
     this.setContent(body);
   }
 
-  loadAuth(auth: { type: string; config: Record<string, string> }, collectionId?: string): void {
+  loadAuth(
+    auth: { type: string; config: Record<string, string> },
+    collectionId?: string
+  ): void {
     this.authConfigManager.load(auth, collectionId);
   }
 
@@ -349,28 +407,56 @@ export class RequestEditorsManager {
   /**
    * Set variable context for highlighting in params, headers, and body editors
    */
-  setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
-    this.paramsManager.setVariableContext(activeEnvironment, globals, folderVars);
-    this.headersManager.setVariableContext(activeEnvironment, globals, folderVars);
+  setVariableContext(
+    activeEnvironment: any,
+    globals: any,
+    folderVars?: any
+  ): void {
+    this.paramsManager.setVariableContext(
+      activeEnvironment,
+      globals,
+      folderVars
+    );
+    this.headersManager.setVariableContext(
+      activeEnvironment,
+      globals,
+      folderVars
+    );
     if (this.bodyEditor) {
-      this.bodyEditor.setVariableContext(activeEnvironment, globals, folderVars);
+      this.bodyEditor.setVariableContext(
+        activeEnvironment,
+        globals,
+        folderVars
+      );
     }
   }
 
   // Delegate OAuth methods to AuthConfigManager
-  isOAuthTokenExpired(auth: { type: string; config: Record<string, string> }): boolean {
+  isOAuthTokenExpired(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): boolean {
     return this.authConfigManager.isOAuthTokenExpired(auth);
   }
 
-  async autoRefreshOAuthToken(auth: { type: string; config: Record<string, string> }): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoRefreshOAuthToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     return this.authConfigManager.autoRefreshOAuthToken(auth);
   }
 
-  async autoGetOAuthToken(auth: { type: string; config: Record<string, string> }): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoGetOAuthToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     return this.authConfigManager.autoGetOAuthToken(auth);
   }
 
-  updateOAuthStatus(message: string, type: 'loading' | 'success' | 'error'): void {
+  updateOAuthStatus(
+    message: string,
+    type: 'loading' | 'success' | 'error'
+  ): void {
     this.uiHelpers.updateOAuthStatus(message, type);
   }
 
@@ -388,7 +474,9 @@ export class RequestEditorsManager {
       bodySection.classList.toggle('soap-mode', enabled);
     }
     if (this.bodyEditor) {
-      this.bodyEditor.setForcedContentType(enabled ? forcedContentType : undefined);
+      this.bodyEditor.setForcedContentType(
+        enabled ? forcedContentType : undefined
+      );
     }
   }
 

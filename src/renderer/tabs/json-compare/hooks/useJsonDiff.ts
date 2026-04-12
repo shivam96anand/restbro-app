@@ -7,7 +7,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { create, DiffPatcher } from 'jsondiffpatch';
 import { buildDiffRows } from '../utils/diffMap';
-import type { DiffResult, DiffStats, WorkerRequest, WorkerResponse } from '../types';
+import type {
+  DiffResult,
+  DiffStats,
+  WorkerRequest,
+  WorkerResponse,
+} from '../types';
 
 interface UseJsonDiffOptions {
   debounceMs?: number;
@@ -38,7 +43,10 @@ function computeObjectHash(obj: unknown): string {
 
   const product = record.product as Record<string, unknown> | undefined;
   const nestedProductId = product?.id;
-  if (typeof nestedProductId === 'string' || typeof nestedProductId === 'number') {
+  if (
+    typeof nestedProductId === 'string' ||
+    typeof nestedProductId === 'number'
+  ) {
     return String(nestedProductId);
   }
 
@@ -50,7 +58,7 @@ function getInlineDiffer(): DiffPatcher {
     inlineDiffer = create({
       objectHash: computeObjectHash,
       arrays: { detectMove: true },
-      textDiff: { minLength: Infinity }
+      textDiff: { minLength: Infinity },
     });
   }
   return inlineDiffer;
@@ -70,10 +78,10 @@ function computeInline(leftJson: string, rightJson: string): DiffResult {
   const rows = buildDiffRows(delta);
 
   const stats: DiffStats = {
-    added: rows.filter(r => r.type === 'added').length,
-    removed: rows.filter(r => r.type === 'removed').length,
-    changed: rows.filter(r => r.type === 'changed').length,
-    totalTime: performance.now() - start
+    added: rows.filter((r) => r.type === 'added').length,
+    removed: rows.filter((r) => r.type === 'removed').length,
+    changed: rows.filter((r) => r.type === 'changed').length,
+    totalTime: performance.now() - start,
   };
 
   return { rows, leftDecorations: [], rightDecorations: [], stats };
@@ -88,7 +96,9 @@ export function useJsonDiff(
 ): UseJsonDiffResult {
   const { debounceMs = 300, workerTimeoutMs = 2000 } = options;
 
-  const [status, setStatus] = useState<'idle' | 'computing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<
+    'idle' | 'computing' | 'success' | 'error'
+  >('idle');
   const [result, setResult] = useState<DiffResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -184,7 +194,7 @@ export function useJsonDiff(
     workerRef.current.postMessage({
       type: 'diff',
       leftJson,
-      rightJson
+      rightJson,
     } as WorkerRequest);
 
     // If the worker doesn't respond in time, fall back

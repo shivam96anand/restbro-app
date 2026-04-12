@@ -9,7 +9,9 @@ export class BackupManager {
   private menu: HTMLDivElement | null = null;
 
   initialize(): void {
-    this.button = document.getElementById('backup-button') as HTMLButtonElement | null;
+    this.button = document.getElementById(
+      'backup-button'
+    ) as HTMLButtonElement | null;
     if (!this.button) return;
 
     this.button.addEventListener('click', (event) => {
@@ -77,7 +79,9 @@ export class BackupManager {
         item.className = 'backup-menu-item';
         item.textContent = this.formatBackupLabel(backup);
         item.addEventListener('click', async () => {
-          const ok = window.confirm(`Restore backup from ${this.formatBackupLabel(backup)}?`);
+          const ok = window.confirm(
+            `Restore backup from ${this.formatBackupLabel(backup)}?`
+          );
           if (!ok) return;
           try {
             await window.apiCourier.backups.restore(backup.id);

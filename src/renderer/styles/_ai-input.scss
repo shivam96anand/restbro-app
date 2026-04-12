@@ -3,7 +3,11 @@
 
 // Quick Suggestions
 .quick-suggestions {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.2)
+  );
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 16px;
@@ -34,7 +38,11 @@
     transition: all 0.2s ease;
 
     &:hover {
-      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      background: linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--primary-dark)
+      );
       color: white;
       border-color: rgba(255, 255, 255, 0.2);
     }
@@ -43,7 +51,11 @@
 
 // Input Area
 .input-area {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.2)
+  );
   border-radius: 18px;
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -126,7 +138,8 @@
   align-items: flex-end;
 }
 
-.btn-settings, .btn-send {
+.btn-settings,
+.btn-send {
   padding: 12px 16px;
   border-radius: 12px;
   border: none;
@@ -157,7 +170,11 @@
 }
 
 .btn-send {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-dark)
+  );
   color: white;
 
   &:hover:not(:disabled) {

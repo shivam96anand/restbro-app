@@ -74,7 +74,10 @@
   text-align: center;
 }
 
-pre, code, .json-viewer, .json-content {
+pre,
+code,
+.json-viewer,
+.json-content {
   font-family: var(--font-mono);
 }
 
@@ -115,7 +118,11 @@ pre, code, .json-viewer, .json-content {
     padding: 6px 14px;
     border-radius: 999px;
     border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background: linear-gradient(
+      135deg,
+      var(--primary-color),
+      var(--primary-dark)
+    );
     color: #fff;
     cursor: pointer;
     font-size: 11px;

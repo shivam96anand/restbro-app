@@ -19,13 +19,15 @@ export class RequestFormHandler {
   }
 
   setupRequestForm(): void {
-    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const methodSelect = document.getElementById(
+      'request-method'
+    ) as HTMLSelectElement;
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
     if (methodSelect) {
       // Apply initial method color class
       this.uiHandler.updateMethodSelectColor(methodSelect);
-      
+
       methodSelect.addEventListener('change', () => {
         this.onRequestUpdate({ method: methodSelect.value as any });
         this.uiHandler.updateMethodSelectColor(methodSelect);
@@ -42,7 +44,9 @@ export class RequestFormHandler {
       });
 
       // Setup autocomplete for URL input
-      setupAutocomplete(urlInput, () => this.variableHandler.getVariableContext());
+      setupAutocomplete(urlInput, () =>
+        this.variableHandler.getVariableContext()
+      );
 
       // Variable tooltips will be initialized by refreshVariableTooltips()
       // which is called from request-manager when a request is loaded
@@ -66,7 +70,11 @@ export class RequestFormHandler {
    * Note: This only sets the context. Call refreshAllInputHighlighting() after
    * all inputs are loaded to apply highlighting.
    */
-  public setVariableContext(context: { activeEnvironment?: Environment; globals: Globals; folderVars: Record<string, string> }): void {
+  public setVariableContext(context: {
+    activeEnvironment?: Environment;
+    globals: Globals;
+    folderVars: Record<string, string>;
+  }): void {
     this.variableHandler.setVariableContext(context);
 
     // Ensure listeners are attached to URL input
@@ -100,12 +108,12 @@ export class RequestFormHandler {
     const tabs = document.querySelectorAll('.request-details .tab');
     const sections = document.querySelectorAll('.request-details .section');
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
         const sectionName = (tab as HTMLElement).dataset.section;
 
-        tabs.forEach(t => t.classList.remove('active'));
-        sections.forEach(s => s.classList.remove('active'));
+        tabs.forEach((t) => t.classList.remove('active'));
+        sections.forEach((s) => s.classList.remove('active'));
 
         tab.classList.add('active');
         const section = document.getElementById(`${sectionName}-section`);
@@ -142,7 +150,7 @@ export class RequestFormHandler {
 
     // Dispatch event to save the active details tab
     const event = new CustomEvent('active-details-tab-changed', {
-      detail: { activeDetailsTab: tabName }
+      detail: { activeDetailsTab: tabName },
     });
     document.dispatchEvent(event);
   }
@@ -157,11 +165,13 @@ export class RequestFormHandler {
     // Default to 'params' if no active tab is saved
     const tabToActivate = activeDetailsTab || 'params';
 
-    tabs.forEach(t => t.classList.remove('active'));
-    sections.forEach(s => s.classList.remove('active'));
+    tabs.forEach((t) => t.classList.remove('active'));
+    sections.forEach((s) => s.classList.remove('active'));
 
     // Activate the saved tab
-    const targetTab = document.querySelector(`.request-details .tab[data-section="${tabToActivate}"]`);
+    const targetTab = document.querySelector(
+      `.request-details .tab[data-section="${tabToActivate}"]`
+    );
     const targetSection = document.getElementById(`${tabToActivate}-section`);
 
     if (targetTab) {
@@ -174,7 +184,9 @@ export class RequestFormHandler {
   }
 
   loadBasicRequestData(request: ApiRequest): void {
-    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const methodSelect = document.getElementById(
+      'request-method'
+    ) as HTMLSelectElement;
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
     if (methodSelect) {
@@ -185,7 +197,9 @@ export class RequestFormHandler {
   }
 
   clearBasicForm(): void {
-    const methodSelect = document.getElementById('request-method') as HTMLSelectElement;
+    const methodSelect = document.getElementById(
+      'request-method'
+    ) as HTMLSelectElement;
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
 
     if (methodSelect) {

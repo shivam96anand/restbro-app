@@ -29,7 +29,9 @@ export class ImportManager {
       }
 
       // Parse and preview
-      const parseResult = await window.apiCourier.import.parsePreview(fileResult.content);
+      const parseResult = await window.apiCourier.import.parsePreview(
+        fileResult.content
+      );
 
       if (!parseResult.success) {
         this.showError(parseResult.error || 'Failed to parse import file');
@@ -53,7 +55,9 @@ export class ImportManager {
         return false;
       }
 
-      this.showSuccess(`Successfully imported: ${preview.summary.requests} requests, ${preview.summary.environments} environments`);
+      this.showSuccess(
+        `Successfully imported: ${preview.summary.requests} requests, ${preview.summary.environments} environments`
+      );
 
       // Notify completion
       if (this.onImportComplete) {
@@ -63,7 +67,9 @@ export class ImportManager {
       return true;
     } catch (error) {
       console.error('Import commit failed:', error);
-      this.showError(error instanceof Error ? error.message : 'Import commit failed');
+      this.showError(
+        error instanceof Error ? error.message : 'Import commit failed'
+      );
       return false;
     }
   }

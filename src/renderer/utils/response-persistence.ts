@@ -40,7 +40,9 @@ export function sanitizeTabsForPersistence(tabs: RequestTab[]): RequestTab[] {
   }));
 }
 
-export function sanitizeHistoryForPersistence(history: HistoryItem[]): HistoryItem[] {
+export function sanitizeHistoryForPersistence(
+  history: HistoryItem[]
+): HistoryItem[] {
   return history.map((item) => ({
     ...item,
     response: sanitizeHistoryResponseForPersistence(item.response)!,

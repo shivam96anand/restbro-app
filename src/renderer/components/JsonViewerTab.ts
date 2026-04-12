@@ -29,7 +29,9 @@ export class JsonViewerTab {
   }
 
   private initializeComponents(): void {
-    const inputPanelContainer = this.container.querySelector('.json-input-panel') as HTMLElement;
+    const inputPanelContainer = this.container.querySelector(
+      '.json-input-panel'
+    ) as HTMLElement;
 
     this.inputPanel = new JsonInputPanel(inputPanelContainer, {
       onJsonParsed: (_jsonData: any) => {
@@ -38,13 +40,16 @@ export class JsonViewerTab {
       onStatusUpdate: (type, message) => this.setStatus(type, message),
       onClearViewer: () => {
         this.setStatus('info', '');
-      }
+      },
     });
 
     this.inputPanel.restorePersistedInput();
   }
 
-  private setStatus(type: 'info' | 'success' | 'warning' | 'error', message: string): void {
+  private setStatus(
+    type: 'info' | 'success' | 'warning' | 'error',
+    message: string
+  ): void {
     const statusEl = this.container.querySelector('#json-status');
     if (statusEl) {
       statusEl.className = `json-status ${type ? `status-${type}` : ''}`;

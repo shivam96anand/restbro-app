@@ -19,9 +19,15 @@ export class ResponseViewer {
   private currentResponseTimestamp: number | null = null;
   private lastResponseTimestamps: Map<string, number> = new Map();
   private largeJsonPrettySelections: Map<string, number> = new Map();
-  private monacoViewStateSelections: Map<string, { responseTimestamp: number; viewState: Record<string, unknown> }> = new Map();
+  private monacoViewStateSelections: Map<
+    string,
+    { responseTimestamp: number; viewState: Record<string, unknown> }
+  > = new Map();
 
-  constructor(container: HTMLElement, private config: ResponseViewerConfig) {
+  constructor(
+    container: HTMLElement,
+    private config: ResponseViewerConfig
+  ) {
     this.container = container;
     this.setupViewerElements();
   }
@@ -30,7 +36,10 @@ export class ResponseViewer {
     this.currentRequestId = requestId;
   }
 
-  public setLargeJsonPrettySelection(requestId: string, responseTimestamp?: number): void {
+  public setLargeJsonPrettySelection(
+    requestId: string,
+    responseTimestamp?: number
+  ): void {
     if (typeof responseTimestamp === 'number') {
       this.largeJsonPrettySelections.set(requestId, responseTimestamp);
       return;
@@ -43,7 +52,11 @@ export class ResponseViewer {
     responseTimestamp?: number,
     viewState?: Record<string, unknown>
   ): void {
-    if (typeof responseTimestamp === 'number' && viewState && typeof viewState === 'object') {
+    if (
+      typeof responseTimestamp === 'number' &&
+      viewState &&
+      typeof viewState === 'object'
+    ) {
       this.monacoViewStateSelections.set(requestId, {
         responseTimestamp,
         viewState,
@@ -56,14 +69,21 @@ export class ResponseViewer {
   public captureMonacoViewState():
     | { responseTimestamp: number; viewState: Record<string, unknown> }
     | undefined {
-    if (this.currentFormatter !== 'json' || !this.monacoEditor || typeof this.currentResponseTimestamp !== 'number') {
+    if (
+      this.currentFormatter !== 'json' ||
+      !this.monacoEditor ||
+      typeof this.currentResponseTimestamp !== 'number'
+    ) {
       return undefined;
     }
 
     const viewState = this.monacoEditor.saveViewState();
     if (!viewState) return undefined;
 
-    const serializableViewState = viewState as unknown as Record<string, unknown>;
+    const serializableViewState = viewState as unknown as Record<
+      string,
+      unknown
+    >;
     const snapshot = {
       responseTimestamp: this.currentResponseTimestamp,
       viewState: serializableViewState,
@@ -104,15 +124,27 @@ export class ResponseViewer {
     }
   }
 
-  public async displayResponse(response: ApiResponse, requestMode: RequestMode = 'rest'): Promise<void> {
-    const lastTimestamp = this.lastResponseTimestamps.get(this.currentRequestId);
+  public async displayResponse(
+    response: ApiResponse,
+    requestMode: RequestMode = 'rest'
+  ): Promise<void> {
+    const lastTimestamp = this.lastResponseTimestamps.get(
+      this.currentRequestId
+    );
     this.currentResponseTimestamp = response.timestamp;
 
     if (response.timestamp !== lastTimestamp) {
-      console.log(`[ResponseViewer] New response detected (size: ${response.size} bytes)`);
-      this.lastResponseTimestamps.set(this.currentRequestId, response.timestamp);
+      console.log(
+        `[ResponseViewer] New response detected (size: ${response.size} bytes)`
+      );
+      this.lastResponseTimestamps.set(
+        this.currentRequestId,
+        response.timestamp
+      );
     } else {
-      console.log(`[ResponseViewer] Same response (size: ${response.size} bytes)`);
+      console.log(
+        `[ResponseViewer] Same response (size: ${response.size} bytes)`
+      );
     }
 
     await this.updateResponseBody(response, requestMode);
@@ -120,12 +152,16 @@ export class ResponseViewer {
     this.updateResponseMeta(response);
   }
 
-  private async updateResponseBody(response: ApiResponse, requestMode: RequestMode): Promise<void> {
+  private async updateResponseBody(
+    response: ApiResponse,
+    requestMode: RequestMode
+  ): Promise<void> {
     const bodyElement = document.getElementById('response-body');
     if (!bodyElement) return;
 
     if (!response.body) {
-      bodyElement.innerHTML = '<div class="response-placeholder">No response body</div>';
+      bodyElement.innerHTML =
+        '<div class="response-placeholder">No response body</div>';
       this.disposeMonaco();
       this.currentFormatter = null;
       this.parsedJsonData = null;
@@ -136,9 +172,12 @@ export class ResponseViewer {
       return;
     }
 
-    const contentType = this.getHeaderValueCaseInsensitive(response.headers, 'content-type') || '';
+    const contentType =
+      this.getHeaderValueCaseInsensitive(response.headers, 'content-type') ||
+      '';
     this.currentSoapFault = false;
-    const isXmlMode = requestMode === 'soap' || this.isXmlContentType(contentType);
+    const isXmlMode =
+      requestMode === 'soap' || this.isXmlContentType(contentType);
     if (isXmlMode) {
       const xmlParseResult = this.tryParseXml(response.body);
       if (xmlParseResult.ok && xmlParseResult.document) {
@@ -161,14 +200,21 @@ export class ResponseViewer {
     // For large responses, use a lightweight heuristic (content-type or first char)
     // so the banner appears even if the body was truncated or JSON.parse fails.
     if (responseBytes >= ResponseViewer.LARGE_JSON_RAW_THRESHOLD_BYTES) {
-      const looksLikeJson = isJsonContentType || this.bodyLooksLikeJson(response.body);
+      const looksLikeJson =
+        isJsonContentType || this.bodyLooksLikeJson(response.body);
 
       if (looksLikeJson) {
-        const shouldAutoPretty = this.largeJsonPrettySelections.get(this.currentRequestId) === response.timestamp;
+        const shouldAutoPretty =
+          this.largeJsonPrettySelections.get(this.currentRequestId) ===
+          response.timestamp;
         if (shouldAutoPretty) {
           const parseResult = this.tryParseJson(response.body);
           if (parseResult.ok && parseResult.value !== null) {
-            const mounted = await this.setupJsonViewer(bodyElement, parseResult.value, response.size);
+            const mounted = await this.setupJsonViewer(
+              bodyElement,
+              parseResult.value,
+              response.size
+            );
             if (mounted) {
               this.currentFormatter = 'json';
               this.parsedJsonData = parseResult.value;
@@ -179,7 +225,12 @@ export class ResponseViewer {
           }
         }
 
-        this.setupLargeJsonPreview(bodyElement, response.body, response.size, response.timestamp);
+        this.setupLargeJsonPreview(
+          bodyElement,
+          response.body,
+          response.size,
+          response.timestamp
+        );
         this.currentFormatter = 'plain';
         this.parsedJsonData = null;
         this.detectedJsonBody = true;
@@ -188,7 +239,9 @@ export class ResponseViewer {
       }
     }
 
-    const shouldSniffJson = !isJsonContentType && responseBytes <= ResponseViewer.JSON_SNIFF_LIMIT_BYTES;
+    const shouldSniffJson =
+      !isJsonContentType &&
+      responseBytes <= ResponseViewer.JSON_SNIFF_LIMIT_BYTES;
 
     let parsedJson: unknown | null = null;
     let detectedJson = false;
@@ -200,7 +253,11 @@ export class ResponseViewer {
     }
 
     if (detectedJson && parsedJson !== null) {
-      const mounted = await this.setupJsonViewer(bodyElement, parsedJson, response.size);
+      const mounted = await this.setupJsonViewer(
+        bodyElement,
+        parsedJson,
+        response.size
+      );
       if (mounted) {
         this.currentFormatter = 'json';
         this.parsedJsonData = parsedJson;
@@ -212,7 +269,12 @@ export class ResponseViewer {
       }
     } else {
       if (response.status >= 400) {
-        this.setupErrorBodyView(bodyElement, response.body, response.status, response.statusText);
+        this.setupErrorBodyView(
+          bodyElement,
+          response.body,
+          response.status,
+          response.statusText
+        );
       } else {
         this.setupPlainTextView(bodyElement, response.body);
       }
@@ -226,13 +288,18 @@ export class ResponseViewer {
     this.emitModeChanged();
   }
 
-  private setupXmlView(container: HTMLElement, xml: string, hasSoapFault: boolean): void {
+  private setupXmlView(
+    container: HTMLElement,
+    xml: string,
+    hasSoapFault: boolean
+  ): void {
     this.disposeMonaco();
     this.parsedJsonData = null;
 
     const wrapper = document.createElement('div');
     wrapper.className = `xml-response-wrapper${hasSoapFault ? ' has-soap-fault' : ''}`;
-    wrapper.style.cssText = 'width:100%;height:100%;display:flex;flex-direction:column;min-height:0;';
+    wrapper.style.cssText =
+      'width:100%;height:100%;display:flex;flex-direction:column;min-height:0;';
 
     if (hasSoapFault) {
       const banner = document.createElement('div');
@@ -252,12 +319,18 @@ export class ResponseViewer {
     this.monacoXmlEditor = new MonacoXmlEditor({
       container: editorContainer,
       value: xml,
-      onChange: () => { /* read-only */ },
+      onChange: () => {
+        /* read-only */
+      },
       readOnly: true,
     });
   }
 
-  private async setupJsonViewer(container: HTMLElement, jsonData: any, _responseSize?: number): Promise<boolean> {
+  private async setupJsonViewer(
+    container: HTMLElement,
+    jsonData: any,
+    _responseSize?: number
+  ): Promise<boolean> {
     this.disposeMonaco();
     container.innerHTML = '';
 
@@ -274,7 +347,9 @@ export class ResponseViewer {
       this.monacoEditor = new MonacoJsonEditor({
         container: jsonContainer,
         value: formattedJson,
-        onChange: () => { /* read-only, no-op */ },
+        onChange: () => {
+          /* read-only, no-op */
+        },
         readOnly: true,
       });
       this.tryRestoreMonacoViewState();
@@ -319,7 +394,11 @@ export class ResponseViewer {
         return;
       }
 
-      const mounted = await this.setupJsonViewer(container, parseResult.value, responseSize);
+      const mounted = await this.setupJsonViewer(
+        container,
+        parseResult.value,
+        responseSize
+      );
       if (!mounted) {
         button.disabled = false;
         button.textContent = 'Pretty Print';
@@ -330,13 +409,18 @@ export class ResponseViewer {
       this.parsedJsonData = parseResult.value;
       this.detectedJsonBody = true;
       if (typeof responseTimestamp === 'number') {
-        this.largeJsonPrettySelections.set(this.currentRequestId, responseTimestamp);
-        document.dispatchEvent(new CustomEvent('response-large-json-pretty-selected', {
-          detail: {
-            tabId: this.currentRequestId,
-            responseTimestamp,
-          },
-        }));
+        this.largeJsonPrettySelections.set(
+          this.currentRequestId,
+          responseTimestamp
+        );
+        document.dispatchEvent(
+          new CustomEvent('response-large-json-pretty-selected', {
+            detail: {
+              tabId: this.currentRequestId,
+              responseTimestamp,
+            },
+          })
+        );
       }
       this.emitModeChanged();
     });
@@ -350,32 +434,51 @@ export class ResponseViewer {
     container.appendChild(preElement);
   }
 
-  private setupErrorBodyView(container: HTMLElement, content: string, status: number, statusText: string): void {
+  private setupErrorBodyView(
+    container: HTMLElement,
+    content: string,
+    status: number,
+    statusText: string
+  ): void {
     this.disposeMonaco();
     this.parsedJsonData = null;
 
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display: flex; flex-direction: column; gap: 12px; padding: 16px;';
+    wrapper.style.cssText =
+      'display: flex; flex-direction: column; gap: 12px; padding: 16px;';
 
     // Extract a human-readable message from HTML body if present
     const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
     const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const rawMessage = (h1Match?.[1] || titleMatch?.[1] || '').replace(/&[a-z#0-9]+;/gi, ' ').trim();
-    const humanMessage = rawMessage.toLowerCase() !== `${status} ${statusText}`.toLowerCase() ? rawMessage : '';
+    const rawMessage = (h1Match?.[1] || titleMatch?.[1] || '')
+      .replace(/&[a-z#0-9]+;/gi, ' ')
+      .trim();
+    const humanMessage =
+      rawMessage.toLowerCase() !== `${status} ${statusText}`.toLowerCase()
+        ? rawMessage
+        : '';
 
     const isServerError = status >= 500;
-    const accentColor = isServerError ? 'var(--error-color, #ef4444)' : 'var(--warning-color, #f59e0b)';
-    const bgColor = isServerError ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)';
-    const borderColor = isServerError ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)';
+    const accentColor = isServerError
+      ? 'var(--error-color, #ef4444)'
+      : 'var(--warning-color, #f59e0b)';
+    const bgColor = isServerError
+      ? 'rgba(239,68,68,0.08)'
+      : 'rgba(245,158,11,0.08)';
+    const borderColor = isServerError
+      ? 'rgba(239,68,68,0.3)'
+      : 'rgba(245,158,11,0.3)';
 
     const banner = document.createElement('div');
     banner.style.cssText = [
-      'display:flex', 'align-items:flex-start', 'gap:12px',
+      'display:flex',
+      'align-items:flex-start',
+      'gap:12px',
       `padding:14px 16px`,
       `background:${bgColor}`,
       `border:1px solid ${borderColor}`,
       `border-left:4px solid ${accentColor}`,
-      'border-radius:8px'
+      'border-radius:8px',
     ].join(';');
 
     const icon = document.createElement('div');
@@ -392,7 +495,8 @@ export class ResponseViewer {
 
     if (humanMessage) {
       const msgLine = document.createElement('div');
-      msgLine.style.cssText = 'font-size:13px; color:var(--text-secondary); margin-top:4px;';
+      msgLine.style.cssText =
+        'font-size:13px; color:var(--text-secondary); margin-top:4px;';
       msgLine.textContent = humanMessage;
       textWrapper.appendChild(msgLine);
     }
@@ -407,17 +511,29 @@ export class ResponseViewer {
 
     const summary = document.createElement('summary');
     summary.style.cssText = [
-      'cursor:pointer', 'user-select:none',
-      'padding:6px 8px', 'border-radius:4px',
-      'color:var(--text-secondary)', 'font-size:12px',
-      'list-style:none', 'display:flex', 'align-items:center', 'gap:6px'
+      'cursor:pointer',
+      'user-select:none',
+      'padding:6px 8px',
+      'border-radius:4px',
+      'color:var(--text-secondary)',
+      'font-size:12px',
+      'list-style:none',
+      'display:flex',
+      'align-items:center',
+      'gap:6px',
     ].join(';');
-    summary.textContent = rawIsHtml ? '▶  Raw HTML response' : '▶  Raw response body';
+    summary.textContent = rawIsHtml
+      ? '▶  Raw HTML response'
+      : '▶  Raw response body';
     summary.addEventListener('click', () => {
       requestAnimationFrame(() => {
         summary.textContent = details.open
-          ? (rawIsHtml ? '▼  Raw HTML response' : '▼  Raw response body')
-          : (rawIsHtml ? '▶  Raw HTML response' : '▶  Raw response body');
+          ? rawIsHtml
+            ? '▼  Raw HTML response'
+            : '▼  Raw response body'
+          : rawIsHtml
+            ? '▶  Raw HTML response'
+            : '▶  Raw response body';
       });
     });
 
@@ -468,7 +584,8 @@ export class ResponseViewer {
     if (!headersElement) return;
 
     if (!response.headers || Object.keys(response.headers).length === 0) {
-      headersElement.innerHTML = '<div class="response-placeholder">No response headers</div>';
+      headersElement.innerHTML =
+        '<div class="response-placeholder">No response headers</div>';
       return;
     }
 
@@ -508,7 +625,11 @@ export class ResponseViewer {
 
     if (statusEl) {
       statusEl.textContent = `${response.status} ${response.statusText}`;
-      statusEl.classList.remove('meta-chip--success', 'meta-chip--warning', 'meta-chip--error');
+      statusEl.classList.remove(
+        'meta-chip--success',
+        'meta-chip--warning',
+        'meta-chip--error'
+      );
       if (response.status >= 200 && response.status < 300) {
         statusEl.classList.add('meta-chip--success');
       } else if (response.status >= 300 && response.status < 500) {
@@ -525,7 +646,12 @@ export class ResponseViewer {
     // Add status class to toolbar for subtle background tint
     const toolbar = document.querySelector('.response-toolbar');
     if (toolbar) {
-      toolbar.classList.remove('status-2xx', 'status-3xx', 'status-4xx', 'status-5xx');
+      toolbar.classList.remove(
+        'status-2xx',
+        'status-3xx',
+        'status-4xx',
+        'status-5xx'
+      );
       if (response.status >= 200 && response.status < 300) {
         toolbar.classList.add('status-2xx');
       } else if (response.status >= 300 && response.status < 400) {
@@ -565,7 +691,7 @@ export class ResponseViewer {
 
   public switchTab(tab: string): void {
     const sections = this.container.querySelectorAll('.response-section');
-    sections.forEach(section => section.classList.remove('active'));
+    sections.forEach((section) => section.classList.remove('active'));
 
     const targetSection = document.getElementById(`response-${tab}`);
     targetSection?.classList.add('active');
@@ -598,7 +724,7 @@ export class ResponseViewer {
     }
   }
 
-  public getSearchInfo(): { total: number, current: number } {
+  public getSearchInfo(): { total: number; current: number } {
     // Monaco manages search internally via its find widget
     return { total: 0, current: 0 };
   }
@@ -607,10 +733,13 @@ export class ResponseViewer {
     // Basic text search implementation
     const bodyElement = document.getElementById('response-body');
     const codeElement = bodyElement?.querySelector('code');
-    
+
     if (codeElement && query) {
       const content = codeElement.textContent || '';
-      const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      const regex = new RegExp(
+        query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        'gi'
+      );
       const highlightedContent = content.replace(regex, '<mark>$&</mark>');
       codeElement.innerHTML = highlightedContent;
     }
@@ -627,7 +756,10 @@ export class ResponseViewer {
     const bodyElement = document.getElementById('response-body');
     const codeElement = bodyElement?.querySelector('code');
     if (codeElement) {
-      const content = codeElement.innerHTML.replace(/<mark>(.*?)<\/mark>/gi, '$1');
+      const content = codeElement.innerHTML.replace(
+        /<mark>(.*?)<\/mark>/gi,
+        '$1'
+      );
       codeElement.innerHTML = content;
     }
   }
@@ -662,7 +794,10 @@ export class ResponseViewer {
     }
     const responseBody = document.getElementById('response-body');
     if (responseBody) {
-      responseBody.scrollTo({ top: responseBody.scrollHeight, behavior: 'smooth' });
+      responseBody.scrollTo({
+        top: responseBody.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }
 
@@ -698,11 +833,13 @@ export class ResponseViewer {
     this.disposeMonaco();
 
     if (bodyElement) {
-      bodyElement.innerHTML = '<div class="response-placeholder">Send a request to see the response here</div>';
+      bodyElement.innerHTML =
+        '<div class="response-placeholder">Send a request to see the response here</div>';
     }
 
     if (headersElement) {
-      headersElement.innerHTML = '<div class="response-placeholder">No response headers</div>';
+      headersElement.innerHTML =
+        '<div class="response-placeholder">No response headers</div>';
     }
 
     // Reset individual meta chips without destroying them
@@ -711,7 +848,11 @@ export class ResponseViewer {
     const sizeEl = document.getElementById('meta-size');
     if (statusEl) {
       statusEl.textContent = '---';
-      statusEl.classList.remove('meta-chip--success', 'meta-chip--warning', 'meta-chip--error');
+      statusEl.classList.remove(
+        'meta-chip--success',
+        'meta-chip--warning',
+        'meta-chip--error'
+      );
     }
     if (timeEl) timeEl.textContent = '---';
     if (sizeEl) sizeEl.textContent = '---';
@@ -719,7 +860,12 @@ export class ResponseViewer {
     // Remove toolbar status tint
     const toolbar = document.querySelector('.response-toolbar');
     if (toolbar) {
-      toolbar.classList.remove('status-2xx', 'status-3xx', 'status-4xx', 'status-5xx');
+      toolbar.classList.remove(
+        'status-2xx',
+        'status-3xx',
+        'status-4xx',
+        'status-5xx'
+      );
     }
 
     if (timestampElement) {
@@ -736,10 +882,17 @@ export class ResponseViewer {
   }
 
   private tryRestoreMonacoViewState(): void {
-    if (!this.monacoEditor || typeof this.currentResponseTimestamp !== 'number') return;
+    if (!this.monacoEditor || typeof this.currentResponseTimestamp !== 'number')
+      return;
 
-    const persistedState = this.monacoViewStateSelections.get(this.currentRequestId);
-    if (!persistedState || persistedState.responseTimestamp !== this.currentResponseTimestamp) return;
+    const persistedState = this.monacoViewStateSelections.get(
+      this.currentRequestId
+    );
+    if (
+      !persistedState ||
+      persistedState.responseTimestamp !== this.currentResponseTimestamp
+    )
+      return;
 
     this.monacoEditor.restoreViewState(persistedState.viewState);
   }
@@ -768,7 +921,7 @@ export class ResponseViewer {
     let normalized = value || '';
 
     // Remove UTF-8 BOM.
-    if (normalized.charCodeAt(0) === 0xFEFF) {
+    if (normalized.charCodeAt(0) === 0xfeff) {
       normalized = normalized.slice(1);
     }
 
@@ -807,20 +960,26 @@ export class ResponseViewer {
     for (let i = 0, len = Math.min(body.length, 64); i < len; i++) {
       const ch = body.charCodeAt(i);
       // Skip whitespace and BOM
-      if (ch === 32 || ch === 9 || ch === 10 || ch === 13 || ch === 0xFEFF) continue;
+      if (ch === 32 || ch === 9 || ch === 10 || ch === 13 || ch === 0xfeff)
+        continue;
       return ch === 123 /* { */ || ch === 91 /* [ */;
     }
     return false;
   }
 
-  private getHeaderValueCaseInsensitive(headers: Record<string, string>, headerName: string): string | undefined {
+  private getHeaderValueCaseInsensitive(
+    headers: Record<string, string>,
+    headerName: string
+  ): string | undefined {
     const direct = headers[headerName];
     if (typeof direct === 'string') {
       return direct;
     }
 
     const target = headerName.toLowerCase();
-    const foundKey = Object.keys(headers).find((key) => key.toLowerCase() === target);
+    const foundKey = Object.keys(headers).find(
+      (key) => key.toLowerCase() === target
+    );
     return foundKey ? headers[foundKey] : undefined;
   }
 
@@ -848,7 +1007,9 @@ export class ResponseViewer {
 
   private hasSoapFault(documentNode: Document): boolean {
     const allElements = Array.from(documentNode.getElementsByTagName('*'));
-    return allElements.some((element) => element.localName?.toLowerCase() === 'fault');
+    return allElements.some(
+      (element) => element.localName?.toLowerCase() === 'fault'
+    );
   }
 
   private prettyPrintXml(documentNode: Document): string {
@@ -868,18 +1029,27 @@ export class ResponseViewer {
       const attrs = Array.from(element.attributes)
         .map((attr) => `${attr.name}=\"${attr.value}\"`)
         .join(' ');
-      const openTag = attrs ? `<${element.tagName} ${attrs}>` : `<${element.tagName}>`;
+      const openTag = attrs
+        ? `<${element.tagName} ${attrs}>`
+        : `<${element.tagName}>`;
 
-      const children = Array.from(element.childNodes)
-        .filter((child) => child.nodeType === Node.ELEMENT_NODE || ((child.nodeType === Node.TEXT_NODE) && (child.nodeValue || '').trim()));
+      const children = Array.from(element.childNodes).filter(
+        (child) =>
+          child.nodeType === Node.ELEMENT_NODE ||
+          (child.nodeType === Node.TEXT_NODE && (child.nodeValue || '').trim())
+      );
 
       if (children.length === 0) {
         return `${indent}${openTag.replace('>', '/>')}\n`;
       }
 
-      const textOnly = children.every((child) => child.nodeType === Node.TEXT_NODE);
+      const textOnly = children.every(
+        (child) => child.nodeType === Node.TEXT_NODE
+      );
       if (textOnly) {
-        const text = children.map((child) => (child.nodeValue || '').trim()).join('');
+        const text = children
+          .map((child) => (child.nodeValue || '').trim())
+          .join('');
         return `${indent}${openTag}${text}</${element.tagName}>\n`;
       }
 
@@ -917,7 +1087,8 @@ export class ResponseViewer {
   }
 
   private getResponseBytes(response: ApiResponse): number {
-    const transferBytes = response.size && response.size > 0 ? response.size : 0;
+    const transferBytes =
+      response.size && response.size > 0 ? response.size : 0;
     const bodyBytes = this.getResponseBytesFromBody(response.body || '');
     return Math.max(transferBytes, bodyBytes);
   }
@@ -927,12 +1098,14 @@ export class ResponseViewer {
   }
 
   private emitModeChanged(): void {
-    document.dispatchEvent(new CustomEvent('response-viewer-mode-changed', {
-      detail: {
-        isJson: this.detectedJsonBody,
-        formatter: this.currentFormatter,
-      },
-    }));
+    document.dispatchEvent(
+      new CustomEvent('response-viewer-mode-changed', {
+        detail: {
+          isJson: this.detectedJsonBody,
+          formatter: this.currentFormatter,
+        },
+      })
+    );
   }
 
   private formatBytes(bytes: number): string {

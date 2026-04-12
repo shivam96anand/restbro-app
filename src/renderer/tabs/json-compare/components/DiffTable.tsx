@@ -14,17 +14,25 @@ interface DiffTableProps {
 
 const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
   const [searchFilter, setSearchFilter] = useState('');
-  const [selectedTypes, setSelectedTypes] = useState<DiffChangeType[]>(['added', 'removed', 'changed']);
+  const [selectedTypes, setSelectedTypes] = useState<DiffChangeType[]>([
+    'added',
+    'removed',
+    'changed',
+  ]);
   const listViewportRef = useRef<HTMLDivElement>(null);
   const rowHeight = 72;
   const [listViewportHeight, setListViewportHeight] = useState(rowHeight * 5);
 
   const normalizePath = (path: string) => path.toLowerCase();
   const matchesPathKeywords = (path: string, rawFilter: string) => {
-    const keywords = rawFilter.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const keywords = rawFilter
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
     if (keywords.length === 0) return true;
     const normalizedPath = normalizePath(path);
-    return keywords.every(keyword => normalizedPath.includes(keyword));
+    return keywords.every((keyword) => normalizedPath.includes(keyword));
   };
 
   useEffect(() => {
@@ -52,7 +60,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
 
   // Filter rows
   const filteredRows = useMemo(() => {
-    return rows.filter(row => {
+    return rows.filter((row) => {
       // Type filter
       if (!selectedTypes.includes(row.type)) return false;
 
@@ -69,7 +77,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
     if (selectedTypes.includes(type)) {
       // Don't allow deselecting all
       if (selectedTypes.length > 1) {
-        setSelectedTypes(selectedTypes.filter(t => t !== type));
+        setSelectedTypes(selectedTypes.filter((t) => t !== type));
       }
     } else {
       setSelectedTypes([...selectedTypes, type]);
@@ -105,7 +113,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
         <pre
           className="value-text"
           dangerouslySetInnerHTML={{
-            __html: highlightJSON(formatted)
+            __html: highlightJSON(formatted),
           }}
         />
       );
@@ -126,27 +134,43 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
 
   const getTypeLabel = (type: DiffChangeType): string => {
     switch (type) {
-      case 'added': return 'Added';
-      case 'removed': return 'Removed';
-      case 'changed': return 'Changed';
+      case 'added':
+        return 'Added';
+      case 'removed':
+        return 'Removed';
+      case 'changed':
+        return 'Changed';
     }
   };
 
   const getTypeBadgeClass = (type: DiffChangeType): string => {
     switch (type) {
-      case 'added': return 'type-badge-added';
-      case 'removed': return 'type-badge-removed';
-      case 'changed': return 'type-badge-changed';
+      case 'added':
+        return 'type-badge-added';
+      case 'removed':
+        return 'type-badge-removed';
+      case 'changed':
+        return 'type-badge-changed';
     }
   };
 
   // Virtualized row renderer
-  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const Row = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
     const row = filteredRows[index];
     const leftDisabled = row.type === 'added';
     const rightDisabled = row.type === 'removed';
 
-    const handleKeyJump = (e: React.KeyboardEvent, disabled: boolean, side: 'left' | 'right') => {
+    const handleKeyJump = (
+      e: React.KeyboardEvent,
+      disabled: boolean,
+      side: 'left' | 'right'
+    ) => {
       if (disabled) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -155,10 +179,7 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
     };
 
     return (
-      <div
-        style={style}
-        className="diff-row"
-      >
+      <div style={style} className="diff-row">
         <div className="diff-cell path-cell">
           <span className="path-text">{row.path || '/'}</span>
           <button
@@ -199,7 +220,10 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
   };
 
   const contentHeight = filteredRows.length * rowHeight;
-  const listHeight = Math.max(rowHeight, Math.min(contentHeight || rowHeight, listViewportHeight));
+  const listHeight = Math.max(
+    rowHeight,
+    Math.min(contentHeight || rowHeight, listViewportHeight)
+  );
 
   return (
     <div className="diff-table-wrapper">
@@ -245,12 +269,22 @@ const DiffTable: React.FC<DiffTableProps> = ({ rows, onNavigate }) => {
       {/* Virtualized Table Body */}
       <div className="diff-table-list-viewport" ref={listViewportRef}>
         {filteredRows.length > 0 ? (
-          <VirtualList height={listHeight} itemCount={filteredRows.length} itemSize={rowHeight} width="100%" overscanCount={6}>
+          <VirtualList
+            height={listHeight}
+            itemCount={filteredRows.length}
+            itemSize={rowHeight}
+            width="100%"
+            overscanCount={6}
+          >
             {Row}
           </VirtualList>
         ) : (
           <div className="empty-table-state">
-            <p>{rows.length === 0 ? 'No differences found' : 'No matches for current filters'}</p>
+            <p>
+              {rows.length === 0
+                ? 'No differences found'
+                : 'No matches for current filters'}
+            </p>
           </div>
         )}
       </div>

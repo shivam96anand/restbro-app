@@ -8,8 +8,9 @@
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px 14px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-              0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 10px 15px -3px rgba(0, 0, 0, 0.2);
   z-index: 10000;
   pointer-events: auto;
   max-width: 400px;
@@ -164,7 +165,7 @@
 
 // Variable highlighting in inputs
 .url-input,
-input[type="text"],
+input[type='text'],
 textarea {
   position: relative;
 
@@ -216,8 +217,8 @@ textarea {
 }
 
 // Inline variable color coding for input fields
-input[type="text"],
-input[type="password"],
+input[type='text'],
+input[type='password'],
 textarea {
   &.has-variables-inline {
     position: relative;

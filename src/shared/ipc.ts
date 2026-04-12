@@ -85,4 +85,4 @@ export const IPC_CHANNELS = {
   UPDATE_ERROR: 'update:error',
 } as const;
 
-export type IpcChannelKey = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
+export type IpcChannelKey = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

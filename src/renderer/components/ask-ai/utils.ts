@@ -48,14 +48,20 @@ export function formatDate(timestamp: number): string {
 export function formatMessageContent(content: string): string {
   // Escape HTML first
   let formatted = escapeHtml(content);
-  
+
   // Handle code blocks
-  formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-    return `<div class="code-block"><code>${code.trim()}</code></div>`;
-  });
+  formatted = formatted.replace(
+    /```(\w*)\n?([\s\S]*?)```/g,
+    (_, lang, code) => {
+      return `<div class="code-block"><code>${code.trim()}</code></div>`;
+    }
+  );
 
   // Handle inline code
-  formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  formatted = formatted.replace(
+    /`([^`]+)`/g,
+    '<code class="inline-code">$1</code>'
+  );
 
   // Handle bold **text**
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -64,7 +70,10 @@ export function formatMessageContent(content: string): string {
   formatted = formatted.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
 
   // Handle numbered lists (1. 2. 3.)
-  formatted = formatted.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-num">$1.</span> $2</div>');
+  formatted = formatted.replace(
+    /^(\d+)\.\s+(.+)$/gm,
+    '<div class="list-item"><span class="list-num">$1.</span> $2</div>'
+  );
 
   // Handle line breaks
   formatted = formatted.replace(/\n/g, '<br>');
@@ -83,7 +92,9 @@ export function formatKeyValuePairs(data: unknown): string {
       .map((p: { key: string; value: string }) => `${p.key}: ${p.value}`)
       .join('\n');
   }
-  return Object.entries(data as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n');
+  return Object.entries(data as Record<string, string>)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n');
 }
 
 /**
@@ -93,7 +104,10 @@ export function calculateContextSize(context: AiContext): number {
   let size = 0;
   if (context.request) size += JSON.stringify(context.request).length;
   if (context.response) {
-    size += (context.response.body?.length || 0) + JSON.stringify(context.response.headers).length + 200;
+    size +=
+      (context.response.body?.length || 0) +
+      JSON.stringify(context.response.headers).length +
+      200;
   }
   if (context.fileContent) size += context.fileContent.length;
   return size;
@@ -105,5 +119,7 @@ export function calculateContextSize(context: AiContext): number {
 export function showSizeWarning(size: number, maxChars: number): void {
   const sizeKb = Math.round(size / 1000);
   const maxKb = maxChars / 1000;
-  alert(`Content too large (${sizeKb}K chars). Maximum allowed: ${maxKb}K chars.\n\nThe response or file is too big for AI analysis. Try with a smaller dataset.`);
+  alert(
+    `Content too large (${sizeKb}K chars). Maximum allowed: ${maxKb}K chars.\n\nThe response or file is too big for AI analysis. Try with a smaller dataset.`
+  );
 }

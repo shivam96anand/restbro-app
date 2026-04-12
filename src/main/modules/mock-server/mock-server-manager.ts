@@ -16,7 +16,13 @@ import {
   MockRouteToggleParams,
   MockServerStatusChangedEvent,
 } from '../../../shared/types';
-import { RunningServerInfo, redactHeaders, delay, matchPath, getMatchSpecificity } from './mock-server-utils';
+import {
+  RunningServerInfo,
+  redactHeaders,
+  delay,
+  matchPath,
+  getMatchSpecificity,
+} from './mock-server-utils';
 import { mockServerResponseHandler } from './mock-server-response-handler';
 import { getMockServersState, saveMockServersState } from './mock-server-store';
 import { mockRouteManager } from './mock-route-manager';
@@ -39,10 +45,12 @@ class MockServerManager {
    */
   list(): MockServerIpcResponse<MockServerListResponse> {
     const state = getMockServersState();
-    const runtimeStatus: MockServerRuntimeStatus[] = state.servers.map((server) => ({
-      serverId: server.id,
-      isRunning: this.runningServers.has(server.id),
-    }));
+    const runtimeStatus: MockServerRuntimeStatus[] = state.servers.map(
+      (server) => ({
+        serverId: server.id,
+        isRunning: this.runningServers.has(server.id),
+      })
+    );
     return {
       success: true,
       data: { servers: state.servers, runtimeStatus },
@@ -52,7 +60,9 @@ class MockServerManager {
   /**
    * Create a new mock server definition
    */
-  createServer(params: MockServerCreateParams): MockServerIpcResponse<MockServerDefinition> {
+  createServer(
+    params: MockServerCreateParams
+  ): MockServerIpcResponse<MockServerDefinition> {
     const state = getMockServersState();
     const now = Date.now();
     const newServer: MockServerDefinition = {
@@ -72,9 +82,13 @@ class MockServerManager {
   /**
    * Update an existing mock server definition
    */
-  updateServer(params: MockServerUpdateParams): MockServerIpcResponse<MockServerDefinition> {
+  updateServer(
+    params: MockServerUpdateParams
+  ): MockServerIpcResponse<MockServerDefinition> {
     const state = getMockServersState();
-    const serverIndex = state.servers.findIndex((s) => s.id === params.serverId);
+    const serverIndex = state.servers.findIndex(
+      (s) => s.id === params.serverId
+    );
     if (serverIndex === -1) {
       return { success: false, error: 'Server not found' };
     }
@@ -110,7 +124,10 @@ class MockServerManager {
    */
   startServer(serverId: string): Promise<MockServerIpcResponse<void>> {
     if (this.runningServers.has(serverId)) {
-      return Promise.resolve({ success: false, error: 'Server is already running' });
+      return Promise.resolve({
+        success: false,
+        error: 'Server is already running',
+      });
     }
     const state = getMockServersState();
     const serverDef = state.servers.find((s) => s.id === serverId);
@@ -118,7 +135,10 @@ class MockServerManager {
       return Promise.resolve({ success: false, error: 'Server not found' });
     }
     if (serverDef.port === null || serverDef.port === undefined) {
-      return Promise.resolve({ success: false, error: 'Port is not configured' });
+      return Promise.resolve({
+        success: false,
+        error: 'Port is not configured',
+      });
     }
 
     const server = http.createServer((req, res) => {
@@ -136,13 +156,19 @@ class MockServerManager {
         } else if (err.code === 'EACCES') {
           errorMessage = `Permission denied to bind to port ${port}`;
         }
-        this.emitStatusChanged({ serverId, isRunning: false, error: errorMessage });
+        this.emitStatusChanged({
+          serverId,
+          isRunning: false,
+          error: errorMessage,
+        });
         resolve({ success: false, error: errorMessage });
       });
 
       server.listen(port, host, () => {
         this.runningServers.set(serverId, { server, serverId });
-        console.log(`[MockServer] Started server "${serverDef.name}" on ${host}:${port}`);
+        console.log(
+          `[MockServer] Started server "${serverDef.name}" on ${host}:${port}`
+        );
         this.emitStatusChanged({ serverId, isRunning: true });
         resolve({ success: true });
       });
@@ -155,13 +181,19 @@ class MockServerManager {
   stopServer(serverId: string): Promise<MockServerIpcResponse<void>> {
     const runningInfo = this.runningServers.get(serverId);
     if (!runningInfo) {
-      return Promise.resolve({ success: false, error: 'Server is not running' });
+      return Promise.resolve({
+        success: false,
+        error: 'Server is not running',
+      });
     }
     return new Promise<MockServerIpcResponse<void>>((resolve) => {
       runningInfo.server.close((err) => {
         this.runningServers.delete(serverId);
         if (err) {
-          console.error(`[MockServer] Error stopping server ${serverId}:`, err.message);
+          console.error(
+            `[MockServer] Error stopping server ${serverId}:`,
+            err.message
+          );
         }
         console.log(`[MockServer] Stopped server ${serverId}`);
         this.emitStatusChanged({ serverId, isRunning: false });
@@ -232,11 +264,14 @@ class MockServerManager {
     const serverDef = state.servers.find((s) => s.id === serverId);
 
     if (!serverDef) {
-      mockServerResponseHandler.sendJsonResponse(res, 500, { error: 'Server configuration not found' });
+      mockServerResponseHandler.sendJsonResponse(res, 500, {
+        error: 'Server configuration not found',
+      });
       return;
     }
 
-    const urlPath = new URL(req.url || '/', `http://${req.headers.host}`).pathname;
+    const urlPath = new URL(req.url || '/', `http://${req.headers.host}`)
+      .pathname;
     const method = (req.method || 'GET').toUpperCase();
 
     console.log(`[MockServer] ${serverDef.name} - ${method} ${urlPath}`, {
@@ -252,7 +287,10 @@ class MockServerManager {
       })
       .map((route) => ({
         route,
-        specificity: getMatchSpecificity(route.path, route.pathMatchType || 'exact'),
+        specificity: getMatchSpecificity(
+          route.path,
+          route.pathMatchType || 'exact'
+        ),
       }))
       .sort((a, b) => b.specificity - a.specificity);
 
@@ -268,7 +306,9 @@ class MockServerManager {
       return;
     }
 
-    console.log(`[MockServer] Matched route: ${matchedRoute.path} (${matchedRoute.pathMatchType || 'exact'})`);
+    console.log(
+      `[MockServer] Matched route: ${matchedRoute.path} (${matchedRoute.pathMatchType || 'exact'})`
+    );
 
     // Apply delay if configured
     if (matchedRoute.delayMs && matchedRoute.delayMs > 0) {

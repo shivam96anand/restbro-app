@@ -42,7 +42,11 @@ export function updateMonacoTheme(): void {
       { token: 'string.json', foreground: valueColor },
       { token: 'number.json', foreground: valueColor },
       { token: 'keyword.json', foreground: valueColor },
-      { token: 'delimiter.bracket.json', foreground: bracketColor, fontStyle: 'bold' },
+      {
+        token: 'delimiter.bracket.json',
+        foreground: bracketColor,
+        fontStyle: 'bold',
+      },
       { token: 'delimiter.colon.json', foreground: valueColor },
       { token: 'delimiter.comma.json', foreground: bracketColor },
     ],

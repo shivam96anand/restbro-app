@@ -184,7 +184,10 @@
   margin-bottom: 12px;
   display: inline-flex;
 
-  .ui-icon { width: 100%; height: 100%; }
+  .ui-icon {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .upload-text {

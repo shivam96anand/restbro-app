@@ -62,11 +62,16 @@ export class CollectionsSearch {
       (toolbar as HTMLElement).style.display = 'none';
     }
 
-    const searchInput = document.getElementById('collections-search') as HTMLInputElement;
+    const searchInput = document.getElementById(
+      'collections-search'
+    ) as HTMLInputElement;
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement;
-        this.handleSearchInput(target.value.toLowerCase(), getCurrentExpandedFolders());
+        this.handleSearchInput(
+          target.value.toLowerCase(),
+          getCurrentExpandedFolders()
+        );
       });
 
       searchInput.addEventListener('keydown', (e) => {
@@ -78,7 +83,10 @@ export class CollectionsSearch {
     }
   }
 
-  private handleSearchInput(searchTerm: string, currentExpandedFolders?: Set<string>): void {
+  private handleSearchInput(
+    searchTerm: string,
+    currentExpandedFolders?: Set<string>
+  ): void {
     if (searchTerm && currentExpandedFolders) {
       // Save the user's folder state when starting a search
       this.savedExpandedFolders = new Set(currentExpandedFolders);
@@ -87,20 +95,26 @@ export class CollectionsSearch {
     this.onTreeStateChange({
       expandedFolders: searchTerm ? new Set() : this.savedExpandedFolders,
       searchTerm,
-      draggedItem: undefined
+      draggedItem: undefined,
     });
   }
 
-  getFilteredCollections(collections: Collection[], searchTerm: string): Collection[] {
+  getFilteredCollections(
+    collections: Collection[],
+    searchTerm: string
+  ): Collection[] {
     if (!searchTerm) return collections;
 
-    const matchingCollections = collections.filter(collection =>
+    const matchingCollections = collections.filter((collection) =>
       collection.name.toLowerCase().includes(searchTerm)
     );
 
     const result = new Set(matchingCollections);
-    matchingCollections.forEach(collection => {
-      let parent = this.findCollectionById(collections, collection.parentId || '');
+    matchingCollections.forEach((collection) => {
+      let parent = this.findCollectionById(
+        collections,
+        collection.parentId || ''
+      );
       while (parent) {
         result.add(parent);
         parent = this.findCollectionById(collections, parent.parentId || '');
@@ -117,7 +131,7 @@ export class CollectionsSearch {
     const getCollectionsInOrder = (parentId?: string): Collection[] => {
       const items: Collection[] = [];
       const children = collections
-        .filter(c => c.parentId === parentId)
+        .filter((c) => c.parentId === parentId)
         .sort((a, b) => {
           if (a.type !== b.type) {
             return a.type === 'folder' ? -1 : 1;
@@ -146,8 +160,13 @@ export class CollectionsSearch {
     onSelectCollection: (id: string) => void,
     onToggleFolder: (id: string) => void
   ): void {
-    const visibleCollections = this.getVisibleCollections(collections, expandedFolders);
-    const currentIndex = visibleCollections.findIndex(c => c.id === selectedCollectionId);
+    const visibleCollections = this.getVisibleCollections(
+      collections,
+      expandedFolders
+    );
+    const currentIndex = visibleCollections.findIndex(
+      (c) => c.id === selectedCollectionId
+    );
 
     if (currentIndex === -1 && visibleCollections.length > 0) {
       onSelectCollection(visibleCollections[0].id);
@@ -172,7 +191,11 @@ export class CollectionsSearch {
 
       case 'ArrowRight':
         const current = visibleCollections[currentIndex];
-        if (current && current.type === 'folder' && !expandedFolders.has(current.id)) {
+        if (
+          current &&
+          current.type === 'folder' &&
+          !expandedFolders.has(current.id)
+        ) {
           onToggleFolder(current.id);
           e.preventDefault();
         }
@@ -180,7 +203,11 @@ export class CollectionsSearch {
 
       case 'ArrowLeft':
         const currentFolder = visibleCollections[currentIndex];
-        if (currentFolder && currentFolder.type === 'folder' && expandedFolders.has(currentFolder.id)) {
+        if (
+          currentFolder &&
+          currentFolder.type === 'folder' &&
+          expandedFolders.has(currentFolder.id)
+        ) {
           onToggleFolder(currentFolder.id);
           e.preventDefault();
         }
@@ -188,7 +215,10 @@ export class CollectionsSearch {
     }
   }
 
-  private findCollectionById(collections: Collection[], id: string): Collection | undefined {
-    return collections.find(c => c.id === id);
+  private findCollectionById(
+    collections: Collection[],
+    id: string
+  ): Collection | undefined {
+    return collections.find((c) => c.id === id);
   }
 }

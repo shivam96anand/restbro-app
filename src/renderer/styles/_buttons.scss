@@ -146,7 +146,9 @@
 }
 
 @keyframes btn-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .cancel-btn {
@@ -296,9 +298,11 @@
     }
 
     &:hover {
-      background: linear-gradient(135deg,
-                  var(--primary-color) 0%,
-                  var(--primary-dark) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--primary-color) 0%,
+        var(--primary-dark) 100%
+      );
       border-color: var(--primary-light);
       color: white;
       transform: translateY(-1px);
@@ -311,9 +315,11 @@
     }
 
     &.ask-ai-btn {
-      background: linear-gradient(135deg,
-                  var(--primary-color) 0%,
-                  var(--primary-dark) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--primary-color) 0%,
+        var(--primary-dark) 100%
+      );
       border-color: transparent;
       color: white;
       font-weight: 700;

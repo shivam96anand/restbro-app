@@ -1,10 +1,14 @@
 export class LineNumbersManager {
   public generateLineNumbers(container: HTMLElement): void {
     const lineNumbers = container.querySelector('.line-numbers') as HTMLElement;
-    const nodesContainer = container.querySelector('.json-nodes-container') as HTMLElement;
+    const nodesContainer = container.querySelector(
+      '.json-nodes-container'
+    ) as HTMLElement;
     if (!lineNumbers || !nodesContainer) return;
 
-    const nodeElements = nodesContainer.querySelectorAll('.json-node, .json-node-bracket');
+    const nodeElements = nodesContainer.querySelectorAll(
+      '.json-node, .json-node-bracket'
+    );
     const fragment = document.createDocumentFragment();
 
     let lineNumber = 1;

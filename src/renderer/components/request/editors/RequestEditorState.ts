@@ -1,4 +1,7 @@
-import { EditorType, RequestEditorStateConfig } from '../../../types/request-types';
+import {
+  EditorType,
+  RequestEditorStateConfig,
+} from '../../../types/request-types';
 
 export interface EditorState {
   activeEditor: EditorType;
@@ -14,7 +17,7 @@ export class RequestEditorState {
     this.state = {
       activeEditor: this.config.defaultEditor || 'json',
       editorContents: {} as Record<EditorType, any>,
-      preferences: {}
+      preferences: {},
     };
   }
 

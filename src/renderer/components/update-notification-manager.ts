@@ -40,7 +40,7 @@ export class UpdateNotificationManager {
   }
 
   destroy(): void {
-    this.cleanups.forEach(fn => fn());
+    this.cleanups.forEach((fn) => fn());
     this.cleanups = [];
     this.hideBanner();
   }
@@ -63,12 +63,16 @@ export class UpdateNotificationManager {
         <button class="update-banner__action" id="update-install-btn">Restart to update</button>
         <button class="update-banner__dismiss" id="update-dismiss-btn" title="Dismiss">✕</button>
       `;
-      document.getElementById('update-install-btn')?.addEventListener('click', () => {
-        window.apiCourier.update.install();
-      });
-      document.getElementById('update-dismiss-btn')?.addEventListener('click', () => {
-        this.hideBanner();
-      });
+      document
+        .getElementById('update-install-btn')
+        ?.addEventListener('click', () => {
+          window.apiCourier.update.install();
+        });
+      document
+        .getElementById('update-dismiss-btn')
+        ?.addEventListener('click', () => {
+          this.hideBanner();
+        });
     }
 
     this.banner.style.display = 'flex';

@@ -42,8 +42,12 @@ export class UIHelpers {
    * Toggles password visibility for OAuth client secret field
    */
   togglePasswordVisibility(): void {
-    const passwordInput = document.getElementById('oauth-client-secret') as HTMLInputElement;
-    const eyeButton = document.getElementById('oauth-eye-button') as HTMLButtonElement;
+    const passwordInput = document.getElementById(
+      'oauth-client-secret'
+    ) as HTMLInputElement;
+    const eyeButton = document.getElementById(
+      'oauth-eye-button'
+    ) as HTMLButtonElement;
 
     if (passwordInput && eyeButton) {
       const isPassword = passwordInput.type === 'password';
@@ -57,7 +61,9 @@ export class UIHelpers {
    * Copies the OAuth access token to clipboard
    */
   async copyAccessToken(): Promise<void> {
-    const tokenDisplay = document.getElementById('oauth-access-token-display') as HTMLElement;
+    const tokenDisplay = document.getElementById(
+      'oauth-access-token-display'
+    ) as HTMLElement;
     if (!tokenDisplay || tokenDisplay.textContent === 'No token') {
       this.showToast('No token to copy');
       return;
@@ -96,13 +102,14 @@ export class UIHelpers {
 
     if (config.accessToken) {
       console.log('[UIHelpers] Displaying token info');
-      
+
       // Show token panel
       tokenInfo.style.display = 'block';
 
       // Display truncated token but store full token in data attribute
       const token = config.accessToken;
-      const truncatedToken = token.length > 20 ? `${token.substring(0, 20)}...` : token;
+      const truncatedToken =
+        token.length > 20 ? `${token.substring(0, 20)}...` : token;
       tokenDisplay.textContent = truncatedToken;
       tokenDisplay.setAttribute('data-full-token', token);
 
@@ -149,7 +156,10 @@ export class UIHelpers {
    * @param message - Status message to display
    * @param type - Type of status (loading, success, error)
    */
-  updateOAuthStatus(message: string, type: 'loading' | 'success' | 'error'): void {
+  updateOAuthStatus(
+    message: string,
+    type: 'loading' | 'success' | 'error'
+  ): void {
     console.log(`[OAuth] Status update: ${type} - ${message}`);
 
     const oauthStatus = document.getElementById('oauth-status');
@@ -159,18 +169,34 @@ export class UIHelpers {
     }
 
     const statusText = oauthStatus.querySelector('.status-text');
-    const statusIcon = oauthStatus.querySelector('.status-icon') as HTMLElement | null;
+    const statusIcon = oauthStatus.querySelector(
+      '.status-icon'
+    ) as HTMLElement | null;
     if (statusText) {
       // Enhance network error messages with helpful hints
       let displayMessage = message;
       if (type === 'error') {
-        if (message.includes('ENOTFOUND') || message.includes('getaddrinfo') || message.includes('DNS')) {
-          displayMessage = 'Network error: Unable to reach server. Please check your VPN connection and network settings.';
+        if (
+          message.includes('ENOTFOUND') ||
+          message.includes('getaddrinfo') ||
+          message.includes('DNS')
+        ) {
+          displayMessage =
+            'Network error: Unable to reach server. Please check your VPN connection and network settings.';
         } else if (message.includes('ECONNREFUSED')) {
-          displayMessage = 'Connection refused: Server is not responding. Please verify the URL and check your network connection.';
-        } else if (message.includes('ETIMEDOUT') || message.includes('timeout')) {
-          displayMessage = 'Connection timeout: Server took too long to respond. Please check your network connection.';
-        } else if (message.includes('certificate') || message.includes('SSL') || message.includes('TLS')) {
+          displayMessage =
+            'Connection refused: Server is not responding. Please verify the URL and check your network connection.';
+        } else if (
+          message.includes('ETIMEDOUT') ||
+          message.includes('timeout')
+        ) {
+          displayMessage =
+            'Connection timeout: Server took too long to respond. Please check your network connection.';
+        } else if (
+          message.includes('certificate') ||
+          message.includes('SSL') ||
+          message.includes('TLS')
+        ) {
           displayMessage = 'SSL/TLS error: ' + message;
         }
       }
@@ -188,7 +214,11 @@ export class UIHelpers {
     }
 
     // Remove all status classes
-    oauthStatus.classList.remove('status-loading', 'status-success', 'status-error');
+    oauthStatus.classList.remove(
+      'status-loading',
+      'status-success',
+      'status-error'
+    );
 
     // Add the appropriate status class
     oauthStatus.classList.add(`status-${type}`);
@@ -263,7 +293,11 @@ export class UIHelpers {
         if (statusText) {
           statusText.textContent = '';
         }
-        oauthStatus.classList.remove('status-loading', 'status-success', 'status-error');
+        oauthStatus.classList.remove(
+          'status-loading',
+          'status-success',
+          'status-error'
+        );
       }
       oauthStatus.style.display = show ? 'block' : 'none';
     }

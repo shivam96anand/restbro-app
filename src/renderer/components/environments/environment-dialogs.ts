@@ -1,7 +1,11 @@
 import { Environment, Globals } from '../../../shared/types';
 import { modal } from '../../utils/modal';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
-import { EnvironmentDialogUI, EnvironmentDialogState, DialogTab } from './EnvironmentDialogUI';
+import {
+  EnvironmentDialogUI,
+  EnvironmentDialogState,
+  DialogTab,
+} from './EnvironmentDialogUI';
 
 export class EnvironmentDialogs {
   private onShowError: (message: string) => void;
@@ -10,19 +14,32 @@ export class EnvironmentDialogs {
     this.onShowError = onShowError;
   }
 
-  async promptEnvironmentName(defaultValue: string = ''): Promise<string | null> {
-    return modal.show('Environment Name', 'Enter environment name', defaultValue);
+  async promptEnvironmentName(
+    defaultValue: string = ''
+  ): Promise<string | null> {
+    return modal.show(
+      'Environment Name',
+      'Enter environment name',
+      defaultValue
+    );
   }
 
   async showManageDialog(
     environments: Environment[],
     activeEnvironmentId?: string
-  ): Promise<{ environments: Environment[]; activeEnvironmentId?: string; globals?: Globals } | null> {
+  ): Promise<{
+    environments: Environment[];
+    activeEnvironmentId?: string;
+    globals?: Globals;
+  } | null> {
     // Load globals from store
     let loadedGlobals: Globals = { variables: {}, variableDescriptions: {} };
     try {
       const storeState = await window.apiCourier.store.get();
-      loadedGlobals = storeState.globals || { variables: {}, variableDescriptions: {} };
+      loadedGlobals = storeState.globals || {
+        variables: {},
+        variableDescriptions: {},
+      };
     } catch (error) {
       console.error('Failed to load globals:', error);
     }
@@ -33,16 +50,20 @@ export class EnvironmentDialogs {
 
       // Initialize state
       const state: EnvironmentDialogState = {
-        workingEnvs: [...environments.map(e => ({
-          ...e,
-          variables: { ...e.variables },
-          variableDescriptions: { ...(e.variableDescriptions || {}) },
-        }))],
+        workingEnvs: [
+          ...environments.map((e) => ({
+            ...e,
+            variables: { ...e.variables },
+            variableDescriptions: { ...(e.variableDescriptions || {}) },
+          })),
+        ],
         workingActiveId: activeEnvironmentId,
         selectedEnvId: environments[0]?.id || null,
         workingGlobals: {
           variables: { ...loadedGlobals.variables },
-          variableDescriptions: { ...(loadedGlobals.variableDescriptions || {}) },
+          variableDescriptions: {
+            ...(loadedGlobals.variableDescriptions || {}),
+          },
         },
         activeTab: 'environments',
       };
@@ -52,15 +73,20 @@ export class EnvironmentDialogs {
         body.innerHTML = '';
 
         // Create tabs
-        const tabs = EnvironmentDialogUI.createTabs(state.activeTab, (tab: DialogTab) => {
-          state.activeTab = tab;
-          renderBody();
-        });
+        const tabs = EnvironmentDialogUI.createTabs(
+          state.activeTab,
+          (tab: DialogTab) => {
+            state.activeTab = tab;
+            renderBody();
+          }
+        );
         body.appendChild(tabs);
 
         if (state.activeTab === 'globals') {
           // Render globals panel
-          const globalsPanel = EnvironmentDialogUI.createGlobalsPanel(state.workingGlobals);
+          const globalsPanel = EnvironmentDialogUI.createGlobalsPanel(
+            state.workingGlobals
+          );
           body.appendChild(globalsPanel);
           return;
         }
@@ -82,13 +108,17 @@ export class EnvironmentDialogs {
             renderBody();
           },
           (newName) => {
-            const selectedEnv = state.workingEnvs.find(e => e.id === state.selectedEnvId);
+            const selectedEnv = state.workingEnvs.find(
+              (e) => e.id === state.selectedEnvId
+            );
             if (selectedEnv) {
               selectedEnv.name = newName;
             }
           },
           () => {
-            state.workingEnvs = state.workingEnvs.filter(e => e.id !== state.selectedEnvId);
+            state.workingEnvs = state.workingEnvs.filter(
+              (e) => e.id !== state.selectedEnvId
+            );
             if (state.workingActiveId === state.selectedEnvId) {
               state.workingActiveId = undefined;
             }
@@ -144,7 +174,7 @@ export class EnvironmentDialogs {
         },
         () => {
           const DRAFT_PREFIX = '__apicourier_draft__';
-          state.workingEnvs.forEach(env => {
+          state.workingEnvs.forEach((env) => {
             const descriptions = env.variableDescriptions || {};
             Object.keys(env.variables).forEach((key) => {
               if (!key || key.startsWith(DRAFT_PREFIX)) {
@@ -155,7 +185,8 @@ export class EnvironmentDialogs {
             env.variableDescriptions = descriptions;
           });
 
-          const globalDescriptions = state.workingGlobals.variableDescriptions || {};
+          const globalDescriptions =
+            state.workingGlobals.variableDescriptions || {};
           Object.keys(state.workingGlobals.variables).forEach((key) => {
             if (!key || key.startsWith(DRAFT_PREFIX)) {
               delete state.workingGlobals.variables[key];

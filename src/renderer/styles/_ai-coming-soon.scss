@@ -97,7 +97,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -110,15 +111,15 @@
   .coming-soon-content {
     padding: 20px;
   }
-  
+
   .coming-soon-content h2 {
     font-size: 28px;
   }
-  
+
   .coming-soon-content h3 {
     font-size: 20px;
   }
-  
+
   .coming-soon-features {
     grid-template-columns: 1fr;
   }

@@ -1,6 +1,12 @@
 // Ask AI Types and State Definitions
 
-import { AiSession, AiMessage, AiContext, ApiRequest, ApiResponse } from '../../../shared/types';
+import {
+  AiSession,
+  AiMessage,
+  AiContext,
+  ApiRequest,
+  ApiResponse,
+} from '../../../shared/types';
 
 declare global {
   const apiCourier: {
@@ -8,15 +14,24 @@ declare global {
       getSessions: () => Promise<{ sessions: AiSession[] }>;
       createSession: (context?: AiContext) => Promise<AiSession>;
       deleteSession: (sessionId: string) => Promise<boolean>;
-      updateSession: (sessionId: string, updates: { title?: string; context?: AiContext }) => Promise<AiSession | null>;
-      sendMessage: (params: { sessionId: string; message: string; context?: AiContext }) => Promise<{
+      updateSession: (
+        sessionId: string,
+        updates: { title?: string; context?: AiContext }
+      ) => Promise<AiSession | null>;
+      sendMessage: (params: {
+        sessionId: string;
+        message: string;
+        context?: AiContext;
+      }) => Promise<{
         success: boolean;
         message?: AiMessage;
         error?: string;
         tokenLimitExceeded?: boolean;
         requestId?: string;
       }>;
-      onMessageStream: (callback: (data: { requestId: string; chunk: string }) => void) => () => void;
+      onMessageStream: (
+        callback: (data: { requestId: string; chunk: string }) => void
+      ) => () => void;
       checkEngine: () => Promise<{ available: boolean; error?: string }>;
     };
   };

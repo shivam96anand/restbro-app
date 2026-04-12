@@ -11,12 +11,23 @@ import {
 } from '../MockServerTabManager';
 import { MockRouteEditor } from './MockRouteEditor';
 
-type ServerUpdateFn = (serverId: string, updates: { name?: string; host?: string; port?: number | null }) => void;
+type ServerUpdateFn = (
+  serverId: string,
+  updates: { name?: string; host?: string; port?: number | null }
+) => void;
 type ServerIdFn = (serverId: string) => void;
 type RouteAddFn = (serverId: string, route: Omit<MockRoute, 'id'>) => void;
-type RouteUpdateFn = (serverId: string, routeId: string, updates: Partial<Omit<MockRoute, 'id'>>) => void;
+type RouteUpdateFn = (
+  serverId: string,
+  routeId: string,
+  updates: Partial<Omit<MockRoute, 'id'>>
+) => void;
 type RouteDeleteFn = (serverId: string, routeId: string) => void;
-type RouteToggleFn = (serverId: string, routeId: string, enabled: boolean) => void;
+type RouteToggleFn = (
+  serverId: string,
+  routeId: string,
+  enabled: boolean
+) => void;
 
 export class MockServerEditor {
   onServerUpdate: ServerUpdateFn | null = null;
@@ -168,11 +179,20 @@ export class MockServerEditor {
     }
   }
 
-  private setupEventListeners(container: HTMLElement, server: MockServerDefinition): void {
+  private setupEventListeners(
+    container: HTMLElement,
+    server: MockServerDefinition
+  ): void {
     // Server config changes
-    const nameInput = container.querySelector('#server-name') as HTMLInputElement;
-    const hostInput = container.querySelector('#server-host') as HTMLInputElement;
-    const portInput = container.querySelector('#server-port') as HTMLInputElement;
+    const nameInput = container.querySelector(
+      '#server-name'
+    ) as HTMLInputElement;
+    const hostInput = container.querySelector(
+      '#server-host'
+    ) as HTMLInputElement;
+    const portInput = container.querySelector(
+      '#server-port'
+    ) as HTMLInputElement;
 
     nameInput?.addEventListener('change', () => {
       this.onServerUpdate?.(server.id, { name: nameInput.value });
@@ -209,7 +229,11 @@ export class MockServerEditor {
       checkbox.addEventListener('change', (e) => {
         const routeId = (checkbox as HTMLElement).dataset.routeId;
         if (routeId) {
-          this.onRouteToggle?.(server.id, routeId, (e.target as HTMLInputElement).checked);
+          this.onRouteToggle?.(
+            server.id,
+            routeId,
+            (e.target as HTMLInputElement).checked
+          );
         }
       });
     });
@@ -247,7 +271,11 @@ export class MockServerEditor {
     });
   }
 
-  private showRouteEditor(container: HTMLElement, server: MockServerDefinition, route: MockRoute | null): void {
+  private showRouteEditor(
+    container: HTMLElement,
+    server: MockServerDefinition,
+    route: MockRoute | null
+  ): void {
     const panel = container.querySelector('#route-editor-panel') as HTMLElement;
     if (!panel) return;
 
@@ -272,7 +300,10 @@ export class MockServerEditor {
     };
   }
 
-  private async testRoute(server: MockServerDefinition, route: MockRoute): Promise<void> {
+  private async testRoute(
+    server: MockServerDefinition,
+    route: MockRoute
+  ): Promise<void> {
     if (server.port === null) {
       alert('Server port is not configured');
       return;
@@ -294,9 +325,13 @@ export class MockServerEditor {
         preview = preview.substring(0, 500) + '...';
       }
 
-      alert(`Status: ${response.status} ${response.statusText}\n\nBody:\n${preview}`);
+      alert(
+        `Status: ${response.status} ${response.statusText}\n\nBody:\n${preview}`
+      );
     } catch (error) {
-      alert(`Request failed: ${error instanceof Error ? error.message : String(error)}`);
+      alert(
+        `Request failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

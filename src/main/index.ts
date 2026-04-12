@@ -19,10 +19,7 @@ class ApiCourierApp {
     await app.whenReady();
 
     // Parallelize independent I/O: store + AI sessions can load concurrently
-    await Promise.all([
-      storeManager.initialize(),
-      aiEngine.initialize(),
-    ]);
+    await Promise.all([storeManager.initialize(), aiEngine.initialize()]);
 
     storeManager.startAutoBackup();
     ipcManager.initialize();

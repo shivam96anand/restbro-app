@@ -28,11 +28,32 @@ export class JsonFormatter {
         return `"${this.highlightSearchTerm(value, nodeLineNumber, false, searchQuery, searchMatches, currentSearchIndex)}"`;
       case 'number':
       case 'boolean':
-        return this.highlightSearchTerm(String(value), nodeLineNumber, false, searchQuery, searchMatches, currentSearchIndex);
+        return this.highlightSearchTerm(
+          String(value),
+          nodeLineNumber,
+          false,
+          searchQuery,
+          searchMatches,
+          currentSearchIndex
+        );
       case 'null':
-        return this.highlightSearchTerm('null', nodeLineNumber, false, searchQuery, searchMatches, currentSearchIndex);
+        return this.highlightSearchTerm(
+          'null',
+          nodeLineNumber,
+          false,
+          searchQuery,
+          searchMatches,
+          currentSearchIndex
+        );
       default:
-        return this.highlightSearchTerm(String(value), nodeLineNumber, false, searchQuery, searchMatches, currentSearchIndex);
+        return this.highlightSearchTerm(
+          String(value),
+          nodeLineNumber,
+          false,
+          searchQuery,
+          searchMatches,
+          currentSearchIndex
+        );
     }
   }
 
@@ -72,15 +93,20 @@ export class JsonFormatter {
       result += this.escapeHtml(text.substring(lastIndex, index));
 
       const currentMatch = searchMatches[currentSearchIndex];
-      const isCurrentMatch = currentSearchIndex !== -1 &&
-                           currentMatch &&
-                           currentMatch.node.lineNumber === nodeLineNumber &&
-                           currentMatch.startIndex === index &&
-                           ((isKey && currentMatch.isKey) || (!isKey && !currentMatch.isKey));
+      const isCurrentMatch =
+        currentSearchIndex !== -1 &&
+        currentMatch &&
+        currentMatch.node.lineNumber === nodeLineNumber &&
+        currentMatch.startIndex === index &&
+        ((isKey && currentMatch.isKey) || (!isKey && !currentMatch.isKey));
 
-      const highlightClass = isCurrentMatch ? 'search-highlight search-highlight-active' : 'search-highlight';
+      const highlightClass = isCurrentMatch
+        ? 'search-highlight search-highlight-active'
+        : 'search-highlight';
 
-      const matchText = this.escapeHtml(text.substring(index, index + query.length));
+      const matchText = this.escapeHtml(
+        text.substring(index, index + query.length)
+      );
       result += `<span class="${highlightClass}">${matchText}</span>`;
 
       lastIndex = index + query.length;

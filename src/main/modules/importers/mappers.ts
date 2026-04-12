@@ -11,9 +11,19 @@ export function generateId(): string {
 /**
  * Maps generic HTTP method strings to our HttpMethod type
  */
-export function mapHttpMethod(method?: string): 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS' {
+export function mapHttpMethod(
+  method?: string
+): 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS' {
   const normalized = (method || 'GET').toUpperCase();
-  const validMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+  const validMethods = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'HEAD',
+    'OPTIONS',
+  ];
 
   if (validMethods.includes(normalized)) {
     return normalized as any;
@@ -25,7 +35,10 @@ export function mapHttpMethod(method?: string): 'GET' | 'POST' | 'PUT' | 'PATCH'
 /**
  * Maps Postman/Insomnia auth to Restbro auth format
  */
-export function mapAuth(authConfig: any): { type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth2'; config: Record<string, string> } {
+export function mapAuth(authConfig: any): {
+  type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth2';
+  config: Record<string, string>;
+} {
   if (!authConfig || !authConfig.type || authConfig.type === 'noauth') {
     return { type: 'none', config: {} };
   }
@@ -71,8 +84,15 @@ export function mapAuth(authConfig: any): { type: 'none' | 'basic' | 'bearer' | 
   } else if (type === 'oauth2') {
     // Map OAuth2 fields - keep as strings with {{var}} preserved
     const oauth2Fields = [
-      'grantType', 'accessTokenUrl', 'authUrl', 'clientId', 'clientSecret',
-      'scope', 'accessToken', 'refreshToken', 'tokenUrl'
+      'grantType',
+      'accessTokenUrl',
+      'authUrl',
+      'clientId',
+      'clientSecret',
+      'scope',
+      'accessToken',
+      'refreshToken',
+      'tokenUrl',
     ];
 
     if (Array.isArray(authConfig.oauth2)) {
@@ -84,7 +104,7 @@ export function mapAuth(authConfig: any): { type: 'none' | 'basic' | 'bearer' | 
     }
 
     // Direct properties
-    oauth2Fields.forEach(field => {
+    oauth2Fields.forEach((field) => {
       if (authConfig[field]) {
         config[field] = String(authConfig[field]);
       }
@@ -119,7 +139,10 @@ export function sanitizeName(name?: string | null): string {
 /**
  * Generates a unique name by appending suffix if needed
  */
-export function makeUniqueName(name: string, existingNames: Set<string>): string {
+export function makeUniqueName(
+  name: string,
+  existingNames: Set<string>
+): string {
   let candidate = name;
   let counter = 2;
 
@@ -140,7 +163,7 @@ export function mapVariablesArray(variables: any[]): Record<string, string> {
 
   if (!Array.isArray(variables)) return result;
 
-  variables.forEach(v => {
+  variables.forEach((v) => {
     if (v.key && (v.enabled === undefined || v.enabled === true)) {
       result[v.key] = String(v.value || '');
     }

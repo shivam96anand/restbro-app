@@ -1,5 +1,9 @@
 import { Environment, Globals } from '../../../shared/types';
-import { detectVariables, buildFolderVars, addVariableHighlighting } from './variable-helper';
+import {
+  detectVariables,
+  buildFolderVars,
+  addVariableHighlighting,
+} from './variable-helper';
 import { setupAutocomplete } from './variable-autocomplete';
 
 /**
@@ -39,11 +43,15 @@ export class VariableContextHandler {
   /**
    * Get variable context for autocomplete
    */
-  getVariableContext(): { activeEnvironment?: Environment; globals: Globals; folderVars: Record<string, string> } {
+  getVariableContext(): {
+    activeEnvironment?: Environment;
+    globals: Globals;
+    folderVars: Record<string, string>;
+  } {
     return {
       activeEnvironment: this.activeEnvironment,
       globals: this.globals,
-      folderVars: this.folderVars
+      folderVars: this.folderVars,
     };
   }
 
@@ -52,7 +60,11 @@ export class VariableContextHandler {
    * Note: This only sets the context. Call refreshAllInputHighlighting() after
    * all inputs are loaded to apply highlighting.
    */
-  public setVariableContext(context: { activeEnvironment?: Environment; globals: Globals; folderVars: Record<string, string> }): void {
+  public setVariableContext(context: {
+    activeEnvironment?: Environment;
+    globals: Globals;
+    folderVars: Record<string, string>;
+  }): void {
     this.activeEnvironment = context.activeEnvironment;
     this.globals = context.globals;
     this.folderVars = context.folderVars;
@@ -76,7 +88,9 @@ export class VariableContextHandler {
     try {
       const state = await this.getCachedStore();
       const activeEnvironment = state.activeEnvironmentId
-        ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
+        ? state.environments.find(
+            (e: any) => e.id === state.activeEnvironmentId
+          )
         : undefined;
 
       const globals = state.globals || { variables: {} };
@@ -96,7 +110,7 @@ export class VariableContextHandler {
    */
   private async getCachedStore(): Promise<any> {
     const now = Date.now();
-    if (this.storeCache && (now - this.storeCacheTime) < this.CACHE_TTL) {
+    if (this.storeCache && now - this.storeCacheTime < this.CACHE_TTL) {
       return this.storeCache;
     }
 
@@ -145,7 +159,12 @@ export class VariableContextHandler {
    * Refresh highlighting state for an input
    */
   public refreshInputHighlight(inputElement: HTMLInputElement): void {
-    addVariableHighlighting(inputElement, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(
+      inputElement,
+      this.activeEnvironment,
+      this.globals,
+      this.folderVars
+    );
     this.updateVariableIndicator(inputElement);
   }
 
@@ -171,7 +190,9 @@ export class VariableContextHandler {
     const authConfig = document.getElementById('auth-config');
     if (!authConfig) return;
 
-    const inputs = authConfig.querySelectorAll('input[type="text"], input[type="password"]');
+    const inputs = authConfig.querySelectorAll(
+      'input[type="text"], input[type="password"]'
+    );
     inputs.forEach((input) => {
       const inputElement = input as HTMLInputElement;
 
@@ -200,7 +221,9 @@ export class VariableContextHandler {
 
       // CRITICAL: Attach input listeners FIRST (synchronously) to avoid race condition
       // with loadConfigToDOM() setTimeout that loads values
-      const inputs = authConfig.querySelectorAll('input[type="text"], input[type="password"]');
+      const inputs = authConfig.querySelectorAll(
+        'input[type="text"], input[type="password"]'
+      );
 
       inputs.forEach((input) => {
         const inputElement = input as HTMLInputElement;

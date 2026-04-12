@@ -14,7 +14,7 @@ export class TabsRenderer {
     newTabButton.title = 'Create new request';
     tabList.appendChild(newTabButton);
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       const tabElement = document.createElement('button');
       tabElement.className = `request-tab ${tab.id === activeTabId ? 'active' : ''}`;
       tabElement.dataset.tabId = tab.id;

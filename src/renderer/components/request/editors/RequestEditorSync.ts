@@ -1,11 +1,19 @@
-import { EditorType, RequestEditorSyncConfig } from '../../../types/request-types';
+import {
+  EditorType,
+  RequestEditorSyncConfig,
+} from '../../../types/request-types';
 
 export class RequestEditorSync {
-  private onHeaderSyncCallback: ((headers: Record<string, string>) => void) | null = null;
+  private onHeaderSyncCallback:
+    | ((headers: Record<string, string>) => void)
+    | null = null;
 
   constructor(private config: RequestEditorSyncConfig) {}
 
-  public syncHeaders(content: any, editorType: EditorType): Record<string, string> {
+  public syncHeaders(
+    content: any,
+    editorType: EditorType
+  ): Record<string, string> {
     if (!this.config.autoSyncHeaders) {
       return {};
     }
@@ -35,26 +43,31 @@ export class RequestEditorSync {
 
   private getContentTypeForEditor(editorType: EditorType): string | null {
     const contentTypeMap: Record<EditorType, string> = {
-      'json': 'application/json',
+      json: 'application/json',
       'form-data': 'multipart/form-data',
       'x-www-form-urlencoded': 'application/x-www-form-urlencoded',
-      'raw': 'text/plain',
-      'binary': 'application/octet-stream'
+      raw: 'text/plain',
+      binary: 'application/octet-stream',
     };
 
     return contentTypeMap[editorType] || null;
   }
 
-  private calculateContentLength(content: any, editorType: EditorType): number | null {
+  private calculateContentLength(
+    content: any,
+    editorType: EditorType
+  ): number | null {
     try {
       let contentString: string;
 
       switch (editorType) {
         case 'json':
-          contentString = typeof content === 'string' ? content : JSON.stringify(content);
+          contentString =
+            typeof content === 'string' ? content : JSON.stringify(content);
           break;
         case 'raw':
-          contentString = typeof content === 'string' ? content : String(content);
+          contentString =
+            typeof content === 'string' ? content : String(content);
           break;
         case 'form-data':
           // Form data content length is calculated by the browser
@@ -80,7 +93,9 @@ export class RequestEditorSync {
     }
   }
 
-  public onHeaderSync(callback: (headers: Record<string, string>) => void): void {
+  public onHeaderSync(
+    callback: (headers: Record<string, string>) => void
+  ): void {
     this.onHeaderSyncCallback = callback;
   }
 

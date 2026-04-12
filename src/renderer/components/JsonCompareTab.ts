@@ -62,8 +62,12 @@ export class JsonCompareTabManager {
     // Mount React component
     this.reactRoot = ReactDOM.createRoot(rootElement);
     this.reactRoot.render(
-      React.createElement(ThemeProvider, { theme: darkTheme },
-        React.createElement(React.Fragment, null,
+      React.createElement(
+        ThemeProvider,
+        { theme: darkTheme },
+        React.createElement(
+          React.Fragment,
+          null,
           React.createElement(CssBaseline.default || CssBaseline),
           React.createElement(JsonCompareTab)
         )

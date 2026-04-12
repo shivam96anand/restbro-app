@@ -33,7 +33,7 @@ const icons: Record<IconType, string> = {
       <path d="M2 7L1.5 12.5C1.5 13.3284 2.17157 14 3 14H13C13.8284 14 14.5 13.3284 14.5 12.5L14 7H2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
     </svg>
   `,
-  'file': `
+  file: `
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M3.5 1.5H9.5L12.5 4.5V14.5H3.5V1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
       <path d="M9.5 1.5V4.5H12.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
@@ -92,12 +92,12 @@ const icons: Record<IconType, string> = {
       <path d="M10.5 11H13.5M12 9.5V12.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
     </svg>
   `,
-  'add': `
+  add: `
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
   `,
-  'import': `
+  import: `
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M8 2V10M8 10L5 7M8 10L11 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M3 12V13C3 13.5523 3.44772 14 4 14H12C12.5523 14 13 13.5523 13 13V12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>

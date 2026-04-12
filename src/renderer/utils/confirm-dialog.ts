@@ -6,13 +6,15 @@ type ConfirmDialogOptions = {
   destructive?: boolean;
 };
 
-export function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
+export function showConfirmDialog(
+  options: ConfirmDialogOptions
+): Promise<boolean> {
   const {
     title,
     message,
     confirmLabel = 'OK',
     cancelLabel = 'Cancel',
-    destructive = false
+    destructive = false,
   } = options;
 
   return new Promise((resolve) => {

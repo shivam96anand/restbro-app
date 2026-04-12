@@ -137,31 +137,47 @@ export class CurlToolManager {
 
   private setupEventListeners(): void {
     // Execute button
-    this.container.querySelector('#curl-execute-btn')?.addEventListener('click', () => this.execute());
+    this.container
+      .querySelector('#curl-execute-btn')
+      ?.addEventListener('click', () => this.execute());
 
     // Cancel button
-    this.container.querySelector('#curl-cancel-btn')?.addEventListener('click', () => this.cancel());
+    this.container
+      .querySelector('#curl-cancel-btn')
+      ?.addEventListener('click', () => this.cancel());
 
     // Paste button
-    this.container.querySelector('#curl-paste-btn')?.addEventListener('click', () => this.pasteFromClipboard());
+    this.container
+      .querySelector('#curl-paste-btn')
+      ?.addEventListener('click', () => this.pasteFromClipboard());
 
     // Clear button
-    this.container.querySelector('#curl-clear-btn')?.addEventListener('click', () => this.clearInput());
+    this.container
+      .querySelector('#curl-clear-btn')
+      ?.addEventListener('click', () => this.clearInput());
 
     // Clear history
-    this.container.querySelector('#curl-clear-history')?.addEventListener('click', () => this.clearHistory());
+    this.container
+      .querySelector('#curl-clear-history')
+      ?.addEventListener('click', () => this.clearHistory());
 
     // Examples button
-    this.container.querySelector('#curl-examples-btn')?.addEventListener('click', () => this.loadExample());
+    this.container
+      .querySelector('#curl-examples-btn')
+      ?.addEventListener('click', () => this.loadExample());
 
     // Toggle parsed section
-    this.container.querySelector('#curl-toggle-parsed')?.addEventListener('click', () => this.toggleParsed());
+    this.container
+      .querySelector('#curl-toggle-parsed')
+      ?.addEventListener('click', () => this.toggleParsed());
 
     // Copy response
-    this.container.querySelector('#curl-copy-response')?.addEventListener('click', () => this.copyResponse());
+    this.container
+      .querySelector('#curl-copy-response')
+      ?.addEventListener('click', () => this.copyResponse());
 
     // Response tabs
-    this.container.querySelectorAll('.curl-tool__resp-tab').forEach(tab => {
+    this.container.querySelectorAll('.curl-tool__resp-tab').forEach((tab) => {
       tab.addEventListener('click', (e) => {
         const target = (e.currentTarget as HTMLElement).dataset.respTab;
         if (target) this.switchResponseTab(target);
@@ -169,7 +185,9 @@ export class CurlToolManager {
     });
 
     // Keyboard shortcut: Ctrl/Cmd+Enter to execute
-    const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+    const input = this.container.querySelector(
+      '#curl-tool-input'
+    ) as HTMLTextAreaElement;
     input?.addEventListener('keydown', (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -179,15 +197,20 @@ export class CurlToolManager {
 
     // Open-in-curl-tool: navigate here and pre-fill command
     document.addEventListener('open-in-curl-tool', (e: Event) => {
-      const { curlCommand } = (e as CustomEvent<{ curlCommand: string }>).detail;
-      const navBtn = document.querySelector('[data-tab="curl-tool"]') as HTMLElement | null;
+      const { curlCommand } = (e as CustomEvent<{ curlCommand: string }>)
+        .detail;
+      const navBtn = document.querySelector(
+        '[data-tab="curl-tool"]'
+      ) as HTMLElement | null;
       navBtn?.click();
       if (input) input.value = curlCommand;
     });
   }
 
   private async execute(): Promise<void> {
-    const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+    const input = this.container.querySelector(
+      '#curl-tool-input'
+    ) as HTMLTextAreaElement;
     const raw = input?.value?.trim();
     if (!raw || this.isExecuting) return;
 
@@ -200,7 +223,10 @@ export class CurlToolManager {
     this.hideResponse();
 
     try {
-      const result = await window.apiCourier.curl.execute({ id: requestId, rawCommand: raw });
+      const result = await window.apiCourier.curl.execute({
+        id: requestId,
+        rawCommand: raw,
+      });
 
       if (this.activeRequestId !== requestId) return; // cancelled
 
@@ -243,13 +269,19 @@ export class CurlToolManager {
   private async pasteFromClipboard(): Promise<void> {
     try {
       const text = await navigator.clipboard.readText();
-      const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+      const input = this.container.querySelector(
+        '#curl-tool-input'
+      ) as HTMLTextAreaElement;
       if (input) input.value = text;
-    } catch { /* clipboard access denied */ }
+    } catch {
+      /* clipboard access denied */
+    }
   }
 
   private clearInput(): void {
-    const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+    const input = this.container.querySelector(
+      '#curl-tool-input'
+    ) as HTMLTextAreaElement;
     if (input) input.value = '';
     this.hideResponse();
     this.hideParsed();
@@ -265,37 +297,56 @@ export class CurlToolManager {
       `curl -X GET https://jsonplaceholder.typicode.com/posts \\\n  -H 'Accept: application/json' \\\n  -H 'Cache-Control: no-cache'`,
     ];
     const idx = Math.floor(Math.random() * examples.length);
-    const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+    const input = this.container.querySelector(
+      '#curl-tool-input'
+    ) as HTMLTextAreaElement;
     if (input) input.value = examples[idx];
   }
 
   private showParsed(parsed: any): void {
     if (!parsed) return;
-    const section = this.container.querySelector('#curl-parsed-section') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-parsed-section'
+    ) as HTMLElement;
     section.style.display = '';
 
-    const methodEl = this.container.querySelector('#curl-parsed-method') as HTMLElement;
+    const methodEl = this.container.querySelector(
+      '#curl-parsed-method'
+    ) as HTMLElement;
     methodEl.textContent = parsed.method;
     methodEl.className = `curl-tool__parsed-value curl-tool__method-badge curl-tool__method-badge--${parsed.method.toLowerCase()}`;
 
-    (this.container.querySelector('#curl-parsed-url') as HTMLElement).textContent = parsed.url;
+    (
+      this.container.querySelector('#curl-parsed-url') as HTMLElement
+    ).textContent = parsed.url;
 
     // Headers
-    const headersRow = this.container.querySelector('#curl-parsed-headers-row') as HTMLElement;
-    const headersDiv = this.container.querySelector('#curl-parsed-headers') as HTMLElement;
+    const headersRow = this.container.querySelector(
+      '#curl-parsed-headers-row'
+    ) as HTMLElement;
+    const headersDiv = this.container.querySelector(
+      '#curl-parsed-headers'
+    ) as HTMLElement;
     const headerEntries = Object.entries(parsed.headers || {});
     if (headerEntries.length > 0) {
       headersRow.style.display = '';
       headersDiv.innerHTML = headerEntries
-        .map(([k, v]) => `<div class="curl-tool__header-pair"><span class="curl-tool__header-key">${this.escapeHtml(k)}</span><span class="curl-tool__header-val">${this.escapeHtml(String(v))}</span></div>`)
+        .map(
+          ([k, v]) =>
+            `<div class="curl-tool__header-pair"><span class="curl-tool__header-key">${this.escapeHtml(k)}</span><span class="curl-tool__header-val">${this.escapeHtml(String(v))}</span></div>`
+        )
         .join('');
     } else {
       headersRow.style.display = 'none';
     }
 
     // Body
-    const bodyRow = this.container.querySelector('#curl-parsed-body-row') as HTMLElement;
-    const bodyContent = this.container.querySelector('#curl-parsed-body-content') as HTMLElement;
+    const bodyRow = this.container.querySelector(
+      '#curl-parsed-body-row'
+    ) as HTMLElement;
+    const bodyContent = this.container.querySelector(
+      '#curl-parsed-body-content'
+    ) as HTMLElement;
     if (parsed.body) {
       bodyRow.style.display = '';
       bodyContent.textContent = this.tryFormatJson(parsed.body);
@@ -304,26 +355,39 @@ export class CurlToolManager {
     }
 
     // Flags
-    const flagsRow = this.container.querySelector('#curl-parsed-flags-row') as HTMLElement;
-    const flagsEl = this.container.querySelector('#curl-parsed-flags') as HTMLElement;
+    const flagsRow = this.container.querySelector(
+      '#curl-parsed-flags-row'
+    ) as HTMLElement;
+    const flagsEl = this.container.querySelector(
+      '#curl-parsed-flags'
+    ) as HTMLElement;
     if (parsed.flags?.length > 0) {
       flagsRow.style.display = '';
-      flagsEl.innerHTML = parsed.flags.map((f: string) =>
-        `<span class="curl-tool__flag-chip">${this.escapeHtml(f)}</span>`
-      ).join(' ');
+      flagsEl.innerHTML = parsed.flags
+        .map(
+          (f: string) =>
+            `<span class="curl-tool__flag-chip">${this.escapeHtml(f)}</span>`
+        )
+        .join(' ');
     } else {
       flagsRow.style.display = 'none';
     }
   }
 
   private hideParsed(): void {
-    const section = this.container.querySelector('#curl-parsed-section') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-parsed-section'
+    ) as HTMLElement;
     if (section) section.style.display = 'none';
   }
 
   private toggleParsed(): void {
-    const body = this.container.querySelector('#curl-parsed-body') as HTMLElement;
-    const btn = this.container.querySelector('#curl-toggle-parsed') as HTMLElement;
+    const body = this.container.querySelector(
+      '#curl-parsed-body'
+    ) as HTMLElement;
+    const btn = this.container.querySelector(
+      '#curl-toggle-parsed'
+    ) as HTMLElement;
     if (body.style.display === 'none') {
       body.style.display = '';
       btn.textContent = 'Hide';
@@ -334,23 +398,35 @@ export class CurlToolManager {
   }
 
   private showResponse(result: any): void {
-    const section = this.container.querySelector('#curl-response-section') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-response-section'
+    ) as HTMLElement;
     section.style.display = '';
 
     // Meta chips
-    const statusEl = this.container.querySelector('#curl-meta-status') as HTMLElement;
+    const statusEl = this.container.querySelector(
+      '#curl-meta-status'
+    ) as HTMLElement;
     statusEl.textContent = `${result.status} ${result.statusText}`;
     statusEl.className = `curl-tool__meta-chip curl-tool__meta-chip--status ${this.getStatusClass(result.status)}`;
 
-    (this.container.querySelector('#curl-meta-time') as HTMLElement).textContent = `${result.time}ms`;
-    (this.container.querySelector('#curl-meta-size') as HTMLElement).textContent = this.formatSize(result.size);
+    (
+      this.container.querySelector('#curl-meta-time') as HTMLElement
+    ).textContent = `${result.time}ms`;
+    (
+      this.container.querySelector('#curl-meta-size') as HTMLElement
+    ).textContent = this.formatSize(result.size);
 
     // Body
-    const bodyEl = this.container.querySelector('#curl-response-body-content') as HTMLElement;
+    const bodyEl = this.container.querySelector(
+      '#curl-response-body-content'
+    ) as HTMLElement;
     bodyEl.textContent = this.tryFormatJson(result.body);
 
     // Headers
-    const headersEl = this.container.querySelector('#curl-response-headers-content') as HTMLElement;
+    const headersEl = this.container.querySelector(
+      '#curl-response-headers-content'
+    ) as HTMLElement;
     const headerEntries = Object.entries(result.headers || {});
     if (headerEntries.length > 0) {
       headersEl.innerHTML = `
@@ -362,7 +438,8 @@ export class CurlToolManager {
         </table>
       `;
     } else {
-      headersEl.innerHTML = '<div class="curl-tool__empty-state">No response headers</div>';
+      headersEl.innerHTML =
+        '<div class="curl-tool__empty-state">No response headers</div>';
     }
 
     // Ensure body tab is active
@@ -370,39 +447,59 @@ export class CurlToolManager {
   }
 
   private hideResponse(): void {
-    const section = this.container.querySelector('#curl-response-section') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-response-section'
+    ) as HTMLElement;
     if (section) section.style.display = 'none';
   }
 
   private switchResponseTab(tab: string): void {
-    this.container.querySelectorAll('.curl-tool__resp-tab').forEach(t => t.classList.remove('active'));
-    this.container.querySelector(`.curl-tool__resp-tab[data-resp-tab="${tab}"]`)?.classList.add('active');
+    this.container
+      .querySelectorAll('.curl-tool__resp-tab')
+      .forEach((t) => t.classList.remove('active'));
+    this.container
+      .querySelector(`.curl-tool__resp-tab[data-resp-tab="${tab}"]`)
+      ?.classList.add('active');
 
-    this.container.querySelectorAll('.curl-tool__resp-content').forEach(c => {
+    this.container.querySelectorAll('.curl-tool__resp-content').forEach((c) => {
       (c as HTMLElement).style.display = 'none';
     });
-    const target = this.container.querySelector(`[data-resp-content="${tab}"]`) as HTMLElement;
+    const target = this.container.querySelector(
+      `[data-resp-content="${tab}"]`
+    ) as HTMLElement;
     if (target) target.style.display = '';
   }
 
   private showLoading(show: boolean): void {
-    const loading = this.container.querySelector('#curl-loading') as HTMLElement;
-    const executeBtn = this.container.querySelector('#curl-execute-btn') as HTMLElement;
-    const cancelBtn = this.container.querySelector('#curl-cancel-btn') as HTMLElement;
+    const loading = this.container.querySelector(
+      '#curl-loading'
+    ) as HTMLElement;
+    const executeBtn = this.container.querySelector(
+      '#curl-execute-btn'
+    ) as HTMLElement;
+    const cancelBtn = this.container.querySelector(
+      '#curl-cancel-btn'
+    ) as HTMLElement;
     if (loading) loading.style.display = show ? '' : 'none';
     if (executeBtn) executeBtn.style.display = show ? 'none' : '';
     if (cancelBtn) cancelBtn.style.display = show ? '' : 'none';
   }
 
   private showError(message: string): void {
-    const section = this.container.querySelector('#curl-error-section') as HTMLElement;
-    const content = this.container.querySelector('#curl-error-content') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-error-section'
+    ) as HTMLElement;
+    const content = this.container.querySelector(
+      '#curl-error-content'
+    ) as HTMLElement;
     section.style.display = '';
     content.textContent = message;
   }
 
   private hideError(): void {
-    const section = this.container.querySelector('#curl-error-section') as HTMLElement;
+    const section = this.container.querySelector(
+      '#curl-error-section'
+    ) as HTMLElement;
     if (section) section.style.display = 'none';
   }
 
@@ -420,12 +517,17 @@ export class CurlToolManager {
   }
 
   private renderHistory(): void {
-    const list = this.container.querySelector('#curl-history-list') as HTMLElement;
+    const list = this.container.querySelector(
+      '#curl-history-list'
+    ) as HTMLElement;
     if (this.history.length === 0) {
-      list.innerHTML = '<div class="curl-tool__empty-history">No history yet</div>';
+      list.innerHTML =
+        '<div class="curl-tool__empty-history">No history yet</div>';
       return;
     }
-    list.innerHTML = this.history.map(entry => `
+    list.innerHTML = this.history
+      .map(
+        (entry) => `
       <div class="curl-tool__history-item${entry.id === this.selectedHistoryId ? ' active' : ''}" data-history-id="${entry.id}">
         <div class="curl-tool__history-top">
           <span class="curl-tool__method-badge curl-tool__method-badge--${entry.method.toLowerCase()}">${entry.method}</span>
@@ -434,32 +536,45 @@ export class CurlToolManager {
         <div class="curl-tool__history-url" title="${this.escapeHtml(entry.url)}">${this.escapeHtml(this.truncateUrl(entry.url))}</div>
         <div class="curl-tool__history-time">${this.formatTime(entry.timestamp)}</div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     // Click to restore
-    list.querySelectorAll('.curl-tool__history-item').forEach(item => {
+    list.querySelectorAll('.curl-tool__history-item').forEach((item) => {
       item.addEventListener('click', () => {
         const id = (item as HTMLElement).dataset.historyId;
-        const entry = this.history.find(h => h.id === id);
+        const entry = this.history.find((h) => h.id === id);
         if (entry) {
-          const input = this.container.querySelector('#curl-tool-input') as HTMLTextAreaElement;
+          const input = this.container.querySelector(
+            '#curl-tool-input'
+          ) as HTMLTextAreaElement;
           if (input) input.value = entry.command;
           this.selectedHistoryId = entry.id;
           // Update active class without full re-render
-          list.querySelectorAll('.curl-tool__history-item').forEach(el =>
-            el.classList.toggle('active', (el as HTMLElement).dataset.historyId === entry.id)
-          );
+          list
+            .querySelectorAll('.curl-tool__history-item')
+            .forEach((el) =>
+              el.classList.toggle(
+                'active',
+                (el as HTMLElement).dataset.historyId === entry.id
+              )
+            );
         }
       });
     });
   }
 
   private async copyResponse(): Promise<void> {
-    const bodyEl = this.container.querySelector('#curl-response-body-content') as HTMLElement;
+    const bodyEl = this.container.querySelector(
+      '#curl-response-body-content'
+    ) as HTMLElement;
     if (bodyEl?.textContent) {
       try {
         await navigator.clipboard.writeText(bodyEl.textContent);
-      } catch { /* clipboard denied */ }
+      } catch {
+        /* clipboard denied */
+      }
     }
   }
 
@@ -497,7 +612,11 @@ export class CurlToolManager {
 
   private formatTime(timestamp: number): string {
     const d = new Date(timestamp);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   }
 
   private truncateUrl(url: string): string {

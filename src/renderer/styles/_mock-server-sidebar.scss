@@ -5,7 +5,11 @@
   min-width: 240px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(12, 12, 12, 0.8));
+  background: linear-gradient(
+    145deg,
+    rgba(20, 20, 20, 0.9),
+    rgba(12, 12, 12, 0.8)
+  );
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
@@ -36,7 +40,11 @@
     font-weight: 500;
     border: none;
     border-radius: 8px;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background: linear-gradient(
+      135deg,
+      var(--primary-color),
+      var(--primary-dark)
+    );
     color: white;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -93,7 +101,11 @@
   }
 
   &.selected {
-    background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.2), rgba(var(--primary-color-rgb), 0.1));
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.2),
+      rgba(var(--primary-color-rgb), 0.1)
+    );
     border-color: rgba(var(--primary-color-rgb), 0.4);
     box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.15);
 
@@ -156,8 +168,13 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .mock-server-delete-btn {

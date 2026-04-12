@@ -28,10 +28,11 @@ export class HistoryManager {
 
       if (response && request) {
         // Check if this request/response is already in history to avoid duplicates
-        const exists = this.history.some(item =>
-          item.request.id === request.id &&
-          item.response.status === response.status &&
-          Math.abs(new Date(item.timestamp).getTime() - Date.now()) < 60000 // Within last minute
+        const exists = this.history.some(
+          (item) =>
+            item.request.id === request.id &&
+            item.response.status === response.status &&
+            Math.abs(new Date(item.timestamp).getTime() - Date.now()) < 60000 // Within last minute
         );
 
         if (!exists) {
@@ -76,14 +77,18 @@ export class HistoryManager {
     this.saveHistory();
   }
 
-  getLastResponseForRequest(requestId: string): { request: ApiRequest; response: ApiResponse } | null {
+  getLastResponseForRequest(
+    requestId: string
+  ): { request: ApiRequest; response: ApiResponse } | null {
     // Find the most recent history item for this request ID
-    const historyItem = this.history.find(item => item.request.id === requestId);
+    const historyItem = this.history.find(
+      (item) => item.request.id === requestId
+    );
 
     if (historyItem) {
       return {
         request: historyItem.request,
-        response: historyItem.response
+        response: historyItem.response,
       };
     }
 
@@ -97,7 +102,7 @@ export class HistoryManager {
   private saveHistory(): void {
     // Trigger a state save by dispatching an event
     const event = new CustomEvent('history-changed', {
-      detail: { history: this.history }
+      detail: { history: this.history },
     });
     document.dispatchEvent(event);
   }

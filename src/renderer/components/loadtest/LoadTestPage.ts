@@ -65,21 +65,26 @@ export class LoadTestPage {
     this.progress.onCancel = () => this.cancelLoadTest();
     this.summary.onRunAgain = (config) => this.runAgain(config);
     this.summary.onExportCsv = (runId) => this.exportCsv(runId);
-    this.summary.onExportPdf = (runId, summary) => this.exportPdf(runId, summary);
+    this.summary.onExportPdf = (runId, summary) =>
+      this.exportPdf(runId, summary);
   }
 
   private setupIpcListeners(): void {
-    this.progressCleanup = window.apiCourier.loadtest.onProgress((progress: LoadTestProgressTick) => {
-      if (progress.runId === this.currentRunId) {
-        this.progress.updateProgress(progress);
+    this.progressCleanup = window.apiCourier.loadtest.onProgress(
+      (progress: LoadTestProgressTick) => {
+        if (progress.runId === this.currentRunId) {
+          this.progress.updateProgress(progress);
+        }
       }
-    });
+    );
 
-    this.summaryCleanup = window.apiCourier.loadtest.onSummary((summary: LoadTestSummary) => {
-      if (summary.runId === this.currentRunId) {
-        this.showSummary(summary);
+    this.summaryCleanup = window.apiCourier.loadtest.onSummary(
+      (summary: LoadTestSummary) => {
+        if (summary.runId === this.currentRunId) {
+          this.showSummary(summary);
+        }
       }
-    });
+    );
   }
 
   private async startLoadTest(config: any): Promise<void> {
@@ -90,7 +95,9 @@ export class LoadTestPage {
       this.showProgress(config);
     } catch (error) {
       console.error('Failed to start load test:', error);
-      this.showError(error instanceof Error ? error.message : 'Failed to start load test');
+      this.showError(
+        error instanceof Error ? error.message : 'Failed to start load test'
+      );
     }
   }
 
@@ -116,7 +123,10 @@ export class LoadTestPage {
     }
   }
 
-  private async exportPdf(runId: string, summary: LoadTestSummary): Promise<void> {
+  private async exportPdf(
+    runId: string,
+    summary: LoadTestSummary
+  ): Promise<void> {
     try {
       const result = await window.apiCourier.loadtest.exportPdf(runId, summary);
       if (!result.ok) {
@@ -140,7 +150,9 @@ export class LoadTestPage {
       </div>
     `;
 
-    const formContainer = this.container.querySelector('#load-test-form-container')!;
+    const formContainer = this.container.querySelector(
+      '#load-test-form-container'
+    )!;
     await this.form.render(formContainer as HTMLElement);
   }
 
@@ -156,7 +168,9 @@ export class LoadTestPage {
       </div>
     `;
 
-    const progressContainer = this.container.querySelector('#load-test-progress-container')!;
+    const progressContainer = this.container.querySelector(
+      '#load-test-progress-container'
+    )!;
     this.progress.render(progressContainer as HTMLElement, config);
   }
 
@@ -172,7 +186,9 @@ export class LoadTestPage {
       </div>
     `;
 
-    const summaryContainer = this.container.querySelector('#load-test-summary-container')!;
+    const summaryContainer = this.container.querySelector(
+      '#load-test-summary-container'
+    )!;
     this.summary.render(summaryContainer as HTMLElement, summary);
   }
 

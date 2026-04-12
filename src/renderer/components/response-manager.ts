@@ -27,7 +27,7 @@ export class ResponseManager {
       activeTab: 'body',
       searchQuery: '',
       viewPreferences: {},
-      isFloatingSearchVisible: false
+      isFloatingSearchVisible: false,
     };
 
     this.initializeComponents();
@@ -38,20 +38,20 @@ export class ResponseManager {
       viewerConfig: {
         prettyConfig: {},
         rawConfig: { wrapLines: true, fontSize: 12 },
-        headersConfig: { showSize: true, groupByType: false }
+        headersConfig: { showSize: true, groupByType: false },
       },
       tabsConfig: {
         defaultTab: 'body',
-        enabledTabs: ['body', 'headers', 'meta']
+        enabledTabs: ['body', 'headers', 'meta'],
       },
       exportConfig: {
         defaultFormat: 'json',
-        enabledFormats: ['json', 'text', 'csv']
+        enabledFormats: ['json', 'text', 'csv'],
       },
       searchConfig: {
         caseSensitive: false,
-        regex: false
-      }
+        regex: false,
+      },
     };
 
     this.viewer = new ResponseViewer(this.container, config.viewerConfig);
@@ -88,7 +88,12 @@ export class ResponseManager {
   private handleTabChange(tab: string): void {
     this.state.activeTab = tab;
     this.viewer.switchTab(tab);
-    this.actions.updateVisibility(this.state.currentResponse, tab, this.viewer.isJsonBody(), this.viewer.isXmlBody());
+    this.actions.updateVisibility(
+      this.state.currentResponse,
+      tab,
+      this.viewer.isJsonBody(),
+      this.viewer.isXmlBody()
+    );
   }
 
   private listenToResponses(): void {
@@ -112,7 +117,8 @@ export class ResponseManager {
       const customEvent = e as CustomEvent;
       const response = customEvent.detail.response;
       const requestId = customEvent.detail.request?.id;
-      const requestMode = (customEvent.detail.requestMode || this.activeTabRequestMode) as RequestMode;
+      const requestMode = (customEvent.detail.requestMode ||
+        this.activeTabRequestMode) as RequestMode;
 
       // Always remove from pending
       if (requestId) {
@@ -165,7 +171,8 @@ export class ResponseManager {
 
       if (activeTab) {
         this.activeTabRequestId = activeTab.request?.id || null;
-        this.activeTabRequestMode = (activeTab.requestMode || 'rest') as RequestMode;
+        this.activeTabRequestMode = (activeTab.requestMode ||
+          'rest') as RequestMode;
         this.currentRequestId = activeTab.id || 'default';
         this.viewer.setLargeJsonPrettySelection(
           this.currentRequestId,
@@ -178,13 +185,19 @@ export class ResponseManager {
         );
 
         // Check if this tab has a pending request (still loading)
-        if (this.activeTabRequestId && this.pendingRequests.has(this.activeTabRequestId)) {
+        if (
+          this.activeTabRequestId &&
+          this.pendingRequests.has(this.activeTabRequestId)
+        ) {
           const startTime = this.pendingRequests.get(this.activeTabRequestId)!;
           this.showLoadingState(startTime);
         } else if (activeTab.response) {
           // Tab has a response — display it
           this.hideLoadingState();
-          await this.displayResponse(activeTab.response, this.activeTabRequestMode);
+          await this.displayResponse(
+            activeTab.response,
+            this.activeTabRequestMode
+          );
         } else {
           // No pending request, no response — clear
           this.clearResponse();
@@ -220,24 +233,31 @@ export class ResponseManager {
   }
 
   private listenForLargeJsonPreferenceChanges(): void {
-    document.addEventListener('response-large-json-pretty-selected', (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const tabId = customEvent.detail?.tabId as string | undefined;
-      const responseTimestamp = customEvent.detail?.responseTimestamp as number | undefined;
+    document.addEventListener(
+      'response-large-json-pretty-selected',
+      (e: Event) => {
+        const customEvent = e as CustomEvent;
+        const tabId = customEvent.detail?.tabId as string | undefined;
+        const responseTimestamp = customEvent.detail?.responseTimestamp as
+          | number
+          | undefined;
 
-      if (!tabId || typeof responseTimestamp !== 'number') return;
-      if (!this.activeTabRequestId) return;
+        if (!tabId || typeof responseTimestamp !== 'number') return;
+        if (!this.activeTabRequestId) return;
 
-      document.dispatchEvent(new CustomEvent('response-view-preference-updated', {
-        detail: {
-          tabId,
-          requestId: this.activeTabRequestId,
-          responseViewState: {
-            largeJsonPrettyResponseTimestamp: responseTimestamp,
-          },
-        },
-      }));
-    });
+        document.dispatchEvent(
+          new CustomEvent('response-view-preference-updated', {
+            detail: {
+              tabId,
+              requestId: this.activeTabRequestId,
+              responseViewState: {
+                largeJsonPrettyResponseTimestamp: responseTimestamp,
+              },
+            },
+          })
+        );
+      }
+    );
   }
 
   private persistCurrentResponseViewState(): void {
@@ -246,24 +266,34 @@ export class ResponseManager {
     const monacoSnapshot = this.viewer.captureMonacoViewState();
     if (!monacoSnapshot) return;
 
-    document.dispatchEvent(new CustomEvent('response-view-preference-updated', {
-      detail: {
-        tabId: this.currentRequestId,
-        requestId: this.activeTabRequestId,
-        responseViewState: {
-          monacoViewStateResponseTimestamp: monacoSnapshot.responseTimestamp,
-          monacoViewState: monacoSnapshot.viewState,
+    document.dispatchEvent(
+      new CustomEvent('response-view-preference-updated', {
+        detail: {
+          tabId: this.currentRequestId,
+          requestId: this.activeTabRequestId,
+          responseViewState: {
+            monacoViewStateResponseTimestamp: monacoSnapshot.responseTimestamp,
+            monacoViewState: monacoSnapshot.viewState,
+          },
         },
-      },
-    }));
+      })
+    );
   }
 
-  private async displayResponse(response: ApiResponse, requestMode: RequestMode = 'rest'): Promise<void> {
+  private async displayResponse(
+    response: ApiResponse,
+    requestMode: RequestMode = 'rest'
+  ): Promise<void> {
     this.state.currentResponse = response;
     this.viewer.setRequestId(this.currentRequestId);
     await this.viewer.displayResponse(response, requestMode);
     this.tabs.updateTabs(response);
-    this.actions.updateVisibility(response, this.state.activeTab, this.viewer.isJsonBody(), this.viewer.isXmlBody());
+    this.actions.updateVisibility(
+      response,
+      this.state.activeTab,
+      this.viewer.isJsonBody(),
+      this.viewer.isXmlBody()
+    );
   }
 
   getCurrentResponse(): ApiResponse | null {
@@ -288,7 +318,9 @@ export class ResponseManager {
     ['response-body', 'response-headers'].forEach((sectionId) => {
       const section = this.container.querySelector(`#${sectionId}`);
       if (!section) {
-        console.error(`${sectionId} element not found - spinner cannot be displayed`);
+        console.error(
+          `${sectionId} element not found - spinner cannot be displayed`
+        );
         return;
       }
 
@@ -431,18 +463,21 @@ export class ResponseManager {
         textToCopy = JSON.stringify(parsed, null, 2);
       }
 
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        this.showToast('Response copied to clipboard');
-      }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = textToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        this.showToast('Response copied to clipboard');
-      });
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          this.showToast('Response copied to clipboard');
+        })
+        .catch(() => {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          this.showToast('Response copied to clipboard');
+        });
     } catch (error) {
       this.showToast('Failed to copy response');
     }
@@ -490,8 +525,8 @@ export class ResponseManager {
     // We'll get the response via a custom event since we need to access TabsManager
     const askAiEvent = new CustomEvent('open-ask-ai', {
       detail: {
-        response: this.state.currentResponse
-      }
+        response: this.state.currentResponse,
+      },
     });
     document.dispatchEvent(askAiEvent);
   }

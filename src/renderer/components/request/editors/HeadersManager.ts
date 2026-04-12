@@ -14,7 +14,11 @@ export class HeadersManager {
     this.setupEventListeners();
   }
 
-  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+  public setVariableContext(
+    activeEnvironment: any,
+    globals: any,
+    folderVars?: any
+  ): void {
     this.activeEnvironment = activeEnvironment;
     this.globals = globals;
     this.folderVars = folderVars;
@@ -25,7 +29,9 @@ export class HeadersManager {
       const rows = headersEditor.querySelectorAll('.kv-row');
       rows.forEach((row) => {
         const keyInput = row.querySelector('.key-input') as HTMLInputElement;
-        const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+        const valueInput = row.querySelector(
+          '.value-input'
+        ) as HTMLInputElement;
         if (keyInput) {
           this.addVariableSupport(keyInput);
         }
@@ -115,13 +121,18 @@ export class HeadersManager {
     setupAutocomplete(input, () => ({
       activeEnvironment: this.activeEnvironment,
       globals: this.globals,
-      folderVars: this.folderVars || {}
+      folderVars: this.folderVars || {},
     }));
   }
 
   private refreshVariableDecorations(input: HTMLInputElement): void {
     // Only use addVariableHighlighting - it handles both coloring and tooltips on hover
-    addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(
+      input,
+      this.activeEnvironment,
+      this.globals,
+      this.folderVars
+    );
   }
 
   private updateHeadersFromDOM(): void {
@@ -131,7 +142,7 @@ export class HeadersManager {
     const headers: KeyValuePair[] = [];
     const rows = headersEditor.querySelectorAll('.kv-row');
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
@@ -140,7 +151,7 @@ export class HeadersManager {
         headers.push({
           key: keyInput.value.trim(),
           value: valueInput.value.trim(),
-          enabled: checkbox ? checkbox.checked : true
+          enabled: checkbox ? checkbox.checked : true,
         });
       }
     });
@@ -159,7 +170,9 @@ export class HeadersManager {
     }
   }
 
-  public loadHeaders(headers: KeyValuePair[] | Record<string, string> | undefined): void {
+  public loadHeaders(
+    headers: KeyValuePair[] | Record<string, string> | undefined
+  ): void {
     const headersEditor = this.container.querySelector('#headers-editor');
     if (!headersEditor) return;
 
@@ -173,7 +186,7 @@ export class HeadersManager {
       headersArray = Object.entries(headers).map(([key, value]) => ({
         key,
         value,
-        enabled: true
+        enabled: true,
       }));
     } else {
       headersArray = [];
@@ -193,7 +206,7 @@ export class HeadersManager {
       // Set values after creating elements to avoid HTML escaping issues
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
-      
+
       if (keyInput) keyInput.value = key;
       if (valueInput) valueInput.value = value;
 
@@ -231,7 +244,7 @@ export class HeadersManager {
     let targetRow: Element | null = null;
     const rows = headersEditor.querySelectorAll('.kv-row');
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       if (keyInput && keyInput.value.toLowerCase() === key.toLowerCase()) {
         targetRow = row;
@@ -239,12 +252,18 @@ export class HeadersManager {
     });
 
     if (targetRow) {
-      const valueInput = (targetRow as Element).querySelector('.value-input') as HTMLInputElement;
+      const valueInput = (targetRow as Element).querySelector(
+        '.value-input'
+      ) as HTMLInputElement;
       if (valueInput) {
         valueInput.value = value;
         // Update variable highlighting
         if (this.activeEnvironment && this.globals) {
-          addVariableHighlighting(valueInput, this.activeEnvironment, this.globals);
+          addVariableHighlighting(
+            valueInput,
+            this.activeEnvironment,
+            this.globals
+          );
         }
       }
     } else {
@@ -280,7 +299,7 @@ export class HeadersManager {
 
     const rows = Array.from(headersEditor.querySelectorAll('.kv-row'));
     const targetKey = key.toLowerCase();
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       if (keyInput && keyInput.value.toLowerCase() === targetKey) {
         row.remove();

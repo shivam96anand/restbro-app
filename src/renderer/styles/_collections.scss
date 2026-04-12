@@ -7,16 +7,25 @@
   gap: 8px;
   padding: 8px 12px 6px 12px;
   border-bottom: none;
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.03) 0%,
-              var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.03) 0%,
+    var(--bg-secondary) 100%
+  );
   justify-content: flex-end;
 }
 
-.collections-tree { flex: 1; padding: 8px 12px; overflow-y: auto; overflow-x: hidden; }
+.collections-tree {
+  flex: 1;
+  padding: 8px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 
 // Collection tree components
-.collection-container { position: relative; }
+.collection-container {
+  position: relative;
+}
 
 .collection-item {
   position: relative;
@@ -49,12 +58,15 @@
   }
 
   &.selected {
-    background: linear-gradient(135deg,
-                rgba(var(--primary-color-rgb), 0.14) 0%,
-                rgba(var(--primary-color-rgb), 0.08) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.14) 0%,
+      rgba(var(--primary-color-rgb), 0.08) 100%
+    );
     color: var(--text-primary);
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.2),
-                inset 3px 0 0 var(--primary-color);
+    box-shadow:
+      0 1px 3px rgba(var(--primary-color-rgb), 0.2),
+      inset 3px 0 0 var(--primary-color);
 
     .collection-actions {
       opacity: 1;
@@ -79,7 +91,9 @@
   &.folder {
     font-weight: 500;
     cursor: pointer;
-    .collection-content { cursor: pointer; }
+    .collection-content {
+      cursor: pointer;
+    }
   }
 
   &.dragging {
@@ -146,10 +160,16 @@
   color: var(--text-secondary);
   border-radius: 2px;
   transition: all 0.15s ease;
-  &:hover { background-color: var(--hover-color); color: var(--text-primary) !important; }
+  &:hover {
+    background-color: var(--hover-color);
+    color: var(--text-primary) !important;
+  }
 }
 
-.folder-spacer { width: 20px; flex-shrink: 0; }
+.folder-spacer {
+  width: 20px;
+  flex-shrink: 0;
+}
 
 .collection-icon {
   display: inline-flex;
@@ -223,7 +243,11 @@
   cursor: pointer;
   font-size: 8px;
   transition: all 0.15s ease;
-  &:hover { background: var(--primary-color); color: white; transform: scale(1.1); }
+  &:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+  }
 }
 
 .collection-children {

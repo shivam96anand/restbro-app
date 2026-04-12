@@ -20,7 +20,10 @@ export class RequestDataManager {
   private isCurrentRequestValid = true;
   private currentInvalidReason = '';
 
-  constructor(onShowError: (message: string) => void, editorsManager?: RequestEditorsManager) {
+  constructor(
+    onShowError: (message: string) => void,
+    editorsManager?: RequestEditorsManager
+  ) {
     this.onShowError = onShowError;
     this.editorsManager = editorsManager;
     if (editorsManager) {
@@ -94,7 +97,9 @@ export class RequestDataManager {
       if (activeTab) {
         this.setCurrentRequest(activeTab.request);
         this.setRequestMode((activeTab.requestMode || 'rest') as RequestMode);
-        const isActiveTabSending = this.sendingRequestIds.has(activeTab.request.id);
+        const isActiveTabSending = this.sendingRequestIds.has(
+          activeTab.request.id
+        );
         this.toggleRequestButtons(isActiveTabSending);
       } else {
         this.setCurrentRequest(null);
@@ -137,7 +142,7 @@ export class RequestDataManager {
     this.scheduleCurlPreviewUpdate();
 
     const event = new CustomEvent('request-updated', {
-      detail: { request: this.currentRequest, requestMode: this.requestMode }
+      detail: { request: this.currentRequest, requestMode: this.requestMode },
     });
     document.dispatchEvent(event);
   }
@@ -153,16 +158,26 @@ export class RequestDataManager {
   }
 
   private getCurlOutputElement(): HTMLTextAreaElement | null {
-    return document.getElementById('curl-command-output') as HTMLTextAreaElement | null;
+    return document.getElementById(
+      'curl-command-output'
+    ) as HTMLTextAreaElement | null;
   }
 
   private cloneRequestForCurl(request: ApiRequest): ApiRequest {
     return {
       ...request,
-      params: Array.isArray(request.params) ? request.params.map((param) => ({ ...param })) : request.params ? { ...request.params } : request.params,
-      headers: Array.isArray(request.headers) ? request.headers.map((header) => ({ ...header })) : { ...request.headers },
+      params: Array.isArray(request.params)
+        ? request.params.map((param) => ({ ...param }))
+        : request.params
+          ? { ...request.params }
+          : request.params,
+      headers: Array.isArray(request.headers)
+        ? request.headers.map((header) => ({ ...header }))
+        : { ...request.headers },
       body: request.body ? { ...request.body } : request.body,
-      auth: request.auth ? { ...request.auth, config: { ...request.auth.config } } : request.auth
+      auth: request.auth
+        ? { ...request.auth, config: { ...request.auth.config } }
+        : request.auth,
     };
   }
 
@@ -252,13 +267,17 @@ export class RequestDataManager {
       return;
     }
 
-    document.dispatchEvent(new CustomEvent('open-in-curl-tool', { detail: { curlCommand } }));
+    document.dispatchEvent(
+      new CustomEvent('open-in-curl-tool', { detail: { curlCommand } })
+    );
   }
 
   private async sendRequest(): Promise<void> {
     if (!this.currentRequest) return;
     if (!this.isCurrentRequestValid) {
-      this.uiHelpers.showToast(this.currentInvalidReason || 'Request is invalid');
+      this.uiHelpers.showToast(
+        this.currentInvalidReason || 'Request is invalid'
+      );
       return;
     }
 
@@ -275,7 +294,7 @@ export class RequestDataManager {
 
     // Dispatch event to show loading state in response panel
     const sendingEvent = new CustomEvent('request-sending', {
-      detail: { timestamp: Date.now(), requestId }
+      detail: { timestamp: Date.now(), requestId },
     });
     document.dispatchEvent(sendingEvent);
 
@@ -288,7 +307,11 @@ export class RequestDataManager {
       }
 
       const event = new CustomEvent('response-received', {
-        detail: { response, request: sendingRequest, requestMode: sendingRequestMode }
+        detail: {
+          response,
+          request: sendingRequest,
+          requestMode: sendingRequestMode,
+        },
       });
       document.dispatchEvent(event);
     } catch (error) {
@@ -302,7 +325,7 @@ export class RequestDataManager {
 
         // Dispatch event to hide loading state
         const failedEvent = new CustomEvent('request-failed', {
-          detail: { error: message, requestId }
+          detail: { error: message, requestId },
         });
         document.dispatchEvent(failedEvent);
       }
@@ -318,12 +341,21 @@ export class RequestDataManager {
     }
   }
 
-  private async sendRequestWithAuth(request: ApiRequest, isRetry: boolean): Promise<any> {
+  private async sendRequestWithAuth(
+    request: ApiRequest,
+    isRetry: boolean
+  ): Promise<any> {
     let requestToSend = { ...request };
 
     // Proactive token management for OAuth2
-    if (this.oauthTokenManager && this.oauthTokenManager.canManageToken(requestToSend)) {
-      requestToSend = await this.oauthTokenManager.ensureValidToken(requestToSend, isRetry);
+    if (
+      this.oauthTokenManager &&
+      this.oauthTokenManager.canManageToken(requestToSend)
+    ) {
+      requestToSend = await this.oauthTokenManager.ensureValidToken(
+        requestToSend,
+        isRetry
+      );
     }
 
     try {
@@ -333,13 +365,19 @@ export class RequestDataManager {
       const message = (error as Error).message || '';
 
       // Only retry once for auth errors with OAuth2
-      if (!isRetry && this.oauthTokenManager && 
-          this.oauthTokenManager.isAuthError(message) && 
-          this.oauthTokenManager.canManageToken(requestToSend)) {
-        console.log('Auth error detected, attempting token refresh and retry...');
+      if (
+        !isRetry &&
+        this.oauthTokenManager &&
+        this.oauthTokenManager.isAuthError(message) &&
+        this.oauthTokenManager.canManageToken(requestToSend)
+      ) {
+        console.log(
+          'Auth error detected, attempting token refresh and retry...'
+        );
 
         // Force token refresh/regeneration
-        const newRequest = await this.oauthTokenManager.forceRefresh(requestToSend);
+        const newRequest =
+          await this.oauthTokenManager.forceRefresh(requestToSend);
 
         if (newRequest) {
           // Retry the request with the new token
@@ -355,7 +393,11 @@ export class RequestDataManager {
   private async cancelRequest(): Promise<void> {
     if (!this.currentRequest) return;
     const requestId = this.currentRequest.id;
-    if (!this.sendingRequestIds.has(requestId) || this.cancelledRequestIds.has(requestId)) return;
+    if (
+      !this.sendingRequestIds.has(requestId) ||
+      this.cancelledRequestIds.has(requestId)
+    )
+      return;
 
     this.cancelledRequestIds.add(requestId);
     this.toggleRequestButtons(true);
@@ -374,8 +416,12 @@ export class RequestDataManager {
   }
 
   private toggleRequestButtons(isSending: boolean): void {
-    const sendBtn = document.getElementById('send-request') as HTMLButtonElement | null;
-    const cancelBtn = document.getElementById('cancel-request') as HTMLButtonElement | null;
+    const sendBtn = document.getElementById(
+      'send-request'
+    ) as HTMLButtonElement | null;
+    const cancelBtn = document.getElementById(
+      'cancel-request'
+    ) as HTMLButtonElement | null;
     const isCancelling = this.currentRequest
       ? this.cancelledRequestIds.has(this.currentRequest.id)
       : false;
@@ -383,7 +429,9 @@ export class RequestDataManager {
     if (sendBtn) {
       sendBtn.textContent = isSending ? 'Sending...' : 'Send';
       sendBtn.disabled = isSending || !this.isCurrentRequestValid;
-      sendBtn.title = !this.isCurrentRequestValid ? (this.currentInvalidReason || 'Request is invalid') : '';
+      sendBtn.title = !this.isCurrentRequestValid
+        ? this.currentInvalidReason || 'Request is invalid'
+        : '';
     }
 
     if (cancelBtn) {
@@ -399,7 +447,7 @@ export class RequestDataManager {
     this.emittedCancellationIds.add(requestId);
 
     const cancelledEvent = new CustomEvent('request-cancelled', {
-      detail: { requestId }
+      detail: { requestId },
     });
     document.dispatchEvent(cancelledEvent);
   }

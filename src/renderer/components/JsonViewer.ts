@@ -26,7 +26,11 @@ export class JsonViewer {
 
   constructor(
     containerId: string,
-    config?: { requestId?: string; responseSize?: number; showLineNumbers?: boolean }
+    config?: {
+      requestId?: string;
+      responseSize?: number;
+      showLineNumbers?: boolean;
+    }
   ) {
     const container = document.getElementById(containerId);
     if (!container) {
@@ -62,8 +66,12 @@ export class JsonViewer {
   }
 
   private bindEvents(): void {
-    const nodesContainer = this.container.querySelector('.json-nodes-container') as HTMLElement;
-    const content = this.container.querySelector('.json-content') as HTMLElement;
+    const nodesContainer = this.container.querySelector(
+      '.json-nodes-container'
+    ) as HTMLElement;
+    const content = this.container.querySelector(
+      '.json-content'
+    ) as HTMLElement;
 
     nodesContainer.addEventListener('click', (e) => this.handleNodeClick(e));
 
@@ -72,19 +80,23 @@ export class JsonViewer {
 
     // Debounce scroll events for better performance
     let scrollTimeout: number | null = null;
-    content.addEventListener('scroll', () => {
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
+    content.addEventListener(
+      'scroll',
+      () => {
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout);
+        }
 
-      // Immediate sync for visual consistency
-      this.lineNumbersManager.syncLineNumbersScroll(this.container);
+        // Immediate sync for visual consistency
+        this.lineNumbersManager.syncLineNumbersScroll(this.container);
 
-      // Debounced cleanup for performance
-      scrollTimeout = window.setTimeout(() => {
-        scrollTimeout = null;
-      }, 16); // ~60fps
-    }, { passive: true });
+        // Debounced cleanup for performance
+        scrollTimeout = window.setTimeout(() => {
+          scrollTimeout = null;
+        }, 16); // ~60fps
+      },
+      { passive: true }
+    );
 
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -166,13 +178,17 @@ export class JsonViewer {
   private async restoreExpandedState(): Promise<void> {
     if (!this.statePersistence || !this.requestId) return;
 
-    const savedPaths = await this.statePersistence.loadExpandedPaths(this.requestId);
+    const savedPaths = await this.statePersistence.loadExpandedPaths(
+      this.requestId
+    );
     this.expandedPaths = savedPaths;
 
     // Only apply saved state if there actually is saved state
     // If empty, preserve the auto-expansion set by the parser
     if (savedPaths.size > 0) {
-      console.log(`[JsonViewer] Restoring ${savedPaths.size} saved expansion paths`);
+      console.log(
+        `[JsonViewer] Restoring ${savedPaths.size} saved expansion paths`
+      );
       this.applyExpandedState(this.nodes, savedPaths);
     } else {
       console.log('[JsonViewer] No saved state, preserving auto-expansion');
@@ -182,7 +198,10 @@ export class JsonViewer {
   /**
    * Apply expanded state to nodes recursively
    */
-  private applyExpandedState(nodes: JsonNode[], expandedPaths: Set<string>): void {
+  private applyExpandedState(
+    nodes: JsonNode[],
+    expandedPaths: Set<string>
+  ): void {
     const applyToNode = (node: JsonNode): void => {
       if ((node.type === 'object' || node.type === 'array') && node.path) {
         node.isExpanded = expandedPaths.has(node.path);
@@ -202,7 +221,11 @@ export class JsonViewer {
     const paths = new Set<string>();
 
     const collectFromNode = (node: JsonNode): void => {
-      if (node.isExpanded && node.path && (node.type === 'object' || node.type === 'array')) {
+      if (
+        node.isExpanded &&
+        node.path &&
+        (node.type === 'object' || node.type === 'array')
+      ) {
         paths.add(node.path);
       }
       if (node.children) {
@@ -236,7 +259,9 @@ export class JsonViewer {
       this.formattedJsonText = JSON.stringify(this.jsonData, null, 2);
       this.totalLines = this.formattedJsonText.split('\n').length;
 
-      const textContent = this.container.querySelector('.json-text-content') as HTMLElement;
+      const textContent = this.container.querySelector(
+        '.json-text-content'
+      ) as HTMLElement;
       if (textContent) {
         textContent.textContent = this.formattedJsonText;
       }
@@ -245,7 +270,9 @@ export class JsonViewer {
       this.formattedJsonText = 'Invalid JSON data';
       this.totalLines = 1;
 
-      const textContent = this.container.querySelector('.json-text-content') as HTMLElement;
+      const textContent = this.container.querySelector(
+        '.json-text-content'
+      ) as HTMLElement;
       if (textContent) {
         textContent.textContent = this.formattedJsonText;
       }
@@ -253,13 +280,23 @@ export class JsonViewer {
   }
 
   private renderNodesOptimized(): void {
-    const container = this.container.querySelector('.json-nodes-container') as HTMLElement;
-    const visibleNodes = JsonParser.getVisibleNodesWithClosingBrackets(this.nodes);
+    const container = this.container.querySelector(
+      '.json-nodes-container'
+    ) as HTMLElement;
+    const visibleNodes = JsonParser.getVisibleNodesWithClosingBrackets(
+      this.nodes
+    );
     const searchMatches = this.searchEngine.getMatches();
     const currentIndex = this.searchEngine.getCurrentIndex();
     const searchQuery = this.searchEngine.getSearchQuery();
 
-    NodeRenderer.renderNodesOptimized(container, visibleNodes, searchQuery, searchMatches, currentIndex);
+    NodeRenderer.renderNodesOptimized(
+      container,
+      visibleNodes,
+      searchQuery,
+      searchMatches,
+      currentIndex
+    );
   }
 
   private handleNodeClick(e: Event): void {
@@ -276,7 +313,10 @@ export class JsonViewer {
 
     if (!node || (node.type !== 'object' && node.type !== 'array')) return;
 
-    if (target.classList.contains('expand-icon') || target.classList.contains('bracket')) {
+    if (
+      target.classList.contains('expand-icon') ||
+      target.classList.contains('bracket')
+    ) {
       this.toggleNode(node);
     }
   }
@@ -322,13 +362,16 @@ export class JsonViewer {
     const endContainer = range.endContainer;
 
     // Both start and end must be in text nodes
-    if (startContainer.nodeType !== Node.TEXT_NODE || endContainer.nodeType !== Node.TEXT_NODE) {
+    if (
+      startContainer.nodeType !== Node.TEXT_NODE ||
+      endContainer.nodeType !== Node.TEXT_NODE
+    ) {
       return false;
     }
 
     // Find the closest .json-node ancestors
-    const startNode = (startContainer.parentElement)?.closest('.json-node');
-    const endNode = (endContainer.parentElement)?.closest('.json-node');
+    const startNode = startContainer.parentElement?.closest('.json-node');
+    const endNode = endContainer.parentElement?.closest('.json-node');
 
     // If both are in the same node element
     if (startNode && endNode && startNode === endNode) {
@@ -344,7 +387,10 @@ export class JsonViewer {
       if (valueElement) {
         const fullText = valueElement.textContent || '';
         // If selection is different from the full value text, it's a partial selection
-        if (selectionText !== fullText && selectionText.length < fullText.length) {
+        if (
+          selectionText !== fullText &&
+          selectionText.length < fullText.length
+        ) {
           return true;
         }
       }
@@ -363,7 +409,9 @@ export class JsonViewer {
     if (!container) return selectedNodes;
 
     // Get all node elements in the container
-    const allNodeElements = container.querySelectorAll('.json-node[data-node-id]');
+    const allNodeElements = container.querySelectorAll(
+      '.json-node[data-node-id]'
+    );
 
     allNodeElements.forEach((element) => {
       // Check if this element intersects with the selection
@@ -381,7 +429,7 @@ export class JsonViewer {
 
     // Filter out nodes whose ancestors are also selected
     // This prevents duplication when selecting an expanded object
-    return selectedNodes.filter(node => {
+    return selectedNodes.filter((node) => {
       // Check if any ancestor of this node is in the selection
       let parent = node.parent;
       while (parent) {
@@ -405,16 +453,16 @@ export class JsonViewer {
     // If multiple nodes are selected, reconstruct as array or object
     // Check if all nodes share the same parent
     const parent = nodes[0].parent;
-    const allSameParent = nodes.every(node => node.parent === parent);
+    const allSameParent = nodes.every((node) => node.parent === parent);
 
     if (allSameParent && parent) {
       if (parent.type === 'array') {
         // Return array of selected items
-        return nodes.map(node => node.value);
+        return nodes.map((node) => node.value);
       } else if (parent.type === 'object') {
         // Return object with selected properties
         const result: any = {};
-        nodes.forEach(node => {
+        nodes.forEach((node) => {
           if (node.key) {
             result[node.key] = node.value;
           }
@@ -424,13 +472,17 @@ export class JsonViewer {
     }
 
     // Fallback: return array of all selected values
-    return nodes.map(node => node.value);
+    return nodes.map((node) => node.value);
   }
 
   private toggleNode(node: JsonNode): void {
-    const content = this.container.querySelector('.json-content') as HTMLElement;
-    const nodeElement = this.container.querySelector(`[data-node-id="${node.lineNumber}"]`) as HTMLElement;
-    
+    const content = this.container.querySelector(
+      '.json-content'
+    ) as HTMLElement;
+    const nodeElement = this.container.querySelector(
+      `[data-node-id="${node.lineNumber}"]`
+    ) as HTMLElement;
+
     if (!content || !nodeElement) {
       node.isExpanded = !node.isExpanded;
       this.renderNodesOptimized();
@@ -439,19 +491,19 @@ export class JsonViewer {
       });
       return;
     }
-    
+
     // Disable smooth scrolling during the operation
     const originalScrollBehavior = content.style.scrollBehavior;
     content.style.scrollBehavior = 'auto';
-    
+
     // Get the node's visual position relative to the scroll container
     const nodeRect = nodeElement.getBoundingClientRect();
     const contentRect = content.getBoundingClientRect();
     const visualOffsetFromContainerTop = nodeRect.top - contentRect.top;
-    
+
     // Save current scroll position
     const savedScrollTop = content.scrollTop;
-    
+
     // Toggle and render
     node.isExpanded = !node.isExpanded;
     this.renderNodesOptimized();
@@ -461,30 +513,38 @@ export class JsonViewer {
 
     // Force a reflow to ensure DOM is updated
     void content.offsetHeight;
-    
+
     // Restore scroll position first to prevent jump
     content.scrollTop = savedScrollTop;
-    
+
     // Now find the node and adjust scroll to keep it in place
-    const updatedNodeElement = this.container.querySelector(`[data-node-id="${node.lineNumber}"]`) as HTMLElement;
-    
+    const updatedNodeElement = this.container.querySelector(
+      `[data-node-id="${node.lineNumber}"]`
+    ) as HTMLElement;
+
     if (updatedNodeElement) {
       // Get updated position
       const newNodeRect = updatedNodeElement.getBoundingClientRect();
       const newContentRect = content.getBoundingClientRect();
       const currentOffset = newNodeRect.top - newContentRect.top;
-      
+
       // Calculate and apply scroll adjustment
       const scrollAdjustment = currentOffset - visualOffsetFromContainerTop;
       const newScrollTop = content.scrollTop + scrollAdjustment;
-      const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
+      const maxScroll = Math.max(
+        0,
+        content.scrollHeight - content.clientHeight
+      );
       content.scrollTop = Math.max(0, Math.min(newScrollTop, maxScroll));
     } else {
       // Node not found - keep scroll at saved position or clamp
-      const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight);
+      const maxScroll = Math.max(
+        0,
+        content.scrollHeight - content.clientHeight
+      );
       content.scrollTop = Math.min(savedScrollTop, maxScroll);
     }
-    
+
     // Restore smooth scrolling and update line numbers in next frame
     requestAnimationFrame(() => {
       content.style.scrollBehavior = originalScrollBehavior;
@@ -499,7 +559,9 @@ export class JsonViewer {
     this.saveCurrentState();
     requestAnimationFrame(() => {
       // Reset scroll to top when expanding all
-      const content = this.container.querySelector('.json-content') as HTMLElement;
+      const content = this.container.querySelector(
+        '.json-content'
+      ) as HTMLElement;
       if (content) {
         content.scrollTop = 0;
       }
@@ -514,7 +576,9 @@ export class JsonViewer {
     this.saveCurrentState();
     requestAnimationFrame(() => {
       // Reset scroll to top when collapsing all
-      const content = this.container.querySelector('.json-content') as HTMLElement;
+      const content = this.container.querySelector(
+        '.json-content'
+      ) as HTMLElement;
       if (content) {
         content.scrollTop = 0;
       }
@@ -560,7 +624,10 @@ export class JsonViewer {
   }
 
   private updateSearchResults(): void {
-    JsonViewerUtilities.updateSearchResults(this.container, this.searchEngine.getSearchInfo());
+    JsonViewerUtilities.updateSearchResults(
+      this.container,
+      this.searchEngine.getSearchInfo()
+    );
   }
 
   public clearSearch(): void {
@@ -574,7 +641,7 @@ export class JsonViewer {
     }
   }
 
-  public getSearchInfo(): { total: number, current: number } {
+  public getSearchInfo(): { total: number; current: number } {
     return this.searchEngine.getSearchInfo();
   }
 
@@ -601,8 +668,12 @@ export class JsonViewer {
     this.searchEngine.clearSearch();
     this.lineNumbersManager.reset();
 
-    const nodesContainer = this.container.querySelector('.json-nodes-container') as HTMLElement;
-    const lineNumbers = this.container.querySelector('.line-numbers') as HTMLElement;
+    const nodesContainer = this.container.querySelector(
+      '.json-nodes-container'
+    ) as HTMLElement;
+    const lineNumbers = this.container.querySelector(
+      '.line-numbers'
+    ) as HTMLElement;
 
     if (nodesContainer) nodesContainer.innerHTML = '';
     if (lineNumbers) lineNumbers.innerHTML = '';

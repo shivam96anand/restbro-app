@@ -19,7 +19,7 @@ export class ResponseActions {
 
   private setupActionsContainer(container: HTMLElement): void {
     this.actionsContainer = container.querySelector('#response-actions');
-    
+
     if (!this.actionsContainer) {
       this.actionsContainer = document.createElement('div');
       this.actionsContainer.id = 'response-actions';
@@ -37,11 +37,14 @@ export class ResponseActions {
         <button id="bottom-btn" class="response-action-btn" title="Scroll to bottom">Bottom</button>
         <button id="ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI">Ask AI</button>
       `;
-      
+
       // Insert after toolbar but before body/header sections
       const toolbar = container.querySelector('.response-toolbar');
       if (toolbar && toolbar.parentNode) {
-        toolbar.parentNode.insertBefore(this.actionsContainer, toolbar.nextSibling);
+        toolbar.parentNode.insertBefore(
+          this.actionsContainer,
+          toolbar.nextSibling
+        );
       } else {
         container.prepend(this.actionsContainer);
       }
@@ -84,14 +87,23 @@ export class ResponseActions {
     }
   }
 
-  public updateVisibility(response: ApiResponse | null, activeTab: string, isJsonResponse: boolean, isXmlResponse: boolean = false): void {
-    const shouldShow = activeTab === 'body' && response && (isJsonResponse || isXmlResponse);
+  public updateVisibility(
+    response: ApiResponse | null,
+    activeTab: string,
+    isJsonResponse: boolean,
+    isXmlResponse: boolean = false
+  ): void {
+    const shouldShow =
+      activeTab === 'body' && response && (isJsonResponse || isXmlResponse);
     if (shouldShow) {
       this.showForJsonResponse();
       // Export, Collapse, Expand are JSON-tree-only features
-      const exportBtn = this.actionsContainer?.querySelector<HTMLElement>('#export-btn');
-      const collapseBtn = this.actionsContainer?.querySelector<HTMLElement>('#collapse-btn');
-      const expandBtn = this.actionsContainer?.querySelector<HTMLElement>('#expand-btn');
+      const exportBtn =
+        this.actionsContainer?.querySelector<HTMLElement>('#export-btn');
+      const collapseBtn =
+        this.actionsContainer?.querySelector<HTMLElement>('#collapse-btn');
+      const expandBtn =
+        this.actionsContainer?.querySelector<HTMLElement>('#expand-btn');
       const display = isJsonResponse ? '' : 'none';
       if (exportBtn) exportBtn.style.display = display;
       if (collapseBtn) collapseBtn.style.display = display;
@@ -101,15 +113,33 @@ export class ResponseActions {
     }
   }
 
-  public onCopy(callback: () => void): void { this.onCopyCallback = callback; }
-  public onExport(callback: () => void): void { this.onExportCallback = callback; }
-  public onFullscreen(callback: () => void): void { this.onFullscreenCallback = callback; }
-  public onSearch(callback: () => void): void { this.onSearchCallback = callback; }
-  public onCollapse(callback: () => void): void { this.onCollapseCallback = callback; }
-  public onExpand(callback: () => void): void { this.onExpandCallback = callback; }
-  public onScrollTop(callback: () => void): void { this.onScrollTopCallback = callback; }
-  public onScrollBottom(callback: () => void): void { this.onScrollBottomCallback = callback; }
-  public onAskAi(callback: () => void): void { this.onAskAiCallback = callback; }
+  public onCopy(callback: () => void): void {
+    this.onCopyCallback = callback;
+  }
+  public onExport(callback: () => void): void {
+    this.onExportCallback = callback;
+  }
+  public onFullscreen(callback: () => void): void {
+    this.onFullscreenCallback = callback;
+  }
+  public onSearch(callback: () => void): void {
+    this.onSearchCallback = callback;
+  }
+  public onCollapse(callback: () => void): void {
+    this.onCollapseCallback = callback;
+  }
+  public onExpand(callback: () => void): void {
+    this.onExpandCallback = callback;
+  }
+  public onScrollTop(callback: () => void): void {
+    this.onScrollTopCallback = callback;
+  }
+  public onScrollBottom(callback: () => void): void {
+    this.onScrollBottomCallback = callback;
+  }
+  public onAskAi(callback: () => void): void {
+    this.onAskAiCallback = callback;
+  }
 
   public destroy(): void {
     this.actionsContainer?.remove();

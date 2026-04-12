@@ -12,7 +12,10 @@ export class ResponseSearch {
   private onSearchChangeCallback: ((query: string) => void) | null = null;
   private onNavigateCallback: ((direction: number) => void) | null = null;
 
-  constructor(container: HTMLElement, private config: ResponseSearchConfig) {
+  constructor(
+    container: HTMLElement,
+    private config: ResponseSearchConfig
+  ) {
     this.createSearchInterface(container);
     this.setupEventListeners();
   }
@@ -20,13 +23,13 @@ export class ResponseSearch {
   private createSearchInterface(container: HTMLElement): void {
     // Find existing floating search or create new one
     this.searchContainer = container.querySelector('#floating-search-bar');
-    
+
     if (!this.searchContainer) {
       this.searchContainer = document.createElement('div');
       this.searchContainer.id = 'floating-search-bar';
       this.searchContainer.className = 'floating-search-bar';
       this.searchContainer.style.display = 'none';
-      
+
       this.searchContainer.innerHTML = `
         <div class="floating-search-content">
           <input type="text" class="floating-search-input" placeholder="Search in response...">
@@ -36,18 +39,24 @@ export class ResponseSearch {
           <button id="search-close" class="search-close-btn" title="Close search">×</button>
         </div>
       `;
-      
+
       container.appendChild(this.searchContainer);
     }
 
-    this.searchInput = this.searchContainer.querySelector('.floating-search-input');
-    this.resultsSpan = this.searchContainer.querySelector('.floating-search-results');
+    this.searchInput = this.searchContainer.querySelector(
+      '.floating-search-input'
+    );
+    this.resultsSpan = this.searchContainer.querySelector(
+      '.floating-search-results'
+    );
   }
 
   private setupEventListeners(): void {
     if (!this.searchContainer) return;
 
-    const searchInput = this.searchContainer.querySelector('.floating-search-input') as HTMLInputElement;
+    const searchInput = this.searchContainer.querySelector(
+      '.floating-search-input'
+    ) as HTMLInputElement;
     const searchClose = this.searchContainer.querySelector('#search-close');
     const searchPrev = this.searchContainer.querySelector('#search-prev');
     const searchNext = this.searchContainer.querySelector('#search-next');
@@ -76,7 +85,7 @@ export class ResponseSearch {
     if (this.searchContainer) {
       this.searchContainer.style.display = 'flex';
       this.isVisible = true;
-      
+
       // Focus the input
       setTimeout(() => {
         this.searchInput?.focus();
@@ -88,7 +97,7 @@ export class ResponseSearch {
     if (this.searchContainer) {
       this.searchContainer.style.display = 'none';
       this.isVisible = false;
-      
+
       // Clear search
       if (this.searchInput) {
         this.searchInput.value = '';
@@ -106,11 +115,15 @@ export class ResponseSearch {
     }
   }
 
-  public updateResults(current: number, total: number, currentIndex: number = -1): void {
+  public updateResults(
+    current: number,
+    total: number,
+    currentIndex: number = -1
+  ): void {
     this.currentMatches = current;
     this.totalMatches = total;
     this.currentIndex = currentIndex;
-    
+
     if (this.resultsSpan) {
       const displayCurrent = currentIndex === -1 ? 0 : currentIndex + 1;
       this.resultsSpan.textContent = `${displayCurrent}/${total}`;

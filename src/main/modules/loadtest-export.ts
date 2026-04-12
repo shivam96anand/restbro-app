@@ -2,7 +2,11 @@ import { dialog, BrowserWindow } from 'electron';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { loadTestEngine } from './loadtest-engine';
-import { LoadTestSummary, LoadSample, LoadTestConfig } from '../../shared/types';
+import {
+  LoadTestSummary,
+  LoadSample,
+  LoadTestConfig,
+} from '../../shared/types';
 
 interface ExportResult {
   ok: boolean;
@@ -25,8 +29,8 @@ class LoadTestExporter {
         defaultPath: `loadtest-${runId}.csv`,
         filters: [
           { name: 'CSV Files', extensions: ['csv'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+          { name: 'All Files', extensions: ['*'] },
+        ],
       });
 
       if (result.canceled || !result.filePath) {
@@ -43,12 +47,15 @@ class LoadTestExporter {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'Export failed'
+        error: error instanceof Error ? error.message : 'Export failed',
       };
     }
   }
 
-  async exportPdf(runId: string, summary: LoadTestSummary): Promise<ExportResult> {
+  async exportPdf(
+    runId: string,
+    summary: LoadTestSummary
+  ): Promise<ExportResult> {
     try {
       const config = loadTestEngine.getRunConfig(runId);
 
@@ -62,8 +69,8 @@ class LoadTestExporter {
         defaultPath: `loadtest-summary-${runId}.pdf`,
         filters: [
           { name: 'PDF Files', extensions: ['pdf'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+          { name: 'All Files', extensions: ['*'] },
+        ],
       });
 
       if (result.canceled || !result.filePath) {
@@ -76,14 +83,16 @@ class LoadTestExporter {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-        }
+        },
       });
 
       // Generate HTML content
       const htmlContent = this.generatePdfHtml(summary, config, runId);
 
       // Load HTML content
-      await offscreenWindow.loadURL(`data:text/html,${encodeURIComponent(htmlContent)}`);
+      await offscreenWindow.loadURL(
+        `data:text/html,${encodeURIComponent(htmlContent)}`
+      );
 
       // Generate PDF
       const pdfBuffer = await offscreenWindow.webContents.printToPDF({
@@ -100,12 +109,16 @@ class LoadTestExporter {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : 'PDF export failed'
+        error: error instanceof Error ? error.message : 'PDF export failed',
       };
     }
   }
 
-  private generateCsvContent(samples: LoadSample[], config: LoadTestConfig, runId: string): string {
+  private generateCsvContent(
+    samples: LoadSample[],
+    config: LoadTestConfig,
+    runId: string
+  ): string {
     const headers = [
       'runId',
       'timestamp_iso',
@@ -114,13 +127,17 @@ class LoadTestExporter {
       'status',
       'duration_ms',
       'bytes',
-      'error'
+      'error',
     ];
 
-    const rows = samples.map(sample => {
+    const rows = samples.map((sample) => {
       const timestamp = new Date(sample.t0).toISOString();
-      const method = config.target.kind === 'adhoc' ? config.target.method : 'N/A';
-      const url = config.target.kind === 'adhoc' ? config.target.url : 'Collection Request';
+      const method =
+        config.target.kind === 'adhoc' ? config.target.method : 'N/A';
+      const url =
+        config.target.kind === 'adhoc'
+          ? config.target.url
+          : 'Collection Request';
       const status = sample.status?.toString() || '';
       const durationMs = sample.durationMs.toString();
       const bytes = sample.bytes?.toString() || '';
@@ -134,23 +151,29 @@ class LoadTestExporter {
         status,
         durationMs,
         bytes,
-        error
+        error,
       ].join(',');
     });
 
     return [headers.join(','), ...rows].join('\n');
   }
 
-  private generatePdfHtml(summary: LoadTestSummary, config: LoadTestConfig, runId: string): string {
+  private generatePdfHtml(
+    summary: LoadTestSummary,
+    config: LoadTestConfig,
+    runId: string
+  ): string {
     const startTime = new Date(summary.startedAt).toLocaleString();
     const endTime = new Date(summary.finishedAt).toLocaleString();
-    const targetDescription = config.target.kind === 'adhoc'
-      ? `${config.target.method} ${config.target.url}`
-      : `Collection Request (ID: ${config.target.requestId})`;
+    const targetDescription =
+      config.target.kind === 'adhoc'
+        ? `${config.target.method} ${config.target.url}`
+        : `Collection Request (ID: ${config.target.requestId})`;
 
-    const successRate = summary.completed > 0
-      ? ((summary.success / summary.completed) * 100).toFixed(1)
-      : '0.0';
+    const successRate =
+      summary.completed > 0
+        ? ((summary.success / summary.completed) * 100).toFixed(1)
+        : '0.0';
 
     return `
 <!DOCTYPE html>
@@ -367,12 +390,15 @@ class LoadTestExporter {
         <div class="status-codes">
             <div class="status-list">
                 ${Object.entries(summary.codeCounts)
-                  .map(([code, count]) => `
+                  .map(
+                    ([code, count]) => `
                     <div class="status-item">
                         <span>${code}</span>
                         <span>${count.toLocaleString()}</span>
                     </div>
-                  `).join('')}
+                  `
+                  )
+                  .join('')}
             </div>
         </div>
     </div>

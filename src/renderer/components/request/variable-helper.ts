@@ -1,7 +1,7 @@
 /**
  * Variable Highlighting and Tooltip Helper
  * Barrel file that re-exports all variable helper functions
- * 
+ *
  * Split into smaller modules:
  * - variable-detection.ts: Core variable detection and resolution utilities
  * - variable-tooltip.ts: Tooltip creation and management
@@ -10,7 +10,11 @@
  */
 
 // Re-export from variable-detection.ts
-export { buildFolderVars, detectVariables, resolveVariable } from './variable-detection';
+export {
+  buildFolderVars,
+  detectVariables,
+  resolveVariable,
+} from './variable-detection';
 
 // Re-export from variable-tooltip.ts
 export { createVariableTooltip, removeGlobalTooltip } from './variable-tooltip';

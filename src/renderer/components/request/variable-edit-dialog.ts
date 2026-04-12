@@ -125,7 +125,7 @@ export class VariableEditDialog {
         if (environments.length > 0) {
           const envOptGroup = document.createElement('optgroup');
           envOptGroup.label = 'Environments';
-          environments.forEach(env => {
+          environments.forEach((env) => {
             const option = document.createElement('option');
             option.value = `env:${env.id}`;
             option.textContent = env.name;
@@ -150,7 +150,7 @@ export class VariableEditDialog {
           if (folderChain.length > 0) {
             const folderOptGroup = document.createElement('optgroup');
             folderOptGroup.label = 'Folder Variables';
-            folderChain.forEach(folder => {
+            folderChain.forEach((folder) => {
               const option = document.createElement('option');
               option.value = `folder:${folder.id}`;
               option.textContent = folder.name;
@@ -194,7 +194,10 @@ export class VariableEditDialog {
             const folderChain = this.getFolderChain(collectionId, collections);
             // Find the folder that has this variable
             for (const folder of folderChain) {
-              if (folder.variables && folder.variables[variableName] !== undefined) {
+              if (
+                folder.variables &&
+                folder.variables[variableName] !== undefined
+              ) {
                 selectedFolderId = folder.id;
                 break;
               }
@@ -251,8 +254,11 @@ export class VariableEditDialog {
           variableName,
           newValue: valueInput.value,
           source: selectedTarget,
-          environmentId: selectedTarget === 'environment' ? selectedEnvironmentId : undefined,
-          folderId: selectedTarget === 'folder' ? selectedFolderId : undefined
+          environmentId:
+            selectedTarget === 'environment'
+              ? selectedEnvironmentId
+              : undefined,
+          folderId: selectedTarget === 'folder' ? selectedFolderId : undefined,
         });
       });
 
@@ -275,8 +281,12 @@ export class VariableEditDialog {
             variableName,
             newValue: valueInput.value,
             source: selectedTarget,
-            environmentId: selectedTarget === 'environment' ? selectedEnvironmentId : undefined,
-            folderId: selectedTarget === 'folder' ? selectedFolderId : undefined
+            environmentId:
+              selectedTarget === 'environment'
+                ? selectedEnvironmentId
+                : undefined,
+            folderId:
+              selectedTarget === 'folder' ? selectedFolderId : undefined,
           });
           document.removeEventListener('keydown', handleKeydown);
         }
@@ -297,12 +307,15 @@ export class VariableEditDialog {
   /**
    * Gets the chain of folder ancestors for a collection
    */
-  private static getFolderChain(collectionId: string, collections: Collection[]): Collection[] {
+  private static getFolderChain(
+    collectionId: string,
+    collections: Collection[]
+  ): Collection[] {
     const chain: Collection[] = [];
     let currentId: string | undefined = collectionId;
 
     while (currentId) {
-      const collection = collections.find(c => c.id === currentId);
+      const collection = collections.find((c) => c.id === currentId);
       if (!collection) break;
 
       if (collection.type === 'folder') {

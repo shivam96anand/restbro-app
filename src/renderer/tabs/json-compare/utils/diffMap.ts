@@ -19,13 +19,21 @@ interface PathPosition {
  */
 export function toJsonPointer(pathSegments: string[]): string {
   if (pathSegments.length === 0) return '';
-  return '/' + pathSegments.map(seg => seg.replace(/~/g, '~0').replace(/\//g, '~1')).join('/');
+  return (
+    '/' +
+    pathSegments
+      .map((seg) => seg.replace(/~/g, '~0').replace(/\//g, '~1'))
+      .join('/')
+  );
 }
 
 /**
  * Builds flat list of diff rows from jsondiffpatch delta
  */
-export function buildDiffRows(delta: Delta | undefined, basePath: string[] = []): DiffRow[] {
+export function buildDiffRows(
+  delta: Delta | undefined,
+  basePath: string[] = []
+): DiffRow[] {
   if (!delta) return [];
 
   const rows: DiffRow[] = [];
@@ -40,9 +48,10 @@ export function buildDiffRows(delta: Delta | undefined, basePath: string[] = [])
     // jsondiffpatch uses _N keys (e.g. _0, _1) for items deleted/moved from
     // their original index in array deltas. Strip the leading _ so the path
     // segment reflects the original index.
-    const pathKey = (isArrayDelta && key.startsWith('_') && !isNaN(Number(key.slice(1))))
-      ? key.slice(1)
-      : key;
+    const pathKey =
+      isArrayDelta && key.startsWith('_') && !isNaN(Number(key.slice(1)))
+        ? key.slice(1)
+        : key;
 
     const currentPath = [...basePath, pathKey];
     const pathStr = toJsonPointer(currentPath);
@@ -59,7 +68,12 @@ export function buildDiffRows(delta: Delta | undefined, basePath: string[] = [])
       } else if (value.length === 3 && value[1] === 0 && value[2] === 0) {
         rows.push({ path: pathStr, type: 'removed', leftValue: value[0] });
       } else if (value.length === 2) {
-        rows.push({ path: pathStr, type: 'changed', leftValue: value[0], rightValue: value[1] });
+        rows.push({
+          path: pathStr,
+          type: 'changed',
+          leftValue: value[0],
+          rightValue: value[1],
+        });
       } else if (value.length === 3 && value[2] === 2) {
         // Text diff format — old/new not directly available without applying the patch.
         // Show as changed; values are retrieved from the parsed JSON by the caller if needed.
@@ -81,22 +95,36 @@ export function buildDiffRows(delta: Delta | undefined, basePath: string[] = [])
 export function findTextRangeForPath(
   jsonText: string,
   path: string
-): { startLine: number; startColumn: number; endLine: number; endColumn: number } | null {
-  const pathSegments = path === '' ? [] : path.slice(1).split('/').map(seg =>
-    seg.replace(/~1/g, '/').replace(/~0/g, '~')
-  );
+): {
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+} | null {
+  const pathSegments =
+    path === ''
+      ? []
+      : path
+          .slice(1)
+          .split('/')
+          .map((seg) => seg.replace(/~1/g, '/').replace(/~0/g, '~'));
 
   if (pathSegments.length === 0) {
     // Root - entire document
     const lines = jsonText.split('\n');
-    return { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: lines[lines.length - 1].length + 1 };
+    return {
+      startLine: 1,
+      startColumn: 1,
+      endLine: lines.length,
+      endColumn: lines[lines.length - 1].length + 1,
+    };
   }
 
   // Build position map
   const positions = buildPositionMap(jsonText);
 
   // Find matching path
-  const match = positions.find(p => p.path === path);
+  const match = positions.find((p) => p.path === path);
   if (!match) return null;
 
   return offsetToLineColumn(jsonText, match.startOffset, match.endOffset);
@@ -109,12 +137,17 @@ function buildPositionMap(jsonText: string): PathPosition[] {
   const positions: PathPosition[] = [];
   let i = 0;
 
-  const isWhitespace = (ch: string) => ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t';
+  const isWhitespace = (ch: string) =>
+    ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t';
   const skipWhitespace = () => {
     while (i < jsonText.length && isWhitespace(jsonText[i])) i++;
   };
 
-  const parseStringToken = (): { value: string; start: number; end: number } => {
+  const parseStringToken = (): {
+    value: string;
+    start: number;
+    end: number;
+  } => {
     if (jsonText[i] !== '"') throw new Error('Invalid JSON string');
 
     const start = i;
@@ -133,17 +166,34 @@ function buildPositionMap(jsonText: string): PathPosition[] {
         if (i >= jsonText.length) throw new Error('Invalid escape sequence');
         const esc = jsonText[i];
         switch (esc) {
-          case '"': value += '"'; break;
-          case '\\': value += '\\'; break;
-          case '/': value += '/'; break;
-          case 'b': value += '\b'; break;
-          case 'f': value += '\f'; break;
-          case 'n': value += '\n'; break;
-          case 'r': value += '\r'; break;
-          case 't': value += '\t'; break;
+          case '"':
+            value += '"';
+            break;
+          case '\\':
+            value += '\\';
+            break;
+          case '/':
+            value += '/';
+            break;
+          case 'b':
+            value += '\b';
+            break;
+          case 'f':
+            value += '\f';
+            break;
+          case 'n':
+            value += '\n';
+            break;
+          case 'r':
+            value += '\r';
+            break;
+          case 't':
+            value += '\t';
+            break;
           case 'u': {
             const hex = jsonText.slice(i + 1, i + 5);
-            if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new Error('Invalid unicode escape');
+            if (!/^[0-9a-fA-F]{4}$/.test(hex))
+              throw new Error('Invalid unicode escape');
             value += String.fromCharCode(parseInt(hex, 16));
             i += 4;
             break;
@@ -170,13 +220,19 @@ function buildPositionMap(jsonText: string): PathPosition[] {
     } else if (jsonText.startsWith('null', i)) {
       i += 4;
     } else {
-      const numberMatch = jsonText.slice(i).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+      const numberMatch = jsonText
+        .slice(i)
+        .match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
       if (!numberMatch) throw new Error('Invalid JSON primitive');
       i += numberMatch[0].length;
     }
 
     if (path.length > 0) {
-      positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+      positions.push({
+        path: toJsonPointer(path),
+        startOffset: start,
+        endOffset: i,
+      });
     }
   };
 
@@ -196,7 +252,11 @@ function buildPositionMap(jsonText: string): PathPosition[] {
     if (ch === '"') {
       const token = parseStringToken();
       if (path.length > 0) {
-        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: token.end });
+        positions.push({
+          path: toJsonPointer(path),
+          startOffset: start,
+          endOffset: token.end,
+        });
       }
       return;
     }
@@ -211,7 +271,11 @@ function buildPositionMap(jsonText: string): PathPosition[] {
     if (jsonText[i] === '}') {
       i++;
       if (path.length > 0) {
-        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+        positions.push({
+          path: toJsonPointer(path),
+          startOffset: start,
+          endOffset: i,
+        });
       }
       return;
     }
@@ -233,7 +297,11 @@ function buildPositionMap(jsonText: string): PathPosition[] {
       if (jsonText[i] === '}') {
         i++;
         if (path.length > 0) {
-          positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+          positions.push({
+            path: toJsonPointer(path),
+            startOffset: start,
+            endOffset: i,
+          });
         }
         return;
       }
@@ -251,7 +319,11 @@ function buildPositionMap(jsonText: string): PathPosition[] {
     if (jsonText[i] === ']') {
       i++;
       if (path.length > 0) {
-        positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+        positions.push({
+          path: toJsonPointer(path),
+          startOffset: start,
+          endOffset: i,
+        });
       }
       return;
     }
@@ -269,7 +341,11 @@ function buildPositionMap(jsonText: string): PathPosition[] {
       if (jsonText[i] === ']') {
         i++;
         if (path.length > 0) {
-          positions.push({ path: toJsonPointer(path), startOffset: start, endOffset: i });
+          positions.push({
+            path: toJsonPointer(path),
+            startOffset: start,
+            endOffset: i,
+          });
         }
         return;
       }
@@ -297,10 +373,18 @@ function offsetToLineColumn(
   text: string,
   startOffset: number,
   endOffset: number
-): { startLine: number; startColumn: number; endLine: number; endColumn: number } {
+): {
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+} {
   let line = 1;
   let col = 1;
-  let startLine = 1, startColumn = 1, endLine = 1, endColumn = 1;
+  let startLine = 1,
+    startColumn = 1,
+    endLine = 1,
+    endColumn = 1;
 
   for (let i = 0; i < text.length; i++) {
     if (i === startOffset) {
@@ -341,19 +425,27 @@ export function computeDecorations(
   const leftPositions = buildPositionMap(leftText);
   const rightPositions = buildPositionMap(rightText);
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     if (row.type === 'removed' || row.type === 'changed') {
-      const match = leftPositions.find(p => p.path === row.path);
+      const match = leftPositions.find((p) => p.path === row.path);
       if (match) {
-        const range = offsetToLineColumn(leftText, match.startOffset, match.endOffset);
+        const range = offsetToLineColumn(
+          leftText,
+          match.startOffset,
+          match.endOffset
+        );
         leftDecorations.push({ path: row.path, ...range, type: row.type });
       }
     }
 
     if (row.type === 'added' || row.type === 'changed') {
-      const match = rightPositions.find(p => p.path === row.path);
+      const match = rightPositions.find((p) => p.path === row.path);
       if (match) {
-        const range = offsetToLineColumn(rightText, match.startOffset, match.endOffset);
+        const range = offsetToLineColumn(
+          rightText,
+          match.startOffset,
+          match.endOffset
+        );
         rightDecorations.push({ path: row.path, ...range, type: row.type });
       }
     }

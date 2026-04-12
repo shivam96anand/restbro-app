@@ -21,7 +21,9 @@ export class VariableResolver {
 
       // Get active environment
       const activeEnvironment = state.activeEnvironmentId
-        ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
+        ? state.environments.find(
+            (e: any) => e.id === state.activeEnvironmentId
+          )
         : undefined;
 
       const globals = state.globals || { variables: {} };
@@ -30,7 +32,10 @@ export class VariableResolver {
       const folderVars = this.buildFolderVars(collectionId, state.collections);
 
       console.log('[VariableResolver] Folder variables:', folderVars);
-      console.log('[VariableResolver] Environment variables:', activeEnvironment?.variables);
+      console.log(
+        '[VariableResolver] Environment variables:',
+        activeEnvironment?.variables
+      );
       console.log('[VariableResolver] Global variables:', globals.variables);
 
       // Resolve each field in the config

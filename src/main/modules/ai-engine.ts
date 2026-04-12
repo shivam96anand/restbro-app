@@ -46,10 +46,10 @@ class AiEngine {
 
   getSessions(): AiSessionsState {
     return {
-      sessions: this.sessions.map(s => ({
+      sessions: this.sessions.map((s) => ({
         ...s,
         // Return lightweight version without full message content for list
-        messages: s.messages.map(m => ({ ...m })),
+        messages: s.messages.map((m) => ({ ...m })),
       })),
     };
   }
@@ -70,7 +70,7 @@ class AiEngine {
   }
 
   deleteSession(sessionId: string): boolean {
-    const index = this.sessions.findIndex(s => s.id === sessionId);
+    const index = this.sessions.findIndex((s) => s.id === sessionId);
     if (index !== -1) {
       this.sessions.splice(index, 1);
       this.queueWrite();
@@ -79,8 +79,11 @@ class AiEngine {
     return false;
   }
 
-  updateSession(sessionId: string, updates: Partial<Pick<AiSession, 'title' | 'context'>>): AiSession | null {
-    const session = this.sessions.find(s => s.id === sessionId);
+  updateSession(
+    sessionId: string,
+    updates: Partial<Pick<AiSession, 'title' | 'context'>>
+  ): AiSession | null {
+    const session = this.sessions.find((s) => s.id === sessionId);
     if (session) {
       if (updates.title !== undefined) session.title = updates.title;
       if (updates.context !== undefined) session.context = updates.context;
@@ -91,10 +94,13 @@ class AiEngine {
     return null;
   }
 
-  async sendMessage(params: AiSendMessageParams, streamCallback?: (chunk: string) => void): Promise<AiSendMessageResult> {
+  async sendMessage(
+    params: AiSendMessageParams,
+    streamCallback?: (chunk: string) => void
+  ): Promise<AiSendMessageResult> {
     const { sessionId, message, context } = params;
 
-    let session = this.sessions.find(s => s.id === sessionId);
+    const session = this.sessions.find((s) => s.id === sessionId);
     if (!session) {
       return { success: false, error: 'Session not found' };
     }
@@ -142,7 +148,10 @@ class AiEngine {
       session.updatedAt = Date.now();
 
       // Update title if this is the first exchange
-      if (session.messages.length === 2 && session.title.startsWith('New Chat')) {
+      if (
+        session.messages.length === 2 &&
+        session.title.startsWith('New Chat')
+      ) {
         session.title = this.generateTitleFromMessage(message);
       }
 
@@ -153,7 +162,8 @@ class AiEngine {
       // Remove the user message if LLM call failed
       session.messages.pop();
 
-      const errorMsg = error instanceof Error ? error.message : 'Failed to get AI response';
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to get AI response';
       return { success: false, error: errorMsg };
     }
   }
@@ -162,17 +172,17 @@ class AiEngine {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const response = await net.fetch(`${LLM_BASE_URL}/health`, {
         method: 'GET',
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         return { available: true };
       }
-      
+
       // Some servers don't have /health, try a simple completion
       return await this.checkWithCompletion();
     } catch {
@@ -181,11 +191,14 @@ class AiEngine {
     }
   }
 
-  private async checkWithCompletion(): Promise<{ available: boolean; error?: string }> {
+  private async checkWithCompletion(): Promise<{
+    available: boolean;
+    error?: string;
+  }> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
+
       const response = await net.fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -208,7 +221,9 @@ class AiEngine {
     }
   }
 
-  private buildLlmMessages(session: AiSession): Array<{ role: string; content: string }> {
+  private buildLlmMessages(
+    session: AiSession
+  ): Array<{ role: string; content: string }> {
     const messages: Array<{ role: string; content: string }> = [];
 
     // System prompt
@@ -267,7 +282,8 @@ class AiEngine {
     lines.push(`Status: ${res.status} ${res.statusText} | Time: ${res.time}ms`);
 
     // Only include content-type header as it's most relevant
-    const contentType = res.headers?.['content-type'] || res.headers?.['Content-Type'];
+    const contentType =
+      res.headers?.['content-type'] || res.headers?.['Content-Type'];
     if (contentType) {
       lines.push(`Content-Type: ${contentType}`);
     }
@@ -282,13 +298,16 @@ class AiEngine {
 
   private calculateContextSize(context?: AiContext): number {
     if (!context) return 0;
-    
+
     let size = 0;
     if (context.request) {
       size += JSON.stringify(context.request).length;
     }
     if (context.response) {
-      size += (context.response.body?.length || 0) + JSON.stringify(context.response.headers).length + 200;
+      size +=
+        (context.response.body?.length || 0) +
+        JSON.stringify(context.response.headers).length +
+        200;
     }
     if (context.fileContent) {
       size += context.fileContent.length;
@@ -296,7 +315,9 @@ class AiEngine {
     return size;
   }
 
-  private async callLlm(messages: Array<{ role: string; content: string }>): Promise<string> {
+  private async callLlm(
+    messages: Array<{ role: string; content: string }>
+  ): Promise<string> {
     const response = await net.fetch(`${LLM_BASE_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -313,7 +334,9 @@ class AiEngine {
       throw new Error(`LLM request failed: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
     return data.choices?.[0]?.message?.content || 'No response from AI';
   }
 
@@ -422,7 +445,11 @@ class AiEngine {
 
   private writeToFile(): void {
     try {
-      writeFileSync(this.sessionsPath, JSON.stringify(this.sessions, null, 2), 'utf-8');
+      writeFileSync(
+        this.sessionsPath,
+        JSON.stringify(this.sessions, null, 2),
+        'utf-8'
+      );
     } catch (error) {
       console.error('Failed to write AI sessions:', error);
     }

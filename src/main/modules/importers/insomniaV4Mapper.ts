@@ -3,12 +3,7 @@
  */
 
 import { Collection, ApiRequest, Environment } from '../../../shared/types';
-import {
-  generateId,
-  mapHttpMethod,
-  mapAuth,
-  sanitizeName,
-} from './mappers';
+import { generateId, mapHttpMethod, mapAuth, sanitizeName } from './mappers';
 import {
   InsomniaResource,
   InsomniaWorkspace,
@@ -25,9 +20,9 @@ export function mapInsomniaV4Export(resources: InsomniaResource[]): {
   environments: Environment[];
 } {
   // Find workspace
-  const workspace = resources.find(
-    (r) => r._type === 'workspace'
-  ) as InsomniaWorkspace | undefined;
+  const workspace = resources.find((r) => r._type === 'workspace') as
+    | InsomniaWorkspace
+    | undefined;
 
   const rootId = generateId();
   const rootFolder: Collection = {

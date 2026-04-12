@@ -3,9 +3,21 @@ import { NotepadTab, NotepadState } from '../../shared/types';
 import { NotepadStore } from './notepad/notepad-store';
 import { buildNotepadLayout, NotepadElements } from './notepad/notepad-layout';
 import { createNotepadEditor } from './notepad/notepad-editor';
-import { openFile, saveActiveTab, saveTabById, saveTab } from './notepad/notepad-file-ops';
-import { renderTabs, updateStatusBar, CursorPosition } from './notepad/notepad-tabs-ui';
-import { createKeyboardHandler, handleContextMenuAction } from './notepad/notepad-keyboard';
+import {
+  openFile,
+  saveActiveTab,
+  saveTabById,
+  saveTab,
+} from './notepad/notepad-file-ops';
+import {
+  renderTabs,
+  updateStatusBar,
+  CursorPosition,
+} from './notepad/notepad-tabs-ui';
+import {
+  createKeyboardHandler,
+  handleContextMenuAction,
+} from './notepad/notepad-keyboard';
 
 type CloseDecision = 'save' | 'discard' | 'cancel';
 
@@ -74,27 +86,32 @@ export class NotepadManager {
 
   private attachListeners(): void {
     const isMac = navigator.platform.toLowerCase().includes('mac');
-    document.addEventListener('keydown', createKeyboardHandler(isMac, {
-      onSave: (saveAs) => void saveActiveTab(this.getFileOpsContext(), saveAs),
-      onOpenFile: () => void openFile(this.getFileOpsContext()),
-      onNewTab: () => this.store.createTab(),
-      onCloseActiveTab: () => {
-        const active = this.store.getActiveTab();
-        if (active) void this.requestCloseTab(active.id);
-      },
-      onNextTab: () => this.switchTab(1),
-      onPrevTab: () => this.switchTab(-1),
-    }));
+    document.addEventListener(
+      'keydown',
+      createKeyboardHandler(isMac, {
+        onSave: (saveAs) =>
+          void saveActiveTab(this.getFileOpsContext(), saveAs),
+        onOpenFile: () => void openFile(this.getFileOpsContext()),
+        onNewTab: () => this.store.createTab(),
+        onCloseActiveTab: () => {
+          const active = this.store.getActiveTab();
+          if (active) void this.requestCloseTab(active.id);
+        },
+        onNextTab: () => this.switchTab(1),
+        onPrevTab: () => this.switchTab(-1),
+      })
+    );
 
     window.addEventListener('beforeunload', (event) => {
-      if (this.store.getState().tabs.some(t => t.isDirty)) {
+      if (this.store.getState().tabs.some((t) => t.isDirty)) {
         event.preventDefault();
         event.returnValue = '';
       }
     });
 
     document.addEventListener('click', (e) => {
-      if (!(e.target as HTMLElement).closest('#notepad-context-menu')) this.hideContextMenu();
+      if (!(e.target as HTMLElement).closest('#notepad-context-menu'))
+        this.hideContextMenu();
     });
 
     this.elements.contextMenu.addEventListener('click', (e) => {
@@ -113,54 +130,71 @@ export class NotepadManager {
         onCloseOthers: (id) => this.store.closeOthers(id),
         onCloseAll: () => void this.closeAllTabs(),
         onReveal: (id) => {
-          const tab = this.store.getState().tabs.find(t => t.id === id);
-          if (tab?.filePath) window.apiCourier.notepad.revealInFolder(tab.filePath);
+          const tab = this.store.getState().tabs.find((t) => t.id === id);
+          if (tab?.filePath)
+            window.apiCourier.notepad.revealInFolder(tab.filePath);
         },
       });
     });
 
-    this.elements.dirtyModal.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.resolveModal((btn as HTMLElement).dataset.action as CloseDecision);
+    this.elements.dirtyModal
+      .querySelectorAll('[data-action]')
+      .forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.resolveModal(
+            (btn as HTMLElement).dataset.action as CloseDecision
+          );
+        });
       });
-    });
   }
 
   private initializeEditor(): void {
-    this.editor = createNotepadEditor(this.elements.editorHost, { fontSize: this.fontSize }, {
-      onContentChange: (value) => {
-        if (this.isApplyingState) return;
-        const activeTab = this.store.getActiveTab();
-        if (!activeTab) return;
-        this.doUpdateStatusBar(activeTab, value);
-        if (this.contentTimer) clearTimeout(this.contentTimer);
-        this.contentTimer = window.setTimeout(() => {
-          this.store.updateContent(activeTab.id, value, true);
-          this.contentTimer = null;
-        }, 300);
-      },
-      onCursorChange: (lineNumber, column) => {
-        this.cursorPosition = { lineNumber, column };
-        const activeTab = this.store.getActiveTab();
-        if (activeTab) this.doUpdateStatusBar(activeTab);
-      },
-    });
+    this.editor = createNotepadEditor(
+      this.elements.editorHost,
+      { fontSize: this.fontSize },
+      {
+        onContentChange: (value) => {
+          if (this.isApplyingState) return;
+          const activeTab = this.store.getActiveTab();
+          if (!activeTab) return;
+          this.doUpdateStatusBar(activeTab, value);
+          if (this.contentTimer) clearTimeout(this.contentTimer);
+          this.contentTimer = window.setTimeout(() => {
+            this.store.updateContent(activeTab.id, value, true);
+            this.contentTimer = null;
+          }, 300);
+        },
+        onCursorChange: (lineNumber, column) => {
+          this.cursorPosition = { lineNumber, column };
+          const activeTab = this.store.getActiveTab();
+          if (activeTab) this.doUpdateStatusBar(activeTab);
+        },
+      }
+    );
   }
 
   private renderState(state: NotepadState): void {
-    renderTabs({
-      tabStrip: this.elements.tabStrip,
-      store: this.store,
-      onTabClick: (id) => { this.store.setActiveTab(id); this.loadActiveTabIntoEditor(); },
-      onTabClose: (id) => void this.requestCloseTab(id),
-      onTabRename: (id) => this.renameTab(id),
-      onContextMenu: (id, x, y, hasFile) => this.showContextMenu(id, x, y, hasFile),
-    }, state);
+    renderTabs(
+      {
+        tabStrip: this.elements.tabStrip,
+        store: this.store,
+        onTabClick: (id) => {
+          this.store.setActiveTab(id);
+          this.loadActiveTabIntoEditor();
+        },
+        onTabClose: (id) => void this.requestCloseTab(id),
+        onTabRename: (id) => this.renameTab(id),
+        onContextMenu: (id, x, y, hasFile) =>
+          this.showContextMenu(id, x, y, hasFile),
+      },
+      state
+    );
 
-    const activeTab = state.tabs.find(t => t.id === state.activeTabId);
+    const activeTab = state.tabs.find((t) => t.id === state.activeTabId);
     if (activeTab) {
       this.doUpdateStatusBar(activeTab);
-      if (this.editor?.getValue() !== activeTab.content) this.applyContentToEditor(activeTab.content);
+      if (this.editor?.getValue() !== activeTab.content)
+        this.applyContentToEditor(activeTab.content);
     } else {
       this.applyContentToEditor('');
       this.doUpdateStatusBar(undefined);
@@ -184,7 +218,10 @@ export class NotepadManager {
   }
 
   private adjustZoom(delta: number): void {
-    this.fontSize = Math.min(this.maxFontSize, Math.max(this.minFontSize, this.fontSize + delta));
+    this.fontSize = Math.min(
+      this.maxFontSize,
+      Math.max(this.minFontSize, this.fontSize + delta)
+    );
     this.editor?.updateOptions({ fontSize: this.fontSize });
   }
 
@@ -192,7 +229,7 @@ export class NotepadManager {
     const tabs = this.store.getState().tabs;
     if (tabs.length < 2) return;
     const activeId = this.store.getState().activeTabId;
-    let idx = tabs.findIndex(tab => tab.id === activeId);
+    let idx = tabs.findIndex((tab) => tab.id === activeId);
     if (idx === -1) idx = 0;
     const nextIdx = (idx + direction + tabs.length) % tabs.length;
     this.store.setActiveTab(tabs[nextIdx].id);
@@ -201,7 +238,10 @@ export class NotepadManager {
 
   private applyContentToEditor(content: string): void {
     if (!this.editor) return;
-    if (this.contentTimer) { clearTimeout(this.contentTimer); this.contentTimer = null; }
+    if (this.contentTimer) {
+      clearTimeout(this.contentTimer);
+      this.contentTimer = null;
+    }
     this.cursorPosition = { lineNumber: 1, column: 1 };
     this.isApplyingState = true;
     this.editor.setValue(content);
@@ -209,9 +249,12 @@ export class NotepadManager {
   }
 
   private async requestCloseTab(tabId: string): Promise<void> {
-    const tab = this.store.getState().tabs.find(t => t.id === tabId);
+    const tab = this.store.getState().tabs.find((t) => t.id === tabId);
     if (!tab) return;
-    if (!tab.isDirty) { this.performClose(tabId); return; }
+    if (!tab.isDirty) {
+      this.performClose(tabId);
+      return;
+    }
 
     const decision = await this.showDirtyModal();
     if (decision === 'cancel') return;
@@ -230,42 +273,56 @@ export class NotepadManager {
   private async closeAllTabs(): Promise<void> {
     const tabs = [...this.store.getState().tabs];
     for (const tab of tabs) {
-      if (!this.store.getState().tabs.find(t => t.id === tab.id)) continue;
+      if (!this.store.getState().tabs.find((t) => t.id === tab.id)) continue;
       await this.requestCloseTab(tab.id);
     }
     if (this.store.getState().tabs.length === 0) this.store.createTab();
   }
 
   private renameTab(tabId: string): void {
-    const tab = this.store.getState().tabs.find(t => t.id === tabId);
+    const tab = this.store.getState().tabs.find((t) => t.id === tabId);
     if (!tab) return;
     const next = prompt('Rename tab', tab.title);
     if (next?.trim()) this.store.updateTab(tabId, { title: next.trim() });
   }
 
   private doUpdateStatusBar(tab?: NotepadTab, valueOverride?: string): void {
-    updateStatusBar({
-      statusFile: this.elements.statusFile,
-      statusState: this.elements.statusState,
-      statusCursor: this.elements.statusCursor,
-      statusLines: this.elements.statusLines,
-      statusChars: this.elements.statusChars,
-    }, this.cursorPosition, tab, valueOverride);
+    updateStatusBar(
+      {
+        statusFile: this.elements.statusFile,
+        statusState: this.elements.statusState,
+        statusCursor: this.elements.statusCursor,
+        statusLines: this.elements.statusLines,
+        statusChars: this.elements.statusChars,
+      },
+      this.cursorPosition,
+      tab,
+      valueOverride
+    );
   }
 
-  private showContextMenu(tabId: string, x: number, y: number, hasFile: boolean): void {
+  private showContextMenu(
+    tabId: string,
+    x: number,
+    y: number,
+    hasFile: boolean
+  ): void {
     this.elements.contextMenu.style.left = `${x}px`;
     this.elements.contextMenu.style.top = `${y}px`;
     this.elements.contextMenu.dataset.tabId = tabId;
     this.elements.contextMenu.classList.remove('hidden');
-    const revealBtn = this.elements.contextMenu.querySelector('[data-action="reveal"]') as HTMLElement;
+    const revealBtn = this.elements.contextMenu.querySelector(
+      '[data-action="reveal"]'
+    ) as HTMLElement;
     if (revealBtn) revealBtn.style.display = hasFile ? 'block' : 'none';
   }
 
-  private hideContextMenu(): void { this.elements.contextMenu.classList.add('hidden'); }
+  private hideContextMenu(): void {
+    this.elements.contextMenu.classList.add('hidden');
+  }
 
   private showDirtyModal(): Promise<CloseDecision> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       this.modalResolver = resolve;
       this.elements.dirtyModal.classList.remove('hidden');
     });
@@ -273,6 +330,9 @@ export class NotepadManager {
 
   private resolveModal(decision: CloseDecision): void {
     this.elements.dirtyModal.classList.add('hidden');
-    if (this.modalResolver) { this.modalResolver(decision); this.modalResolver = null; }
+    if (this.modalResolver) {
+      this.modalResolver(decision);
+      this.modalResolver = null;
+    }
   }
 }

@@ -40,8 +40,13 @@ export class MockRouteEditor {
             <div class="mock-route-field">
               <label>Method</label>
               <select id="route-method" class="mock-select">
-                ${(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as MockHttpMethod[])
-                  .map((m) => `<option value="${m}" ${m === method ? 'selected' : ''}>${m}</option>`)
+                ${(
+                  ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as MockHttpMethod[]
+                )
+                  .map(
+                    (m) =>
+                      `<option value="${m}" ${m === method ? 'selected' : ''}>${m}</option>`
+                  )
                   .join('')}
               </select>
             </div>
@@ -74,7 +79,10 @@ export class MockRouteEditor {
               <label>Response Type</label>
               <select id="route-response-type" class="mock-select">
                 ${(['json', 'text', 'binary', 'file'] as MockResponseType[])
-                  .map((t) => `<option value="${t}" ${t === responseType ? 'selected' : ''}>${t}</option>`)
+                  .map(
+                    (t) =>
+                      `<option value="${t}" ${t === responseType ? 'selected' : ''}>${t}</option>`
+                  )
                   .join('')}
               </select>
             </div>
@@ -87,14 +95,18 @@ export class MockRouteEditor {
 
           <div class="mock-route-field" id="body-field">
             <label id="body-label">${this.getBodyLabel(responseType)}</label>
-            ${responseType === 'file' ? `
+            ${
+              responseType === 'file'
+                ? `
               <div class="file-picker-row">
                 <input type="text" id="route-body" class="mock-input" value="${this.escapeAttr(body)}" placeholder="Select a file..." readonly />
                 <button class="btn-mock btn-pick-file" id="pick-file-btn">Browse...</button>
               </div>
-            ` : `
+            `
+                : `
               <textarea id="route-body" class="mock-textarea" rows="8" placeholder="${this.getBodyPlaceholder(responseType)}">${this.escapeHtml(body)}</textarea>
-            `}
+            `
+            }
           </div>
 
           <div class="mock-route-field">
@@ -135,58 +147,81 @@ export class MockRouteEditor {
   }
 
   private setupEventListeners(container: HTMLElement, enabled: boolean): void {
-    let currentEnabled = enabled;
-    let currentHeaders: MockRouteHeader[] = this.collectHeaders(container);
+    const currentEnabled = enabled;
+    const currentHeaders: MockRouteHeader[] = this.collectHeaders(container);
 
     // Path match type change
-    container.querySelectorAll('input[name="pathMatchType"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        const matchType = (e.target as HTMLInputElement).value as MockPathMatchType;
-        // Update visual selection
-        container.querySelectorAll('.path-match-option').forEach((opt) => {
-          opt.classList.toggle('selected', opt.getAttribute('data-value') === matchType);
+    container
+      .querySelectorAll('input[name="pathMatchType"]')
+      .forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+          const matchType = (e.target as HTMLInputElement)
+            .value as MockPathMatchType;
+          // Update visual selection
+          container.querySelectorAll('.path-match-option').forEach((opt) => {
+            opt.classList.toggle(
+              'selected',
+              opt.getAttribute('data-value') === matchType
+            );
+          });
+          // Update hint text
+          const hintEl = container.querySelector('#path-match-hint');
+          if (hintEl) {
+            hintEl.innerHTML = this.getPathMatchHint(matchType);
+          }
+          // Update path placeholder
+          const pathInput = container.querySelector(
+            '#route-path'
+          ) as HTMLInputElement;
+          if (pathInput) {
+            pathInput.placeholder = this.getPathPlaceholder(matchType);
+          }
         });
-        // Update hint text
-        const hintEl = container.querySelector('#path-match-hint');
-        if (hintEl) {
-          hintEl.innerHTML = this.getPathMatchHint(matchType);
-        }
-        // Update path placeholder
-        const pathInput = container.querySelector('#route-path') as HTMLInputElement;
-        if (pathInput) {
-          pathInput.placeholder = this.getPathPlaceholder(matchType);
-        }
       });
-    });
 
     // Response type change
-    const responseTypeSelect = container.querySelector('#route-response-type') as HTMLSelectElement;
+    const responseTypeSelect = container.querySelector(
+      '#route-response-type'
+    ) as HTMLSelectElement;
     responseTypeSelect?.addEventListener('change', () => {
       const type = responseTypeSelect.value as MockResponseType;
       this.updateBodyFieldForType(container, type);
     });
 
     // Pick file button
-    container.querySelector('#pick-file-btn')?.addEventListener('click', async () => {
-      const result = await window.apiCourier.mockServer.pickFile();
-      if (result.success && result.data && !result.data.canceled && result.data.filePath) {
-        const bodyInput = container.querySelector('#route-body') as HTMLInputElement;
-        if (bodyInput) {
-          bodyInput.value = result.data.filePath;
+    container
+      .querySelector('#pick-file-btn')
+      ?.addEventListener('click', async () => {
+        const result = await window.apiCourier.mockServer.pickFile();
+        if (
+          result.success &&
+          result.data &&
+          !result.data.canceled &&
+          result.data.filePath
+        ) {
+          const bodyInput = container.querySelector(
+            '#route-body'
+          ) as HTMLInputElement;
+          if (bodyInput) {
+            bodyInput.value = result.data.filePath;
+          }
         }
-      }
-    });
+      });
 
     // Add header button
-    container.querySelector('#add-header-btn')?.addEventListener('click', () => {
-      currentHeaders.push({ key: '', value: '', enabled: true });
-      this.rerenderHeaders(container, currentHeaders);
-    });
+    container
+      .querySelector('#add-header-btn')
+      ?.addEventListener('click', () => {
+        currentHeaders.push({ key: '', value: '', enabled: true });
+        this.rerenderHeaders(container, currentHeaders);
+      });
 
     // Close/Cancel buttons
-    container.querySelector('#close-editor-btn')?.addEventListener('click', () => {
-      this.onCancel?.();
-    });
+    container
+      .querySelector('#close-editor-btn')
+      ?.addEventListener('click', () => {
+        this.onCancel?.();
+      });
 
     container.querySelector('#cancel-btn')?.addEventListener('click', () => {
       this.onCancel?.();
@@ -201,20 +236,27 @@ export class MockRouteEditor {
     });
 
     // Header removal - use event delegation
-    container.querySelector('#headers-editor')?.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.classList.contains('btn-remove-header')) {
-        const index = parseInt(target.dataset.index || '-1', 10);
-        if (index >= 0) {
-          currentHeaders.splice(index, 1);
-          this.rerenderHeaders(container, currentHeaders);
+    container
+      .querySelector('#headers-editor')
+      ?.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('btn-remove-header')) {
+          const index = parseInt(target.dataset.index || '-1', 10);
+          if (index >= 0) {
+            currentHeaders.splice(index, 1);
+            this.rerenderHeaders(container, currentHeaders);
+          }
         }
-      }
-    });
+      });
   }
 
-  private updateBodyFieldForType(container: HTMLElement, type: MockResponseType): void {
-    const contentTypeField = container.querySelector('#content-type-field') as HTMLElement;
+  private updateBodyFieldForType(
+    container: HTMLElement,
+    type: MockResponseType
+  ): void {
+    const contentTypeField = container.querySelector(
+      '#content-type-field'
+    ) as HTMLElement;
     const bodyLabel = container.querySelector('#body-label') as HTMLElement;
     const bodyField = container.querySelector('#body-field') as HTMLElement;
 
@@ -227,10 +269,17 @@ export class MockRouteEditor {
     }
 
     // Re-render body input based on type
-    const currentBody = (container.querySelector('#route-body') as HTMLInputElement | HTMLTextAreaElement)?.value || '';
+    const currentBody =
+      (
+        container.querySelector('#route-body') as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+      )?.value || '';
 
     if (bodyField) {
-      const existingLabel = bodyField.querySelector('label')?.outerHTML || `<label id="body-label">${this.getBodyLabel(type)}</label>`;
+      const existingLabel =
+        bodyField.querySelector('label')?.outerHTML ||
+        `<label id="body-label">${this.getBodyLabel(type)}</label>`;
       bodyField.innerHTML = existingLabel;
 
       if (type === 'file') {
@@ -241,15 +290,24 @@ export class MockRouteEditor {
           </div>
         `;
         // Re-attach file picker event
-        bodyField.querySelector('#pick-file-btn')?.addEventListener('click', async () => {
-          const result = await window.apiCourier.mockServer.pickFile();
-          if (result.success && result.data && !result.data.canceled && result.data.filePath) {
-            const bodyInput = bodyField.querySelector('#route-body') as HTMLInputElement;
-            if (bodyInput) {
-              bodyInput.value = result.data.filePath;
+        bodyField
+          .querySelector('#pick-file-btn')
+          ?.addEventListener('click', async () => {
+            const result = await window.apiCourier.mockServer.pickFile();
+            if (
+              result.success &&
+              result.data &&
+              !result.data.canceled &&
+              result.data.filePath
+            ) {
+              const bodyInput = bodyField.querySelector(
+                '#route-body'
+              ) as HTMLInputElement;
+              if (bodyInput) {
+                bodyInput.value = result.data.filePath;
+              }
             }
-          }
-        });
+          });
       } else {
         bodyField.innerHTML += `
           <textarea id="route-body" class="mock-textarea" rows="8" placeholder="${this.getBodyPlaceholder(type)}">${this.escapeHtml(currentBody)}</textarea>
@@ -258,7 +316,10 @@ export class MockRouteEditor {
     }
   }
 
-  private rerenderHeaders(container: HTMLElement, headers: MockRouteHeader[]): void {
+  private rerenderHeaders(
+    container: HTMLElement,
+    headers: MockRouteHeader[]
+  ): void {
     // Collect current values before re-rendering
     this.collectHeaderValues(container, headers);
 
@@ -271,34 +332,76 @@ export class MockRouteEditor {
   private collectHeaders(container: HTMLElement): MockRouteHeader[] {
     const headers: MockRouteHeader[] = [];
     container.querySelectorAll('.mock-header-row').forEach((row) => {
-      const enabled = (row.querySelector('.header-enabled') as HTMLInputElement)?.checked ?? true;
-      const key = (row.querySelector('.header-key') as HTMLInputElement)?.value || '';
-      const value = (row.querySelector('.header-value') as HTMLInputElement)?.value || '';
+      const enabled =
+        (row.querySelector('.header-enabled') as HTMLInputElement)?.checked ??
+        true;
+      const key =
+        (row.querySelector('.header-key') as HTMLInputElement)?.value || '';
+      const value =
+        (row.querySelector('.header-value') as HTMLInputElement)?.value || '';
       headers.push({ key, value, enabled });
     });
     return headers;
   }
 
-  private collectHeaderValues(container: HTMLElement, headers: MockRouteHeader[]): void {
+  private collectHeaderValues(
+    container: HTMLElement,
+    headers: MockRouteHeader[]
+  ): void {
     container.querySelectorAll('.mock-header-row').forEach((row, index) => {
       if (headers[index]) {
-        headers[index].enabled = (row.querySelector('.header-enabled') as HTMLInputElement)?.checked ?? true;
-        headers[index].key = (row.querySelector('.header-key') as HTMLInputElement)?.value || '';
-        headers[index].value = (row.querySelector('.header-value') as HTMLInputElement)?.value || '';
+        headers[index].enabled =
+          (row.querySelector('.header-enabled') as HTMLInputElement)?.checked ??
+          true;
+        headers[index].key =
+          (row.querySelector('.header-key') as HTMLInputElement)?.value || '';
+        headers[index].value =
+          (row.querySelector('.header-value') as HTMLInputElement)?.value || '';
       }
     });
   }
 
-  private collectRouteData(container: HTMLElement, enabled: boolean): Partial<Omit<MockRoute, 'id'>> {
-    const method = (container.querySelector('#route-method') as HTMLSelectElement)?.value as MockHttpMethod;
-    const path = (container.querySelector('#route-path') as HTMLInputElement)?.value || '/';
-    const pathMatchType = (container.querySelector('input[name="pathMatchType"]:checked') as HTMLInputElement)?.value as MockPathMatchType || 'exact';
-    const statusCode = parseInt((container.querySelector('#route-status') as HTMLInputElement)?.value || '200', 10);
-    const delayMs = parseInt((container.querySelector('#route-delay') as HTMLInputElement)?.value || '0', 10);
-    const responseType = (container.querySelector('#route-response-type') as HTMLSelectElement)?.value as MockResponseType;
-    const body = (container.querySelector('#route-body') as HTMLInputElement | HTMLTextAreaElement)?.value || '';
-    const contentType = (container.querySelector('#route-content-type') as HTMLInputElement)?.value || '';
-    const headers = this.collectHeaders(container).filter((h) => h.key.trim() !== '');
+  private collectRouteData(
+    container: HTMLElement,
+    enabled: boolean
+  ): Partial<Omit<MockRoute, 'id'>> {
+    const method = (
+      container.querySelector('#route-method') as HTMLSelectElement
+    )?.value as MockHttpMethod;
+    const path =
+      (container.querySelector('#route-path') as HTMLInputElement)?.value ||
+      '/';
+    const pathMatchType =
+      ((
+        container.querySelector(
+          'input[name="pathMatchType"]:checked'
+        ) as HTMLInputElement
+      )?.value as MockPathMatchType) || 'exact';
+    const statusCode = parseInt(
+      (container.querySelector('#route-status') as HTMLInputElement)?.value ||
+        '200',
+      10
+    );
+    const delayMs = parseInt(
+      (container.querySelector('#route-delay') as HTMLInputElement)?.value ||
+        '0',
+      10
+    );
+    const responseType = (
+      container.querySelector('#route-response-type') as HTMLSelectElement
+    )?.value as MockResponseType;
+    const body =
+      (
+        container.querySelector('#route-body') as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+      )?.value || '';
+    const contentType =
+      (container.querySelector('#route-content-type') as HTMLInputElement)
+        ?.value || '';
+    const headers = this.collectHeaders(container).filter(
+      (h) => h.key.trim() !== ''
+    );
 
     return {
       enabled,
@@ -374,12 +477,13 @@ export class MockRouteEditor {
   }
 
   private renderPathMatchTypeOptions(selected: MockPathMatchType): string {
-    const options: { value: MockPathMatchType; label: string; icon: string }[] = [
-      { value: 'exact', label: 'Exact', icon: '=' },
-      { value: 'prefix', label: 'Prefix', icon: '▸' },
-      { value: 'wildcard', label: 'Wildcard', icon: '*' },
-      { value: 'regex', label: 'Regex', icon: '.*' },
-    ];
+    const options: { value: MockPathMatchType; label: string; icon: string }[] =
+      [
+        { value: 'exact', label: 'Exact', icon: '=' },
+        { value: 'prefix', label: 'Prefix', icon: '▸' },
+        { value: 'wildcard', label: 'Wildcard', icon: '*' },
+        { value: 'regex', label: 'Regex', icon: '.*' },
+      ];
 
     return options
       .map(

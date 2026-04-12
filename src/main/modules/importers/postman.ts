@@ -47,7 +47,12 @@ interface PostmanBody {
   mode?: string;
   raw?: string;
   urlencoded?: Array<{ key: string; value: string; disabled?: boolean }>;
-  formdata?: Array<{ key: string; value: string; type?: string; disabled?: boolean }>;
+  formdata?: Array<{
+    key: string;
+    value: string;
+    type?: string;
+    disabled?: boolean;
+  }>;
 }
 
 interface PostmanVariable {
@@ -93,7 +98,9 @@ export function mapPostmanCollection(data: PostmanCollection): {
 
   // Map items (folders and requests)
   if (data.item) {
-    rootFolder.children = data.item.map(item => mapPostmanItem(item, rootId, data.auth));
+    rootFolder.children = data.item.map((item) =>
+      mapPostmanItem(item, rootId, data.auth)
+    );
   }
 
   return { rootFolder, environments };
@@ -102,7 +109,11 @@ export function mapPostmanCollection(data: PostmanCollection): {
 /**
  * Maps a Postman item (folder or request)
  */
-function mapPostmanItem(item: PostmanItem, parentId: string, collectionAuth?: any): Collection {
+function mapPostmanItem(
+  item: PostmanItem,
+  parentId: string,
+  collectionAuth?: any
+): Collection {
   const itemId = generateId();
 
   // Check if it's a folder or request
@@ -113,7 +124,9 @@ function mapPostmanItem(item: PostmanItem, parentId: string, collectionAuth?: an
       name: sanitizeName(item.name),
       type: 'folder',
       parentId,
-      children: item.item.map(child => mapPostmanItem(child, itemId, collectionAuth)),
+      children: item.item.map((child) =>
+        mapPostmanItem(child, itemId, collectionAuth)
+      ),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -148,7 +161,11 @@ function mapPostmanItem(item: PostmanItem, parentId: string, collectionAuth?: an
 /**
  * Maps a Postman request to ApiRequest
  */
-function mapPostmanRequest(name: string, req: PostmanRequest, collectionAuth?: any): ApiRequest {
+function mapPostmanRequest(
+  name: string,
+  req: PostmanRequest,
+  collectionAuth?: any
+): ApiRequest {
   const method = mapHttpMethod(req.method);
 
   // Parse URL
@@ -161,7 +178,7 @@ function mapPostmanRequest(name: string, req: PostmanRequest, collectionAuth?: a
     urlString = req.url.raw || '';
     // Extract query params
     if (req.url.query) {
-      req.url.query.forEach(q => {
+      req.url.query.forEach((q) => {
         if (q.key && (q.disabled === undefined || q.disabled === false)) {
           params[q.key] = q.value || '';
         }
@@ -172,7 +189,7 @@ function mapPostmanRequest(name: string, req: PostmanRequest, collectionAuth?: a
   // Parse headers
   const headers: Record<string, string> = {};
   if (req.header) {
-    req.header.forEach(h => {
+    req.header.forEach((h) => {
       if (h.key && (h.disabled === undefined || h.disabled === false)) {
         headers[h.key] = h.value || '';
       }
@@ -195,9 +212,14 @@ function mapPostmanRequest(name: string, req: PostmanRequest, collectionAuth?: a
     } else if (req.body.mode === 'urlencoded') {
       const pairs: string[] = [];
       if (req.body.urlencoded) {
-        req.body.urlencoded.forEach(item => {
-          if (item.key && (item.disabled === undefined || item.disabled === false)) {
-            pairs.push(`${encodeURIComponent(item.key)}=${encodeURIComponent(item.value || '')}`);
+        req.body.urlencoded.forEach((item) => {
+          if (
+            item.key &&
+            (item.disabled === undefined || item.disabled === false)
+          ) {
+            pairs.push(
+              `${encodeURIComponent(item.key)}=${encodeURIComponent(item.value || '')}`
+            );
           }
         });
       }
@@ -206,8 +228,11 @@ function mapPostmanRequest(name: string, req: PostmanRequest, collectionAuth?: a
       // Convert form-data to a simple string representation
       const pairs: string[] = [];
       if (req.body.formdata) {
-        req.body.formdata.forEach(item => {
-          if (item.key && (item.disabled === undefined || item.disabled === false)) {
+        req.body.formdata.forEach((item) => {
+          if (
+            item.key &&
+            (item.disabled === undefined || item.disabled === false)
+          ) {
             pairs.push(`${item.key}=${item.value || ''}`);
           }
         });
@@ -239,7 +264,7 @@ export function mapPostmanEnvironment(data: PostmanEnvironment): Environment {
   const variables: Record<string, string> = {};
 
   if (data.values) {
-    data.values.forEach(v => {
+    data.values.forEach((v) => {
       if (v.key && (v.enabled === undefined || v.enabled === true)) {
         variables[v.key] = String(v.value || '');
       }
@@ -275,6 +300,7 @@ export function isPostmanEnvironment(data: any): boolean {
     typeof data === 'object' &&
     data.name &&
     Array.isArray(data.values) &&
-    (data._postman_variable_scope === 'environment' || data.values.some((v: any) => v.key))
+    (data._postman_variable_scope === 'environment' ||
+      data.values.some((v: any) => v.key))
   );
 }

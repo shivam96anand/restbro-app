@@ -28,7 +28,10 @@ import { ImportManager } from './components/import/import-manager';
 import { setupEventListeners } from './event-listeners';
 import { BackupManager } from './components/backup-manager';
 import { ThemeOnboarding } from './components/theme-onboarding';
-import { sanitizeHistoryForPersistence, sanitizeTabsForPersistence } from './utils/response-persistence';
+import {
+  sanitizeHistoryForPersistence,
+  sanitizeTabsForPersistence,
+} from './utils/response-persistence';
 
 declare global {
   interface Window {
@@ -64,14 +67,18 @@ class ApiCourierRenderer {
     this.collectionsManager = new CollectionsManager();
     this.requestManager = new RequestManager();
     this.environmentManager = new EnvironmentManager();
-    this.importManager = new ImportManager(this.handleImportComplete.bind(this));
+    this.importManager = new ImportManager(
+      this.handleImportComplete.bind(this)
+    );
     this.backupManager = new BackupManager();
     this.themeOnboarding = new ThemeOnboarding(this.themeManager);
     this.updateNotificationManager = new UpdateNotificationManager();
 
     // Get container elements for managers that require them
-    const responseContainer = document.getElementById('response-area') || document.body;
-    const askAiContainer = document.getElementById('ask-ai-tab') || document.body;
+    const responseContainer =
+      document.getElementById('response-area') || document.body;
+    const askAiContainer =
+      document.getElementById('ask-ai-tab') || document.body;
 
     this.responseManager = new ResponseManager(responseContainer);
     this.historyManager = new HistoryManager();
@@ -80,7 +87,9 @@ class ApiCourierRenderer {
     this.jsonViewerTab = new JsonViewerTab();
     this.jsonCompareTab = new JsonCompareTabManager();
     this.askAiTab = new AskAiTab(askAiContainer);
-    this.notepadManager = new NotepadManager(document.getElementById('notepad-tab'));
+    this.notepadManager = new NotepadManager(
+      document.getElementById('notepad-tab')
+    );
     this.curlToolManager = new CurlToolManager();
   }
 
@@ -139,8 +148,12 @@ class ApiCourierRenderer {
       await this.collectionsManager.setCollections(state.collections);
       this.tabsManager.setTabs(state.openTabs, state.activeTabId);
       this.historyManager.setHistory((state as any).history || []);
-      this.environmentManager.setEnvironments((state as any).environments || []);
-      this.environmentManager.setActiveEnvironment((state as any).activeEnvironmentId);
+      this.environmentManager.setEnvironments(
+        (state as any).environments || []
+      );
+      this.environmentManager.setActiveEnvironment(
+        (state as any).activeEnvironmentId
+      );
     } catch (error) {
       console.error('Failed to load initial state:', error);
     }
@@ -196,10 +209,12 @@ class ApiCourierRenderer {
     const lazyMap: Record<string, () => void | Promise<void>> = {
       'json-viewer': () => this.jsonViewerTab.ensureInitialized(),
       'json-compare': () => this.jsonCompareTab.ensureInitialized(),
-      'notepad': () => this.notepadManager.ensureInitialized(),
+      notepad: () => this.notepadManager.ensureInitialized(),
     };
 
-    document.addEventListener('nav-tab-switched', ((e: CustomEvent<{ tab: string }>) => {
+    document.addEventListener('nav-tab-switched', ((
+      e: CustomEvent<{ tab: string }>
+    ) => {
       const initFn = lazyMap[e.detail.tab];
       if (initFn) initFn();
     }) as EventListener);

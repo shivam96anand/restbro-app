@@ -131,12 +131,24 @@ export class OAuth2UIRenderer {
       onCopyToken: () => void;
     }
   ): void {
-    const getTokenBtn = authConfig.querySelector('#oauth-get-token') as HTMLButtonElement;
-    const clearTokenBtn = authConfig.querySelector('#oauth-clear-token') as HTMLButtonElement;
-    const grantTypeSelect = authConfig.querySelector('#oauth-grant-type') as HTMLSelectElement;
-    const advancedToggle = authConfig.querySelector('#oauth-advanced-toggle') as HTMLElement;
-    const eyeButton = authConfig.querySelector('#oauth-eye-button') as HTMLButtonElement;
-    const copyTokenBtn = authConfig.querySelector('#copy-access-token') as HTMLButtonElement;
+    const getTokenBtn = authConfig.querySelector(
+      '#oauth-get-token'
+    ) as HTMLButtonElement;
+    const clearTokenBtn = authConfig.querySelector(
+      '#oauth-clear-token'
+    ) as HTMLButtonElement;
+    const grantTypeSelect = authConfig.querySelector(
+      '#oauth-grant-type'
+    ) as HTMLSelectElement;
+    const advancedToggle = authConfig.querySelector(
+      '#oauth-advanced-toggle'
+    ) as HTMLElement;
+    const eyeButton = authConfig.querySelector(
+      '#oauth-eye-button'
+    ) as HTMLButtonElement;
+    const copyTokenBtn = authConfig.querySelector(
+      '#copy-access-token'
+    ) as HTMLButtonElement;
 
     if (getTokenBtn) {
       getTokenBtn.addEventListener('click', callbacks.onGetToken);
@@ -169,10 +181,13 @@ export class OAuth2UIRenderer {
    * Toggles grant type-specific fields visibility
    */
   toggleGrantTypeFields(grantType: string): void {
-    const authCodeFields = document.querySelector('.oauth-auth-code-fields') as HTMLElement;
+    const authCodeFields = document.querySelector(
+      '.oauth-auth-code-fields'
+    ) as HTMLElement;
 
     if (authCodeFields) {
-      authCodeFields.style.display = grantType === 'authorization_code' ? 'block' : 'none';
+      authCodeFields.style.display =
+        grantType === 'authorization_code' ? 'block' : 'none';
     }
   }
 
@@ -191,7 +206,7 @@ export class OAuth2UIRenderer {
       if (!isVisible) {
         requestAnimationFrame(() => {
           const event = new CustomEvent('oauth-advanced-toggled', {
-            detail: { visible: true }
+            detail: { visible: true },
           });
           document.dispatchEvent(event);
         });
@@ -209,7 +224,7 @@ export class OAuth2UIRenderer {
     const config: Record<string, string> = {};
     const inputs = authConfig.querySelectorAll('input, select');
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       const field = (input as HTMLElement).dataset.field;
       const value = (input as HTMLInputElement | HTMLSelectElement).value;
 
@@ -228,7 +243,9 @@ export class OAuth2UIRenderer {
     const authConfig = document.getElementById('auth-config');
     if (authConfig) {
       Object.entries(config).forEach(([field, value]) => {
-        const input = authConfig.querySelector(`[data-field="${field}"]`) as HTMLInputElement;
+        const input = authConfig.querySelector(
+          `[data-field="${field}"]`
+        ) as HTMLInputElement;
         if (input) {
           input.value = value;
           // Trigger input event to refresh variable highlighting

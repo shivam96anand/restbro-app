@@ -5,7 +5,12 @@
 
 import { Environment } from '../../../shared/types';
 import { detectVariables, resolveVariable } from './variable-detection';
-import { createVariableTooltip, removeGlobalTooltip, getGlobalTooltip, setGlobalTooltip } from './variable-tooltip';
+import {
+  createVariableTooltip,
+  removeGlobalTooltip,
+  getGlobalTooltip,
+  setGlobalTooltip,
+} from './variable-tooltip';
 
 /**
  * Adds variable highlighting to an input field
@@ -40,7 +45,7 @@ export function addVariableHighlighting(
     `.variable-highlight-container[data-for="${highlightId}"]`
   ) as HTMLDivElement;
   const isNewContainer = !container;
-  
+
   if (isNewContainer) {
     container = document.createElement('div');
     container.className = 'variable-highlight-container';
@@ -136,7 +141,7 @@ export function addVariableHighlighting(
 
   // Add text segments with highlights
   let lastIndex = 0;
-  variables.forEach(variable => {
+  variables.forEach((variable) => {
     // Add text before variable
     if (variable.start > lastIndex) {
       const textSpan = document.createElement('span');
@@ -150,7 +155,12 @@ export function addVariableHighlighting(
     varSpan.textContent = text.substring(variable.start, variable.end);
 
     // Resolve variable to determine if it's defined
-    const { value, source } = resolveVariable(variable.name, activeEnvironment, globals, folderVars);
+    const { value, source } = resolveVariable(
+      variable.name,
+      activeEnvironment,
+      globals,
+      folderVars
+    );
     if (!value) {
       varSpan.classList.add('undefined');
     }
@@ -171,7 +181,12 @@ export function addVariableHighlighting(
       };
 
       // Create and position new tooltip
-      const tooltip = createVariableTooltip(variable.name, value, source, handleCopy);
+      const tooltip = createVariableTooltip(
+        variable.name,
+        value,
+        source,
+        handleCopy
+      );
       setGlobalTooltip(tooltip);
       document.body.appendChild(tooltip);
 
@@ -217,11 +232,12 @@ export function addVariableHighlighting(
           const tooltipRect = globalTooltip.getBoundingClientRect();
           const mouseX = (window as any).__mouseX || 0;
           const mouseY = (window as any).__mouseY || 0;
-          
-          const isOverTooltip = mouseX >= tooltipRect.left &&
-                                mouseX <= tooltipRect.right &&
-                                mouseY >= tooltipRect.top &&
-                                mouseY <= tooltipRect.bottom;
+
+          const isOverTooltip =
+            mouseX >= tooltipRect.left &&
+            mouseX <= tooltipRect.right &&
+            mouseY >= tooltipRect.top &&
+            mouseY <= tooltipRect.bottom;
 
           if (!isOverTooltip) {
             if ((globalTooltip as any).__cleanup) {

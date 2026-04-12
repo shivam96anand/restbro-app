@@ -2,7 +2,13 @@
  * Monaco-based JSON editor with validation and diff highlighting
  */
 
-import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+} from 'react';
 import * as monaco from 'monaco-editor';
 import type { DiffDecoration } from '../types';
 import { findTextRangeForPath } from '../utils/diffMap';
@@ -44,18 +50,27 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
       const valueColor = getCssHexVariable('--text-primary') || 'ffffff';
       const bracketColor = getCssHexVariable('--json-bracket') || 'da70d6';
       const editorBackground = getCssHexVariable('--bg-primary') || '1a1a1a';
-      const lineNumberColor = getCssHexVariable('--json-line-number') || '6e6e6e';
+      const lineNumberColor =
+        getCssHexVariable('--json-line-number') || '6e6e6e';
 
       monaco.editor.defineTheme('api-courier-json', {
         base: 'vs-dark',
         inherit: true,
         rules: [
-          { token: 'string.key.json', foreground: themeColor, fontStyle: 'bold' },
+          {
+            token: 'string.key.json',
+            foreground: themeColor,
+            fontStyle: 'bold',
+          },
           { token: 'string.value.json', foreground: valueColor },
           { token: 'string.json', foreground: valueColor },
           { token: 'number.json', foreground: valueColor },
           { token: 'keyword.json', foreground: valueColor },
-          { token: 'delimiter.bracket.json', foreground: bracketColor, fontStyle: 'bold' },
+          {
+            token: 'delimiter.bracket.json',
+            foreground: bracketColor,
+            fontStyle: 'bold',
+          },
           { token: 'delimiter.colon.json', foreground: valueColor },
           { token: 'delimiter.comma.json', foreground: bracketColor },
         ],
@@ -78,7 +93,7 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
           'editorBracketPairGuide.activeBackground5': `#${bracketColor}`,
           'editorBracketPairGuide.activeBackground6': `#${bracketColor}`,
           'editorBracketHighlight.unexpectedBracket.foreground': `#${bracketColor}`,
-        }
+        },
       });
 
       // Apply theme globally (affects all Monaco editors)
@@ -109,8 +124,8 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
         lineDecorationsWidth: 4,
         lineNumbersMinChars: 3,
         bracketPairColorization: {
-          enabled: false
-        }
+          enabled: false,
+        },
       });
 
       editorRef.current = editor;
@@ -149,7 +164,10 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
     // Clear error decorations
     const clearErrorDecorations = () => {
       if (!editorRef.current) return;
-      errorDecorationsRef.current = editorRef.current.deltaDecorations(errorDecorationsRef.current, []);
+      errorDecorationsRef.current = editorRef.current.deltaDecorations(
+        errorDecorationsRef.current,
+        []
+      );
     };
 
     // Add error decoration at position
@@ -171,20 +189,28 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
       const pos = model.getPositionAt(position);
 
       // Highlight the error position
-      errorDecorationsRef.current = editorRef.current.deltaDecorations(errorDecorationsRef.current, [
-        {
-          range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column + 1),
-          options: {
-            className: 'json-error-decoration',
-            glyphMarginClassName: 'json-error-glyph',
-            inlineClassName: 'json-error-inline',
-            minimap: {
-              color: '#f85149',
-              position: monaco.editor.MinimapPosition.Inline
-            }
-          }
-        }
-      ]);
+      errorDecorationsRef.current = editorRef.current.deltaDecorations(
+        errorDecorationsRef.current,
+        [
+          {
+            range: new monaco.Range(
+              pos.lineNumber,
+              pos.column,
+              pos.lineNumber,
+              pos.column + 1
+            ),
+            options: {
+              className: 'json-error-decoration',
+              glyphMarginClassName: 'json-error-glyph',
+              inlineClassName: 'json-error-inline',
+              minimap: {
+                color: '#f85149',
+                position: monaco.editor.MinimapPosition.Inline,
+              },
+            },
+          },
+        ]
+      );
 
       // Scroll to the error
       editorRef.current.revealPositionInCenter(pos);
@@ -222,19 +248,27 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
 
       decorationMapRef.current = new Map();
 
-      const monacoDecorations = decorations.map(dec => {
+      const monacoDecorations = decorations.map((dec) => {
         decorationMapRef.current.set(dec.path, dec);
         return {
-          range: new monaco.Range(dec.startLine, dec.startColumn, dec.endLine, dec.endColumn),
+          range: new monaco.Range(
+            dec.startLine,
+            dec.startColumn,
+            dec.endLine,
+            dec.endColumn
+          ),
           options: {
             className: `diff-${dec.type}`,
             isWholeLine: false,
             inlineClassName: `diff-inline-${dec.type}`,
-          }
+          },
         };
       });
 
-      decorationsRef.current = editorRef.current.deltaDecorations(decorationsRef.current, monacoDecorations);
+      decorationsRef.current = editorRef.current.deltaDecorations(
+        decorationsRef.current,
+        monacoDecorations
+      );
     }, [decorations]);
 
     // Expose methods via ref
@@ -246,9 +280,13 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
         if (!model) return;
 
         // Parse JSON Pointer segments (RFC 6901)
-        const segments = path === '' ? [] : path.slice(1).split('/').map(s =>
-          s.replace(/~1/g, '/').replace(/~0/g, '~')
-        );
+        const segments =
+          path === ''
+            ? []
+            : path
+                .slice(1)
+                .split('/')
+                .map((s) => s.replace(/~1/g, '/').replace(/~0/g, '~'));
 
         if (segments.length === 0) {
           editor.revealLine(1, monaco.editor.ScrollType.Smooth);
@@ -276,10 +314,20 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
             if (!isNaN(Number(seg))) continue; // array index — no key to find
 
             const searchRange = new monaco.Range(
-              searchStartLine, 1, lineCount, model.getLineMaxColumn(lineCount)
+              searchStartLine,
+              1,
+              lineCount,
+              model.getLineMaxColumn(lineCount)
             );
             const escaped = seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const matches = model.findMatches(`"${escaped}"\\s*:`, searchRange, true, false, null, false);
+            const matches = model.findMatches(
+              `"${escaped}"\\s*:`,
+              searchRange,
+              true,
+              false,
+              null,
+              false
+            );
             if (matches.length === 0) break;
 
             targetRange = matches[0].range;
@@ -288,14 +336,17 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
         }
 
         if (targetRange) {
-          editor.revealRangeInCenter(targetRange, monaco.editor.ScrollType.Smooth);
+          editor.revealRangeInCenter(
+            targetRange,
+            monaco.editor.ScrollType.Smooth
+          );
           editor.setSelection(targetRange);
         }
         editor.focus();
       },
       focusEditor: () => {
         editorRef.current?.focus();
-      }
+      },
     }));
 
     return (
@@ -305,14 +356,22 @@ const JsonEditor = forwardRef<JsonEditorRef, JsonEditorProps>(
           <span className={`validity-badge ${isValid ? 'valid' : 'invalid'}`}>
             {isValid ? (
               <>
-                <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  className="ui-icon ui-icon--sm"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path d="M5 12l4 4 10-10" />
                 </svg>
                 Valid
               </>
             ) : (
               <>
-                <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+                <svg
+                  className="ui-icon ui-icon--sm"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path d="M6 6l12 12M18 6l-12 12" />
                 </svg>
                 Invalid

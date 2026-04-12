@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { getExportRootIds } from '../export-dialog';
 import type { Collection } from '../../../../shared/types';
 
-function folder(id: string, name: string, parentId: string | undefined, children: Collection[]): Collection {
+function folder(
+  id: string,
+  name: string,
+  parentId: string | undefined,
+  children: Collection[]
+): Collection {
   return {
     id,
     name,
@@ -14,13 +19,23 @@ function folder(id: string, name: string, parentId: string | undefined, children
   };
 }
 
-function request(id: string, name: string, parentId: string | undefined): Collection {
+function request(
+  id: string,
+  name: string,
+  parentId: string | undefined
+): Collection {
   return {
     id,
     name,
     type: 'request',
     parentId,
-    request: { id: `req-${id}`, name, method: 'GET' as const, url: 'https://example.com', headers: {} },
+    request: {
+      id: `req-${id}`,
+      name,
+      method: 'GET' as const,
+      url: 'https://example.com',
+      headers: {},
+    },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -66,9 +81,7 @@ describe('export-dialog getExportRootIds', () => {
   });
 
   it('returns empty array when nothing is checked', () => {
-    const collections: Collection[] = [
-      folder('f1', 'F1', undefined, []),
-    ];
+    const collections: Collection[] = [folder('f1', 'F1', undefined, [])];
     expect(getExportRootIds(collections, new Set())).toEqual([]);
   });
 

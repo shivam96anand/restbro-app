@@ -1,4 +1,10 @@
-import { ApiRequest, KeyValuePair, RequestMode, RequestTab, SoapRequestConfig } from '../../shared/types';
+import {
+  ApiRequest,
+  KeyValuePair,
+  RequestMode,
+  RequestTab,
+  SoapRequestConfig,
+} from '../../shared/types';
 import { RequestFormHandler } from './request/request-form-handler';
 import { RequestEditorsManager } from './request/request-editors-manager';
 import { RequestDataManager } from './request/request-data-manager';
@@ -39,12 +45,12 @@ export class RequestManager {
   private lastRestFocusedElementId = 'request-url';
 
   constructor() {
-    this.formHandler = new RequestFormHandler(
-      (updates) => this.updateRequest(updates)
+    this.formHandler = new RequestFormHandler((updates) =>
+      this.updateRequest(updates)
     );
 
-    this.editorsManager = new RequestEditorsManager(
-      (updates) => this.updateRequest(updates)
+    this.editorsManager = new RequestEditorsManager((updates) =>
+      this.updateRequest(updates)
     );
 
     this.dataManager = new RequestDataManager(
@@ -54,9 +60,10 @@ export class RequestManager {
   }
 
   private updateRequest(updates: Partial<ApiRequest>): void {
-    const normalizedUpdates = this.currentMode === 'soap'
-      ? { ...updates, method: 'POST' as const }
-      : updates;
+    const normalizedUpdates =
+      this.currentMode === 'soap'
+        ? { ...updates, method: 'POST' as const }
+        : updates;
 
     this.dataManager.updateCurrentRequest(normalizedUpdates);
 
@@ -97,7 +104,8 @@ export class RequestManager {
 
     document.addEventListener('tab-changed', (e: Event) => {
       const customEvent = e as CustomEvent;
-      const activeTab = (customEvent.detail.activeTab || null) as RequestTab | null;
+      const activeTab = (customEvent.detail.activeTab ||
+        null) as RequestTab | null;
       void this.loadRequest(activeTab);
     });
 
@@ -148,13 +156,21 @@ export class RequestManager {
   }
 
   private setupSoapControls(): void {
-    const soapVersion = document.getElementById('soap-version') as HTMLSelectElement | null;
-    const soapAction = document.getElementById('soap-action') as HTMLInputElement | null;
-    const formatXmlBtn = document.getElementById('soap-format-xml') as HTMLButtonElement | null;
+    const soapVersion = document.getElementById(
+      'soap-version'
+    ) as HTMLSelectElement | null;
+    const soapAction = document.getElementById(
+      'soap-action'
+    ) as HTMLInputElement | null;
+    const formatXmlBtn = document.getElementById(
+      'soap-format-xml'
+    ) as HTMLButtonElement | null;
 
     soapVersion?.addEventListener('change', () => {
       if (this.currentMode !== 'soap') return;
-      void this.applySoapConfigUpdate({ version: soapVersion.value === '1.1' ? '1.1' : '1.2' });
+      void this.applySoapConfigUpdate({
+        version: soapVersion.value === '1.1' ? '1.1' : '1.2',
+      });
     });
 
     soapAction?.addEventListener('input', () => {
@@ -187,21 +203,39 @@ export class RequestManager {
       ? this.cloneRequest(this.currentRestDraft)
       : this.createRestDraft(this.currentSoapDraft);
     this.currentRestDraft = nextRestDraft;
-    await this.switchToMode('rest', this.currentRestDraft, this.lastRestDetailsTab || 'params');
+    await this.switchToMode(
+      'rest',
+      this.currentRestDraft,
+      this.lastRestDetailsTab || 'params'
+    );
   }
 
-  private async switchToMode(mode: RequestMode, request: ApiRequest, activeDetailsTab: string): Promise<void> {
+  private async switchToMode(
+    mode: RequestMode,
+    request: ApiRequest,
+    activeDetailsTab: string
+  ): Promise<void> {
     this.currentMode = mode;
     this.dataManager.setRequestMode(mode);
 
     const requestForMode = this.cloneRequest(request);
     this.dataManager.setCurrentRequest(requestForMode);
 
-    const cachedState = this.currentTabId ? this.requestStateCache.get(this.currentTabId) : undefined;
-    const variableContext = cachedState?.variableContext || await this.loadVariableContext(this.currentCollectionId);
+    const cachedState = this.currentTabId
+      ? this.requestStateCache.get(this.currentTabId)
+      : undefined;
+    const variableContext =
+      cachedState?.variableContext ||
+      (await this.loadVariableContext(this.currentCollectionId));
 
     this.applyTransitionAnimation();
-    this.renderRequestUI(requestForMode, variableContext, this.currentCollectionId, activeDetailsTab, mode);
+    this.renderRequestUI(
+      requestForMode,
+      variableContext,
+      this.currentCollectionId,
+      activeDetailsTab,
+      mode
+    );
 
     this.dispatchModeSwitchState(requestForMode, activeDetailsTab);
     this.cacheCurrentTabState(variableContext, activeDetailsTab);
@@ -217,7 +251,9 @@ export class RequestManager {
     }
   }
 
-  private async applySoapConfigUpdate(configUpdates: Partial<SoapRequestConfig>): Promise<void> {
+  private async applySoapConfigUpdate(
+    configUpdates: Partial<SoapRequestConfig>
+  ): Promise<void> {
     const currentRequest = this.dataManager.getCurrentRequest();
     if (!currentRequest) return;
 
@@ -228,13 +264,19 @@ export class RequestManager {
       ...configUpdates,
     };
 
-    const previousContentType = this.getHeaderValue(nextRequest.headers, 'Content-Type');
+    const previousContentType = this.getHeaderValue(
+      nextRequest.headers,
+      'Content-Type'
+    );
     const previousVersion = currentRequest.soap?.version;
 
     this.applySoapHeaders(nextRequest, previousVersion, previousContentType);
     nextRequest.body = this.ensureSoapBody(nextRequest.body, nextRequest.soap);
     if (configUpdates.version && nextRequest.body) {
-      nextRequest.body.content = this.syncSoapEnvelopeNamespace(nextRequest.body.content || '', nextRequest.soap.version);
+      nextRequest.body.content = this.syncSoapEnvelopeNamespace(
+        nextRequest.body.content || '',
+        nextRequest.soap.version
+      );
     }
 
     this.dataManager.setCurrentRequest(nextRequest);
@@ -259,7 +301,10 @@ export class RequestManager {
     const parseResult = this.parseXml(currentRequest.body.content);
     if (!parseResult.valid || !parseResult.document) {
       this.updateSoapValidationMessage(parseResult.error || 'Invalid XML body');
-      this.dataManager.setRequestValidity(false, parseResult.error || 'Invalid XML body');
+      this.dataManager.setRequestValidity(
+        false,
+        parseResult.error || 'Invalid XML body'
+      );
       return;
     }
 
@@ -281,7 +326,9 @@ export class RequestManager {
   }
 
   private applyTransitionAnimation(): void {
-    const requestDetails = document.querySelector('.request-details') as HTMLElement | null;
+    const requestDetails = document.querySelector(
+      '.request-details'
+    ) as HTMLElement | null;
     if (!requestDetails) return;
 
     requestDetails.classList.remove('mode-transition');
@@ -293,26 +340,39 @@ export class RequestManager {
     }, REQUEST_DETAILS_TRANSITION_MS);
   }
 
-  private dispatchModeSwitchState(request: ApiRequest, activeDetailsTab: string): void {
-    document.dispatchEvent(new CustomEvent('request-mode-switched', {
-      detail: {
-        request: this.cloneRequest(request),
-        requestMode: this.currentMode,
-        restDraft: this.currentRestDraft ? this.cloneRequest(this.currentRestDraft) : undefined,
-        soapDraft: this.currentSoapDraft ? this.cloneRequest(this.currentSoapDraft) : undefined,
-        activeDetailsTab,
-      }
-    }));
+  private dispatchModeSwitchState(
+    request: ApiRequest,
+    activeDetailsTab: string
+  ): void {
+    document.dispatchEvent(
+      new CustomEvent('request-mode-switched', {
+        detail: {
+          request: this.cloneRequest(request),
+          requestMode: this.currentMode,
+          restDraft: this.currentRestDraft
+            ? this.cloneRequest(this.currentRestDraft)
+            : undefined,
+          soapDraft: this.currentSoapDraft
+            ? this.cloneRequest(this.currentSoapDraft)
+            : undefined,
+          activeDetailsTab,
+        },
+      })
+    );
   }
 
   private restoreRestFocus(): void {
-    const target = document.getElementById(this.lastRestFocusedElementId) as HTMLElement | null;
+    const target = document.getElementById(
+      this.lastRestFocusedElementId
+    ) as HTMLElement | null;
     if (target) {
       target.focus();
       return;
     }
 
-    const fallback = document.getElementById('request-url') as HTMLElement | null;
+    const fallback = document.getElementById(
+      'request-url'
+    ) as HTMLElement | null;
     fallback?.focus();
   }
 
@@ -323,8 +383,12 @@ export class RequestManager {
     this.currentTabId = tabId || undefined;
     this.currentCollectionId = activeTab?.collectionId;
     this.currentMode = activeTab?.requestMode || 'rest';
-    this.currentRestDraft = activeTab?.restDraft ? this.cloneRequest(activeTab.restDraft) : null;
-    this.currentSoapDraft = activeTab?.soapDraft ? this.cloneRequest(activeTab.soapDraft) : null;
+    this.currentRestDraft = activeTab?.restDraft
+      ? this.cloneRequest(activeTab.restDraft)
+      : null;
+    this.currentSoapDraft = activeTab?.soapDraft
+      ? this.cloneRequest(activeTab.soapDraft)
+      : null;
 
     this.dataManager.setRequestMode(this.currentMode);
     this.dataManager.setCurrentRequest(request);
@@ -345,21 +409,36 @@ export class RequestManager {
       const mergedCachedState: RequestStateCache = {
         ...cachedState,
         request,
-        requestMode: activeTab?.requestMode || cachedState.requestMode || 'rest',
+        requestMode:
+          activeTab?.requestMode || cachedState.requestMode || 'rest',
         restDraft: activeTab?.restDraft || cachedState.restDraft,
         soapDraft: activeTab?.soapDraft || cachedState.soapDraft,
       };
 
-      this.requestStateCache.set(tabId, { ...mergedCachedState, timestamp: Date.now() });
+      this.requestStateCache.set(tabId, {
+        ...mergedCachedState,
+        timestamp: Date.now(),
+      });
       this.loadRequestFromCache(mergedCachedState, activeTab?.activeDetailsTab);
       return;
     }
 
-    const variableContext = await this.loadVariableContext(activeTab?.collectionId);
+    const variableContext = await this.loadVariableContext(
+      activeTab?.collectionId
+    );
     const mode = activeTab?.requestMode || 'rest';
-    const detailsTab = this.resolveDetailsTab(mode, activeTab?.activeDetailsTab);
+    const detailsTab = this.resolveDetailsTab(
+      mode,
+      activeTab?.activeDetailsTab
+    );
 
-    this.renderRequestUI(request, variableContext, activeTab?.collectionId, detailsTab, mode);
+    this.renderRequestUI(
+      request,
+      variableContext,
+      activeTab?.collectionId,
+      detailsTab,
+      mode
+    );
     this.cacheRequestState(
       tabId,
       request,
@@ -379,9 +458,10 @@ export class RequestManager {
     activeDetailsTab: string,
     mode: RequestMode
   ): void {
-    const normalizedRequest = mode === 'soap'
-      ? this.ensureSoapRequestShape(this.cloneRequest(request), true)
-      : this.cloneRequest(request);
+    const normalizedRequest =
+      mode === 'soap'
+        ? this.ensureSoapRequestShape(this.cloneRequest(request), true)
+        : this.cloneRequest(request);
 
     this.formHandler.showRequestForm();
     this.formHandler.loadBasicRequestData(normalizedRequest);
@@ -421,11 +501,17 @@ export class RequestManager {
     });
   }
 
-  private applyModeUI(mode: RequestMode, request: ApiRequest, activeDetailsTab?: string): void {
+  private applyModeUI(
+    mode: RequestMode,
+    request: ApiRequest,
+    activeDetailsTab?: string
+  ): void {
     this.currentMode = mode;
     this.dataManager.setRequestMode(mode);
 
-    const switchBtn = document.getElementById('switch-to-soap') as HTMLButtonElement | null;
+    const switchBtn = document.getElementById(
+      'switch-to-soap'
+    ) as HTMLButtonElement | null;
     if (switchBtn) {
       if (mode === 'soap') {
         switchBtn.textContent = 'Switch to REST';
@@ -437,12 +523,16 @@ export class RequestManager {
     }
 
     // Rename the Auth tab label based on mode
-    const authTabBtn = document.querySelector('.tab[data-section="auth"]') as HTMLElement | null;
+    const authTabBtn = document.querySelector(
+      '.tab[data-section="auth"]'
+    ) as HTMLElement | null;
     if (authTabBtn) {
       authTabBtn.textContent = mode === 'soap' ? 'Certs' : 'Auth';
     }
 
-    const methodSelect = document.getElementById('request-method') as HTMLSelectElement | null;
+    const methodSelect = document.getElementById(
+      'request-method'
+    ) as HTMLSelectElement | null;
     if (methodSelect) {
       methodSelect.disabled = mode === 'soap';
       methodSelect.classList.toggle('locked', mode === 'soap');
@@ -451,13 +541,18 @@ export class RequestManager {
       }
     }
 
-    this.updateSoapControlsVisibility(activeDetailsTab || this.getCurrentActiveDetailsTab());
+    this.updateSoapControlsVisibility(
+      activeDetailsTab || this.getCurrentActiveDetailsTab()
+    );
 
     if (mode === 'soap') {
       const soapVersion = request.soap?.version || '1.2';
       this.syncSoapControls(request);
       this.editorsManager.setContentTypeSyncEnabled(false);
-      this.editorsManager.setBodySoapMode(true, this.getSoapContentType(soapVersion));
+      this.editorsManager.setBodySoapMode(
+        true,
+        this.getSoapContentType(soapVersion)
+      );
       return;
     }
 
@@ -467,8 +562,12 @@ export class RequestManager {
   }
 
   private syncSoapControls(request: ApiRequest): void {
-    const soapVersion = document.getElementById('soap-version') as HTMLSelectElement | null;
-    const soapAction = document.getElementById('soap-action') as HTMLInputElement | null;
+    const soapVersion = document.getElementById(
+      'soap-version'
+    ) as HTMLSelectElement | null;
+    const soapAction = document.getElementById(
+      'soap-action'
+    ) as HTMLInputElement | null;
     const soapActionField = document.getElementById('soap-action-field');
 
     const version = request.soap?.version || '1.2';
@@ -486,7 +585,10 @@ export class RequestManager {
     }
   }
 
-  private resolveDetailsTab(mode: RequestMode, activeDetailsTab?: string): string {
+  private resolveDetailsTab(
+    mode: RequestMode,
+    activeDetailsTab?: string
+  ): string {
     if (mode === 'soap') {
       return 'body';
     }
@@ -498,7 +600,10 @@ export class RequestManager {
     return this.lastRestDetailsTab || 'params';
   }
 
-  private ensureSoapRequestShape(request: ApiRequest, initializeEnvelope: boolean): ApiRequest {
+  private ensureSoapRequestShape(
+    request: ApiRequest,
+    initializeEnvelope: boolean
+  ): ApiRequest {
     const next = this.cloneRequest(request);
     next.method = 'POST';
 
@@ -509,7 +614,10 @@ export class RequestManager {
 
     next.body = this.ensureSoapBody(next.body, next.soap, initializeEnvelope);
 
-    const previousContentType = this.getHeaderValue(next.headers, 'Content-Type');
+    const previousContentType = this.getHeaderValue(
+      next.headers,
+      'Content-Type'
+    );
     this.applySoapHeaders(next, next.soap.version, previousContentType);
 
     return next;
@@ -527,7 +635,10 @@ export class RequestManager {
         type: 'raw',
         format: 'xml',
         contentType: this.getSoapContentType(soapConfig.version),
-        content: this.buildSoapEnvelopeTemplate(soapConfig.version, soapConfig.action || ''),
+        content: this.buildSoapEnvelopeTemplate(
+          soapConfig.version,
+          soapConfig.action || ''
+        ),
       };
     }
 
@@ -538,24 +649,48 @@ export class RequestManager {
       format: 'xml',
       contentType: this.getSoapContentType(soapConfig.version),
       content: shouldInjectTemplate
-        ? this.buildSoapEnvelopeTemplate(soapConfig.version, soapConfig.action || '')
-        : (body.content || ''),
+        ? this.buildSoapEnvelopeTemplate(
+            soapConfig.version,
+            soapConfig.action || ''
+          )
+        : body.content || '',
     };
   }
 
-  private applySoapHeaders(request: ApiRequest, previousVersion?: string, previousContentType?: string): void {
+  private applySoapHeaders(
+    request: ApiRequest,
+    previousVersion?: string,
+    previousContentType?: string
+  ): void {
     const soapVersion = request.soap?.version || '1.2';
     const expectedContentType = this.getSoapContentType(soapVersion);
 
-    if (this.shouldApplySoapContentType(previousContentType, previousVersion, soapVersion)) {
-      request.headers = this.upsertHeader(request.headers, 'Content-Type', expectedContentType);
+    if (
+      this.shouldApplySoapContentType(
+        previousContentType,
+        previousVersion,
+        soapVersion
+      )
+    ) {
+      request.headers = this.upsertHeader(
+        request.headers,
+        'Content-Type',
+        expectedContentType
+      );
     }
 
     if (soapVersion === '1.1') {
       if ((request.soap?.action || '').trim()) {
-        request.headers = this.upsertHeader(request.headers, SOAP_HEADER_ACTION, (request.soap?.action || '').trim());
+        request.headers = this.upsertHeader(
+          request.headers,
+          SOAP_HEADER_ACTION,
+          (request.soap?.action || '').trim()
+        );
       } else {
-        request.headers = this.removeHeader(request.headers, SOAP_HEADER_ACTION);
+        request.headers = this.removeHeader(
+          request.headers,
+          SOAP_HEADER_ACTION
+        );
       }
       return;
     }
@@ -568,7 +703,10 @@ export class RequestManager {
     previousVersion?: string,
     nextVersion?: string
   ): boolean {
-    const normalized = (currentContentType || '').toLowerCase().split(';')[0].trim();
+    const normalized = (currentContentType || '')
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
 
     if (!normalized) {
       return true;
@@ -578,8 +716,15 @@ export class RequestManager {
       return true;
     }
 
-    const previousSoapType = previousVersion ? this.getSoapContentType(previousVersion).toLowerCase().split(';')[0].trim() : '';
-    const nextSoapType = nextVersion ? this.getSoapContentType(nextVersion).toLowerCase().split(';')[0].trim() : '';
+    const previousSoapType = previousVersion
+      ? this.getSoapContentType(previousVersion)
+          .toLowerCase()
+          .split(';')[0]
+          .trim()
+      : '';
+    const nextSoapType = nextVersion
+      ? this.getSoapContentType(nextVersion).toLowerCase().split(';')[0].trim()
+      : '';
 
     if (normalized === previousSoapType || normalized === nextSoapType) {
       return true;
@@ -592,16 +737,24 @@ export class RequestManager {
     return version === '1.1' ? SOAP_CONTENT_TYPE_11 : SOAP_CONTENT_TYPE_12;
   }
 
-  private buildSoapEnvelopeTemplate(version: '1.1' | '1.2', action: string): string {
-    const envelopeNamespace = version === '1.2'
-      ? SOAP_ENVELOPE_NS_12
-      : SOAP_ENVELOPE_NS_11;
-    const actionComment = action ? `<!-- SOAPAction: ${action} -->` : '<!-- SOAPAction -->';
+  private buildSoapEnvelopeTemplate(
+    version: '1.1' | '1.2',
+    action: string
+  ): string {
+    const envelopeNamespace =
+      version === '1.2' ? SOAP_ENVELOPE_NS_12 : SOAP_ENVELOPE_NS_11;
+    const actionComment = action
+      ? `<!-- SOAPAction: ${action} -->`
+      : '<!-- SOAPAction -->';
     return `<?xml version="1.0" encoding="UTF-8"?>\n<soap:Envelope xmlns:soap="${envelopeNamespace}">\n  <soap:Header>\n    ${actionComment}\n  </soap:Header>\n  <soap:Body>\n    <m:Operation xmlns:m="http://tempuri.org/">\n      <m:Value></m:Value>\n    </m:Operation>\n  </soap:Body>\n</soap:Envelope>`;
   }
 
-  private syncSoapEnvelopeNamespace(xml: string, version: '1.1' | '1.2'): string {
-    const targetNamespace = version === '1.2' ? SOAP_ENVELOPE_NS_12 : SOAP_ENVELOPE_NS_11;
+  private syncSoapEnvelopeNamespace(
+    xml: string,
+    version: '1.1' | '1.2'
+  ): string {
+    const targetNamespace =
+      version === '1.2' ? SOAP_ENVELOPE_NS_12 : SOAP_ENVELOPE_NS_11;
     if (!xml.trim()) return xml;
 
     const envelopeTagMatch = xml.match(/<([\w.-]+:)?Envelope\b[^>]*>/i);
@@ -609,8 +762,20 @@ export class RequestManager {
 
     const openingTag = envelopeTagMatch[0];
     const normalizedTag = openingTag
-      .replace(new RegExp(SOAP_ENVELOPE_NS_11.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), targetNamespace)
-      .replace(new RegExp(SOAP_ENVELOPE_NS_12.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), targetNamespace);
+      .replace(
+        new RegExp(
+          SOAP_ENVELOPE_NS_11.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+          'g'
+        ),
+        targetNamespace
+      )
+      .replace(
+        new RegExp(
+          SOAP_ENVELOPE_NS_12.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+          'g'
+        ),
+        targetNamespace
+      );
 
     if (normalizedTag === openingTag) {
       return xml;
@@ -619,13 +784,20 @@ export class RequestManager {
     return xml.replace(openingTag, normalizedTag);
   }
 
-  private parseXml(xml: string): { valid: boolean; document?: Document; error?: string } {
+  private parseXml(xml: string): {
+    valid: boolean;
+    document?: Document;
+    error?: string;
+  } {
     try {
       const parser = new DOMParser();
       const documentNode = parser.parseFromString(xml, 'application/xml');
       const parserError = documentNode.querySelector('parsererror');
       if (parserError) {
-        return { valid: false, error: 'Invalid XML body. Check tags, attributes, and namespaces.' };
+        return {
+          valid: false,
+          error: 'Invalid XML body. Check tags, attributes, and namespaces.',
+        };
       }
       return { valid: true, document: documentNode };
     } catch {
@@ -652,16 +824,23 @@ export class RequestManager {
         .join(' ');
       const openTag = attrs ? `<${el.tagName} ${attrs}>` : `<${el.tagName}>`;
 
-      const childNodes = Array.from(el.childNodes)
-        .filter((child) => child.nodeType === Node.ELEMENT_NODE || ((child.nodeType === Node.TEXT_NODE) && (child.nodeValue || '').trim()));
+      const childNodes = Array.from(el.childNodes).filter(
+        (child) =>
+          child.nodeType === Node.ELEMENT_NODE ||
+          (child.nodeType === Node.TEXT_NODE && (child.nodeValue || '').trim())
+      );
 
       if (childNodes.length === 0) {
         return `${indent}${openTag.replace('>', '/>')}\n`;
       }
 
-      const hasOnlyText = childNodes.every((child) => child.nodeType === Node.TEXT_NODE);
+      const hasOnlyText = childNodes.every(
+        (child) => child.nodeType === Node.TEXT_NODE
+      );
       if (hasOnlyText) {
-        const textContent = childNodes.map((child) => (child.nodeValue || '').trim()).join('');
+        const textContent = childNodes
+          .map((child) => (child.nodeValue || '').trim())
+          .join('');
         return `${indent}${openTag}${textContent}</${el.tagName}>\n`;
       }
 
@@ -716,7 +895,9 @@ export class RequestManager {
   }
 
   private updateSoapValidationMessage(message: string): void {
-    const validationElement = document.getElementById('soap-validation-message');
+    const validationElement = document.getElementById(
+      'soap-validation-message'
+    );
     if (!validationElement) return;
     validationElement.textContent = message;
   }
@@ -752,25 +933,45 @@ export class RequestManager {
   /**
    * Load request from cached state (synchronous, instant)
    */
-  private loadRequestFromCache(cachedState: RequestStateCache, activeDetailsTab?: string): void {
+  private loadRequestFromCache(
+    cachedState: RequestStateCache,
+    activeDetailsTab?: string
+  ): void {
     const { request, variableContext, collectionId } = cachedState;
     const mode = cachedState.requestMode || this.currentMode || 'rest';
-    const detailsTab = this.resolveDetailsTab(mode, activeDetailsTab || cachedState.activeDetailsTab);
+    const detailsTab = this.resolveDetailsTab(
+      mode,
+      activeDetailsTab || cachedState.activeDetailsTab
+    );
 
-    this.renderRequestUI(request, variableContext, collectionId, detailsTab, mode);
+    this.renderRequestUI(
+      request,
+      variableContext,
+      collectionId,
+      detailsTab,
+      mode
+    );
 
-    this.currentRestDraft = cachedState.restDraft ? this.cloneRequest(cachedState.restDraft) : this.currentRestDraft;
-    this.currentSoapDraft = cachedState.soapDraft ? this.cloneRequest(cachedState.soapDraft) : this.currentSoapDraft;
+    this.currentRestDraft = cachedState.restDraft
+      ? this.cloneRequest(cachedState.restDraft)
+      : this.currentRestDraft;
+    this.currentSoapDraft = cachedState.soapDraft
+      ? this.cloneRequest(cachedState.soapDraft)
+      : this.currentSoapDraft;
   }
 
   /**
    * Load variable context and return it
    */
-  private async loadVariableContext(collectionId?: string): Promise<VariableContext> {
+  private async loadVariableContext(
+    collectionId?: string
+  ): Promise<VariableContext> {
     try {
       const state = await this.getCachedStore();
       const activeEnvironment = state.activeEnvironmentId
-        ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
+        ? state.environments.find(
+            (e: any) => e.id === state.activeEnvironmentId
+          )
         : undefined;
 
       const globals = state.globals || { variables: {} };
@@ -821,11 +1022,14 @@ export class RequestManager {
       restDraft,
       soapDraft,
       activeDetailsTab,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
-  private cacheCurrentTabState(variableContext: VariableContext, activeDetailsTab: string): void {
+  private cacheCurrentTabState(
+    variableContext: VariableContext,
+    activeDetailsTab: string
+  ): void {
     if (!this.currentTabId) return;
     const currentRequest = this.dataManager.getCurrentRequest();
     if (!currentRequest) return;
@@ -859,7 +1063,7 @@ export class RequestManager {
       requestMode: this.currentMode,
       restDraft: this.currentRestDraft || undefined,
       soapDraft: this.currentSoapDraft || undefined,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -870,13 +1074,12 @@ export class RequestManager {
     this.requestStateCache.clear();
   }
 
-
   /**
    * Get store data with caching to reduce IPC calls during rapid tab switching
    */
   private async getCachedStore(): Promise<any> {
     const now = Date.now();
-    if (this.storeCache && (now - this.storeCacheTime) < this.CACHE_TTL) {
+    if (this.storeCache && now - this.storeCacheTime < this.CACHE_TTL) {
       return this.storeCache;
     }
 
@@ -929,13 +1132,17 @@ export class RequestManager {
 
     this.updateSoapControlsVisibility();
 
-    const switchBtn = document.getElementById('switch-to-soap') as HTMLButtonElement | null;
+    const switchBtn = document.getElementById(
+      'switch-to-soap'
+    ) as HTMLButtonElement | null;
     if (switchBtn) {
       switchBtn.textContent = 'Switch to SOAP';
       switchBtn.title = 'Switch to SOAP';
     }
 
-    const methodSelect = document.getElementById('request-method') as HTMLSelectElement | null;
+    const methodSelect = document.getElementById(
+      'request-method'
+    ) as HTMLSelectElement | null;
     if (methodSelect) {
       methodSelect.disabled = false;
       methodSelect.classList.remove('locked');
@@ -954,9 +1161,13 @@ export class RequestManager {
         ? request.headers.map((header) => ({ ...header }))
         : { ...request.headers },
       body: request.body ? { ...request.body } : request.body,
-      auth: request.auth ? { ...request.auth, config: { ...request.auth.config } } : request.auth,
+      auth: request.auth
+        ? { ...request.auth, config: { ...request.auth.config } }
+        : request.auth,
       soap: request.soap ? { ...request.soap } : request.soap,
-      variables: request.variables ? { ...request.variables } : request.variables,
+      variables: request.variables
+        ? { ...request.variables }
+        : request.variables,
     };
   }
 
@@ -972,17 +1183,29 @@ export class RequestManager {
     }));
   }
 
-  private getHeaderValue(headers: ApiRequest['headers'], key: string): string | undefined {
+  private getHeaderValue(
+    headers: ApiRequest['headers'],
+    key: string
+  ): string | undefined {
     const target = key.toLowerCase();
     const pairs = this.toHeaderPairs(headers);
-    const match = pairs.find((header) => header.key.toLowerCase() === target && header.enabled !== false);
+    const match = pairs.find(
+      (header) =>
+        header.key.toLowerCase() === target && header.enabled !== false
+    );
     return match?.value;
   }
 
-  private upsertHeader(headers: ApiRequest['headers'], key: string, value: string): KeyValuePair[] {
+  private upsertHeader(
+    headers: ApiRequest['headers'],
+    key: string,
+    value: string
+  ): KeyValuePair[] {
     const pairs = this.toHeaderPairs(headers);
     const target = key.toLowerCase();
-    const existing = pairs.find((header) => header.key.toLowerCase() === target);
+    const existing = pairs.find(
+      (header) => header.key.toLowerCase() === target
+    );
 
     if (existing) {
       existing.value = value;
@@ -994,13 +1217,20 @@ export class RequestManager {
     return pairs;
   }
 
-  private removeHeader(headers: ApiRequest['headers'], key: string): KeyValuePair[] {
+  private removeHeader(
+    headers: ApiRequest['headers'],
+    key: string
+  ): KeyValuePair[] {
     const target = key.toLowerCase();
-    return this.toHeaderPairs(headers).filter((header) => header.key.toLowerCase() !== target);
+    return this.toHeaderPairs(headers).filter(
+      (header) => header.key.toLowerCase() !== target
+    );
   }
 
   private getCurrentActiveDetailsTab(): string {
-    const activeTab = document.querySelector('.request-details .tab.active') as HTMLElement | null;
+    const activeTab = document.querySelector(
+      '.request-details .tab.active'
+    ) as HTMLElement | null;
     return activeTab?.dataset.section || 'params';
   }
 

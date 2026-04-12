@@ -8,7 +8,12 @@ export class JsonParser {
     // Determine expansion strategy based on response size
     const autoExpandDepth = this.calculateAutoExpandDepth(responseSize);
 
-    const parseNode = (key: string, value: any, level: number, parent?: JsonNode): JsonNode => {
+    const parseNode = (
+      key: string,
+      value: any,
+      level: number,
+      parent?: JsonNode
+    ): JsonNode => {
       const type = JsonParser.getValueType(value);
 
       const node: JsonNode = {
@@ -18,14 +23,19 @@ export class JsonParser {
         level,
         isExpanded: level < autoExpandDepth,
         parent,
-        lineNumber: lineNumber++
+        lineNumber: lineNumber++,
       };
 
       if (type === 'object' || type === 'array') {
         node.children = [];
         if (type === 'object') {
-          Object.keys(value).forEach(childKey => {
-            const childNode = parseNode(childKey, value[childKey], level + 1, node);
+          Object.keys(value).forEach((childKey) => {
+            const childNode = parseNode(
+              childKey,
+              value[childKey],
+              level + 1,
+              node
+            );
             node.children!.push(childNode);
           });
         } else {
@@ -64,7 +74,10 @@ export class JsonParser {
     return 'string';
   }
 
-  public static findNodeByLineNumber(nodes: JsonNode[], lineNumber: number): JsonNode | null {
+  public static findNodeByLineNumber(
+    nodes: JsonNode[],
+    lineNumber: number
+  ): JsonNode | null {
     const searchInNode = (node: JsonNode): JsonNode | null => {
       if (node.lineNumber === lineNumber) {
         return node;
@@ -94,7 +107,7 @@ export class JsonParser {
     const addVisibleNodes = (node: JsonNode) => {
       visibleNodes.push(node);
       if (node.isExpanded && node.children) {
-        node.children.forEach(child => addVisibleNodes(child));
+        node.children.forEach((child) => addVisibleNodes(child));
       }
     };
 
@@ -105,18 +118,20 @@ export class JsonParser {
     return visibleNodes;
   }
 
-  public static getVisibleNodesWithClosingBrackets(nodes: JsonNode[]): Array<{node?: JsonNode, isClosingBracket: boolean}> {
-    const result: Array<{node?: JsonNode, isClosingBracket: boolean}> = [];
+  public static getVisibleNodesWithClosingBrackets(
+    nodes: JsonNode[]
+  ): Array<{ node?: JsonNode; isClosingBracket: boolean }> {
+    const result: Array<{ node?: JsonNode; isClosingBracket: boolean }> = [];
 
     const addVisibleNodes = (node: JsonNode) => {
-      result.push({node, isClosingBracket: false});
+      result.push({ node, isClosingBracket: false });
 
       if (node.isExpanded && node.children) {
-        node.children.forEach(child => addVisibleNodes(child));
+        node.children.forEach((child) => addVisibleNodes(child));
 
         // Always add closing bracket for objects/arrays when expanded
         if (node.type === 'object' || node.type === 'array') {
-          result.push({node, isClosingBracket: true});
+          result.push({ node, isClosingBracket: true });
         }
       }
     };
@@ -134,7 +149,7 @@ export class JsonParser {
         node.isExpanded = true;
       }
       if (node.children) {
-        node.children.forEach(child => expandNode(child));
+        node.children.forEach((child) => expandNode(child));
       }
     };
 
@@ -149,7 +164,7 @@ export class JsonParser {
         node.isExpanded = false;
       }
       if (node.children) {
-        node.children.forEach(child => collapseNode(child));
+        node.children.forEach((child) => collapseNode(child));
       }
     };
 
@@ -170,7 +185,7 @@ export class JsonParser {
       count++;
 
       if (value && typeof value === 'object') {
-        Object.values(value).forEach(child => traverse(child));
+        Object.values(value).forEach((child) => traverse(child));
       }
     };
 
@@ -188,27 +203,37 @@ export class JsonParser {
 
     // If size unknown, use conservative default
     if (responseSize === undefined) {
-      console.log('[JsonParser] Response size unknown, using default expansion depth: 2');
+      console.log(
+        '[JsonParser] Response size unknown, using default expansion depth: 2'
+      );
       return 2;
     }
 
     // Keep expansion conservative to avoid renderer stalls on deeply nested payloads.
     if (responseSize < 256 * KB) {
-      console.log(`[JsonParser] Response size ${responseSize} bytes (< 256KB), expanding 4 levels`);
+      console.log(
+        `[JsonParser] Response size ${responseSize} bytes (< 256KB), expanding 4 levels`
+      );
       return 4;
     }
 
     if (responseSize < MB) {
-      console.log(`[JsonParser] Response size ${responseSize} bytes (256KB-1MB), expanding 3 levels`);
+      console.log(
+        `[JsonParser] Response size ${responseSize} bytes (256KB-1MB), expanding 3 levels`
+      );
       return 3;
     }
 
     if (responseSize < 5 * MB) {
-      console.log(`[JsonParser] Response size ${responseSize} bytes (1-5MB), expanding 2 levels`);
+      console.log(
+        `[JsonParser] Response size ${responseSize} bytes (1-5MB), expanding 2 levels`
+      );
       return 2;
     }
 
-    console.log(`[JsonParser] Response size ${responseSize} bytes (>=5MB), expanding only root`);
+    console.log(
+      `[JsonParser] Response size ${responseSize} bytes (>=5MB), expanding only root`
+    );
     return 1;
   }
 }

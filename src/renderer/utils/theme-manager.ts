@@ -22,11 +22,15 @@ export class ThemeManager {
   }
 
   private setupThemeDropdown(): void {
-    const dropdown = document.getElementById('theme-dropdown') as HTMLSelectElement;
+    const dropdown = document.getElementById(
+      'theme-dropdown'
+    ) as HTMLSelectElement;
     if (!dropdown) return;
 
     dropdown.addEventListener('change', () => {
-      const selectedTheme = this.themes.find(theme => theme.name === dropdown.value);
+      const selectedTheme = this.themes.find(
+        (theme) => theme.name === dropdown.value
+      );
       if (selectedTheme) {
         this.setTheme(selectedTheme);
       }
@@ -55,9 +59,18 @@ export class ThemeManager {
     document.body.setAttribute('data-theme', theme.name);
 
     // Update CSS custom properties
-    document.documentElement.style.setProperty('--primary-color', theme.primaryColor);
-    document.documentElement.style.setProperty('--primary-dark', theme.accentColor);
-    document.documentElement.style.setProperty('--json-bracket', theme.primaryColor);
+    document.documentElement.style.setProperty(
+      '--primary-color',
+      theme.primaryColor
+    );
+    document.documentElement.style.setProperty(
+      '--primary-dark',
+      theme.accentColor
+    );
+    document.documentElement.style.setProperty(
+      '--json-bracket',
+      theme.primaryColor
+    );
 
     // Calculate lighter variant
     const lightColor = this.lightenColor(theme.primaryColor, 20);
@@ -81,7 +94,8 @@ export class ThemeManager {
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
 
-    const lighten = (color: number) => Math.min(255, Math.floor(color + (255 - color) * (percent / 100)));
+    const lighten = (color: number) =>
+      Math.min(255, Math.floor(color + (255 - color) * (percent / 100)));
 
     const newR = lighten(r).toString(16).padStart(2, '0');
     const newG = lighten(g).toString(16).padStart(2, '0');
@@ -91,7 +105,9 @@ export class ThemeManager {
   }
 
   private updateDropdown(): void {
-    const dropdown = document.getElementById('theme-dropdown') as HTMLSelectElement;
+    const dropdown = document.getElementById(
+      'theme-dropdown'
+    ) as HTMLSelectElement;
     if (dropdown) {
       dropdown.value = this.currentTheme.name;
     }
@@ -99,7 +115,7 @@ export class ThemeManager {
 
   private notifyThemeChange(): void {
     const event = new CustomEvent('theme-changed', {
-      detail: { theme: this.currentTheme }
+      detail: { theme: this.currentTheme },
     });
     document.dispatchEvent(event);
   }

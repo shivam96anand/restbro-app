@@ -6,40 +6,145 @@ export type SystemVariableDefinition = {
 };
 
 const WORDS = [
-  'lunar', 'ember', 'signal', 'glow', 'vector', 'pixel', 'orbit', 'ripple', 'nova',
-  'atlas', 'arrow', 'vivid', 'drift', 'shore', 'amber', 'pulse', 'mosaic', 'peak',
-  'harbor', 'canyon', 'prairie', 'maple', 'amber', 'flint', 'ember', 'scarlet',
-  'sable', 'ivory', 'cedar', 'spruce', 'thistle', 'echo', 'ember', 'cobalt'
+  'lunar',
+  'ember',
+  'signal',
+  'glow',
+  'vector',
+  'pixel',
+  'orbit',
+  'ripple',
+  'nova',
+  'atlas',
+  'arrow',
+  'vivid',
+  'drift',
+  'shore',
+  'amber',
+  'pulse',
+  'mosaic',
+  'peak',
+  'harbor',
+  'canyon',
+  'prairie',
+  'maple',
+  'amber',
+  'flint',
+  'ember',
+  'scarlet',
+  'sable',
+  'ivory',
+  'cedar',
+  'spruce',
+  'thistle',
+  'echo',
+  'ember',
+  'cobalt',
 ];
 const FIRST_NAMES = [
-  'Ava', 'Liam', 'Maya', 'Noah', 'Zoe', 'Ethan', 'Ivy', 'Owen', 'Lila', 'Leo',
-  'Nora', 'Kai', 'Mila', 'Aria', 'Eli', 'Sage', 'Rhea', 'Jude', 'Iris', 'Quinn'
+  'Ava',
+  'Liam',
+  'Maya',
+  'Noah',
+  'Zoe',
+  'Ethan',
+  'Ivy',
+  'Owen',
+  'Lila',
+  'Leo',
+  'Nora',
+  'Kai',
+  'Mila',
+  'Aria',
+  'Eli',
+  'Sage',
+  'Rhea',
+  'Jude',
+  'Iris',
+  'Quinn',
 ];
 const LAST_NAMES = [
-  'Reed', 'Hayes', 'Clark', 'Parker', 'Reyes', 'Baker', 'Lopez', 'Stone', 'Cruz', 'Ward',
-  'Bennett', 'Price', 'Woods', 'Cole', 'Nguyen', 'Patel', 'Kim', 'Diaz', 'Young', 'Shaw'
+  'Reed',
+  'Hayes',
+  'Clark',
+  'Parker',
+  'Reyes',
+  'Baker',
+  'Lopez',
+  'Stone',
+  'Cruz',
+  'Ward',
+  'Bennett',
+  'Price',
+  'Woods',
+  'Cole',
+  'Nguyen',
+  'Patel',
+  'Kim',
+  'Diaz',
+  'Young',
+  'Shaw',
 ];
 const COLORS = [
-  'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal', 'cyan', 'blue',
-  'indigo', 'violet', 'magenta', 'rose', 'slate', 'navy', 'olive'
+  'red',
+  'orange',
+  'amber',
+  'yellow',
+  'lime',
+  'green',
+  'teal',
+  'cyan',
+  'blue',
+  'indigo',
+  'violet',
+  'magenta',
+  'rose',
+  'slate',
+  'navy',
+  'olive',
 ];
-const STATES = [
-  'CA', 'NY', 'TX', 'FL', 'WA', 'IL', 'CO', 'AZ', 'MA', 'NC'
-];
+const STATES = ['CA', 'NY', 'TX', 'FL', 'WA', 'IL', 'CO', 'AZ', 'MA', 'NC'];
 const COUNTRIES = [
-  'United States', 'Canada', 'Mexico', 'United Kingdom', 'Germany',
-  'France', 'Spain', 'India', 'Japan', 'Australia'
+  'United States',
+  'Canada',
+  'Mexico',
+  'United Kingdom',
+  'Germany',
+  'France',
+  'Spain',
+  'India',
+  'Japan',
+  'Australia',
 ];
 const CITIES = [
-  'Seattle', 'Austin', 'Denver', 'Chicago', 'Boston', 'Phoenix', 'Portland', 'Miami',
-  'Toronto', 'London'
+  'Seattle',
+  'Austin',
+  'Denver',
+  'Chicago',
+  'Boston',
+  'Phoenix',
+  'Portland',
+  'Miami',
+  'Toronto',
+  'London',
 ];
 const STREETS = [
-  'Maple', 'Oak', 'Pine', 'Cedar', 'Elm', 'Sunset', 'River', 'Hill', 'Lake', 'Broad'
+  'Maple',
+  'Oak',
+  'Pine',
+  'Cedar',
+  'Elm',
+  'Sunset',
+  'River',
+  'Hill',
+  'Lake',
+  'Broad',
 ];
 const TLDS = ['com', 'net', 'org', 'io', 'dev'];
-const PASSWORD_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
-const NANOID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+const PASSWORD_CHARS =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
+const NANOID_ALPHABET =
+  '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
 const CROCKFORD_BASE32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 function randomInt(min: number, max: number): number {
@@ -50,10 +155,7 @@ function randomInt(min: number, max: number): number {
 function getRandomNumber(): number {
   const bytes = getRandomBytes(4);
   const value =
-    bytes[0] * 0x1000000 +
-    bytes[1] * 0x10000 +
-    bytes[2] * 0x100 +
-    bytes[3];
+    bytes[0] * 0x1000000 + bytes[1] * 0x10000 + bytes[2] * 0x100 + bytes[3];
   return value / 0x100000000;
 }
 
@@ -102,7 +204,9 @@ function generateUuidV4(): string {
   const bytes = getRandomBytes(16);
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
@@ -172,7 +276,7 @@ function generateIPv6(): string {
 function generateMacAddress(): string {
   const bytes = getRandomBytes(6);
   return Array.from(bytes)
-    .map(byte => byte.toString(16).padStart(2, '0'))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
     .join(':');
 }
 
@@ -206,175 +310,178 @@ const SYSTEM_VARIABLES: SystemVariableDefinition[] = [
     name: 'uuid',
     description: 'Random UUID v4',
     generator: generateUuidV4,
-    aliases: ['guid', 'randomUUID']
+    aliases: ['guid', 'randomUUID'],
   },
   {
     name: 'timestamp',
     description: 'Unix timestamp in seconds',
-    generator: () => Math.floor(Date.now() / 1000).toString()
+    generator: () => Math.floor(Date.now() / 1000).toString(),
   },
   {
     name: 'timestampMs',
     description: 'Unix timestamp in milliseconds',
-    generator: () => Date.now().toString()
+    generator: () => Date.now().toString(),
   },
   {
     name: 'isoTimestamp',
     description: 'ISO-8601 timestamp',
     generator: () => new Date().toISOString(),
-    aliases: ['now']
+    aliases: ['now'],
   },
   {
     name: 'date',
     description: 'Current date (YYYY-MM-DD)',
-    generator: () => formatDate(new Date())
+    generator: () => formatDate(new Date()),
   },
   {
     name: 'time',
     description: 'Current time (HH:mm:ss)',
-    generator: () => formatTime(new Date())
+    generator: () => formatTime(new Date()),
   },
   {
     name: 'randomInt',
     description: 'Random integer between 0 and 1000',
-    generator: () => randomInt(0, 1000).toString()
+    generator: () => randomInt(0, 1000).toString(),
   },
   {
     name: 'randomBoolean',
     description: 'Random boolean value',
-    generator: () => (randomInt(0, 1) === 1).toString()
+    generator: () => (randomInt(0, 1) === 1).toString(),
   },
   {
     name: 'randomFirstName',
     description: 'Random first name',
-    generator: () => pick(FIRST_NAMES)
+    generator: () => pick(FIRST_NAMES),
   },
   {
     name: 'randomLastName',
     description: 'Random last name',
-    generator: () => pick(LAST_NAMES)
+    generator: () => pick(LAST_NAMES),
   },
   {
     name: 'randomFullName',
     description: 'Random full name',
-    generator: () => `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`
+    generator: () => `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
   },
   {
     name: 'randomUserName',
     description: 'Random username',
-    generator: generateUsername
+    generator: generateUsername,
   },
   {
     name: 'randomEmail',
     description: 'Random email address',
-    generator: generateEmail
+    generator: generateEmail,
   },
   {
     name: 'randomPassword',
     description: 'Random password',
-    generator: () => generatePassword(12)
+    generator: () => generatePassword(12),
   },
   {
     name: 'randomPhoneNumber',
     description: 'Random phone number',
-    generator: generatePhoneNumber
+    generator: generatePhoneNumber,
   },
   {
     name: 'randomColor',
     description: 'Random color name',
-    generator: () => pick(COLORS)
+    generator: () => pick(COLORS),
   },
   {
     name: 'randomHexColor',
     description: 'Random hex color',
-    generator: () => `#${randomHex(6)}`
+    generator: () => `#${randomHex(6)}`,
   },
   {
     name: 'randomStreetAddress',
     description: 'Random street address',
-    generator: generateStreetAddress
+    generator: generateStreetAddress,
   },
   {
     name: 'randomCity',
     description: 'Random city',
-    generator: () => pick(CITIES)
+    generator: () => pick(CITIES),
   },
   {
     name: 'randomState',
     description: 'Random state code',
-    generator: () => pick(STATES)
+    generator: () => pick(STATES),
   },
   {
     name: 'randomCountry',
     description: 'Random country name',
-    generator: () => pick(COUNTRIES)
+    generator: () => pick(COUNTRIES),
   },
   {
     name: 'randomZipCode',
     description: 'Random postal code',
-    generator: () => randomInt(10000, 99999).toString()
+    generator: () => randomInt(10000, 99999).toString(),
   },
   {
     name: 'randomIP',
     description: 'Random IPv4 address',
     generator: generateIPv4,
-    aliases: ['randomIPv4']
+    aliases: ['randomIPv4'],
   },
   {
     name: 'randomIPv6',
     description: 'Random IPv6 address',
-    generator: generateIPv6
+    generator: generateIPv6,
   },
   {
     name: 'randomMacAddress',
     description: 'Random MAC address',
-    generator: generateMacAddress
+    generator: generateMacAddress,
   },
   {
     name: 'randomWord',
     description: 'Random word',
-    generator: () => pick(WORDS).toLowerCase()
+    generator: () => pick(WORDS).toLowerCase(),
   },
   {
     name: 'randomWords',
     description: 'Random words',
-    generator: () => generateWords(2, 5)
+    generator: () => generateWords(2, 5),
   },
   {
     name: 'randomLoremSentence',
     description: 'Random lorem sentence',
-    generator: generateSentence
+    generator: generateSentence,
   },
   {
     name: 'randomLoremParagraph',
     description: 'Random lorem paragraph',
-    generator: () => generateParagraph(randomInt(2, 4))
+    generator: () => generateParagraph(randomInt(2, 4)),
   },
   {
     name: 'randomLoremParagraphs',
     description: 'Random lorem paragraphs',
-    generator: () => Array.from({ length: randomInt(2, 3) }, () => generateParagraph()).join('\n\n')
+    generator: () =>
+      Array.from({ length: randomInt(2, 3) }, () => generateParagraph()).join(
+        '\n\n'
+      ),
   },
   {
     name: 'randomDomainName',
     description: 'Random domain name',
-    generator: generateDomainName
+    generator: generateDomainName,
   },
   {
     name: 'randomUrl',
     description: 'Random URL',
-    generator: generateUrl
+    generator: generateUrl,
   },
   {
     name: 'ulid',
     description: 'ULID (time-sortable id)',
-    generator: generateUlid
+    generator: generateUlid,
   },
   {
     name: 'nanoid',
     description: 'Nano ID',
-    generator: () => generateNanoId(21)
-  }
+    generator: () => generateNanoId(21),
+  },
 ];
 
 export function getSystemVariableDefinitions(): SystemVariableDefinition[] {
@@ -390,9 +497,10 @@ export function resolveSystemVariable(name: string): string | undefined {
     return Date.now().toString();
   }
 
-  const match = SYSTEM_VARIABLES.find(def =>
-    def.name === normalizedName ||
-    (def.aliases && def.aliases.includes(normalizedName))
+  const match = SYSTEM_VARIABLES.find(
+    (def) =>
+      def.name === normalizedName ||
+      (def.aliases && def.aliases.includes(normalizedName))
   );
   return match ? match.generator() : undefined;
 }

@@ -2,13 +2,24 @@
 
 import { AiSession, AiContext, AiMessage, AskAiState } from './types';
 import { iconHtml } from '../../utils/icons';
-import { escapeHtml, formatBytes, formatKeyValuePairs, formatMessageContent } from './utils';
+import {
+  escapeHtml,
+  formatBytes,
+  formatKeyValuePairs,
+  formatMessageContent,
+} from './utils';
 
 /**
  * Render the context panel showing request/response context
  */
-export function renderContextPanel(session: AiSession, state: AskAiState): string {
-  if (!session.context || (!session.context.request && !session.context.fileContent)) {
+export function renderContextPanel(
+  session: AiSession,
+  state: AskAiState
+): string {
+  if (
+    !session.context ||
+    (!session.context.request && !session.context.fileContent)
+  ) {
     return '';
   }
 
@@ -23,32 +34,48 @@ export function renderContextPanel(session: AiSession, state: AskAiState): strin
           ${state.showContextPanel ? '▼ Hide' : '▶ Show'}
         </button>
       </div>
-      ${state.showContextPanel ? `
+      ${
+        state.showContextPanel
+          ? `
         <div class="context-content">
-          ${req ? `
+          ${
+            req
+              ? `
             <div class="request-line">
               <span class="method-badge method-${req.method.toLowerCase()}">${req.method}</span>
               <span class="request-url">${escapeHtml(req.url)}</span>
             </div>
-            ${req.body?.content ? `
+            ${
+              req.body?.content
+                ? `
               <div class="context-section">
                 <h5>Request Body</h5>
                 <div class="details-content">
                   <pre>${escapeHtml(req.body.content.slice(0, 500))}${req.body.content.length > 500 ? '...' : ''}</pre>
                 </div>
               </div>
-            ` : ''}
-          ` : ''}
-          ${ctx.fileContent ? `
+            `
+                : ''
+            }
+          `
+              : ''
+          }
+          ${
+            ctx.fileContent
+              ? `
             <div class="context-section">
               <h5>${iconHtml('file', 'ui-icon--sm')} Uploaded File: ${escapeHtml(ctx.fileName || 'file')}</h5>
               <div class="details-content">
                 <pre>${escapeHtml(ctx.fileContent.slice(0, 500))}${ctx.fileContent.length > 500 ? '...' : ''}</pre>
               </div>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
   `;
 }
@@ -56,7 +83,10 @@ export function renderContextPanel(session: AiSession, state: AskAiState): strin
 /**
  * Render context tab content (params, headers, body, auth, response)
  */
-export function renderContextTabContent(ctx: AiContext, activeTab: AskAiState['activeContextTab']): string {
+export function renderContextTabContent(
+  ctx: AiContext,
+  activeTab: AskAiState['activeContextTab']
+): string {
   const req = ctx.request;
   const res = ctx.response;
 
@@ -97,18 +127,23 @@ export function renderContextTabContent(ctx: AiContext, activeTab: AskAiState['a
 /**
  * Render chat messages for a session
  */
-export function renderChatMessages(session: AiSession, state: AskAiState): string {
+export function renderChatMessages(
+  session: AiSession,
+  state: AskAiState
+): string {
   if (session.messages.length === 0) {
     return renderEmptyChat();
   }
 
-  const messagesHtml = session.messages.map(msg => renderMessage(msg)).join('');
-  const streamingHtml = state.isSending && state.streamingContent
-    ? renderStreamingMessage(state.streamingContent)
-    : '';
-  const typingHtml = state.isSending && !state.streamingContent
-    ? renderTypingIndicator()
-    : '';
+  const messagesHtml = session.messages
+    .map((msg) => renderMessage(msg))
+    .join('');
+  const streamingHtml =
+    state.isSending && state.streamingContent
+      ? renderStreamingMessage(state.streamingContent)
+      : '';
+  const typingHtml =
+    state.isSending && !state.streamingContent ? renderTypingIndicator() : '';
 
   return `<div class="chat-messages">${messagesHtml}${streamingHtml}${typingHtml}</div>`;
 }

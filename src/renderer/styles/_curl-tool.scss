@@ -25,7 +25,11 @@
   justify-content: space-between;
   padding: 14px 14px 10px;
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.04) 0%, var(--bg-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.04) 0%,
+    var(--bg-primary) 100%
+  );
 
   h3 {
     font-size: 13px;
@@ -200,7 +204,9 @@
   padding: 14px 16px;
   box-sizing: border-box;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 
   &::placeholder {
     color: var(--text-secondary);
@@ -225,7 +231,11 @@
   align-items: center;
   gap: 6px;
   padding: 8px 20px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -280,7 +290,11 @@
   justify-content: space-between;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.12);
-  background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.06) 0%, transparent 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.06) 0%,
+    transparent 100%
+  );
 
   h3 {
     font-size: 12px;
@@ -301,7 +315,9 @@
   border-radius: 4px;
   cursor: pointer;
 
-  &:hover { color: var(--text-primary); }
+  &:hover {
+    color: var(--text-primary);
+  }
 }
 
 .curl-tool__parsed-body {
@@ -315,7 +331,9 @@
   padding: 5px 0;
   border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.05);
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .curl-tool__parsed-label {
@@ -357,7 +375,9 @@
   color: var(--primary-light);
   font-weight: 600;
 
-  &::after { content: ':'; }
+  &::after {
+    content: ':';
+  }
 }
 
 .curl-tool__header-val {
@@ -402,13 +422,34 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 
-  &--get { background: rgba(16, 185, 129, 0.15); color: var(--success-color); }
-  &--post { background: rgba(245, 158, 11, 0.15); color: var(--warning-color); }
-  &--put { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-  &--patch { background: rgba(139, 92, 246, 0.15); color: var(--accent-color); }
-  &--delete { background: rgba(239, 68, 68, 0.15); color: var(--error-color); }
-  &--head { background: rgba(160, 160, 160, 0.15); color: var(--text-secondary); }
-  &--options { background: rgba(160, 160, 160, 0.15); color: var(--text-secondary); }
+  &--get {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success-color);
+  }
+  &--post {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning-color);
+  }
+  &--put {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+  }
+  &--patch {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-color);
+  }
+  &--delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error-color);
+  }
+  &--head {
+    background: rgba(160, 160, 160, 0.15);
+    color: var(--text-secondary);
+  }
+  &--options {
+    background: rgba(160, 160, 160, 0.15);
+    color: var(--text-secondary);
+  }
 }
 
 // ─── Response Section ──────────────────────────────────────────────────────
@@ -430,7 +471,11 @@
   gap: 12px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.04) 0%, var(--bg-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.04) 0%,
+    var(--bg-primary) 100%
+  );
   flex-wrap: wrap;
 }
 
@@ -549,11 +594,26 @@
 // ─── Status colors ─────────────────────────────────────────────────────────
 
 .curl-tool__status {
-  &--success { color: var(--success-color); background: rgba(var(--success-color-rgb), 0.1); }
-  &--redirect { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
-  &--client-error { color: var(--warning-color); background: rgba(var(--warning-color-rgb), 0.1); }
-  &--server-error { color: var(--error-color); background: rgba(var(--error-color-rgb), 0.1); }
-  &--error { color: var(--error-color); background: rgba(var(--error-color-rgb), 0.1); }
+  &--success {
+    color: var(--success-color);
+    background: rgba(var(--success-color-rgb), 0.1);
+  }
+  &--redirect {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+  }
+  &--client-error {
+    color: var(--warning-color);
+    background: rgba(var(--warning-color-rgb), 0.1);
+  }
+  &--server-error {
+    color: var(--error-color);
+    background: rgba(var(--error-color-rgb), 0.1);
+  }
+  &--error {
+    color: var(--error-color);
+    background: rgba(var(--error-color-rgb), 0.1);
+  }
 }
 
 // ─── Loading ───────────────────────────────────────────────────────────────
@@ -577,7 +637,9 @@
 }
 
 @keyframes curl-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ─── Error ─────────────────────────────────────────────────────────────────

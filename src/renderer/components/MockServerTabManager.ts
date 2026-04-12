@@ -108,19 +108,28 @@ export class MockServerTabManager {
     this.serverList.onDelete = (serverId) => this.handleDeleteServer(serverId);
 
     // Editor events
-    this.serverEditor.onServerUpdate = (serverId, updates) => this.handleServerUpdate(serverId, updates);
-    this.serverEditor.onServerStart = (serverId) => this.handleServerStart(serverId);
-    this.serverEditor.onServerStop = (serverId) => this.handleServerStop(serverId);
-    this.serverEditor.onRouteAdd = (serverId, route) => this.handleRouteAdd(serverId, route);
-    this.serverEditor.onRouteUpdate = (serverId, routeId, updates) => this.handleRouteUpdate(serverId, routeId, updates);
-    this.serverEditor.onRouteDelete = (serverId, routeId) => this.handleRouteDelete(serverId, routeId);
-    this.serverEditor.onRouteToggle = (serverId, routeId, enabled) => this.handleRouteToggle(serverId, routeId, enabled);
+    this.serverEditor.onServerUpdate = (serverId, updates) =>
+      this.handleServerUpdate(serverId, updates);
+    this.serverEditor.onServerStart = (serverId) =>
+      this.handleServerStart(serverId);
+    this.serverEditor.onServerStop = (serverId) =>
+      this.handleServerStop(serverId);
+    this.serverEditor.onRouteAdd = (serverId, route) =>
+      this.handleRouteAdd(serverId, route);
+    this.serverEditor.onRouteUpdate = (serverId, routeId, updates) =>
+      this.handleRouteUpdate(serverId, routeId, updates);
+    this.serverEditor.onRouteDelete = (serverId, routeId) =>
+      this.handleRouteDelete(serverId, routeId);
+    this.serverEditor.onRouteToggle = (serverId, routeId, enabled) =>
+      this.handleRouteToggle(serverId, routeId, enabled);
   }
 
   private setupIpcListeners(): void {
-    this.statusCleanup = window.apiCourier.mockServer.onStatusChanged((event) => {
-      this.handleStatusChanged(event);
-    });
+    this.statusCleanup = window.apiCourier.mockServer.onStatusChanged(
+      (event) => {
+        this.handleStatusChanged(event);
+      }
+    );
   }
 
   private async loadServers(): Promise<void> {
@@ -163,7 +172,9 @@ export class MockServerTabManager {
     }
 
     const server = this.servers.find((s) => s.id === this.selectedServerId);
-    const status = this.runtimeStatus.find((s) => s.serverId === this.selectedServerId);
+    const status = this.runtimeStatus.find(
+      (s) => s.serverId === this.selectedServerId
+    );
     if (server) {
       this.serverEditor.render(editorContainer as HTMLElement, server, status);
     }
@@ -199,9 +210,12 @@ export class MockServerTabManager {
       const result = await window.apiCourier.mockServer.deleteServer(serverId);
       if (result.success) {
         this.servers = this.servers.filter((s) => s.id !== serverId);
-        this.runtimeStatus = this.runtimeStatus.filter((s) => s.serverId !== serverId);
+        this.runtimeStatus = this.runtimeStatus.filter(
+          (s) => s.serverId !== serverId
+        );
         if (this.selectedServerId === serverId) {
-          this.selectedServerId = this.servers.length > 0 ? this.servers[0].id : null;
+          this.selectedServerId =
+            this.servers.length > 0 ? this.servers[0].id : null;
         }
         this.renderServerList();
         this.renderEditor();
@@ -216,7 +230,10 @@ export class MockServerTabManager {
     updates: { name?: string; host?: string; port?: number | null }
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.updateServer({ serverId, ...updates });
+      const result = await window.apiCourier.mockServer.updateServer({
+        serverId,
+        ...updates,
+      });
       if (result.success && result.data) {
         const index = this.servers.findIndex((s) => s.id === serverId);
         if (index !== -1) {
@@ -253,9 +270,15 @@ export class MockServerTabManager {
     }
   }
 
-  private async handleRouteAdd(serverId: string, route: Omit<MockRoute, 'id'>): Promise<void> {
+  private async handleRouteAdd(
+    serverId: string,
+    route: Omit<MockRoute, 'id'>
+  ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.addRoute({ serverId, route });
+      const result = await window.apiCourier.mockServer.addRoute({
+        serverId,
+        route,
+      });
       if (result.success && result.data) {
         const server = this.servers.find((s) => s.id === serverId);
         if (server) {
@@ -274,7 +297,11 @@ export class MockServerTabManager {
     updates: Partial<Omit<MockRoute, 'id'>>
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.updateRoute({ serverId, routeId, updates });
+      const result = await window.apiCourier.mockServer.updateRoute({
+        serverId,
+        routeId,
+        updates,
+      });
       if (result.success && result.data) {
         const server = this.servers.find((s) => s.id === serverId);
         if (server) {
@@ -290,9 +317,15 @@ export class MockServerTabManager {
     }
   }
 
-  private async handleRouteDelete(serverId: string, routeId: string): Promise<void> {
+  private async handleRouteDelete(
+    serverId: string,
+    routeId: string
+  ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.deleteRoute({ serverId, routeId });
+      const result = await window.apiCourier.mockServer.deleteRoute({
+        serverId,
+        routeId,
+      });
       if (result.success) {
         const server = this.servers.find((s) => s.id === serverId);
         if (server) {
@@ -305,9 +338,17 @@ export class MockServerTabManager {
     }
   }
 
-  private async handleRouteToggle(serverId: string, routeId: string, enabled: boolean): Promise<void> {
+  private async handleRouteToggle(
+    serverId: string,
+    routeId: string,
+    enabled: boolean
+  ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.toggleRoute({ serverId, routeId, enabled });
+      const result = await window.apiCourier.mockServer.toggleRoute({
+        serverId,
+        routeId,
+        enabled,
+      });
       if (result.success && result.data) {
         const server = this.servers.find((s) => s.id === serverId);
         if (server) {
@@ -322,8 +363,14 @@ export class MockServerTabManager {
     }
   }
 
-  private handleStatusChanged(event: { serverId: string; isRunning: boolean; error?: string }): void {
-    const status = this.runtimeStatus.find((s) => s.serverId === event.serverId);
+  private handleStatusChanged(event: {
+    serverId: string;
+    isRunning: boolean;
+    error?: string;
+  }): void {
+    const status = this.runtimeStatus.find(
+      (s) => s.serverId === event.serverId
+    );
     if (status) {
       status.isRunning = event.isRunning;
       status.error = event.error;

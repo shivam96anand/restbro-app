@@ -99,7 +99,8 @@ export class EnvironmentManager {
       manageBtn.style.background = 'var(--primary-color)';
       manageBtn.style.borderColor = 'var(--primary-color)';
       manageBtn.style.transform = 'translateY(-1px) rotate(15deg)';
-      manageBtn.style.boxShadow = '0 2px 8px rgba(var(--primary-color-rgb), 0.25)';
+      manageBtn.style.boxShadow =
+        '0 2px 8px rgba(var(--primary-color-rgb), 0.25)';
     });
     manageBtn.addEventListener('mouseleave', () => {
       manageBtn.style.background = 'var(--bg-tertiary)';
@@ -109,18 +110,20 @@ export class EnvironmentManager {
     });
 
     manageBtn.addEventListener('click', () => {
-      this.dialogs.showManageDialog(this.environments, this.activeEnvironmentId).then(async result => {
-        if (result) {
-          this.setEnvironments(result.environments);
-          if (result.activeEnvironmentId !== undefined) {
-            this.setActiveEnvironment(result.activeEnvironmentId);
+      this.dialogs
+        .showManageDialog(this.environments, this.activeEnvironmentId)
+        .then(async (result) => {
+          if (result) {
+            this.setEnvironments(result.environments);
+            if (result.activeEnvironmentId !== undefined) {
+              this.setActiveEnvironment(result.activeEnvironmentId);
+            }
+            await this.saveState(result.globals);
+            // Notify other components that environments/variables changed
+            // This refreshes variable context for autocomplete and highlighting
+            document.dispatchEvent(new CustomEvent('environment-changed'));
           }
-          await this.saveState(result.globals);
-          // Notify other components that environments/variables changed
-          // This refreshes variable context for autocomplete and highlighting
-          document.dispatchEvent(new CustomEvent('environment-changed'));
-        }
-      });
+        });
     });
 
     manageBtn.addEventListener('mouseover', () => {
@@ -152,7 +155,9 @@ export class EnvironmentManager {
   }
 
   private renderSwitcher(): void {
-    const select = document.getElementById('environment-dropdown') as HTMLSelectElement;
+    const select = document.getElementById(
+      'environment-dropdown'
+    ) as HTMLSelectElement;
     if (!select) return;
 
     // Save current selection
@@ -168,7 +173,7 @@ export class EnvironmentManager {
     select.appendChild(noneOption);
 
     // Add environment options
-    this.environments.forEach(env => {
+    this.environments.forEach((env) => {
       const option = document.createElement('option');
       option.value = env.id;
       option.textContent = env.name;
@@ -201,7 +206,7 @@ export class EnvironmentManager {
 
   getActiveEnvironment(): Environment | undefined {
     if (!this.activeEnvironmentId) return undefined;
-    return this.environments.find(e => e.id === this.activeEnvironmentId);
+    return this.environments.find((e) => e.id === this.activeEnvironmentId);
   }
 
   getActiveEnvironmentId(): string | undefined {
@@ -209,7 +214,7 @@ export class EnvironmentManager {
   }
 
   async createEnvironment(name?: string): Promise<Environment | null> {
-    const envName = name || await this.dialogs.promptEnvironmentName();
+    const envName = name || (await this.dialogs.promptEnvironmentName());
     if (!envName) return null;
 
     const newEnv: Environment = {
@@ -225,8 +230,11 @@ export class EnvironmentManager {
     return newEnv;
   }
 
-  async updateEnvironment(id: string, updates: Partial<Environment>): Promise<void> {
-    const index = this.environments.findIndex(e => e.id === id);
+  async updateEnvironment(
+    id: string,
+    updates: Partial<Environment>
+  ): Promise<void> {
+    const index = this.environments.findIndex((e) => e.id === id);
     if (index === -1) return;
 
     this.environments[index] = { ...this.environments[index], ...updates };
@@ -235,7 +243,7 @@ export class EnvironmentManager {
   }
 
   async deleteEnvironment(id: string): Promise<void> {
-    this.environments = this.environments.filter(e => e.id !== id);
+    this.environments = this.environments.filter((e) => e.id !== id);
 
     // If the deleted environment was active, clear active
     if (this.activeEnvironmentId === id) {
@@ -246,7 +254,9 @@ export class EnvironmentManager {
     this.saveState();
   }
 
-  private async saveState(globals?: { variables: Record<string, string> }): Promise<void> {
+  private async saveState(globals?: {
+    variables: Record<string, string>;
+  }): Promise<void> {
     try {
       const updates: Record<string, any> = {
         environments: this.environments,

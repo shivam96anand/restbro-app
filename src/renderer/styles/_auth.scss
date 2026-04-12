@@ -23,9 +23,11 @@
   gap: 6px;
 
   input {
-    background: linear-gradient(135deg,
-                rgba(var(--primary-color-rgb), 0.02) 0%,
-                rgba(0, 0, 0, 0.15) 100%);
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.02) 0%,
+      rgba(0, 0, 0, 0.15) 100%
+    );
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
@@ -42,9 +44,11 @@
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
-      background: linear-gradient(135deg,
-                  rgba(var(--primary-color-rgb), 0.04) 0%,
-                  rgba(0, 0, 0, 0.2) 100%);
+      background: linear-gradient(
+        135deg,
+        rgba(var(--primary-color-rgb), 0.04) 0%,
+        rgba(0, 0, 0, 0.2) 100%
+      );
     }
   }
 }
@@ -72,10 +76,13 @@
     letter-spacing: 0.3px;
   }
 
-  input, select {
-    background: linear-gradient(135deg,
-                rgba(var(--primary-color-rgb), 0.02) 0%,
-                rgba(0, 0, 0, 0.15) 100%);
+  input,
+  select {
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.02) 0%,
+      rgba(0, 0, 0, 0.15) 100%
+    );
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;

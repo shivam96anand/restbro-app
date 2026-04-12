@@ -6,7 +6,10 @@ export class ResponseTabs {
   private activeTab: string = 'body';
   private onTabChangeCallback: ((tab: string) => void) | null = null;
 
-  constructor(container: HTMLElement, private config: ResponseTabsConfig) {
+  constructor(
+    container: HTMLElement,
+    private config: ResponseTabsConfig
+  ) {
     this.createTabsContainer(container);
     this.createTabs();
   }
@@ -30,7 +33,7 @@ export class ResponseTabs {
     tabGroup.className = 'response-toolbar__tabs';
 
     const tabs = ['body', 'headers'];
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       const tabEl = document.createElement('button');
       tabEl.className = `response-toolbar__tab ${tab === this.activeTab ? 'active' : ''}`;
       tabEl.dataset.section = tab;
@@ -65,7 +68,7 @@ export class ResponseTabs {
   private getTabLabel(tab: string): string {
     const labels: Record<string, string> = {
       body: 'Body',
-      headers: 'Headers'
+      headers: 'Headers',
     };
     return labels[tab] || tab;
   }
@@ -78,9 +81,13 @@ export class ResponseTabs {
 
   private updateActiveTab(tab: string): void {
     if (!this.tabsContainer) return;
-    const currentActive = this.tabsContainer.querySelector('.response-toolbar__tab.active');
+    const currentActive = this.tabsContainer.querySelector(
+      '.response-toolbar__tab.active'
+    );
     currentActive?.classList.remove('active');
-    const newActive = this.tabsContainer.querySelector(`[data-section="${tab}"]`);
+    const newActive = this.tabsContainer.querySelector(
+      `[data-section="${tab}"]`
+    );
     newActive?.classList.add('active');
     this.activeTab = tab;
   }
@@ -92,7 +99,9 @@ export class ResponseTabs {
   private updateTabBadges(response: ApiResponse): void {
     if (!this.tabsContainer) return;
 
-    const headersTab = this.tabsContainer.querySelector('[data-section="headers"]');
+    const headersTab = this.tabsContainer.querySelector(
+      '[data-section="headers"]'
+    );
     if (headersTab && response.headers) {
       const headerCount = Object.keys(response.headers).length;
       headersTab.setAttribute('data-count', headerCount.toString());
@@ -127,11 +136,20 @@ export class ResponseTabs {
     if (timestampEl) timestampEl.textContent = '';
 
     if (this.tabsContainer) {
-      this.tabsContainer.classList.remove('status-2xx', 'status-3xx', 'status-4xx', 'status-5xx');
+      this.tabsContainer.classList.remove(
+        'status-2xx',
+        'status-3xx',
+        'status-4xx',
+        'status-5xx'
+      );
     }
 
     // Reset chip modifiers
-    statusEl?.classList.remove('meta-chip--success', 'meta-chip--warning', 'meta-chip--error');
+    statusEl?.classList.remove(
+      'meta-chip--success',
+      'meta-chip--warning',
+      'meta-chip--error'
+    );
   }
 
   public destroy(): void {

@@ -1,13 +1,22 @@
 export class Modal {
   private modal: HTMLElement | null = null;
 
-  show(title: string, placeholder: string = '', initialValue: string = ''): Promise<string | null> {
+  show(
+    title: string,
+    placeholder: string = '',
+    initialValue: string = ''
+  ): Promise<string | null> {
     return new Promise((resolve) => {
       this.createModal(title, placeholder, initialValue, resolve);
     });
   }
 
-  private createModal(title: string, placeholder: string, initialValue: string, resolve: (value: string | null) => void): void {
+  private createModal(
+    title: string,
+    placeholder: string,
+    initialValue: string,
+    resolve: (value: string | null) => void
+  ): void {
     // Remove existing modal if any
     this.hide();
 

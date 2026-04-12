@@ -1,6 +1,9 @@
 export interface JsonInputPanelEvents {
   onJsonParsed: (jsonData: any) => void;
-  onStatusUpdate: (type: 'info' | 'success' | 'warning' | 'error', message: string) => void;
+  onStatusUpdate: (
+    type: 'info' | 'success' | 'warning' | 'error',
+    message: string
+  ) => void;
   onClearViewer: () => void;
 }
 
@@ -83,7 +86,9 @@ export class JsonInputPanel {
     `;
 
     // Initialize Monaco editor
-    const monacoContainer = this.container.querySelector('#monaco-input-container') as HTMLElement;
+    const monacoContainer = this.container.querySelector(
+      '#monaco-input-container'
+    ) as HTMLElement;
     if (monacoContainer) {
       this.monacoEditor = new MonacoInputEditor({
         container: monacoContainer,
@@ -95,7 +100,7 @@ export class JsonInputPanel {
           this.isValid = valid;
           this.errorMessage = error || '';
           this.updateValidationUI();
-        }
+        },
       });
     }
   }
@@ -105,12 +110,12 @@ export class JsonInputPanel {
     const inputTabs = this.container.querySelectorAll('.input-tab');
     const inputSections = this.container.querySelectorAll('.input-section');
 
-    inputTabs.forEach(tab => {
+    inputTabs.forEach((tab) => {
       tab.addEventListener('click', () => {
         const method = (tab as HTMLElement).dataset.method;
 
-        inputTabs.forEach(t => t.classList.remove('active'));
-        inputSections.forEach(s => s.classList.remove('active'));
+        inputTabs.forEach((t) => t.classList.remove('active'));
+        inputSections.forEach((s) => s.classList.remove('active'));
 
         tab.classList.add('active');
         const section = this.container.querySelector(`#${method}-section`);
@@ -121,25 +126,53 @@ export class JsonInputPanel {
     });
 
     // Action buttons
-    this.container.querySelector('#clear-input-btn')?.addEventListener('click', () => this.clearInput());
-    this.container.querySelector('#format-btn')?.addEventListener('click', () => this.formatJson());
-    this.container.querySelector('#minify-btn')?.addEventListener('click', () => this.minifyJson());
-    this.container.querySelector('#parse-btn')?.addEventListener('click', () => this.parseAndView());
+    this.container
+      .querySelector('#clear-input-btn')
+      ?.addEventListener('click', () => this.clearInput());
+    this.container
+      .querySelector('#format-btn')
+      ?.addEventListener('click', () => this.formatJson());
+    this.container
+      .querySelector('#minify-btn')
+      ?.addEventListener('click', () => this.minifyJson());
+    this.container
+      .querySelector('#parse-btn')
+      ?.addEventListener('click', () => this.parseAndView());
 
     // Toolbar buttons
-    this.container.querySelector('#viewer-copy-btn')?.addEventListener('click', () => this.copyJson());
-    this.container.querySelector('#viewer-export-btn')?.addEventListener('click', () => this.exportJson());
-    this.container.querySelector('#viewer-search-btn')?.addEventListener('click', () => this.openSearch());
-    this.container.querySelector('#viewer-collapse-btn')?.addEventListener('click', () => this.foldAll());
-    this.container.querySelector('#viewer-expand-btn')?.addEventListener('click', () => this.unfoldAll());
-    this.container.querySelector('#viewer-top-btn')?.addEventListener('click', () => this.scrollEditorToTop());
-    this.container.querySelector('#viewer-bottom-btn')?.addEventListener('click', () => this.scrollEditorToBottom());
-    this.container.querySelector('#viewer-ask-ai-btn')?.addEventListener('click', () => this.handleAskAI());
+    this.container
+      .querySelector('#viewer-copy-btn')
+      ?.addEventListener('click', () => this.copyJson());
+    this.container
+      .querySelector('#viewer-export-btn')
+      ?.addEventListener('click', () => this.exportJson());
+    this.container
+      .querySelector('#viewer-search-btn')
+      ?.addEventListener('click', () => this.openSearch());
+    this.container
+      .querySelector('#viewer-collapse-btn')
+      ?.addEventListener('click', () => this.foldAll());
+    this.container
+      .querySelector('#viewer-expand-btn')
+      ?.addEventListener('click', () => this.unfoldAll());
+    this.container
+      .querySelector('#viewer-top-btn')
+      ?.addEventListener('click', () => this.scrollEditorToTop());
+    this.container
+      .querySelector('#viewer-bottom-btn')
+      ?.addEventListener('click', () => this.scrollEditorToBottom());
+    this.container
+      .querySelector('#viewer-ask-ai-btn')
+      ?.addEventListener('click', () => this.handleAskAI());
   }
 
   private updateValidationUI(): void {
-    const statusBadge = this.container.querySelector('#input-status-badge') as HTMLElement;
-    const parseBtn = this.container.querySelector('#parse-btn') as HTMLButtonElement;
+    const statusBadge = this.container.querySelector(
+      '#input-status-badge'
+    ) as HTMLElement;
+    const parseBtn = this.container.querySelector(
+      '#parse-btn'
+    ) as HTMLButtonElement;
 
     if (!statusBadge) return;
 
@@ -160,7 +193,9 @@ export class JsonInputPanel {
 
   private setupFileUpload(): void {
     const uploadArea = this.container.querySelector('#upload-area')!;
-    const fileInput = this.container.querySelector('#file-input') as HTMLInputElement;
+    const fileInput = this.container.querySelector(
+      '#file-input'
+    ) as HTMLInputElement;
 
     // Click to browse
     uploadArea.addEventListener('click', () => {
@@ -205,7 +240,10 @@ export class JsonInputPanel {
     }
 
     // Check file type
-    if (!file.name.toLowerCase().endsWith('.json') && !file.name.toLowerCase().endsWith('.txt')) {
+    if (
+      !file.name.toLowerCase().endsWith('.json') &&
+      !file.name.toLowerCase().endsWith('.txt')
+    ) {
       this.events.onStatusUpdate('error', 'Please upload a .json or .txt file');
       return;
     }
@@ -220,17 +258,26 @@ export class JsonInputPanel {
       }
 
       this.persistCurrentInput(text);
-      this.events.onStatusUpdate('success', `File "${file.name}" loaded successfully`);
+      this.events.onStatusUpdate(
+        'success',
+        `File "${file.name}" loaded successfully`
+      );
 
       // Auto-parse if it looks like valid JSON
       try {
         JSON.parse(text);
         this.parseAndView();
       } catch {
-        this.events.onStatusUpdate('warning', 'File loaded but JSON appears invalid. Please check and parse manually.');
+        this.events.onStatusUpdate(
+          'warning',
+          'File loaded but JSON appears invalid. Please check and parse manually.'
+        );
       }
     } catch (error) {
-      this.events.onStatusUpdate('error', `Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.events.onStatusUpdate(
+        'error',
+        `Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -259,7 +306,10 @@ export class JsonInputPanel {
       this.monacoEditor.format();
       this.events.onStatusUpdate('success', 'JSON formatted successfully');
     } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.events.onStatusUpdate(
+        'error',
+        `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -280,7 +330,10 @@ export class JsonInputPanel {
       this.monacoEditor.minify();
       this.events.onStatusUpdate('success', 'JSON minified successfully');
     } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.events.onStatusUpdate(
+        'error',
+        `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -302,7 +355,10 @@ export class JsonInputPanel {
       const parsed = JSON.parse(text);
       this.events.onJsonParsed(parsed);
     } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.events.onStatusUpdate(
+        'error',
+        `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       this.events.onClearViewer();
     }
   }
@@ -313,11 +369,14 @@ export class JsonInputPanel {
       this.events.onStatusUpdate('warning', 'No JSON to copy');
       return;
     }
-    navigator.clipboard.writeText(text).then(() => {
-      this.events.onStatusUpdate('success', 'JSON copied to clipboard');
-    }).catch(() => {
-      this.events.onStatusUpdate('error', 'Failed to copy to clipboard');
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        this.events.onStatusUpdate('success', 'JSON copied to clipboard');
+      })
+      .catch(() => {
+        this.events.onStatusUpdate('error', 'Failed to copy to clipboard');
+      });
   }
 
   private exportJson(): void {
@@ -377,9 +436,11 @@ export class JsonInputPanel {
       this.events.onStatusUpdate('warning', 'No JSON to analyze');
       return;
     }
-    document.dispatchEvent(new CustomEvent('ask-ai-with-context', {
-      detail: { context: text, source: 'json-viewer' }
-    }));
+    document.dispatchEvent(
+      new CustomEvent('ask-ai-with-context', {
+        detail: { context: text, source: 'json-viewer' },
+      })
+    );
   }
 
   public getJsonText(): string {
@@ -424,7 +485,8 @@ export class JsonInputPanel {
       return;
     }
 
-    const text = value !== undefined ? value : this.monacoEditor?.getValue() || '';
+    const text =
+      value !== undefined ? value : this.monacoEditor?.getValue() || '';
 
     if (!text.trim()) {
       storage.removeItem(this.storageKey);

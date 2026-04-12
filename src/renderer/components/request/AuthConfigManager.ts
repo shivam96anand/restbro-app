@@ -8,12 +8,18 @@ import { UIHelpers } from './UIHelpers';
 export class AuthConfigManager {
   private oauth2Manager: OAuth2Manager;
   private uiHelpers: UIHelpers;
-  private onAuthUpdate: (auth: { type: string; config: Record<string, string> }) => void;
+  private onAuthUpdate: (auth: {
+    type: string;
+    config: Record<string, string>;
+  }) => void;
   private authConfigInputListener?: (event: Event) => void;
   private isLoading: boolean = false; // Flag to suppress updates during loading
 
   constructor(
-    onAuthUpdate: (auth: { type: string; config: Record<string, string> }) => void,
+    onAuthUpdate: (auth: {
+      type: string;
+      config: Record<string, string>;
+    }) => void,
     oauth2Manager: OAuth2Manager,
     uiHelpers: UIHelpers
   ) {
@@ -26,7 +32,9 @@ export class AuthConfigManager {
    * Initializes the auth editor with event listeners
    */
   setup(): void {
-    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+    const authTypeSelect = document.getElementById(
+      'auth-type'
+    ) as HTMLSelectElement;
 
     if (authTypeSelect) {
       authTypeSelect.addEventListener('change', () => {
@@ -37,7 +45,7 @@ export class AuthConfigManager {
         // Update the request with the new auth type and empty config
         this.onAuthUpdate({
           type: newAuthType,
-          config: {}
+          config: {},
         });
       });
     }
@@ -72,11 +80,12 @@ export class AuthConfigManager {
       // Handle other auth types
       const fields = configs[authType] || [];
 
-      fields.forEach(field => {
+      fields.forEach((field) => {
         if (field === 'location') {
           const select = document.createElement('select');
           select.dataset.field = field;
-          select.innerHTML = '<option value="header">Header</option><option value="query">Query</option>';
+          select.innerHTML =
+            '<option value="header">Header</option><option value="query">Query</option>';
           authConfig.appendChild(select);
         } else {
           const input = document.createElement('input');
@@ -114,7 +123,7 @@ export class AuthConfigManager {
     const config: Record<string, string> = {};
     const inputs = authConfig.querySelectorAll('input, select');
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       const field = (input as HTMLElement).dataset.field;
       const value = (input as HTMLInputElement | HTMLSelectElement).value;
 
@@ -125,21 +134,26 @@ export class AuthConfigManager {
 
     this.onAuthUpdate({
       type: authType,
-      config
+      config,
     });
   }
 
   /**
    * Loads authentication configuration into the UI
    */
-  load(auth: { type: string; config: Record<string, string> }, collectionId?: string): void {
+  load(
+    auth: { type: string; config: Record<string, string> },
+    collectionId?: string
+  ): void {
     // Set loading flag to suppress spurious updates
     this.isLoading = true;
 
     // Set collectionId in OAuth2Manager for variable resolution
     this.oauth2Manager.setCollectionId(collectionId);
 
-    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+    const authTypeSelect = document.getElementById(
+      'auth-type'
+    ) as HTMLSelectElement;
 
     if (authTypeSelect) {
       authTypeSelect.value = auth.type;
@@ -163,7 +177,9 @@ export class AuthConfigManager {
           const authConfig = document.getElementById('auth-config');
           if (authConfig) {
             Object.entries(auth.config).forEach(([field, value]) => {
-              const input = authConfig.querySelector(`[data-field="${field}"]`) as HTMLInputElement;
+              const input = authConfig.querySelector(
+                `[data-field="${field}"]`
+              ) as HTMLInputElement;
               if (input) {
                 input.value = value;
                 // Trigger input event to refresh variable highlighting
@@ -184,7 +200,9 @@ export class AuthConfigManager {
    */
   clear(): void {
     this.isLoading = false; // Reset flag when clearing
-    const authTypeSelect = document.getElementById('auth-type') as HTMLSelectElement;
+    const authTypeSelect = document.getElementById(
+      'auth-type'
+    ) as HTMLSelectElement;
     if (authTypeSelect) {
       authTypeSelect.value = 'none';
       this.renderConfig('none');
@@ -194,25 +212,30 @@ export class AuthConfigManager {
   /**
    * Checks if OAuth token is expired
    */
-  isOAuthTokenExpired(auth: { type: string; config: Record<string, string> }): boolean {
+  isOAuthTokenExpired(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): boolean {
     return this.oauth2Manager.isTokenExpired(auth);
   }
 
   /**
    * Auto-refreshes OAuth token if expired
    */
-  async autoRefreshOAuthToken(
-    auth: { type: string; config: Record<string, string> }
-  ): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoRefreshOAuthToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     return this.oauth2Manager.autoRefreshToken(auth);
   }
 
   /**
    * Auto-gets OAuth token if none exists
    */
-  async autoGetOAuthToken(
-    auth: { type: string; config: Record<string, string> }
-  ): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoGetOAuthToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     return this.oauth2Manager.autoGetToken(auth);
   }
 }

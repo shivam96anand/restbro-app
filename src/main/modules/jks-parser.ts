@@ -19,7 +19,10 @@ export interface JksTruststoreResult {
  * Parses a JKS keystore and returns combined PEM cert + key strings.
  * Concatenates all aliases found in the keystore.
  */
-export function parseKeystoreJks(base64: string, password: string): JksKeystoreResult {
+export function parseKeystoreJks(
+  base64: string,
+  password: string
+): JksKeystoreResult {
   const buf = Buffer.from(base64, 'base64');
   const parsed = jksJs.toPem(buf, password);
   const certs: string[] = [];
@@ -41,7 +44,10 @@ export function parseKeystoreJks(base64: string, password: string): JksKeystoreR
  * Parses a JKS truststore and returns a combined PEM CA cert string.
  * Handles both `ca` entries (TrustedKeyEntry) and plain `cert` entries.
  */
-export function parseTruststoreJks(base64: string, password: string): JksTruststoreResult {
+export function parseTruststoreJks(
+  base64: string,
+  password: string
+): JksTruststoreResult {
   const buf = Buffer.from(base64, 'base64');
   const parsed = jksJs.toPem(buf, password);
   const cas: string[] = [];

@@ -2,7 +2,11 @@ import * as http from 'http';
 import * as https from 'https';
 import * as zlib from 'zlib';
 import { URL } from 'url';
-import { CurlExecuteRequest, CurlExecuteResponse, CurlParsed } from '../../shared/types';
+import {
+  CurlExecuteRequest,
+  CurlExecuteResponse,
+  CurlParsed,
+} from '../../shared/types';
 
 /** Active curl requests for cancellation support */
 const activeRequests = new Map<string, http.ClientRequest>();
@@ -14,7 +18,7 @@ const activeRequests = new Map<string, http.ClientRequest>();
 export function parseCurlCommand(raw: string): CurlParsed {
   // Normalize line continuations and whitespace
   const cleaned = raw
-    .replace(/\\\s*\n/g, ' ')  // join backslash-continued lines
+    .replace(/\\\s*\n/g, ' ') // join backslash-continued lines
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -43,7 +47,12 @@ export function parseCurlCommand(raw: string): CurlParsed {
         const val = headerStr.slice(colonIdx + 1).trim();
         headers[key] = val;
       }
-    } else if (token === '-d' || token === '--data' || token === '--data-raw' || token === '--data-binary') {
+    } else if (
+      token === '-d' ||
+      token === '--data' ||
+      token === '--data-raw' ||
+      token === '--data-binary'
+    ) {
       body = tokens[++i] || '';
       if (method === 'GET') method = 'POST';
     } else if (token === '--data-urlencode') {
@@ -54,7 +63,8 @@ export function parseCurlCommand(raw: string): CurlParsed {
       }
     } else if (token === '-u' || token === '--user') {
       const credentials = tokens[++i] || '';
-      headers['Authorization'] = `Basic ${Buffer.from(credentials).toString('base64')}`;
+      headers['Authorization'] =
+        `Basic ${Buffer.from(credentials).toString('base64')}`;
     } else if (token === '-A' || token === '--user-agent') {
       headers['User-Agent'] = tokens[++i] || '';
     } else if (token === '-b' || token === '--cookie') {
@@ -62,12 +72,18 @@ export function parseCurlCommand(raw: string): CurlParsed {
     } else if (token === '-e' || token === '--referer') {
       headers['Referer'] = tokens[++i] || '';
     } else if (
-      token === '-k' || token === '--insecure' ||
-      token === '-L' || token === '--location' ||
-      token === '-v' || token === '--verbose' ||
-      token === '-s' || token === '--silent' ||
-      token === '-S' || token === '--show-error' ||
-      token === '-i' || token === '--include' ||
+      token === '-k' ||
+      token === '--insecure' ||
+      token === '-L' ||
+      token === '--location' ||
+      token === '-v' ||
+      token === '--verbose' ||
+      token === '-s' ||
+      token === '--silent' ||
+      token === '-S' ||
+      token === '--show-error' ||
+      token === '-i' ||
+      token === '--include' ||
       token === '--compressed'
     ) {
       flags.push(token);
@@ -148,7 +164,9 @@ function tokenize(input: string): string[] {
 }
 
 /** Execute a parsed curl command using Node http/https */
-export async function executeCurl(request: CurlExecuteRequest): Promise<CurlExecuteResponse> {
+export async function executeCurl(
+  request: CurlExecuteRequest
+): Promise<CurlExecuteResponse> {
   const { id, rawCommand } = request;
   const parsed = parseCurlCommand(rawCommand);
 
@@ -172,10 +190,15 @@ export async function executeCurl(request: CurlExecuteRequest): Promise<CurlExec
     const parsedUrl = new URL(parsed.url);
     const isHttps = parsedUrl.protocol === 'https:';
     const httpModule = isHttps ? https : http;
-    const insecure = parsed.flags.some(f => f === '-k' || f === '--insecure');
-    const followRedirects = parsed.flags.some(f => f === '-L' || f === '--location');
+    const insecure = parsed.flags.some((f) => f === '-k' || f === '--insecure');
+    const followRedirects = parsed.flags.some(
+      (f) => f === '-L' || f === '--location'
+    );
 
-    const doRequest = (targetUrl: URL, redirectCount: number): Promise<CurlExecuteResponse> => {
+    const doRequest = (
+      targetUrl: URL,
+      redirectCount: number
+    ): Promise<CurlExecuteResponse> => {
       return new Promise((resolve) => {
         const options: http.RequestOptions = {
           hostname: targetUrl.hostname,
@@ -183,14 +206,25 @@ export async function executeCurl(request: CurlExecuteRequest): Promise<CurlExec
           path: targetUrl.pathname + targetUrl.search,
           method: parsed.method,
           headers: { ...parsed.headers },
-          ...(insecure && targetUrl.protocol === 'https:' ? { rejectUnauthorized: false } : {}),
+          ...(insecure && targetUrl.protocol === 'https:'
+            ? { rejectUnauthorized: false }
+            : {}),
         };
 
         const reqModule = targetUrl.protocol === 'https:' ? https : http;
         const req = reqModule.request(options, (res) => {
           // Handle redirects
-          if (followRedirects && res.statusCode && [301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirectCount < 10) {
-            const redirectUrl = new URL(res.headers.location, targetUrl.toString());
+          if (
+            followRedirects &&
+            res.statusCode &&
+            [301, 302, 303, 307, 308].includes(res.statusCode) &&
+            res.headers.location &&
+            redirectCount < 10
+          ) {
+            const redirectUrl = new URL(
+              res.headers.location,
+              targetUrl.toString()
+            );
             res.resume(); // Drain response
             resolve(doRequest(redirectUrl, redirectCount + 1));
             return;
@@ -215,7 +249,9 @@ export async function executeCurl(request: CurlExecuteRequest): Promise<CurlExec
 
             const responseHeaders: Record<string, string> = {};
             for (const [key, val] of Object.entries(res.headers)) {
-              responseHeaders[key] = Array.isArray(val) ? val.join(', ') : (val || '');
+              responseHeaders[key] = Array.isArray(val)
+                ? val.join(', ')
+                : val || '';
             }
 
             resolve({

@@ -40,7 +40,8 @@ export class MonacoInputEditor {
     const valueColor = this.getCssHexVariable('--text-primary') || 'ffffff';
     const bracketColor = this.getCssHexVariable('--json-bracket') || 'da70d6';
     const editorBackground = this.getCssHexVariable('--bg-primary') || '1a1a1a';
-    const lineNumberColor = this.getCssHexVariable('--json-line-number') || '6e6e6e';
+    const lineNumberColor =
+      this.getCssHexVariable('--json-line-number') || '6e6e6e';
 
     monaco.editor.defineTheme('api-courier-json-viewer', {
       base: 'vs-dark',
@@ -51,7 +52,11 @@ export class MonacoInputEditor {
         { token: 'string.json', foreground: valueColor },
         { token: 'number.json', foreground: valueColor },
         { token: 'keyword.json', foreground: valueColor },
-        { token: 'delimiter.bracket.json', foreground: bracketColor, fontStyle: 'bold' },
+        {
+          token: 'delimiter.bracket.json',
+          foreground: bracketColor,
+          fontStyle: 'bold',
+        },
         { token: 'delimiter.colon.json', foreground: valueColor },
         { token: 'delimiter.comma.json', foreground: bracketColor },
       ],
@@ -74,7 +79,7 @@ export class MonacoInputEditor {
         'editorBracketPairGuide.activeBackground5': `#${bracketColor}`,
         'editorBracketPairGuide.activeBackground6': `#${bracketColor}`,
         'editorBracketHighlight.unexpectedBracket.foreground': `#${bracketColor}`,
-      }
+      },
     });
 
     // Apply theme to this editor
@@ -107,16 +112,16 @@ export class MonacoInputEditor {
       insertSpaces: true,
       autoIndent: 'full',
       bracketPairColorization: {
-        enabled: true
+        enabled: true,
       },
       padding: {
         top: 12,
-        bottom: 12
+        bottom: 12,
       },
       // Enable error/warning markers
       renderValidationDecorations: 'on',
       showUnused: true,
-      showDeprecated: true
+      showDeprecated: true,
     });
 
     // Listen to content changes
@@ -158,7 +163,10 @@ export class MonacoInputEditor {
 
   private clearErrorDecorations(): void {
     if (!this.editor) return;
-    this.errorDecorations = this.editor.deltaDecorations(this.errorDecorations, []);
+    this.errorDecorations = this.editor.deltaDecorations(
+      this.errorDecorations,
+      []
+    );
   }
 
   private addErrorDecoration(text: string, errorMessage: string): void {
@@ -172,16 +180,24 @@ export class MonacoInputEditor {
       if (!model) return;
 
       const lineCount = model.getLineCount();
-      this.errorDecorations = this.editor.deltaDecorations(this.errorDecorations, [
-        {
-          range: new monaco.Range(1, 1, lineCount, model.getLineMaxColumn(lineCount)),
-          options: {
-            className: 'json-error-decoration',
-            glyphMarginClassName: 'json-error-glyph',
-            isWholeLine: false,
-          }
-        }
-      ]);
+      this.errorDecorations = this.editor.deltaDecorations(
+        this.errorDecorations,
+        [
+          {
+            range: new monaco.Range(
+              1,
+              1,
+              lineCount,
+              model.getLineMaxColumn(lineCount)
+            ),
+            options: {
+              className: 'json-error-decoration',
+              glyphMarginClassName: 'json-error-glyph',
+              isWholeLine: false,
+            },
+          },
+        ]
+      );
       return;
     }
 
@@ -193,20 +209,28 @@ export class MonacoInputEditor {
     const pos = model.getPositionAt(position);
 
     // Highlight the error position
-    this.errorDecorations = this.editor.deltaDecorations(this.errorDecorations, [
-      {
-        range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column + 1),
-        options: {
-          className: 'json-error-decoration',
-          glyphMarginClassName: 'json-error-glyph',
-          inlineClassName: 'json-error-inline',
-          minimap: {
-            color: '#f85149',
-            position: monaco.editor.MinimapPosition.Inline
-          }
-        }
-      }
-    ]);
+    this.errorDecorations = this.editor.deltaDecorations(
+      this.errorDecorations,
+      [
+        {
+          range: new monaco.Range(
+            pos.lineNumber,
+            pos.column,
+            pos.lineNumber,
+            pos.column + 1
+          ),
+          options: {
+            className: 'json-error-decoration',
+            glyphMarginClassName: 'json-error-glyph',
+            inlineClassName: 'json-error-inline',
+            minimap: {
+              color: '#f85149',
+              position: monaco.editor.MinimapPosition.Inline,
+            },
+          },
+        },
+      ]
+    );
 
     // Scroll to the error
     this.editor.revealPositionInCenter(pos);
@@ -240,7 +264,10 @@ export class MonacoInputEditor {
       this.onValidityChange(true);
     } catch (error) {
       // Don't format if invalid
-      this.onValidityChange(false, error instanceof Error ? error.message : 'Invalid JSON');
+      this.onValidityChange(
+        false,
+        error instanceof Error ? error.message : 'Invalid JSON'
+      );
     }
   }
 
@@ -257,7 +284,10 @@ export class MonacoInputEditor {
       this.onValidityChange(true);
     } catch (error) {
       // Don't minify if invalid
-      this.onValidityChange(false, error instanceof Error ? error.message : 'Invalid JSON');
+      this.onValidityChange(
+        false,
+        error instanceof Error ? error.message : 'Invalid JSON'
+      );
     }
   }
 

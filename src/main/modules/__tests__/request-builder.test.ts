@@ -24,13 +24,16 @@ describe('request-builder.ts', () => {
     });
 
     it('handles array params by including enabled items and skipping invalid ones', () => {
-      const url = RequestBuilder.buildUrlWithParams('https://api.example.com/users', [
-        { key: ' page ', value: ' 1 ', enabled: true },
-        { key: 'disabled', value: 'nope', enabled: false },
-        { key: '', value: 'missing-key', enabled: true },
-        { key: 'missing-value', value: '   ', enabled: true },
-        { key: 'sort', value: 'name', enabled: true },
-      ]);
+      const url = RequestBuilder.buildUrlWithParams(
+        'https://api.example.com/users',
+        [
+          { key: ' page ', value: ' 1 ', enabled: true },
+          { key: 'disabled', value: 'nope', enabled: false },
+          { key: '', value: 'missing-key', enabled: true },
+          { key: 'missing-value', value: '   ', enabled: true },
+          { key: 'sort', value: 'name', enabled: true },
+        ]
+      );
 
       expect(url).toBe('https://api.example.com/users?page=1&sort=name');
     });
@@ -44,18 +47,25 @@ describe('request-builder.ts', () => {
         ]
       );
 
-      expect(url).toBe('https://api.example.com/users?page=1&sort=new&filter=active');
+      expect(url).toBe(
+        'https://api.example.com/users?page=1&sort=new&filter=active'
+      );
     });
 
     it('handles record params, skips empty entries, and URL-encodes values', () => {
-      const url = RequestBuilder.buildUrlWithParams('https://api.example.com/search', {
-        q: 'hello world',
-        category: 'a&b',
-        empty: '',
-        '   ': 'ignored',
-      });
+      const url = RequestBuilder.buildUrlWithParams(
+        'https://api.example.com/search',
+        {
+          q: 'hello world',
+          category: 'a&b',
+          empty: '',
+          '   ': 'ignored',
+        }
+      );
 
-      expect(url).toBe('https://api.example.com/search?q=hello+world&category=a%26b');
+      expect(url).toBe(
+        'https://api.example.com/search?q=hello+world&category=a%26b'
+      );
     });
 
     it('preserves trailing slashes and fragments', () => {
@@ -66,9 +76,12 @@ describe('request-builder.ts', () => {
       ).toBe('https://api.example.com/users/?page=1');
 
       expect(
-        RequestBuilder.buildUrlWithParams('https://api.example.com/users#details', {
-          page: '1',
-        })
+        RequestBuilder.buildUrlWithParams(
+          'https://api.example.com/users#details',
+          {
+            page: '1',
+          }
+        )
       ).toBe('https://api.example.com/users?page=1#details');
     });
   });
@@ -209,14 +222,18 @@ describe('request-builder.ts', () => {
     it('does not override a user-specified Authorization header', () => {
       const oauthHeaders = RequestBuilder.buildHeaders(
         createRequest({
-          headers: [{ key: 'Authorization', value: 'Custom abc', enabled: true }],
+          headers: [
+            { key: 'Authorization', value: 'Custom abc', enabled: true },
+          ],
           auth: { type: 'oauth2', config: { accessToken: 'oauth-token' } },
         })
       );
 
       const bearerHeaders = RequestBuilder.buildHeaders(
         createRequest({
-          headers: [{ key: 'Authorization', value: 'Custom abc', enabled: true }],
+          headers: [
+            { key: 'Authorization', value: 'Custom abc', enabled: true },
+          ],
           auth: { type: 'bearer', config: { token: 'bearer-token' } },
         })
       );
@@ -252,10 +269,17 @@ describe('request-builder.ts', () => {
     });
 
     it.each([
-      createRequest({ auth: { type: 'api-key', config: { location: 'header', value: 'secret' } } }),
+      createRequest({
+        auth: {
+          type: 'api-key',
+          config: { location: 'header', value: 'secret' },
+        },
+      }),
       createRequest({ auth: { type: 'none', config: {} } }),
       createRequest({ auth: { type: 'bearer', config: { token: 'secret' } } }),
-      createRequest({ auth: { type: 'api-key', config: { location: 'query', value: '   ' } } }),
+      createRequest({
+        auth: { type: 'api-key', config: { location: 'query', value: '   ' } },
+      }),
     ])('returns an empty object for non-query auth cases', (request) => {
       expect(RequestBuilder.buildAuthQueryParams(request)).toEqual({});
     });
@@ -267,7 +291,9 @@ describe('request-builder.ts', () => {
 
       expect(RequestBuilder.mergeParams(params)).toEqual(params);
       expect(RequestBuilder.mergeParams(params, {})).toEqual(params);
-      expect(RequestBuilder.mergeParams(undefined, { page: '1' })).toEqual({ page: '1' });
+      expect(RequestBuilder.mergeParams(undefined, { page: '1' })).toEqual({
+        page: '1',
+      });
     });
 
     it('merges array and record params using the expected strategy', () => {
@@ -309,9 +335,14 @@ describe('request-builder.ts', () => {
 
       expect(
         RequestBuilder.buildBody(
-          createRequest({ body: { type: 'form-urlencoded', content: 'a=1&b=2' } })
+          createRequest({
+            body: { type: 'form-urlencoded', content: 'a=1&b=2' },
+          })
         )
-      ).toEqual({ bodyData: 'a=1&b=2', contentType: 'application/x-www-form-urlencoded' });
+      ).toEqual({
+        bodyData: 'a=1&b=2',
+        contentType: 'application/x-www-form-urlencoded',
+      });
 
       expect(
         RequestBuilder.buildBody(
@@ -321,13 +352,17 @@ describe('request-builder.ts', () => {
 
       expect(
         RequestBuilder.buildBody(
-          createRequest({ body: { type: 'raw', content: 'hello', format: 'text' } })
+          createRequest({
+            body: { type: 'raw', content: 'hello', format: 'text' },
+          })
         )
       ).toEqual({ bodyData: 'hello', contentType: 'text/plain' });
 
       expect(
         RequestBuilder.buildBody(
-          createRequest({ body: { type: 'raw', content: '<xml/>', format: 'xml' } })
+          createRequest({
+            body: { type: 'raw', content: '<xml/>', format: 'xml' },
+          })
         )
       ).toEqual({ bodyData: '<xml/>', contentType: 'application/xml' });
     });
@@ -367,7 +402,9 @@ describe('request-builder.ts', () => {
     });
 
     it('does not add Content-Length when body data is undefined', () => {
-      expect(RequestBuilder.addDefaultHeaders({}, undefined, 'application/json')).toEqual({
+      expect(
+        RequestBuilder.addDefaultHeaders({}, undefined, 'application/json')
+      ).toEqual({
         'Content-Type': 'application/json',
       });
     });

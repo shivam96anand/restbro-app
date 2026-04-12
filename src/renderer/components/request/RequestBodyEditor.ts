@@ -7,9 +7,17 @@ type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded';
 type BodyFormat = 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
 
 export interface RequestBodyEditorEvents {
-  onBodyChange: (body: { type: BodyType; content: string; format?: BodyFormat; contentType?: string }) => void;
+  onBodyChange: (body: {
+    type: BodyType;
+    content: string;
+    format?: BodyFormat;
+    contentType?: string;
+  }) => void;
   onContentTypeChange?: (contentType: string | null | undefined) => void;
-  onStatusUpdate: (type: 'info' | 'success' | 'warning' | 'error', message: string) => void;
+  onStatusUpdate: (
+    type: 'info' | 'success' | 'warning' | 'error',
+    message: string
+  ) => void;
 }
 
 export class RequestBodyEditor {
@@ -29,7 +37,7 @@ export class RequestBodyEditor {
     xml: 'application/xml',
     yaml: 'application/x-yaml',
     text: 'text/plain',
-    'form-urlencoded': 'application/x-www-form-urlencoded'
+    'form-urlencoded': 'application/x-www-form-urlencoded',
   };
 
   constructor(container: HTMLElement, events: RequestBodyEditorEvents) {
@@ -38,21 +46,32 @@ export class RequestBodyEditor {
     this.initialize();
   }
 
-  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+  public setVariableContext(
+    activeEnvironment: any,
+    globals: any,
+    folderVars?: any
+  ): void {
     this.activeEnvironment = activeEnvironment;
     this.globals = globals;
     this.folderVars = folderVars;
 
     // Add variable tooltips and autocomplete to the textarea
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
     if (bodyEditor && this.activeEnvironment && this.globals) {
-      addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
-      
+      addVariableTooltips(
+        bodyEditor,
+        this.activeEnvironment,
+        this.globals,
+        this.folderVars
+      );
+
       // Setup autocomplete for variable suggestions
       setupAutocomplete(bodyEditor, () => ({
         activeEnvironment: this.activeEnvironment,
         globals: this.globals,
-        folderVars: this.folderVars || {}
+        folderVars: this.folderVars || {},
       }));
     }
 
@@ -108,7 +127,9 @@ export class RequestBodyEditor {
 
   private setupEventListeners(): void {
     // Body type selector
-    const bodyTypeSelect = this.container.querySelector('#body-type-select') as HTMLSelectElement;
+    const bodyTypeSelect = this.container.querySelector(
+      '#body-type-select'
+    ) as HTMLSelectElement;
     if (bodyTypeSelect) {
       bodyTypeSelect.addEventListener('change', (e) => {
         const target = e.target as HTMLSelectElement;
@@ -117,7 +138,9 @@ export class RequestBodyEditor {
     }
 
     // Body editor textarea
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
     if (bodyEditor) {
       bodyEditor.addEventListener('input', () => {
         this.handleBodyContentChange();
@@ -128,11 +151,16 @@ export class RequestBodyEditor {
 
       // Add variable tooltips and autocomplete
       if (this.activeEnvironment && this.globals) {
-        addVariableTooltips(bodyEditor, this.activeEnvironment, this.globals, this.folderVars);
+        addVariableTooltips(
+          bodyEditor,
+          this.activeEnvironment,
+          this.globals,
+          this.folderVars
+        );
         setupAutocomplete(bodyEditor, () => ({
           activeEnvironment: this.activeEnvironment,
           globals: this.globals,
-          folderVars: this.folderVars || {}
+          folderVars: this.folderVars || {},
         }));
       }
     }
@@ -141,10 +169,12 @@ export class RequestBodyEditor {
     this.setupVisibilityWatcher();
 
     // Action buttons
-    this.container.querySelector('#body-content-type')?.addEventListener('change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      this.handleFormatChange(target.value as BodyFormat);
-    });
+    this.container
+      .querySelector('#body-content-type')
+      ?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement;
+        this.handleFormatChange(target.value as BodyFormat);
+      });
 
     // Listen for theme changes and refresh highlighting
     document.addEventListener('theme-changed', () => {
@@ -165,7 +195,9 @@ export class RequestBodyEditor {
         }
 
         // Also reset textarea scroll position for consistency
-        const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+        const textarea = this.container.querySelector(
+          '#request-body'
+        ) as HTMLTextAreaElement;
         if (textarea && textarea.style.display !== 'none') {
           textarea.scrollTop = 0;
         }
@@ -174,14 +206,20 @@ export class RequestBodyEditor {
 
     observer.observe(this.container, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     });
   }
 
   private switchToMonacoEditor(initialValue: string = ''): void {
-    const monacoContainer = this.container.querySelector('#monaco-json-editor') as HTMLElement;
-    const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLElement;
+    const monacoContainer = this.container.querySelector(
+      '#monaco-json-editor'
+    ) as HTMLElement;
+    const textarea = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
+    const overlay = this.container.querySelector(
+      '#syntax-highlight-overlay'
+    ) as HTMLElement;
 
     if (!monacoContainer) return;
 
@@ -212,7 +250,9 @@ export class RequestBodyEditor {
         this.handleBodyContentChange();
       },
       onValidityChange: (valid, error) => {
-        const statusElement = this.container.querySelector('#body-status') as HTMLElement;
+        const statusElement = this.container.querySelector(
+          '#body-status'
+        ) as HTMLElement;
         if (statusElement) {
           if (!valid && error) {
             statusElement.textContent = 'Invalid JSON';
@@ -222,7 +262,7 @@ export class RequestBodyEditor {
             statusElement.className = 'body-status';
           }
         }
-      }
+      },
     });
 
     // Focus the Monaco editor
@@ -232,9 +272,15 @@ export class RequestBodyEditor {
   }
 
   private switchToMonacoXmlEditor(initialValue: string = ''): void {
-    const monacoContainer = this.container.querySelector('#monaco-json-editor') as HTMLElement;
-    const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLElement;
+    const monacoContainer = this.container.querySelector(
+      '#monaco-json-editor'
+    ) as HTMLElement;
+    const textarea = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
+    const overlay = this.container.querySelector(
+      '#syntax-highlight-overlay'
+    ) as HTMLElement;
 
     if (!monacoContainer) return;
 
@@ -251,7 +297,10 @@ export class RequestBodyEditor {
     const valueToSet = initialValue || textarea?.value || '';
 
     if (textarea) textarea.style.display = 'none';
-    if (overlay) { overlay.style.display = 'none'; overlay.innerHTML = ''; }
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.innerHTML = '';
+    }
     monacoContainer.style.display = 'block';
 
     this.monacoXmlEditor = new MonacoXmlEditor({
@@ -263,12 +312,18 @@ export class RequestBodyEditor {
       },
     });
 
-    setTimeout(() => { this.monacoXmlEditor?.focus(); }, 100);
+    setTimeout(() => {
+      this.monacoXmlEditor?.focus();
+    }, 100);
   }
 
   private switchToTextareaEditor(): void {
-    const monacoContainer = this.container.querySelector('#monaco-json-editor') as HTMLElement;
-    const textarea = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const monacoContainer = this.container.querySelector(
+      '#monaco-json-editor'
+    ) as HTMLElement;
+    const textarea = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
 
     // Dispose Monaco JSON editor if active
     if (this.monacoEditor) {
@@ -300,8 +355,12 @@ export class RequestBodyEditor {
   }
 
   private handleBodySelectionChange(selection: BodyFormat | 'none'): void {
-    const bodyEditorContainer = this.container.querySelector('#body-editor-container') as HTMLElement;
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditorContainer = this.container.querySelector(
+      '#body-editor-container'
+    ) as HTMLElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
     const normalizedType = selection === 'none' ? 'none' : selection;
 
     if (normalizedType === 'none') {
@@ -314,7 +373,7 @@ export class RequestBodyEditor {
         type: this.currentBodyType,
         content: '',
         format: this.currentFormat,
-        contentType: undefined
+        contentType: undefined,
       });
       this.events.onContentTypeChange?.(null);
     } else {
@@ -359,72 +418,92 @@ export class RequestBodyEditor {
         type: this.currentBodyType,
         content: bodyEditor.value,
         format: this.currentFormat,
-        contentType: this.getCurrentContentType()
+        contentType: this.getCurrentContentType(),
       });
       this.events.onContentTypeChange?.(this.getCurrentContentType());
     }
   }
 
   private handleBodyContentChange(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
     this.updateStatus();
-    this.events.onBodyChange({ 
-      type: this.currentBodyType, 
+    this.events.onBodyChange({
+      type: this.currentBodyType,
       content: bodyEditor.value,
       format: this.currentFormat,
-      contentType: this.getCurrentContentType()
+      contentType: this.getCurrentContentType(),
     });
   }
 
   private handleKeydown(e: KeyboardEvent): void {
     const textarea = e.target as HTMLTextAreaElement;
-    
+
     // Auto-indent for JSON
     if (this.currentFormat === 'json' && e.key === 'Enter') {
       e.preventDefault();
       const start = textarea.selectionStart;
       const beforeCursor = textarea.value.substring(0, start);
       const afterCursor = textarea.value.substring(start);
-      
+
       // Calculate indentation
       const currentLineMatch = beforeCursor.match(/^.*$/m);
       const currentLine = currentLineMatch ? currentLineMatch[0] : '';
       const indent = currentLine.match(/^\s*/)?.[0] || '';
-      
+
       // Add extra indent if we're inside an object/array
       const lastChar = beforeCursor.trim().slice(-1);
       const nextChar = afterCursor.trim().charAt(0);
-      const extraIndent = (lastChar === '{' || lastChar === '[') && (nextChar === '}' || nextChar === ']') ? '  ' : '';
-      
-      const newText = beforeCursor + '\n' + indent + extraIndent + (extraIndent ? '\n' + indent : '') + afterCursor;
+      const extraIndent =
+        (lastChar === '{' || lastChar === '[') &&
+        (nextChar === '}' || nextChar === ']')
+          ? '  '
+          : '';
+
+      const newText =
+        beforeCursor +
+        '\n' +
+        indent +
+        extraIndent +
+        (extraIndent ? '\n' + indent : '') +
+        afterCursor;
       textarea.value = newText;
-      textarea.setSelectionRange(start + 1 + indent.length + extraIndent.length, start + 1 + indent.length + extraIndent.length);
-      
+      textarea.setSelectionRange(
+        start + 1 + indent.length + extraIndent.length,
+        start + 1 + indent.length + extraIndent.length
+      );
+
       this.handleBodyContentChange();
     }
-    
+
     // Tab handling for JSON
     if (this.currentFormat === 'json' && e.key === 'Tab') {
       e.preventDefault();
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      
+
       if (e.shiftKey) {
         // Shift+Tab: Remove indent
         const beforeCursor = textarea.value.substring(0, start);
         const lines = beforeCursor.split('\n');
         const currentLine = lines[lines.length - 1];
         if (currentLine.startsWith('  ')) {
-          const newValue = textarea.value.substring(0, start - 2) + textarea.value.substring(start);
+          const newValue =
+            textarea.value.substring(0, start - 2) +
+            textarea.value.substring(start);
           textarea.value = newValue;
           textarea.setSelectionRange(start - 2, end - 2);
         }
       } else {
         // Tab: Add indent
-        textarea.value = textarea.value.substring(0, start) + '  ' + textarea.value.substring(end);
+        textarea.value =
+          textarea.value.substring(0, start) +
+          '  ' +
+          textarea.value.substring(end);
         textarea.setSelectionRange(start + 2, start + 2);
       }
-      
+
       this.handleBodyContentChange();
     }
   }
@@ -442,7 +521,9 @@ export class RequestBodyEditor {
     }
 
     // Fallback to textarea formatting (shouldn't happen in JSON mode)
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
     const text = bodyEditor.value.trim();
 
     if (!text) {
@@ -457,13 +538,20 @@ export class RequestBodyEditor {
       this.handleBodyContentChange();
       this.events.onStatusUpdate('success', 'JSON formatted successfully');
     } catch (error) {
-      this.events.onStatusUpdate('error', `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.events.onStatusUpdate(
+        'error',
+        `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   private updateStatus(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const statusElement = this.container.querySelector('#body-status') as HTMLElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
+    const statusElement = this.container.querySelector(
+      '#body-status'
+    ) as HTMLElement;
     const text = bodyEditor.value.trim();
 
     if (!statusElement) return;
@@ -484,16 +572,26 @@ export class RequestBodyEditor {
   }
 
   // Public methods for external control
-  public setBody(body: { type: BodyType; content: string; format?: BodyFormat; contentType?: string }): void {
+  public setBody(body: {
+    type: BodyType;
+    content: string;
+    format?: BodyFormat;
+    contentType?: string;
+  }): void {
     const normalizedType = body.type === 'json' ? 'raw' : body.type;
     const inferredFormat = this.inferFormat(body);
-    const bodyTypeSelect = this.container.querySelector('#body-type-select') as HTMLSelectElement;
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyTypeSelect = this.container.querySelector(
+      '#body-type-select'
+    ) as HTMLSelectElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
 
     this.currentFormat = inferredFormat;
 
     if (bodyTypeSelect) {
-      const selectionValue = normalizedType === 'none' ? 'none' : inferredFormat;
+      const selectionValue =
+        normalizedType === 'none' ? 'none' : inferredFormat;
       bodyTypeSelect.value = selectionValue;
       this.handleBodySelectionChange(selectionValue as BodyFormat | 'none');
     }
@@ -512,25 +610,33 @@ export class RequestBodyEditor {
       // Trigger highlighting when body is loaded
       this.updateHighlighting();
     }
-
   }
 
-  public getBody(): { type: BodyType; content: string; format?: BodyFormat; contentType?: string } {
-    const bodyTypeSelect = this.container.querySelector('#body-type-select') as HTMLSelectElement;
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+  public getBody(): {
+    type: BodyType;
+    content: string;
+    format?: BodyFormat;
+    contentType?: string;
+  } {
+    const bodyTypeSelect = this.container.querySelector(
+      '#body-type-select'
+    ) as HTMLSelectElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
 
     // Get content from Monaco editor if active, otherwise from textarea
     const content = this.monacoEditor
       ? this.monacoEditor.getValue()
       : this.monacoXmlEditor
         ? this.monacoXmlEditor.getValue()
-        : (bodyEditor?.value || '');
+        : bodyEditor?.value || '';
 
     return {
       type: this.currentBodyType,
       content,
       format: this.currentFormat,
-      contentType: this.getCurrentContentType() || undefined
+      contentType: this.getCurrentContentType() || undefined,
     };
   }
 
@@ -545,7 +651,9 @@ export class RequestBodyEditor {
       this.monacoXmlEditor = null;
     }
 
-    const bodyTypeSelect = this.container.querySelector('#body-type-select') as HTMLSelectElement;
+    const bodyTypeSelect = this.container.querySelector(
+      '#body-type-select'
+    ) as HTMLSelectElement;
     if (bodyTypeSelect) {
       bodyTypeSelect.value = 'none';
       this.handleBodySelectionChange('none');
@@ -567,7 +675,9 @@ export class RequestBodyEditor {
       return;
     }
 
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement | null;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement | null;
     bodyEditor?.focus();
   }
 
@@ -591,7 +701,9 @@ export class RequestBodyEditor {
       this.currentBodyType = 'raw';
     }
 
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
 
     if (bodyEditor) {
       if (format === 'json') {
@@ -630,12 +742,18 @@ export class RequestBodyEditor {
     return this.formatContentTypes[this.currentFormat] || undefined;
   }
 
-  private inferFormat(body: { type: BodyType; content: string; format?: BodyFormat; contentType?: string }): BodyFormat {
+  private inferFormat(body: {
+    type: BodyType;
+    content: string;
+    format?: BodyFormat;
+    contentType?: string;
+  }): BodyFormat {
     if (body.format) {
       return body.format;
     }
 
-    const normalizedContentType = body.contentType?.toLowerCase().split(';')[0] || '';
+    const normalizedContentType =
+      body.contentType?.toLowerCase().split(';')[0] || '';
     switch (normalizedContentType) {
       case 'application/json':
         return 'json';
@@ -671,7 +789,9 @@ export class RequestBodyEditor {
   private updateHighlighting(): void {
     // Skip overlay when Monaco editor is active to avoid ghost text on theme changes
     if (this.monacoEditor) {
-      const overlayHidden = this.container.querySelector('#syntax-highlight-overlay') as HTMLDivElement;
+      const overlayHidden = this.container.querySelector(
+        '#syntax-highlight-overlay'
+      ) as HTMLDivElement;
       if (overlayHidden) {
         overlayHidden.style.display = 'none';
         overlayHidden.innerHTML = '';
@@ -679,8 +799,12 @@ export class RequestBodyEditor {
       return;
     }
 
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLDivElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
+    const overlay = this.container.querySelector(
+      '#syntax-highlight-overlay'
+    ) as HTMLDivElement;
 
     if (!bodyEditor || !overlay) return;
 
@@ -711,8 +835,12 @@ export class RequestBodyEditor {
    * Sync scroll position between textarea and overlay
    */
   private syncScroll(): void {
-    const bodyEditor = this.container.querySelector('#request-body') as HTMLTextAreaElement;
-    const overlay = this.container.querySelector('#syntax-highlight-overlay') as HTMLDivElement;
+    const bodyEditor = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement;
+    const overlay = this.container.querySelector(
+      '#syntax-highlight-overlay'
+    ) as HTMLDivElement;
 
     if (bodyEditor && overlay) {
       overlay.scrollTop = bodyEditor.scrollTop;
@@ -747,9 +875,12 @@ export class RequestBodyEditor {
           tokens.push({ type: 'text', value: currentToken });
           currentToken = '';
         }
-        let varEnd = escaped.indexOf('}}', i);
+        const varEnd = escaped.indexOf('}}', i);
         if (varEnd !== -1) {
-          tokens.push({ type: 'variable', value: escaped.substring(i, varEnd + 2) });
+          tokens.push({
+            type: 'variable',
+            value: escaped.substring(i, varEnd + 2),
+          });
           i = varEnd + 2;
           continue;
         }
@@ -771,7 +902,10 @@ export class RequestBodyEditor {
         const stringValue = escaped.substring(i, stringEnd + 1);
         // Check if this is a key (followed by colon)
         let afterString = stringEnd + 1;
-        while (afterString < escaped.length && /\s/.test(escaped[afterString])) {
+        while (
+          afterString < escaped.length &&
+          /\s/.test(escaped[afterString])
+        ) {
           afterString++;
         }
         const isKey = escaped[afterString] === ':';
@@ -796,12 +930,16 @@ export class RequestBodyEditor {
       }
 
       // Check for keywords
-      if (escaped.substring(i, i + 4) === 'true' || escaped.substring(i, i + 5) === 'false') {
+      if (
+        escaped.substring(i, i + 4) === 'true' ||
+        escaped.substring(i, i + 5) === 'false'
+      ) {
         if (currentToken) {
           tokens.push({ type: 'text', value: currentToken });
           currentToken = '';
         }
-        const keyword = escaped.substring(i, i + 4) === 'true' ? 'true' : 'false';
+        const keyword =
+          escaped.substring(i, i + 4) === 'true' ? 'true' : 'false';
         tokens.push({ type: 'boolean', value: keyword });
         i += keyword.length;
         continue;
@@ -847,35 +985,37 @@ export class RequestBodyEditor {
     }
 
     // Convert tokens to HTML
-    return tokens.map(token => {
-      switch (token.type) {
-        case 'variable':
-          return `<span class="json-variable">${token.value}</span>`;
-        case 'key':
-          return `<span class="json-key">${token.value}</span>`;
-        case 'string':
-          return `<span class="json-string">${token.value}</span>`;
-        case 'number':
-          return `<span class="json-number">${token.value}</span>`;
-        case 'boolean':
-          return `<span class="json-boolean">${token.value}</span>`;
-        case 'null':
-          return `<span class="json-null">${token.value}</span>`;
-        case 'bracket':
-          return `<span class="json-bracket">${token.value}</span>`;
-        case 'punctuation':
-          return `<span class="json-punctuation">${token.value}</span>`;
-        default:
-          return token.value;
-      }
-    }).join('');
+    return tokens
+      .map((token) => {
+        switch (token.type) {
+          case 'variable':
+            return `<span class="json-variable">${token.value}</span>`;
+          case 'key':
+            return `<span class="json-key">${token.value}</span>`;
+          case 'string':
+            return `<span class="json-string">${token.value}</span>`;
+          case 'number':
+            return `<span class="json-number">${token.value}</span>`;
+          case 'boolean':
+            return `<span class="json-boolean">${token.value}</span>`;
+          case 'null':
+            return `<span class="json-null">${token.value}</span>`;
+          case 'bracket':
+            return `<span class="json-bracket">${token.value}</span>`;
+          case 'punctuation':
+            return `<span class="json-punctuation">${token.value}</span>`;
+          default:
+            return token.value;
+        }
+      })
+      .join('');
   }
 
   /**
    * Highlight only variables in text (for non-JSON formats)
    */
   private highlightVariablesOnly(text: string): string {
-    if (!text || !this.activeEnvironment && !this.globals) return '';
+    if (!text || (!this.activeEnvironment && !this.globals)) return '';
 
     const variables = detectVariables(text);
     if (variables.length === 0) return '';
@@ -886,7 +1026,10 @@ export class RequestBodyEditor {
       .replace(/>/g, '&gt;');
 
     // Highlight variables
-    result = result.replace(/(\{\{[^}]+\}\})/g, '<span class="json-variable">$1</span>');
+    result = result.replace(
+      /(\{\{[^}]+\}\})/g,
+      '<span class="json-variable">$1</span>'
+    );
 
     return result;
   }

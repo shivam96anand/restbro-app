@@ -15,7 +15,9 @@ export interface ApiCourierExportData {
   globals?: Globals;
 }
 
-export function isApiCourierExport(data: unknown): data is ApiCourierExportData {
+export function isApiCourierExport(
+  data: unknown
+): data is ApiCourierExportData {
   return (
     typeof data === 'object' &&
     data !== null &&
@@ -40,8 +42,12 @@ function reassignCollectionIds(
     ...collection,
     id: newId,
     parentId,
-    createdAt: collection.createdAt ? new Date(collection.createdAt) : new Date(),
-    updatedAt: collection.updatedAt ? new Date(collection.updatedAt) : new Date(),
+    createdAt: collection.createdAt
+      ? new Date(collection.createdAt)
+      : new Date(),
+    updatedAt: collection.updatedAt
+      ? new Date(collection.updatedAt)
+      : new Date(),
   };
 
   if (out.request) {
@@ -51,7 +57,11 @@ function reassignCollectionIds(
     const remappedCollectionId = out.request.collectionId
       ? (idMap.get(out.request.collectionId) ?? out.request.collectionId)
       : undefined;
-    out.request = { ...out.request, id: newRequestId, collectionId: remappedCollectionId };
+    out.request = {
+      ...out.request,
+      id: newRequestId,
+      collectionId: remappedCollectionId,
+    };
   }
 
   if (out.type === 'folder' && out.children && out.children.length > 0) {
@@ -74,13 +84,16 @@ export function mapApiCourierExport(data: ApiCourierExportData): {
   globals?: Globals;
 } {
   const idMap = new Map<string, string>();
-  const collections = data.collections ?? (data.collection ? [data.collection] : []);
+  const collections =
+    data.collections ?? (data.collection ? [data.collection] : []);
 
   const rootFolder: Collection = {
     id: generateId(),
     name: 'Restbro Export',
     type: 'folder',
-    children: collections.map((c) => reassignCollectionIds(c, idMap, undefined)),
+    children: collections.map((c) =>
+      reassignCollectionIds(c, idMap, undefined)
+    ),
     createdAt: new Date(),
     updatedAt: new Date(),
   };

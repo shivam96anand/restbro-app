@@ -5,7 +5,12 @@
 
 import { create, DiffPatcher } from 'jsondiffpatch';
 import { buildDiffRows } from '../utils/diffMap';
-import type { WorkerRequest, WorkerResponse, DiffResult, DiffStats } from '../types';
+import type {
+  WorkerRequest,
+  WorkerResponse,
+  DiffResult,
+  DiffStats,
+} from '../types';
 
 function computeObjectHash(obj: unknown): string {
   if (!obj || typeof obj !== 'object') {
@@ -20,7 +25,10 @@ function computeObjectHash(obj: unknown): string {
 
   const product = record.product as Record<string, unknown> | undefined;
   const nestedProductId = product?.id;
-  if (typeof nestedProductId === 'string' || typeof nestedProductId === 'number') {
+  if (
+    typeof nestedProductId === 'string' ||
+    typeof nestedProductId === 'number'
+  ) {
     return String(nestedProductId);
   }
 
@@ -30,7 +38,7 @@ function computeObjectHash(obj: unknown): string {
 const differ: DiffPatcher = create({
   objectHash: computeObjectHash,
   arrays: { detectMove: true },
-  textDiff: { minLength: Infinity }
+  textDiff: { minLength: Infinity },
 });
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
@@ -65,29 +73,29 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 
     // Compute stats
     const stats: DiffStats = {
-      added: rows.filter(r => r.type === 'added').length,
-      removed: rows.filter(r => r.type === 'removed').length,
-      changed: rows.filter(r => r.type === 'changed').length,
-      totalTime: performance.now() - startTime
+      added: rows.filter((r) => r.type === 'added').length,
+      removed: rows.filter((r) => r.type === 'removed').length,
+      changed: rows.filter((r) => r.type === 'changed').length,
+      totalTime: performance.now() - startTime,
     };
 
     const result: DiffResult = {
       rows,
       leftDecorations: [],
       rightDecorations: [],
-      stats
+      stats,
     };
 
     const response: WorkerResponse = {
       type: 'diff-result',
-      result
+      result,
     };
 
     self.postMessage(response);
   } catch (error) {
     const response: WorkerResponse = {
       type: 'error',
-      error: (error as Error).message
+      error: (error as Error).message,
     };
     self.postMessage(response);
   }

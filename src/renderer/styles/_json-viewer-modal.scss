@@ -20,7 +20,11 @@
   .modal-content {
     width: 95vw;
     height: 95vh;
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(12, 12, 12, 0.95));
+    background: linear-gradient(
+      145deg,
+      rgba(20, 20, 20, 0.95),
+      rgba(12, 12, 12, 0.95)
+    );
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);

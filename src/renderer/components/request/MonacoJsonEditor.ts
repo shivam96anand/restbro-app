@@ -41,7 +41,8 @@ export class MonacoJsonEditor {
     const valueColor = this.getCssHexVariable('--text-primary') || 'ffffff';
     const bracketColor = this.getCssHexVariable('--json-bracket') || 'da70d6';
     const editorBackground = this.getCssHexVariable('--bg-primary') || '1a1a1a';
-    const lineNumberColor = this.getCssHexVariable('--json-line-number') || '6e6e6e';
+    const lineNumberColor =
+      this.getCssHexVariable('--json-line-number') || '6e6e6e';
 
     monaco.editor.defineTheme('api-courier-json', {
       base: 'vs-dark',
@@ -52,7 +53,11 @@ export class MonacoJsonEditor {
         { token: 'string.json', foreground: valueColor },
         { token: 'number.json', foreground: valueColor },
         { token: 'keyword.json', foreground: valueColor },
-        { token: 'delimiter.bracket.json', foreground: bracketColor, fontStyle: 'bold' },
+        {
+          token: 'delimiter.bracket.json',
+          foreground: bracketColor,
+          fontStyle: 'bold',
+        },
         { token: 'delimiter.colon.json', foreground: valueColor },
         { token: 'delimiter.comma.json', foreground: bracketColor },
       ],
@@ -75,7 +80,7 @@ export class MonacoJsonEditor {
         'editorBracketPairGuide.activeBackground5': `#${bracketColor}`,
         'editorBracketPairGuide.activeBackground6': `#${bracketColor}`,
         'editorBracketHighlight.unexpectedBracket.foreground': `#${bracketColor}`,
-      }
+      },
     });
 
     // Apply theme globally (affects all Monaco editors)
@@ -101,7 +106,8 @@ export class MonacoJsonEditor {
       formatOnType: !this.readOnly,
       readOnly: this.readOnly,
       domReadOnly: this.readOnly,
-      fontFamily: "'SF Mono', 'Cascadia Code', Monaco, Menlo, Consolas, 'Courier New', monospace",
+      fontFamily:
+        "'SF Mono', 'Cascadia Code', Monaco, Menlo, Consolas, 'Courier New', monospace",
       letterSpacing: -0.3,
       glyphMargin: false,
       lineDecorationsWidth: 0,
@@ -111,12 +117,12 @@ export class MonacoJsonEditor {
       insertSpaces: true,
       autoIndent: 'full',
       bracketPairColorization: {
-        enabled: false
+        enabled: false,
       },
       padding: {
         top: 12,
-        bottom: 12
-      }
+        bottom: 12,
+      },
     });
 
     // Listen to content changes
@@ -185,7 +191,10 @@ export class MonacoJsonEditor {
       this.onValidityChange?.(true);
     } catch (error) {
       // Don't format if invalid
-      this.onValidityChange?.(false, error instanceof Error ? error.message : 'Invalid JSON');
+      this.onValidityChange?.(
+        false,
+        error instanceof Error ? error.message : 'Invalid JSON'
+      );
     }
   }
 
@@ -238,7 +247,9 @@ export class MonacoJsonEditor {
   /** Restore a previously captured editor view state. */
   public restoreViewState(state: Record<string, unknown>): void {
     if (!this.editor) return;
-    this.editor.restoreViewState(state as unknown as monaco.editor.ICodeEditorViewState);
+    this.editor.restoreViewState(
+      state as unknown as monaco.editor.ICodeEditorViewState
+    );
   }
 
   public dispose(): void {

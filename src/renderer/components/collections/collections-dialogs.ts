@@ -8,12 +8,15 @@ export class CollectionsDialogs {
     this.onShowError = onShowError;
   }
 
-  async showCreateDialog(type: 'folder' | 'request' = 'folder', parentId?: string): Promise<Collection | null> {
+  async showCreateDialog(
+    type: 'folder' | 'request' = 'folder',
+    parentId?: string
+  ): Promise<Collection | null> {
     const name = await modal.show(`Create ${type}`, `Enter ${type} name`);
     if (!name) return null;
 
     try {
-      let collectionData: any = {
+      const collectionData: any = {
         name,
         type,
         parentId,
@@ -27,21 +30,22 @@ export class CollectionsDialogs {
           url: '',
           headers: {
             'User-Agent': 'Restbro/1.0',
-            'Accept-Encoding': 'gzip'
+            'Accept-Encoding': 'gzip',
           },
           params: {},
           body: {
             type: 'none',
-            content: ''
+            content: '',
           },
           auth: {
             type: 'none',
-            config: {}
-          }
+            config: {},
+          },
         };
       }
 
-      const newCollection = await window.apiCourier.collection.create(collectionData);
+      const newCollection =
+        await window.apiCourier.collection.create(collectionData);
       return newCollection;
     } catch (error) {
       console.error('Failed to create collection:', error);
@@ -51,7 +55,11 @@ export class CollectionsDialogs {
   }
 
   async showRenameDialog(collection: Collection): Promise<string | null> {
-    const newName = await modal.show('Rename', 'Enter new name', collection.name);
+    const newName = await modal.show(
+      'Rename',
+      'Enter new name',
+      collection.name
+    );
     if (!newName || newName === collection.name) return null;
     return newName;
   }

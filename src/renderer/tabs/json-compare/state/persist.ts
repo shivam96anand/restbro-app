@@ -11,7 +11,7 @@ const DEFAULT_STATE: CompareState = {
   leftJson: '',
   rightJson: '',
   tableFilter: '',
-  selectedTypes: ['added', 'removed', 'changed']
+  selectedTypes: ['added', 'removed', 'changed'],
 };
 
 /**

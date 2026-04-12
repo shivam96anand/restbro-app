@@ -33,11 +33,11 @@ export interface SoapCertEntry {
 export interface SoapCerts {
   mode: 'jks' | 'pem';
   // JKS mode
-  keystoreJks?: string;        // base64-encoded .jks binary
+  keystoreJks?: string; // base64-encoded .jks binary
   keystoreSource?: 'text' | 'file';
   keystorePassword?: string;
-  keystoreFilePath?: string;   // display only (file mode)
-  truststoreJks?: string;      // base64-encoded .jks binary
+  keystoreFilePath?: string; // display only (file mode)
+  truststoreJks?: string; // base64-encoded .jks binary
   truststoreSource?: 'text' | 'file';
   truststorePassword?: string;
   truststoreFilePath?: string; // display only (file mode)
@@ -45,7 +45,7 @@ export interface SoapCerts {
   clientCert?: SoapCertEntry;
   clientKey?: SoapCertEntry;
   caCert?: SoapCertEntry;
-  pfx?: SoapCertEntry;        // base64-encoded binary
+  pfx?: SoapCertEntry; // base64-encoded binary
   passphrase?: string;
 }
 
@@ -173,7 +173,14 @@ export interface AppState {
 }
 
 // Load Testing Types
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+export type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+  | 'HEAD'
+  | 'OPTIONS';
 
 export interface RequestBody {
   type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
@@ -193,7 +200,10 @@ export interface LoadTestTargetAdHoc {
   url: string;
   params?: Record<string, string | number | boolean>;
   headers?: Record<string, string>;
-  auth?: { type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2'; data?: unknown };
+  auth?: {
+    type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2';
+    data?: unknown;
+  };
   body?: RequestBody;
   collectionId?: string;
 }
@@ -201,7 +211,7 @@ export interface LoadTestTargetAdHoc {
 export type LoadTestTarget = LoadTestTargetFromCollection | LoadTestTargetAdHoc;
 
 export interface LoadTestConfig {
-  rpm: number;         // requests per minute
+  rpm: number; // requests per minute
   durationSec: number; // total duration in seconds
   target: LoadTestTarget;
   followRedirects?: boolean;
@@ -211,17 +221,17 @@ export interface LoadTestConfig {
 
 export interface LoadTestProgressTick {
   runId: string;
-  scheduled: number;   // requests scheduled so far
-  sent: number;        // requests actually dispatched
-  completed: number;   // responses received (success + error)
+  scheduled: number; // requests scheduled so far
+  sent: number; // requests actually dispatched
+  completed: number; // responses received (success + error)
   inFlight: number;
   elapsedSec: number;
 }
 
 export interface LoadSample {
-  t0: number;           // ms epoch when request started
-  durationMs: number;   // total time
-  status?: number;      // undefined if network error
+  t0: number; // ms epoch when request started
+  durationMs: number; // total time
+  status?: number; // undefined if network error
   bytes?: number;
   error?: string | null;
 }
@@ -279,12 +289,17 @@ export interface IpcChannels {
   'store:set': (state: Partial<AppState>) => void;
   'request:send': (request: ApiRequest) => ApiResponse;
   'request:cancel': (requestId: string) => boolean;
-  'collection:create': (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => Collection;
+  'collection:create': (
+    collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>
+  ) => Collection;
   'collection:update': (id: string, updates: Partial<Collection>) => void;
   'collection:delete': (id: string) => void;
   'oauth:start-flow': (config: OAuthConfig) => OAuthResult;
   'oauth:refresh-token': (config: OAuthConfig) => OAuthResult;
-  'oauth:get-token-info': (config: OAuthConfig) => { isValid: boolean; expiresIn?: number };
+  'oauth:get-token-info': (config: OAuthConfig) => {
+    isValid: boolean;
+    expiresIn?: number;
+  };
 }
 
 // AI Chat Types

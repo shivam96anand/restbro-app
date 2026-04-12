@@ -48,10 +48,11 @@ export class OAuth2Manager {
     this.uiRenderer.attachEventListeners(authConfig, {
       onGetToken: () => this.handleGetToken(),
       onClearToken: () => this.handleClearToken(),
-      onGrantTypeChange: (grantType) => this.uiRenderer.toggleGrantTypeFields(grantType),
+      onGrantTypeChange: (grantType) =>
+        this.uiRenderer.toggleGrantTypeFields(grantType),
       onAdvancedToggle: () => this.uiRenderer.toggleAdvancedOptions(),
       onPasswordToggle: () => this.uiHelpers.togglePasswordVisibility(),
-      onCopyToken: () => this.uiHelpers.copyAccessToken()
+      onCopyToken: () => this.uiHelpers.copyAccessToken(),
     });
 
     // Add input listeners to save field changes
@@ -63,7 +64,7 @@ export class OAuth2Manager {
    */
   private setupFieldListeners(authConfig: HTMLElement): void {
     const inputs = authConfig.querySelectorAll('input, select');
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       if ((input as HTMLElement).dataset.field) {
         input.addEventListener('input', () => {
           if (this.isLoadingConfig) {
@@ -73,7 +74,7 @@ export class OAuth2Manager {
           // Merge with currentConfig to avoid losing tokens on field edits
           const mergedConfig = {
             ...this.currentConfig,
-            ...domConfig
+            ...domConfig,
           };
           this.currentConfig = mergedConfig;
           this.onConfigUpdate(mergedConfig);
@@ -98,10 +99,15 @@ export class OAuth2Manager {
       this.uiHelpers.updateOAuthStatus('Getting token...', 'loading');
 
       // Resolve variables in the config
-      const resolvedConfig = await this.variableResolver.resolveConfig(config, this.currentCollectionId);
+      const resolvedConfig = await this.variableResolver.resolveConfig(
+        config,
+        this.currentCollectionId
+      );
 
       // Call OAuth flow through IPC
-      const result = await (window as any).electronAPI.oauth.startFlow(resolvedConfig);
+      const result = await (window as any).electronAPI.oauth.startFlow(
+        resolvedConfig
+      );
 
       if (result.success) {
         this.uiHelpers.showClearButton(true);
@@ -109,8 +115,12 @@ export class OAuth2Manager {
         const updatedConfig = {
           ...config,
           accessToken: result.data.accessToken,
-          ...(result.data.refreshToken && { refreshToken: result.data.refreshToken }),
-          expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
+          ...(result.data.refreshToken && {
+            refreshToken: result.data.refreshToken,
+          }),
+          expiresAt: new Date(
+            Date.now() + result.data.expiresIn * 1000
+          ).toISOString(),
         };
 
         this.currentConfig = updatedConfig;
@@ -128,7 +138,10 @@ export class OAuth2Manager {
       }
     } catch (error) {
       console.error('[OAuth2Manager] Exception during OAuth flow:', error);
-      this.uiHelpers.updateOAuthStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+      this.uiHelpers.updateOAuthStatus(
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
     }
   }
 
@@ -142,7 +155,7 @@ export class OAuth2Manager {
       ...config,
       accessToken: '',
       refreshToken: '',
-      expiresAt: ''
+      expiresAt: '',
     };
     this.currentConfig = clearedConfig;
     this.onConfigUpdate(clearedConfig);
@@ -181,22 +194,28 @@ export class OAuth2Manager {
   /**
    * Checks if OAuth token is expired
    */
-  isTokenExpired(auth: { type: string; config: Record<string, string> }): boolean {
+  isTokenExpired(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): boolean {
     if (auth.type !== 'oauth2' || !auth.config.expiresAt) return false;
 
     const expiresAt = new Date(auth.config.expiresAt);
     const now = new Date();
 
     // Consider token expired if it has already expired OR will expire in the next 5 minutes
-    return expiresAt <= now || expiresAt <= new Date(now.getTime() + 5 * 60 * 1000);
+    return (
+      expiresAt <= now || expiresAt <= new Date(now.getTime() + 5 * 60 * 1000)
+    );
   }
 
   /**
    * Auto-refreshes OAuth token if expired and refresh token is available
    */
-  async autoRefreshToken(
-    auth: { type: string; config: Record<string, string> }
-  ): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoRefreshToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     if (auth.type !== 'oauth2') return null;
 
     // Check if we have a refresh token - if not, can't refresh
@@ -207,20 +226,27 @@ export class OAuth2Manager {
 
     try {
       // Resolve environment variables before refreshing
-      const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
+      const resolvedConfig = await this.variableResolver.resolveConfig(
+        auth.config,
+        this.currentCollectionId
+      );
 
-      const result = await (window as any).electronAPI.oauth.refreshToken(resolvedConfig);
+      const result = await (window as any).electronAPI.oauth.refreshToken(
+        resolvedConfig
+      );
 
       if (result.success) {
         const refreshedConfig = {
           ...auth.config,
           accessToken: result.data.accessToken,
-          expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
+          expiresAt: new Date(
+            Date.now() + result.data.expiresIn * 1000
+          ).toISOString(),
         };
         this.currentConfig = refreshedConfig;
         return {
           type: 'oauth2',
-          config: refreshedConfig
+          config: refreshedConfig,
         };
       }
     } catch (error) {
@@ -233,9 +259,10 @@ export class OAuth2Manager {
   /**
    * Auto-gets OAuth token if none exists
    */
-  async autoGetToken(
-    auth: { type: string; config: Record<string, string> }
-  ): Promise<{ type: string; config: Record<string, string> } | null> {
+  async autoGetToken(auth: {
+    type: string;
+    config: Record<string, string>;
+  }): Promise<{ type: string; config: Record<string, string> } | null> {
     if (auth.type !== 'oauth2') return null;
 
     // Check if we have the required configuration to get a token
@@ -243,16 +270,25 @@ export class OAuth2Manager {
 
     try {
       // Resolve environment variables before getting token
-      const resolvedConfig = await this.variableResolver.resolveConfig(auth.config, this.currentCollectionId);
+      const resolvedConfig = await this.variableResolver.resolveConfig(
+        auth.config,
+        this.currentCollectionId
+      );
 
-      const result = await (window as any).electronAPI.oauth.startFlow(resolvedConfig);
+      const result = await (window as any).electronAPI.oauth.startFlow(
+        resolvedConfig
+      );
 
       if (result.success) {
         const updatedConfig = {
           ...auth.config,
           accessToken: result.data.accessToken,
-          ...(result.data.refreshToken && { refreshToken: result.data.refreshToken }),
-          expiresAt: new Date(Date.now() + result.data.expiresIn * 1000).toISOString()
+          ...(result.data.refreshToken && {
+            refreshToken: result.data.refreshToken,
+          }),
+          expiresAt: new Date(
+            Date.now() + result.data.expiresIn * 1000
+          ).toISOString(),
         };
 
         this.currentConfig = updatedConfig;
@@ -262,7 +298,7 @@ export class OAuth2Manager {
 
         return {
           type: 'oauth2',
-          config: updatedConfig
+          config: updatedConfig,
         };
       }
     } catch (error) {

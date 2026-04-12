@@ -1,6 +1,11 @@
 import { ApiRequest, RequestMode } from '../../shared/types';
 
-export type EditorType = 'json' | 'raw' | 'form-data' | 'x-www-form-urlencoded' | 'binary';
+export type EditorType =
+  | 'json'
+  | 'raw'
+  | 'form-data'
+  | 'x-www-form-urlencoded'
+  | 'binary';
 
 export interface RequestEditorsConfig {
   factoryConfig: RequestEditorFactoryConfig;

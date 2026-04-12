@@ -5,7 +5,10 @@ export class TabsStateManager {
   private tabs: RequestTab[] = [];
   private activeTabId?: string;
   private onNotifyTabChange: () => void;
-  private onShowNotification: (message: string, type: 'success' | 'error') => void;
+  private onShowNotification: (
+    message: string,
+    type: 'success' | 'error'
+  ) => void;
 
   constructor(
     onNotifyTabChange: () => void,
@@ -20,7 +23,7 @@ export class TabsStateManager {
   }
 
   getActiveTab(): RequestTab | undefined {
-    return this.tabs.find(tab => tab.id === this.activeTabId);
+    return this.tabs.find((tab) => tab.id === this.activeTabId);
   }
 
   getActiveTabId(): string | undefined {
@@ -31,7 +34,9 @@ export class TabsStateManager {
     this.tabs = tabs.map((tab) => ({
       ...tab,
       requestMode: tab.requestMode || 'rest',
-      restDraft: tab.restDraft ? this.cloneRequest(tab.restDraft) : this.cloneRequest(tab.request),
+      restDraft: tab.restDraft
+        ? this.cloneRequest(tab.restDraft)
+        : this.cloneRequest(tab.request),
       soapDraft: tab.soapDraft ? this.cloneRequest(tab.soapDraft) : undefined,
     }));
     this.activeTabId = activeTabId;
@@ -47,7 +52,7 @@ export class TabsStateManager {
       params: {},
       headers: {
         'User-Agent': 'Restbro/1.0',
-        'Accept-Encoding': 'gzip'
+        'Accept-Encoding': 'gzip',
       },
     };
 
@@ -75,7 +80,9 @@ export class TabsStateManager {
 
   switchToNextTab(): void {
     if (this.tabs.length <= 1) return;
-    const currentIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    const currentIndex = this.tabs.findIndex(
+      (tab) => tab.id === this.activeTabId
+    );
     if (currentIndex === -1) return;
     const nextIndex = (currentIndex + 1) % this.tabs.length;
     this.activeTabId = this.tabs[nextIndex].id;
@@ -85,7 +92,9 @@ export class TabsStateManager {
 
   switchToPrevTab(): void {
     if (this.tabs.length <= 1) return;
-    const currentIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    const currentIndex = this.tabs.findIndex(
+      (tab) => tab.id === this.activeTabId
+    );
     if (currentIndex === -1) return;
     const prevIndex = (currentIndex - 1 + this.tabs.length) % this.tabs.length;
     this.activeTabId = this.tabs[prevIndex].id;
@@ -94,7 +103,7 @@ export class TabsStateManager {
   }
 
   closeTab(tabId: string): void {
-    const tabIndex = this.tabs.findIndex(tab => tab.id === tabId);
+    const tabIndex = this.tabs.findIndex((tab) => tab.id === tabId);
     if (tabIndex === -1) return;
 
     const tab = this.tabs[tabIndex];
@@ -103,8 +112,8 @@ export class TabsStateManager {
       const event = new CustomEvent('tab-closed-with-response', {
         detail: {
           request: tab.request,
-          response: tab.response
-        }
+          response: tab.response,
+        },
       });
       document.dispatchEvent(event);
     }
@@ -124,28 +133,43 @@ export class TabsStateManager {
     this.saveState();
   }
 
-  updateActiveTab(updates: Partial<RequestTab>, markAsModified: boolean = true): void {
+  updateActiveTab(
+    updates: Partial<RequestTab>,
+    markAsModified: boolean = true
+  ): void {
     if (!this.activeTabId) return;
 
-    const tabIndex = this.tabs.findIndex(tab => tab.id === this.activeTabId);
+    const tabIndex = this.tabs.findIndex((tab) => tab.id === this.activeTabId);
     if (tabIndex !== -1) {
       const currentTab = this.tabs[tabIndex];
-      this.tabs[tabIndex] = this.mergeTabUpdates(currentTab, updates, markAsModified);
+      this.tabs[tabIndex] = this.mergeTabUpdates(
+        currentTab,
+        updates,
+        markAsModified
+      );
       this.saveState();
     }
   }
 
-  updateTabByRequestId(requestId: string, updates: Partial<RequestTab>, markAsModified: boolean = false): void {
-    const tabIndex = this.tabs.findIndex(tab => tab.request.id === requestId);
+  updateTabByRequestId(
+    requestId: string,
+    updates: Partial<RequestTab>,
+    markAsModified: boolean = false
+  ): void {
+    const tabIndex = this.tabs.findIndex((tab) => tab.request.id === requestId);
     if (tabIndex === -1) return;
 
     const currentTab = this.tabs[tabIndex];
-    this.tabs[tabIndex] = this.mergeTabUpdates(currentTab, updates, markAsModified);
+    this.tabs[tabIndex] = this.mergeTabUpdates(
+      currentTab,
+      updates,
+      markAsModified
+    );
     this.saveState();
   }
 
   openRequestInTab(request: ApiRequest, collectionId?: string): void {
-    const existingTab = this.tabs.find(tab => tab.request.id === request.id);
+    const existingTab = this.tabs.find((tab) => tab.request.id === request.id);
 
     if (existingTab) {
       this.activeTabId = existingTab.id;
@@ -159,7 +183,9 @@ export class TabsStateManager {
         request: requestWithCollection, // Add collectionId to request
         requestMode: request.soap ? 'soap' : 'rest',
         restDraft: this.cloneRequest(requestWithCollection),
-        soapDraft: request.soap ? this.cloneRequest(requestWithCollection) : undefined,
+        soapDraft: request.soap
+          ? this.cloneRequest(requestWithCollection)
+          : undefined,
         isModified: false,
         collectionId: collectionId,
       };
@@ -171,8 +197,12 @@ export class TabsStateManager {
     }
   }
 
-  openRequestInTabWithResponse(request: ApiRequest, response: ApiResponse, collectionId?: string): void {
-    const existingTab = this.tabs.find(tab => tab.request.id === request.id);
+  openRequestInTabWithResponse(
+    request: ApiRequest,
+    response: ApiResponse,
+    collectionId?: string
+  ): void {
+    const existingTab = this.tabs.find((tab) => tab.request.id === request.id);
 
     if (existingTab) {
       this.activeTabId = existingTab.id;
@@ -187,7 +217,9 @@ export class TabsStateManager {
         request: requestWithCollection, // Add collectionId to request
         requestMode: request.soap ? 'soap' : 'rest',
         restDraft: this.cloneRequest(requestWithCollection),
-        soapDraft: request.soap ? this.cloneRequest(requestWithCollection) : undefined,
+        soapDraft: request.soap
+          ? this.cloneRequest(requestWithCollection)
+          : undefined,
         response: { ...response },
         isModified: false,
         collectionId: collectionId,
@@ -201,13 +233,15 @@ export class TabsStateManager {
   }
 
   closeTabsByRequestId(requestId: string): void {
-    const tabsToClose = this.tabs.filter(tab => tab.request.id === requestId);
+    const tabsToClose = this.tabs.filter((tab) => tab.request.id === requestId);
 
     if (tabsToClose.length === 0) return;
 
-    this.tabs = this.tabs.filter(tab => tab.request.id !== requestId);
+    this.tabs = this.tabs.filter((tab) => tab.request.id !== requestId);
 
-    const wasActiveTabClosed = tabsToClose.some(tab => tab.id === this.activeTabId);
+    const wasActiveTabClosed = tabsToClose.some(
+      (tab) => tab.id === this.activeTabId
+    );
     if (wasActiveTabClosed) {
       if (this.tabs.length > 0) {
         this.activeTabId = this.tabs[0].id;
@@ -228,7 +262,7 @@ export class TabsStateManager {
       message: `You are about to close ${this.tabs.length} tabs.`,
       confirmLabel: 'Close All',
       cancelLabel: 'Cancel',
-      destructive: true
+      destructive: true,
     }).then((confirmed) => {
       if (!confirmed) return;
       this.tabs = [];
@@ -239,7 +273,7 @@ export class TabsStateManager {
   }
 
   closeOtherTabs(keepTabId: string): void {
-    const tabsToClose = this.tabs.filter(tab => tab.id !== keepTabId);
+    const tabsToClose = this.tabs.filter((tab) => tab.id !== keepTabId);
     if (tabsToClose.length === 0) return;
 
     void showConfirmDialog({
@@ -247,10 +281,10 @@ export class TabsStateManager {
       message: `You are about to close ${tabsToClose.length} other tabs.`,
       confirmLabel: 'Close Others',
       cancelLabel: 'Cancel',
-      destructive: true
+      destructive: true,
     }).then((confirmed) => {
       if (!confirmed) return;
-      this.tabs = this.tabs.filter(tab => tab.id === keepTabId);
+      this.tabs = this.tabs.filter((tab) => tab.id === keepTabId);
       this.activeTabId = keepTabId;
       this.onNotifyTabChange();
       this.saveState();
@@ -258,7 +292,7 @@ export class TabsStateManager {
   }
 
   duplicateTab(tabId: string): void {
-    const originalTab = this.tabs.find(tab => tab.id === tabId);
+    const originalTab = this.tabs.find((tab) => tab.id === tabId);
     if (!originalTab) return;
 
     const duplicatedRequestId = this.generateId();
@@ -267,7 +301,7 @@ export class TabsStateManager {
       name: `${originalTab.name} (Copy)`,
       request: {
         ...originalTab.request,
-        id: duplicatedRequestId
+        id: duplicatedRequestId,
       },
       requestMode: originalTab.requestMode || 'rest',
       restDraft: originalTab.restDraft
@@ -277,10 +311,10 @@ export class TabsStateManager {
         ? { ...originalTab.soapDraft, id: duplicatedRequestId }
         : undefined,
       response: originalTab.response ? { ...originalTab.response } : undefined,
-      isModified: true
+      isModified: true,
     };
 
-    const originalIndex = this.tabs.findIndex(tab => tab.id === tabId);
+    const originalIndex = this.tabs.findIndex((tab) => tab.id === tabId);
     this.tabs.splice(originalIndex + 1, 0, duplicatedTab);
 
     this.activeTabId = duplicatedTab.id;
@@ -289,18 +323,21 @@ export class TabsStateManager {
   }
 
   copyRequestUrl(tabId: string): void {
-    const tab = this.tabs.find(t => t.id === tabId);
+    const tab = this.tabs.find((t) => t.id === tabId);
     if (!tab || !tab.request.url) {
       this.onShowNotification('No URL to copy', 'error');
       return;
     }
 
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(tab.request.url).then(() => {
-        this.onShowNotification('URL copied to clipboard', 'success');
-      }).catch(() => {
-        this.onShowNotification('Failed to copy URL', 'error');
-      });
+      navigator.clipboard
+        .writeText(tab.request.url)
+        .then(() => {
+          this.onShowNotification('URL copied to clipboard', 'success');
+        })
+        .catch(() => {
+          this.onShowNotification('Failed to copy URL', 'error');
+        });
     } else {
       const textArea = document.createElement('textarea');
       textArea.value = tab.request.url;
@@ -319,7 +356,7 @@ export class TabsStateManager {
   updateTabNameForRequest(requestId: string, newName: string): void {
     let updated = false;
 
-    this.tabs.forEach(tab => {
+    this.tabs.forEach((tab) => {
       if (tab.request.id === requestId) {
         tab.name = newName;
         tab.request.name = newName;
@@ -348,14 +385,25 @@ export class TabsStateManager {
         ? request.headers.map((header) => ({ ...header }))
         : { ...request.headers },
       body: request.body ? { ...request.body } : request.body,
-      auth: request.auth ? { ...request.auth, config: { ...request.auth.config } } : request.auth,
+      auth: request.auth
+        ? { ...request.auth, config: { ...request.auth.config } }
+        : request.auth,
       soap: request.soap ? { ...request.soap } : request.soap,
-      variables: request.variables ? { ...request.variables } : request.variables,
+      variables: request.variables
+        ? { ...request.variables }
+        : request.variables,
     };
   }
 
-  private mergeTabUpdates(currentTab: RequestTab, updates: Partial<RequestTab>, markAsModified: boolean): RequestTab {
-    const hasResponseViewStateUpdate = Object.prototype.hasOwnProperty.call(updates, 'responseViewState');
+  private mergeTabUpdates(
+    currentTab: RequestTab,
+    updates: Partial<RequestTab>,
+    markAsModified: boolean
+  ): RequestTab {
+    const hasResponseViewStateUpdate = Object.prototype.hasOwnProperty.call(
+      updates,
+      'responseViewState'
+    );
     const responseViewState = hasResponseViewStateUpdate
       ? {
           ...(currentTab.responseViewState || {}),
@@ -375,8 +423,8 @@ export class TabsStateManager {
     const event = new CustomEvent('tabs-changed', {
       detail: {
         tabs: this.tabs,
-        activeTabId: this.activeTabId
-      }
+        activeTabId: this.activeTabId,
+      },
     });
     document.dispatchEvent(event);
   }

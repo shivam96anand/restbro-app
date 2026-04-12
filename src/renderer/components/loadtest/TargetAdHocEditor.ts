@@ -2,7 +2,14 @@ import { TargetAdHocTemplates } from './TargetAdHocTemplates';
 import { TargetAdHocDataExtractor } from './TargetAdHocDataExtractor';
 import { TargetAdHocPrefill } from './TargetAdHocPrefill';
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+  | 'HEAD'
+  | 'OPTIONS';
 
 interface LoadTestTargetAdHoc {
   kind: 'adhoc';
@@ -10,7 +17,10 @@ interface LoadTestTargetAdHoc {
   url: string;
   params?: Record<string, string | number | boolean>;
   headers?: Record<string, string>;
-  auth?: { type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2'; data?: unknown };
+  auth?: {
+    type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2';
+    data?: unknown;
+  };
   body?: {
     type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
     content: string;
@@ -34,7 +44,7 @@ export class TargetAdHocEditor {
 
     // Tab switching
     const tabs = this.container.querySelectorAll('.tab');
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const section = target.dataset.section;
@@ -63,8 +73,10 @@ export class TargetAdHocEditor {
     });
 
     // Body type change
-    const bodyTypeRadios = this.container.querySelectorAll('input[name="target-body-type"]');
-    bodyTypeRadios.forEach(radio => {
+    const bodyTypeRadios = this.container.querySelectorAll(
+      'input[name="target-body-type"]'
+    );
+    bodyTypeRadios.forEach((radio) => {
       radio.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement;
         this.toggleBodyEditor(target.value);
@@ -89,16 +101,20 @@ export class TargetAdHocEditor {
     this.activeTab = section;
 
     // Update tab active state
-    this.container.querySelectorAll('.tab').forEach(tab => {
+    this.container.querySelectorAll('.tab').forEach((tab) => {
       tab.classList.remove('active');
     });
-    this.container.querySelector(`[data-section="${section}"]`)?.classList.add('active');
+    this.container
+      .querySelector(`[data-section="${section}"]`)
+      ?.classList.add('active');
 
     // Show appropriate section
-    this.container.querySelectorAll('.section').forEach(sec => {
+    this.container.querySelectorAll('.section').forEach((sec) => {
       sec.classList.remove('active');
     });
-    this.container.querySelector(`#target-${section}-section`)?.classList.add('active');
+    this.container
+      .querySelector(`#target-${section}-section`)
+      ?.classList.add('active');
   }
 
   private addKeyValueRow(editorId: string): void {
@@ -106,14 +122,21 @@ export class TargetAdHocEditor {
 
     const editor = this.container.querySelector(`#${editorId}`);
     if (!editor) return;
-    editor.insertAdjacentHTML('beforeend', TargetAdHocTemplates.getKeyValueRow());
+    editor.insertAdjacentHTML(
+      'beforeend',
+      TargetAdHocTemplates.getKeyValueRow()
+    );
   }
 
   private setupAuthConfig(): void {
     if (!this.container) return;
 
-    const authType = this.container.querySelector('#target-auth-type') as HTMLSelectElement;
-    const authConfig = this.container.querySelector('#target-auth-config') as HTMLElement;
+    const authType = this.container.querySelector(
+      '#target-auth-type'
+    ) as HTMLSelectElement;
+    const authConfig = this.container.querySelector(
+      '#target-auth-config'
+    ) as HTMLElement;
 
     authConfig.innerHTML = '';
 
@@ -136,12 +159,17 @@ export class TargetAdHocEditor {
 
   private setupOAuth2Listeners(): void {
     if (!this.container) return;
-    const grantType = this.container.querySelector('#target-oauth-grant-type') as HTMLSelectElement | null;
-    const authCodeFields = this.container.querySelector('#target-oauth-auth-code-fields') as HTMLElement | null;
+    const grantType = this.container.querySelector(
+      '#target-oauth-grant-type'
+    ) as HTMLSelectElement | null;
+    const authCodeFields = this.container.querySelector(
+      '#target-oauth-auth-code-fields'
+    ) as HTMLElement | null;
     if (!grantType || !authCodeFields) return;
 
     const updateVisibility = () => {
-      authCodeFields.style.display = grantType.value === 'authorization_code' ? 'block' : 'none';
+      authCodeFields.style.display =
+        grantType.value === 'authorization_code' ? 'block' : 'none';
     };
 
     grantType.addEventListener('change', updateVisibility);
@@ -151,7 +179,9 @@ export class TargetAdHocEditor {
   private toggleBodyEditor(type: string): void {
     if (!this.container) return;
 
-    const bodyEditor = this.container.querySelector('#target-request-body') as HTMLTextAreaElement;
+    const bodyEditor = this.container.querySelector(
+      '#target-request-body'
+    ) as HTMLTextAreaElement;
 
     if (type === 'none') {
       bodyEditor.style.display = 'none';
@@ -177,8 +207,12 @@ export class TargetAdHocEditor {
   prefillTarget(target: LoadTestTargetAdHoc): void {
     if (!this.container) return;
 
-    const methodSelect = this.container.querySelector('#target-method') as HTMLSelectElement;
-    const urlInput = this.container.querySelector('#target-url') as HTMLInputElement;
+    const methodSelect = this.container.querySelector(
+      '#target-method'
+    ) as HTMLSelectElement;
+    const urlInput = this.container.querySelector(
+      '#target-url'
+    ) as HTMLInputElement;
 
     methodSelect.value = target.method;
     urlInput.value = target.url;
@@ -205,19 +239,15 @@ export class TargetAdHocEditor {
 
     // Prefill auth
     if (target.auth) {
-      TargetAdHocPrefill.prefillAuth(
-        this.container,
-        target.auth,
-        () => this.setupAuthConfig()
+      TargetAdHocPrefill.prefillAuth(this.container, target.auth, () =>
+        this.setupAuthConfig()
       );
     }
 
     // Prefill body
     if (target.body) {
-      TargetAdHocPrefill.prefillBody(
-        this.container,
-        target.body,
-        (type) => this.toggleBodyEditor(type)
+      TargetAdHocPrefill.prefillBody(this.container, target.body, (type) =>
+        this.toggleBodyEditor(type)
       );
     }
   }

@@ -95,7 +95,11 @@ export class ImportDialog {
         gap: 12px;
       `;
 
-      const createStat = (label: string, value: number, icon: Parameters<typeof createIconElement>[0]) => {
+      const createStat = (
+        label: string,
+        value: number,
+        icon: Parameters<typeof createIconElement>[0]
+      ) => {
         const stat = document.createElement('div');
         stat.style.cssText = `
           text-align: center;
@@ -111,7 +115,9 @@ export class ImportDialog {
           margin: 0 auto 4px auto;
           color: var(--text-secondary);
         `;
-        iconEl.appendChild(createIconElement(icon, { style: { width: '100%', height: '100%' } }));
+        iconEl.appendChild(
+          createIconElement(icon, { style: { width: '100%', height: '100%' } })
+        );
 
         const valueEl = document.createElement('div');
         valueEl.textContent = String(value);
@@ -135,9 +141,15 @@ export class ImportDialog {
         return stat;
       };
 
-      summaryStats.appendChild(createStat('Folders', preview.summary.folders, 'folder'));
-      summaryStats.appendChild(createStat('Requests', preview.summary.requests, 'file'));
-      summaryStats.appendChild(createStat('Environments', preview.summary.environments, 'globe'));
+      summaryStats.appendChild(
+        createStat('Folders', preview.summary.folders, 'folder')
+      );
+      summaryStats.appendChild(
+        createStat('Requests', preview.summary.requests, 'file')
+      );
+      summaryStats.appendChild(
+        createStat('Environments', preview.summary.environments, 'globe')
+      );
 
       summarySection.appendChild(summaryTitle);
       summarySection.appendChild(summaryStats);
@@ -181,9 +193,12 @@ export class ImportDialog {
             gap: 6px;
           `;
 
-          const icon = createIconElement(item.type === 'folder' ? 'folder' : 'file', {
-            style: { width: '14px', height: '14px' }
-          });
+          const icon = createIconElement(
+            item.type === 'folder' ? 'folder' : 'file',
+            {
+              style: { width: '14px', height: '14px' },
+            }
+          );
 
           const name = document.createElement('span');
           name.textContent = item.name;
@@ -207,7 +222,7 @@ export class ImportDialog {
           treeContainer.appendChild(itemEl);
 
           if (item.type === 'folder' && item.children) {
-            item.children.forEach(child => renderTree(child, level + 1));
+            item.children.forEach((child) => renderTree(child, level + 1));
           }
         };
 
@@ -255,7 +270,11 @@ export class ImportDialog {
           `;
 
           const envIcon = document.createElement('span');
-          envIcon.appendChild(createIconElement('globe', { style: { width: '16px', height: '16px' } }));
+          envIcon.appendChild(
+            createIconElement('globe', {
+              style: { width: '16px', height: '16px' },
+            })
+          );
 
           const envName = document.createElement('span');
           envName.textContent = env.name;

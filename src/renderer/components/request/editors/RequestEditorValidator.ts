@@ -1,8 +1,14 @@
-import { EditorType, RequestEditorValidatorConfig, ValidationResult } from '../../../types/request-types';
+import {
+  EditorType,
+  RequestEditorValidatorConfig,
+  ValidationResult,
+} from '../../../types/request-types';
 
 export class RequestEditorValidator {
   private validationResults: Map<EditorType, ValidationResult> = new Map();
-  private onValidationChangeCallback: ((result: ValidationResult) => void) | null = null;
+  private onValidationChangeCallback:
+    | ((result: ValidationResult) => void)
+    | null = null;
 
   constructor(private config: RequestEditorValidatorConfig) {}
 
@@ -30,7 +36,7 @@ export class RequestEditorValidator {
     } catch (error) {
       result = {
         isValid: false,
-        error: error instanceof Error ? error.message : 'Validation failed'
+        error: error instanceof Error ? error.message : 'Validation failed',
       };
     }
 
@@ -51,11 +57,11 @@ export class RequestEditorValidator {
       } catch (error) {
         return {
           isValid: false,
-          error: 'Invalid JSON syntax'
+          error: 'Invalid JSON syntax',
         };
       }
     }
-    
+
     // If it's already an object, it's valid
     return { isValid: true };
   }
@@ -66,7 +72,7 @@ export class RequestEditorValidator {
     }
 
     const warnings: string[] = [];
-    
+
     // Check for duplicate keys
     const keys = Object.keys(content);
     const uniqueKeys = new Set(keys);
@@ -76,7 +82,7 @@ export class RequestEditorValidator {
 
     return {
       isValid: true,
-      warnings: warnings.length > 0 ? warnings : undefined
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   }
 
@@ -89,7 +95,7 @@ export class RequestEditorValidator {
       } catch (error) {
         return {
           isValid: false,
-          error: 'Invalid URL encoded format'
+          error: 'Invalid URL encoded format',
         };
       }
     }
@@ -97,7 +103,9 @@ export class RequestEditorValidator {
     return { isValid: true };
   }
 
-  public getValidationResult(editorType: EditorType): ValidationResult | undefined {
+  public getValidationResult(
+    editorType: EditorType
+  ): ValidationResult | undefined {
     return this.validationResults.get(editorType);
   }
 
@@ -109,7 +117,9 @@ export class RequestEditorValidator {
     }
   }
 
-  public onValidationChange(callback: (result: ValidationResult) => void): void {
+  public onValidationChange(
+    callback: (result: ValidationResult) => void
+  ): void {
     this.onValidationChangeCallback = callback;
   }
 

@@ -72,7 +72,10 @@ export class RequestBuilder {
       cleanHeaders['Authorization'] = `Bearer ${request.auth.config.token}`;
     }
 
-    if (request.auth?.type === 'api-key' && request.auth.config.location === 'header') {
+    if (
+      request.auth?.type === 'api-key' &&
+      request.auth.config.location === 'header'
+    ) {
       const key = request.auth.config.key || 'X-API-Key';
       if (request.auth.config.value && !this.hasHeader(cleanHeaders, key)) {
         cleanHeaders[key] = request.auth.config.value;
@@ -93,8 +96,13 @@ export class RequestBuilder {
     return cleanHeaders;
   }
 
-  public static buildAuthQueryParams(request: ApiRequest): Record<string, string> {
-    if (request.auth?.type === 'api-key' && request.auth.config.location === 'query') {
+  public static buildAuthQueryParams(
+    request: ApiRequest
+  ): Record<string, string> {
+    if (
+      request.auth?.type === 'api-key' &&
+      request.auth.config.location === 'query'
+    ) {
       const key = request.auth.config.key || 'api_key';
       const value = request.auth.config.value || '';
       if (key.trim() && value.trim()) {
@@ -152,27 +160,21 @@ export class RequestBuilder {
     const result = { ...headers };
 
     // Only set Content-Type if not already specified by user
-    if (
-      contentType &&
-      !result['Content-Type'] &&
-      !result['content-type']
-    ) {
+    if (contentType && !result['Content-Type'] && !result['content-type']) {
       result['Content-Type'] = contentType;
     }
 
     // Set Content-Length if body exists
-    if (
-      bodyData &&
-      !result['Content-Length'] &&
-      !result['content-length']
-    ) {
+    if (bodyData && !result['Content-Length'] && !result['content-length']) {
       result['Content-Length'] = Buffer.byteLength(bodyData).toString();
     }
 
     return result;
   }
 
-  private static resolveContentType(body: ApiRequest['body']): string | undefined {
+  private static resolveContentType(
+    body: ApiRequest['body']
+  ): string | undefined {
     if (!body) return undefined;
 
     if (body.contentType) {

@@ -45,11 +45,13 @@ The feature is integrated via `JsonCompareTabManager` in `/src/renderer/componen
 ## Testing
 
 Run unit tests:
+
 ```bash
 npm test
 ```
 
 Tests cover:
+
 - JSON Pointer conversion
 - Diff row building (adds/removes/changes)
 - Edge cases (null vs undefined, type changes, nested objects, arrays)

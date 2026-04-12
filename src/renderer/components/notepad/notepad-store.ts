@@ -30,8 +30,10 @@ export class NotepadStore {
    * Load persisted notepad state. Accepts an optional pre-fetched AppState
    * to avoid a redundant IPC round-trip when the caller already has it.
    */
-  async hydrate(prefetchedState?: { notepad?: NotepadState }): Promise<NotepadState> {
-    const stored = prefetchedState ?? await window.apiCourier.store.get();
+  async hydrate(prefetchedState?: {
+    notepad?: NotepadState;
+  }): Promise<NotepadState> {
+    const stored = prefetchedState ?? (await window.apiCourier.store.get());
     const persisted = (stored as any).notepad as NotepadState | undefined;
 
     if (persisted) {
@@ -40,7 +42,8 @@ export class NotepadStore {
         ...persisted,
         tabs: (persisted.tabs || []).map(normalizeTab),
         activeTabId: persisted.activeTabId,
-        untitledCounter: persisted.untitledCounter || DEFAULT_STATE.untitledCounter,
+        untitledCounter:
+          persisted.untitledCounter || DEFAULT_STATE.untitledCounter,
       };
     } else {
       this.state = { ...DEFAULT_STATE };
@@ -53,7 +56,7 @@ export class NotepadStore {
   subscribe(handler: (state: NotepadState) => void): () => void {
     this.subscribers.push(handler);
     return () => {
-      this.subscribers = this.subscribers.filter(cb => cb !== handler);
+      this.subscribers = this.subscribers.filter((cb) => cb !== handler);
     };
   }
 
@@ -62,15 +65,17 @@ export class NotepadStore {
   }
 
   getActiveTab(): NotepadTab | undefined {
-    return this.state.tabs.find(t => t.id === this.state.activeTabId);
+    return this.state.tabs.find((t) => t.id === this.state.activeTabId);
   }
 
   getTabByFilePath(filePath?: string): NotepadTab | undefined {
     if (!filePath) return undefined;
-    return this.state.tabs.find(t => t.filePath === filePath);
+    return this.state.tabs.find((t) => t.filePath === filePath);
   }
 
-  createTab(initial?: Partial<Pick<NotepadTab, 'title' | 'content' | 'filePath'>>): NotepadTab {
+  createTab(
+    initial?: Partial<Pick<NotepadTab, 'title' | 'content' | 'filePath'>>
+  ): NotepadTab {
     const title = initial?.title || 'Untitled';
     const now = Date.now();
 
@@ -96,7 +101,7 @@ export class NotepadStore {
   }
 
   updateTab(tabId: string, updates: Partial<NotepadTab>): void {
-    const idx = this.state.tabs.findIndex(t => t.id === tabId);
+    const idx = this.state.tabs.findIndex((t) => t.id === tabId);
     if (idx === -1) return;
 
     const updated: NotepadTab = {
@@ -110,15 +115,17 @@ export class NotepadStore {
   }
 
   updateContent(tabId: string, content: string, markDirty = true): void {
-    const tab = this.state.tabs.find(t => t.id === tabId);
+    const tab = this.state.tabs.find((t) => t.id === tabId);
     if (!tab) return;
-    const isDirty = markDirty ? content !== tab.content || tab.isDirty : tab.isDirty;
+    const isDirty = markDirty
+      ? content !== tab.content || tab.isDirty
+      : tab.isDirty;
 
     this.updateTab(tabId, { content, isDirty });
   }
 
   markSaved(tabId: string, filePath?: string): void {
-    const tab = this.state.tabs.find(t => t.id === tabId);
+    const tab = this.state.tabs.find((t) => t.id === tabId);
     if (!tab) return;
 
     const title = filePath ? this.getFileName(filePath) : tab.title;
@@ -130,7 +137,7 @@ export class NotepadStore {
   }
 
   closeTab(tabId: string): NotepadTab | undefined {
-    const idx = this.state.tabs.findIndex(t => t.id === tabId);
+    const idx = this.state.tabs.findIndex((t) => t.id === tabId);
     if (idx === -1) return undefined;
 
     const [removed] = this.state.tabs.splice(idx, 1);
@@ -155,7 +162,7 @@ export class NotepadStore {
   }
 
   closeOthers(tabId: string): void {
-    this.state.tabs = this.state.tabs.filter(t => t.id === tabId);
+    this.state.tabs = this.state.tabs.filter((t) => t.id === tabId);
     this.state.activeTabId = tabId;
     this.touch();
   }
@@ -174,7 +181,9 @@ export class NotepadStore {
   }
 
   private notify(): void {
-    this.subscribers.forEach(cb => cb({ ...this.state, tabs: [...this.state.tabs] }));
+    this.subscribers.forEach((cb) =>
+      cb({ ...this.state, tabs: [...this.state.tabs] })
+    );
   }
 
   private persist(): void {

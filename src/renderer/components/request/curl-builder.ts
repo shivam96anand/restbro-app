@@ -1,5 +1,10 @@
 import { ApiRequest } from '../../../shared/types';
-import { buildHeaders, buildBody, buildUrlWithParams, buildAuthQueryParams } from './request-builder-utils';
+import {
+  buildHeaders,
+  buildBody,
+  buildUrlWithParams,
+  buildAuthQueryParams,
+} from './request-builder-utils';
 
 /**
  * Shell-escapes a value for safe use in a shell command
@@ -11,7 +16,11 @@ export function shellEscape(value: string): string {
 /**
  * Builds the URL, header arguments, and body argument for a cURL command
  */
-export function buildCurlParts(request: ApiRequest): { url: string; headerArgs: string[]; bodyArg?: string } {
+export function buildCurlParts(request: ApiRequest): {
+  url: string;
+  headerArgs: string[];
+  bodyArg?: string;
+} {
   const headers = buildHeaders(request);
   const { bodyData, contentType } = buildBody(request);
   const headerArgs: string[] = [];
@@ -26,14 +35,21 @@ export function buildCurlParts(request: ApiRequest): { url: string; headerArgs: 
     }
   });
 
-  const url = buildUrlWithParams(request.url, request.params, buildAuthQueryParams(request));
+  const url = buildUrlWithParams(
+    request.url,
+    request.params,
+    buildAuthQueryParams(request)
+  );
   return { url, headerArgs, bodyArg: bodyData || undefined };
 }
 
 /**
  * Checks if a header exists (case-insensitive)
  */
-function hasHeader(headers: Record<string, string>, headerName: string): boolean {
+function hasHeader(
+  headers: Record<string, string>,
+  headerName: string
+): boolean {
   const target = headerName.toLowerCase();
   return Object.keys(headers).some((key) => key.toLowerCase() === target);
 }

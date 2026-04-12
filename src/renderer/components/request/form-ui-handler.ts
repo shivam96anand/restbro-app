@@ -10,8 +10,13 @@ export class FormUIHandler {
   public updateMethodSelectColor(methodSelect: HTMLSelectElement): void {
     // Remove all existing method color classes
     methodSelect.classList.remove(
-      'method-get', 'method-post', 'method-put', 
-      'method-patch', 'method-delete', 'method-head', 'method-options'
+      'method-get',
+      'method-post',
+      'method-put',
+      'method-patch',
+      'method-delete',
+      'method-head',
+      'method-options'
     );
     // Add the appropriate class for the current method
     const method = methodSelect.value.toLowerCase();
@@ -51,7 +56,9 @@ export class FormUIHandler {
         width: 48px;
         height: 48px;
       `;
-      icon.appendChild(createIconElement('file', { style: { width: '100%', height: '100%' } }));
+      icon.appendChild(
+        createIconElement('file', { style: { width: '100%', height: '100%' } })
+      );
 
       const title = document.createElement('h3');
       title.textContent = 'No Request Selected';
@@ -63,7 +70,8 @@ export class FormUIHandler {
       `;
 
       const description = document.createElement('p');
-      description.textContent = 'Select a request from collections or create a new request tab to get started';
+      description.textContent =
+        'Select a request from collections or create a new request tab to get started';
       description.style.cssText = `
         margin: 0;
         line-height: 1.5;
@@ -123,7 +131,9 @@ export class FormUIHandler {
    */
   public clearUrlInputOverlay(urlInput: HTMLInputElement): void {
     // Remove any leftover variable overlay/indicator from the previous tab
-    const existing = urlInput.parentElement?.querySelector('.variable-highlight-container');
+    const existing = urlInput.parentElement?.querySelector(
+      '.variable-highlight-container'
+    );
     if (existing) existing.remove();
     urlInput.classList.remove('has-variable-overlay', 'has-variables');
   }

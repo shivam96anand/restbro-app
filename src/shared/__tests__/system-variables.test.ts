@@ -6,24 +6,90 @@ const UUID_V4_RE =
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/;
 
 const FIRST_NAMES = new Set([
-  'Ava', 'Liam', 'Maya', 'Noah', 'Zoe', 'Ethan', 'Ivy', 'Owen', 'Lila', 'Leo',
-  'Nora', 'Kai', 'Mila', 'Aria', 'Eli', 'Sage', 'Rhea', 'Jude', 'Iris', 'Quinn',
+  'Ava',
+  'Liam',
+  'Maya',
+  'Noah',
+  'Zoe',
+  'Ethan',
+  'Ivy',
+  'Owen',
+  'Lila',
+  'Leo',
+  'Nora',
+  'Kai',
+  'Mila',
+  'Aria',
+  'Eli',
+  'Sage',
+  'Rhea',
+  'Jude',
+  'Iris',
+  'Quinn',
 ]);
 const LAST_NAMES = new Set([
-  'Reed', 'Hayes', 'Clark', 'Parker', 'Reyes', 'Baker', 'Lopez', 'Stone', 'Cruz', 'Ward',
-  'Bennett', 'Price', 'Woods', 'Cole', 'Nguyen', 'Patel', 'Kim', 'Diaz', 'Young', 'Shaw',
+  'Reed',
+  'Hayes',
+  'Clark',
+  'Parker',
+  'Reyes',
+  'Baker',
+  'Lopez',
+  'Stone',
+  'Cruz',
+  'Ward',
+  'Bennett',
+  'Price',
+  'Woods',
+  'Cole',
+  'Nguyen',
+  'Patel',
+  'Kim',
+  'Diaz',
+  'Young',
+  'Shaw',
 ]);
 const COLORS = new Set([
-  'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'teal', 'cyan', 'blue',
-  'indigo', 'violet', 'magenta', 'rose', 'slate', 'navy', 'olive',
+  'red',
+  'orange',
+  'amber',
+  'yellow',
+  'lime',
+  'green',
+  'teal',
+  'cyan',
+  'blue',
+  'indigo',
+  'violet',
+  'magenta',
+  'rose',
+  'slate',
+  'navy',
+  'olive',
 ]);
 const CITIES = new Set([
-  'Seattle', 'Austin', 'Denver', 'Chicago', 'Boston', 'Phoenix', 'Portland', 'Miami',
-  'Toronto', 'London',
+  'Seattle',
+  'Austin',
+  'Denver',
+  'Chicago',
+  'Boston',
+  'Phoenix',
+  'Portland',
+  'Miami',
+  'Toronto',
+  'London',
 ]);
 const COUNTRIES = new Set([
-  'United States', 'Canada', 'Mexico', 'United Kingdom', 'Germany',
-  'France', 'Spain', 'India', 'Japan', 'Australia',
+  'United States',
+  'Canada',
+  'Mexico',
+  'United Kingdom',
+  'Germany',
+  'France',
+  'Spain',
+  'India',
+  'Japan',
+  'Australia',
 ]);
 
 describe('system-variables.ts', () => {
@@ -63,11 +129,15 @@ describe('system-variables.ts', () => {
     });
 
     it('$randomFirstName returns a known first name', () => {
-      expect(FIRST_NAMES.has(resolveSystemVariable('$randomFirstName') as string)).toBe(true);
+      expect(
+        FIRST_NAMES.has(resolveSystemVariable('$randomFirstName') as string)
+      ).toBe(true);
     });
 
     it('$randomLastName returns a known last name', () => {
-      expect(LAST_NAMES.has(resolveSystemVariable('$randomLastName') as string)).toBe(true);
+      expect(
+        LAST_NAMES.has(resolveSystemVariable('$randomLastName') as string)
+      ).toBe(true);
     });
 
     it('$randomFullName returns a first and last name', () => {
@@ -84,11 +154,15 @@ describe('system-variables.ts', () => {
     });
 
     it('$randomCity returns a known city', () => {
-      expect(CITIES.has(resolveSystemVariable('$randomCity') as string)).toBe(true);
+      expect(CITIES.has(resolveSystemVariable('$randomCity') as string)).toBe(
+        true
+      );
     });
 
     it('$randomCountry returns a known country', () => {
-      expect(COUNTRIES.has(resolveSystemVariable('$randomCountry') as string)).toBe(true);
+      expect(
+        COUNTRIES.has(resolveSystemVariable('$randomCountry') as string)
+      ).toBe(true);
     });
 
     it('$randomColor returns a known lowercase color', () => {
@@ -102,11 +176,15 @@ describe('system-variables.ts', () => {
     });
 
     it('$randomBoolean returns true or false', () => {
-      expect(['true', 'false']).toContain(resolveSystemVariable('$randomBoolean'));
+      expect(['true', 'false']).toContain(
+        resolveSystemVariable('$randomBoolean')
+      );
     });
 
     it('$randomPassword returns at least 12 characters', () => {
-      expect((resolveSystemVariable('$randomPassword') as string).length).toBeGreaterThanOrEqual(12);
+      expect(
+        (resolveSystemVariable('$randomPassword') as string).length
+      ).toBeGreaterThanOrEqual(12);
     });
   });
 

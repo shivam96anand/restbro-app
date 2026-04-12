@@ -8,7 +8,7 @@ import { escapeHtml, escapeAttr, formatDate } from './utils';
  * Render the sessions list in the sidebar
  */
 export function renderSessionsList(state: AskAiState): string {
-  const filtered = state.sessions.filter(s =>
+  const filtered = state.sessions.filter((s) =>
     s.title.toLowerCase().includes(state.searchQuery.toLowerCase())
   );
 
@@ -21,10 +21,14 @@ export function renderSessionsList(state: AskAiState): string {
     `;
   }
 
-  return filtered.map(session => `
+  return filtered
+    .map(
+      (session) => `
     <div class="session-item ${session.id === state.activeSessionId ? 'active' : ''}" data-session-id="${session.id}">
       <div class="session-main">
-        ${state.renamingSessionId === session.id ? `
+        ${
+          state.renamingSessionId === session.id
+            ? `
           <input
             type="text"
             class="session-title-input"
@@ -32,9 +36,11 @@ export function renderSessionsList(state: AskAiState): string {
             data-session-id="${session.id}"
             autofocus
           />
-        ` : `
+        `
+            : `
           <div class="session-title" title="${escapeAttr(session.title)}">${escapeHtml(session.title)}</div>
-        `}
+        `
+        }
         <div class="session-meta">
           <span>${session.messages.length} messages</span>
           <span>${formatDate(session.updatedAt)}</span>
@@ -45,7 +51,9 @@ export function renderSessionsList(state: AskAiState): string {
         <button class="session-delete" data-session-id="${session.id}" title="Delete">${iconHtml('trash')}</button>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
 }
 
 /**
@@ -101,7 +109,7 @@ export function renderQuickSuggestions(session: AiSession | undefined): string {
     <div class="quick-suggestions">
       <div class="suggestions-header">Quick questions:</div>
       <div class="suggestions-buttons">
-        ${suggestions.map(s => `<button class="suggestion-btn">${s}</button>`).join('')}
+        ${suggestions.map((s) => `<button class="suggestion-btn">${s}</button>`).join('')}
       </div>
     </div>
   `;
@@ -112,9 +120,10 @@ export function renderQuickSuggestions(session: AiSession | undefined): string {
  */
 export function renderInputArea(state: AskAiState): string {
   const disabled = state.engineStatus !== 'available' || state.isSending;
-  const placeholder = state.engineStatus !== 'available'
-    ? 'AI engine unavailable...'
-    : 'Ask a question about your API...';
+  const placeholder =
+    state.engineStatus !== 'available'
+      ? 'AI engine unavailable...'
+      : 'Ask a question about your API...';
 
   return `
     <div class="input-area">

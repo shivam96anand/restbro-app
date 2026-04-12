@@ -4,9 +4,9 @@ type PemCertField = 'clientCert' | 'clientKey' | 'caCert' | 'pfx';
 
 const PEM_FIELD_LABELS: Record<PemCertField, string> = {
   clientCert: 'Client Certificate (PEM)',
-  clientKey:  'Client Key (PEM)',
-  caCert:     'CA / Truststore Certificate (PEM)',
-  pfx:        'PFX / PKCS12 Certificate',
+  clientKey: 'Client Key (PEM)',
+  caCert: 'CA / Truststore Certificate (PEM)',
+  pfx: 'PFX / PKCS12 Certificate',
 };
 
 const BINARY_EXTENSIONS = new Set(['.pfx', '.p12', '.jks']);
@@ -95,7 +95,9 @@ export class SoapCertsManager {
       this.current.mode = 'jks';
       jksBtn.classList.add('active');
       pemBtn.classList.remove('active');
-      const content = jksBtn.closest('.soap-certs')?.querySelector('.soap-certs__mode-content') as HTMLElement | null;
+      const content = jksBtn
+        .closest('.soap-certs')
+        ?.querySelector('.soap-certs__mode-content') as HTMLElement | null;
       if (content) this.renderModeContent(content);
       this.emit();
     });
@@ -105,7 +107,9 @@ export class SoapCertsManager {
       this.current.mode = 'pem';
       pemBtn.classList.add('active');
       jksBtn.classList.remove('active');
-      const content = pemBtn.closest('.soap-certs')?.querySelector('.soap-certs__mode-content') as HTMLElement | null;
+      const content = pemBtn
+        .closest('.soap-certs')
+        ?.querySelector('.soap-certs__mode-content') as HTMLElement | null;
       if (content) this.renderModeContent(content);
       this.emit();
     });
@@ -127,41 +131,52 @@ export class SoapCertsManager {
   // ── JKS mode ─────────────────────────────────────────────────────────────
 
   private renderJksMode(container: HTMLElement): void {
-    container.appendChild(this.buildJksStoreBlock({
-      label: 'Keystore (keystore.jks)',
-      pwLabel: 'Keystore Password',
-      source: this.current.keystoreSource ?? 'file',
-      currentContent: this.current.keystoreJks,
-      currentPath: this.current.keystoreFilePath,
-      currentPw: this.current.keystorePassword,
-      onContent: (src, content, filePath) => {
-        this.current.keystoreSource = src;
-        this.current.keystoreJks = content || undefined;
-        this.current.keystoreFilePath = filePath;
-        this.emit();
-      },
-      onPassword: (pw) => { this.current.keystorePassword = pw || undefined; this.emit(); },
-    }));
+    container.appendChild(
+      this.buildJksStoreBlock({
+        label: 'Keystore (keystore.jks)',
+        pwLabel: 'Keystore Password',
+        source: this.current.keystoreSource ?? 'file',
+        currentContent: this.current.keystoreJks,
+        currentPath: this.current.keystoreFilePath,
+        currentPw: this.current.keystorePassword,
+        onContent: (src, content, filePath) => {
+          this.current.keystoreSource = src;
+          this.current.keystoreJks = content || undefined;
+          this.current.keystoreFilePath = filePath;
+          this.emit();
+        },
+        onPassword: (pw) => {
+          this.current.keystorePassword = pw || undefined;
+          this.emit();
+        },
+      })
+    );
 
-    container.appendChild(this.buildJksStoreBlock({
-      label: 'Truststore (truststore.jks)',
-      pwLabel: 'Truststore Password',
-      source: this.current.truststoreSource ?? 'file',
-      currentContent: this.current.truststoreJks,
-      currentPath: this.current.truststoreFilePath,
-      currentPw: this.current.truststorePassword,
-      onContent: (src, content, filePath) => {
-        this.current.truststoreSource = src;
-        this.current.truststoreJks = content || undefined;
-        this.current.truststoreFilePath = filePath;
-        this.emit();
-      },
-      onPassword: (pw) => { this.current.truststorePassword = pw || undefined; this.emit(); },
-    }));
+    container.appendChild(
+      this.buildJksStoreBlock({
+        label: 'Truststore (truststore.jks)',
+        pwLabel: 'Truststore Password',
+        source: this.current.truststoreSource ?? 'file',
+        currentContent: this.current.truststoreJks,
+        currentPath: this.current.truststoreFilePath,
+        currentPw: this.current.truststorePassword,
+        onContent: (src, content, filePath) => {
+          this.current.truststoreSource = src;
+          this.current.truststoreJks = content || undefined;
+          this.current.truststoreFilePath = filePath;
+          this.emit();
+        },
+        onPassword: (pw) => {
+          this.current.truststorePassword = pw || undefined;
+          this.emit();
+        },
+      })
+    );
 
     const note = document.createElement('p');
     note.className = 'soap-certs__note';
-    note.textContent = 'Keystore holds your client cert + key. Truststore holds the server CA certificate.';
+    note.textContent =
+      'Keystore holds your client cert + key. Truststore holds the server CA certificate.';
     container.appendChild(note);
   }
 
@@ -172,7 +187,11 @@ export class SoapCertsManager {
     currentContent: string | undefined;
     currentPath: string | undefined;
     currentPw: string | undefined;
-    onContent: (src: 'text' | 'file', content: string, filePath?: string) => void;
+    onContent: (
+      src: 'text' | 'file',
+      content: string,
+      filePath?: string
+    ) => void;
     onPassword: (pw: string) => void;
   }): HTMLElement {
     const { label, pwLabel, onContent, onPassword } = opts;
@@ -217,11 +236,16 @@ export class SoapCertsManager {
           onContent('text', val, undefined);
         });
       } else {
-        this.buildJksFileRow(contentArea, opts.currentPath, (filePath, base64) => {
-          onContent('file', base64, filePath);
-        }, () => {
-          onContent('file', '', undefined);
-        });
+        this.buildJksFileRow(
+          contentArea,
+          opts.currentPath,
+          (filePath, base64) => {
+            onContent('file', base64, filePath);
+          },
+          () => {
+            onContent('file', '', undefined);
+          }
+        );
       }
     };
 
@@ -255,7 +279,11 @@ export class SoapCertsManager {
     return block;
   }
 
-  private buildJksTextArea(container: HTMLElement, value: string, onChange: (val: string) => void): void {
+  private buildJksTextArea(
+    container: HTMLElement,
+    value: string,
+    onChange: (val: string) => void
+  ): void {
     const ta = document.createElement('textarea');
     ta.className = 'soap-certs__textarea';
     ta.placeholder = 'Paste base64-encoded JKS content here…';
@@ -277,7 +305,9 @@ export class SoapCertsManager {
 
     const pathSpan = document.createElement('span');
     pathSpan.className = 'soap-certs__file-path';
-    pathSpan.textContent = currentPath ? this.basename(currentPath) : 'No file selected';
+    pathSpan.textContent = currentPath
+      ? this.basename(currentPath)
+      : 'No file selected';
     if (currentPath) pathSpan.title = currentPath;
 
     const browseBtn = document.createElement('button');
@@ -324,7 +354,7 @@ export class SoapCertsManager {
 
   private renderPemMode(container: HTMLElement): void {
     const fields: PemCertField[] = ['clientCert', 'clientKey', 'caCert', 'pfx'];
-    fields.forEach(field => {
+    fields.forEach((field) => {
       container.appendChild(this.buildPemFieldBlock(field));
     });
     container.appendChild(this.buildPassphraseBlock());
@@ -366,7 +396,12 @@ export class SoapCertsManager {
       block.appendChild(contentArea);
 
       if (srcMode === 'file') {
-        this.renderPemFileRow(field, contentArea, existing?.filePath, existing?.content);
+        this.renderPemFileRow(
+          field,
+          contentArea,
+          existing?.filePath,
+          existing?.content
+        );
       } else {
         this.renderPemTextArea(field, contentArea, existing?.content ?? '');
       }
@@ -374,7 +409,11 @@ export class SoapCertsManager {
       textBtn.addEventListener('click', () => {
         textBtn.classList.add('active');
         fileBtn.classList.remove('active');
-        this.renderPemTextArea(field, contentArea, (this.current[field] as SoapCertEntry | undefined)?.content ?? '');
+        this.renderPemTextArea(
+          field,
+          contentArea,
+          (this.current[field] as SoapCertEntry | undefined)?.content ?? ''
+        );
       });
       fileBtn.addEventListener('click', () => {
         fileBtn.classList.add('active');
@@ -385,14 +424,23 @@ export class SoapCertsManager {
     } else {
       const contentArea = document.createElement('div');
       contentArea.className = 'soap-certs__content';
-      this.renderPemFileRow(field, contentArea, existing?.filePath, existing?.content);
+      this.renderPemFileRow(
+        field,
+        contentArea,
+        existing?.filePath,
+        existing?.content
+      );
       block.appendChild(contentArea);
     }
 
     return block;
   }
 
-  private renderPemTextArea(field: PemCertField, container: HTMLElement, value: string): void {
+  private renderPemTextArea(
+    field: PemCertField,
+    container: HTMLElement,
+    value: string
+  ): void {
     container.innerHTML = '';
     const ta = document.createElement('textarea');
     ta.className = 'soap-certs__textarea';
@@ -402,7 +450,7 @@ export class SoapCertsManager {
     ta.value = value;
 
     ta.addEventListener('input', () => {
-      (this.current[field] as SoapCertEntry | undefined);
+      this.current[field] as SoapCertEntry | undefined;
       this.current[field] = { source: 'text', content: ta.value };
       this.emit();
     });
@@ -415,14 +463,21 @@ export class SoapCertsManager {
     }
   }
 
-  private renderPemFileRow(field: PemCertField, container: HTMLElement, currentPath?: string, currentContent?: string): void {
+  private renderPemFileRow(
+    field: PemCertField,
+    container: HTMLElement,
+    currentPath?: string,
+    currentContent?: string
+  ): void {
     container.innerHTML = '';
     const row = document.createElement('div');
     row.className = 'soap-certs__file-row';
 
     const pathSpan = document.createElement('span');
     pathSpan.className = 'soap-certs__file-path';
-    pathSpan.textContent = currentPath ? this.basename(currentPath) : 'No file selected';
+    pathSpan.textContent = currentPath
+      ? this.basename(currentPath)
+      : 'No file selected';
     if (currentPath) pathSpan.title = currentPath;
 
     const browseBtn = document.createElement('button');
@@ -476,7 +531,11 @@ export class SoapCertsManager {
     container.appendChild(row);
 
     if (currentPath && currentContent) {
-      this.current[field] = { source: 'file', content: currentContent, filePath: currentPath };
+      this.current[field] = {
+        source: 'file',
+        content: currentContent,
+        filePath: currentPath,
+      };
     }
   }
 

@@ -31,8 +31,12 @@ export class JsonViewerSearch {
   }
 
   private setupEventListeners(): void {
-    const floatingSearchBar = document.getElementById('json-viewer-floating-search-bar');
-    const searchInput = floatingSearchBar?.querySelector('.floating-search-input') as HTMLInputElement;
+    const floatingSearchBar = document.getElementById(
+      'json-viewer-floating-search-bar'
+    );
+    const searchInput = floatingSearchBar?.querySelector(
+      '.floating-search-input'
+    ) as HTMLInputElement;
     const searchClose = document.getElementById('json-viewer-search-close');
     const searchPrev = document.getElementById('json-viewer-search-prev');
     const searchNext = document.getElementById('json-viewer-search-next');
@@ -53,7 +57,9 @@ export class JsonViewerSearch {
     });
 
     searchClose?.addEventListener('click', () => this.hideFloatingSearch());
-    searchPrev?.addEventListener('click', () => this.navigateFloatingSearch(-1));
+    searchPrev?.addEventListener('click', () =>
+      this.navigateFloatingSearch(-1)
+    );
     searchNext?.addEventListener('click', () => this.navigateFloatingSearch(1));
   }
 
@@ -74,8 +80,12 @@ export class JsonViewerSearch {
   }
 
   private showFloatingSearch(): void {
-    const floatingSearchBar = document.getElementById('json-viewer-floating-search-bar')!;
-    const searchInput = floatingSearchBar.querySelector('.floating-search-input') as HTMLInputElement;
+    const floatingSearchBar = document.getElementById(
+      'json-viewer-floating-search-bar'
+    )!;
+    const searchInput = floatingSearchBar.querySelector(
+      '.floating-search-input'
+    ) as HTMLInputElement;
 
     floatingSearchBar.style.display = 'flex';
     this.isFloatingSearchVisible = true;
@@ -86,7 +96,9 @@ export class JsonViewerSearch {
   }
 
   private hideFloatingSearch(): void {
-    const floatingSearchBar = document.getElementById('json-viewer-floating-search-bar')!;
+    const floatingSearchBar = document.getElementById(
+      'json-viewer-floating-search-bar'
+    )!;
     floatingSearchBar.style.display = 'none';
     this.isFloatingSearchVisible = false;
 
@@ -111,7 +123,9 @@ export class JsonViewerSearch {
   }
 
   private updateFloatingSearchResults(): void {
-    const resultsSpan = document.querySelector('#json-viewer-floating-search-bar .floating-search-results') as HTMLElement;
+    const resultsSpan = document.querySelector(
+      '#json-viewer-floating-search-bar .floating-search-results'
+    ) as HTMLElement;
     if (resultsSpan && this.jsonViewer) {
       const searchInfo = this.jsonViewer.getSearchInfo();
       resultsSpan.textContent = `${searchInfo.current}/${searchInfo.total}`;
@@ -124,7 +138,9 @@ export class JsonViewerSearch {
 
   public destroy(): void {
     // Remove the floating search bar from DOM
-    const floatingSearchBar = document.getElementById('json-viewer-floating-search-bar');
+    const floatingSearchBar = document.getElementById(
+      'json-viewer-floating-search-bar'
+    );
     if (floatingSearchBar) {
       floatingSearchBar.remove();
     }

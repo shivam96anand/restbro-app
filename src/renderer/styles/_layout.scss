@@ -1,9 +1,11 @@
 // App Layout Styles
 
 .app-header {
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.02) 0%,
-              var(--bg-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.02) 0%,
+    var(--bg-secondary) 100%
+  );
   border-bottom: 2px solid var(--border-color);
   padding: 12px 20px;
   display: flex;
@@ -44,9 +46,11 @@
 }
 
 .backup-button {
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.12) 0%,
-              var(--bg-tertiary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.12) 0%,
+    var(--bg-tertiary) 100%
+  );
   color: var(--text-primary);
   border: 1px solid rgba(var(--primary-color-rgb), 0.3);
   border-radius: 6px;
@@ -70,9 +74,11 @@
 }
 
 .theme-button {
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.12) 0%,
-              var(--bg-tertiary) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.12) 0%,
+    var(--bg-tertiary) 100%
+  );
   color: var(--text-primary);
   border: 1px solid rgba(var(--primary-color-rgb), 0.3);
   border-radius: 6px;
@@ -188,10 +194,13 @@
   aspect-ratio: 1;
   border-radius: 12px;
   border: 2px solid transparent;
-  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.3), transparent 60%),
-              var(--swatch-color);
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.3), transparent 60%),
+    var(--swatch-color);
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
@@ -241,7 +250,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.04) 0%, transparent 40%);
+    background: linear-gradient(
+      180deg,
+      rgba(var(--primary-color-rgb), 0.04) 0%,
+      transparent 40%
+    );
     pointer-events: none;
   }
 }
@@ -329,7 +342,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    );
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -348,11 +365,14 @@
     &::before {
       opacity: 1;
     }
-
   }
 
   &.active {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary-color) 0%,
+      var(--primary-dark) 100%
+    );
     color: white;
     border-color: var(--primary-light);
     transform: translateX(6px);
@@ -362,9 +382,12 @@
 
     &::before {
       opacity: 1;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        transparent 50%
+      );
     }
-
   }
 
   &:active {

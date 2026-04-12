@@ -54,7 +54,7 @@ export class JsonViewerUtilities {
 
     // Action button handlers - using exact same logic as JsonViewerPanel
     const jsonString = JSON.stringify(jsonData, null, 2);
-    
+
     const copyBtn = modal.querySelector('#fs-copy-btn') as HTMLButtonElement;
     copyBtn?.addEventListener('click', () => {
       if (!jsonString) {
@@ -62,59 +62,79 @@ export class JsonViewerUtilities {
         return;
       }
 
-      navigator.clipboard.writeText(jsonString).then(() => {
-        // Silently copy without toast notification
-      }).catch(() => {
-        // Silently fail without toast notification
-      });
+      navigator.clipboard
+        .writeText(jsonString)
+        .then(() => {
+          // Silently copy without toast notification
+        })
+        .catch(() => {
+          // Silently fail without toast notification
+        });
     });
 
-    const exportBtn = modal.querySelector('#fs-export-btn') as HTMLButtonElement;
+    const exportBtn = modal.querySelector(
+      '#fs-export-btn'
+    ) as HTMLButtonElement;
     exportBtn?.addEventListener('click', () => {
       JsonViewerUtilities.exportJson(jsonData);
     });
 
-    const searchBtn = modal.querySelector('#fs-search-btn') as HTMLButtonElement;
+    const searchBtn = modal.querySelector(
+      '#fs-search-btn'
+    ) as HTMLButtonElement;
     searchBtn?.addEventListener('click', () => {
       // Trigger search functionality - same as JsonViewerPanel
-      const searchEvent = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true });
+      const searchEvent = new KeyboardEvent('keydown', {
+        key: 'f',
+        ctrlKey: true,
+      });
       document.dispatchEvent(searchEvent);
     });
 
-    const collapseBtn = modal.querySelector('#fs-collapse-btn') as HTMLButtonElement;
+    const collapseBtn = modal.querySelector(
+      '#fs-collapse-btn'
+    ) as HTMLButtonElement;
     collapseBtn?.addEventListener('click', () => {
       if (!fullscreenViewer) {
         // Silently return without toast notification
         return;
       }
-      
+
       fullscreenViewer.collapseAll();
       // No toast notification
     });
 
-    const expandBtn = modal.querySelector('#fs-expand-btn') as HTMLButtonElement;
+    const expandBtn = modal.querySelector(
+      '#fs-expand-btn'
+    ) as HTMLButtonElement;
     expandBtn?.addEventListener('click', () => {
       if (!fullscreenViewer) {
         // Silently return without toast notification
         return;
       }
-      
+
       fullscreenViewer.expandAll();
       // No toast notification
     });
 
     const topBtn = modal.querySelector('#fs-top-btn') as HTMLButtonElement;
     topBtn?.addEventListener('click', () => {
-      const content = modal.querySelector('#fullscreen-json-viewer .json-content') as HTMLElement;
+      const content = modal.querySelector(
+        '#fullscreen-json-viewer .json-content'
+      ) as HTMLElement;
       if (content) {
         content.scrollTop = 0;
         // No toast notification
       }
     });
 
-    const bottomBtn = modal.querySelector('#fs-bottom-btn') as HTMLButtonElement;
+    const bottomBtn = modal.querySelector(
+      '#fs-bottom-btn'
+    ) as HTMLButtonElement;
     bottomBtn?.addEventListener('click', () => {
-      const content = modal.querySelector('#fullscreen-json-viewer .json-content') as HTMLElement;
+      const content = modal.querySelector(
+        '#fullscreen-json-viewer .json-content'
+      ) as HTMLElement;
       if (content) {
         content.scrollTop = content.scrollHeight;
         // No toast notification
@@ -136,14 +156,14 @@ export class JsonViewerUtilities {
         size: jsonString.length,
         time: 0,
         contentType: 'application/json',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       const askAIEvent = new CustomEvent('open-ask-ai', {
-        detail: { response: response }
+        detail: { response: response },
       });
       document.dispatchEvent(askAIEvent);
-      
+
       // Close modal without toast notification
       document.body.removeChild(modal);
       // No toast notification
@@ -204,36 +224,50 @@ export class JsonViewerUtilities {
 
     document.body.appendChild(modal);
 
-    const editorContainer = modal.querySelector('#fullscreen-monaco-json-viewer') as HTMLElement;
+    const editorContainer = modal.querySelector(
+      '#fullscreen-monaco-json-viewer'
+    ) as HTMLElement;
     const fullscreenEditor = new MonacoJsonEditor({
       container: editorContainer,
       value: jsonString,
-      onChange: () => { /* read-only, no-op */ },
+      onChange: () => {
+        /* read-only, no-op */
+      },
       readOnly: true,
     });
 
     // Action button handlers
     const copyBtn = modal.querySelector('#fs-copy-btn') as HTMLButtonElement;
     copyBtn?.addEventListener('click', () => {
-      navigator.clipboard.writeText(jsonString).catch(() => { /* silent */ });
+      navigator.clipboard.writeText(jsonString).catch(() => {
+        /* silent */
+      });
     });
 
-    const exportBtn = modal.querySelector('#fs-export-btn') as HTMLButtonElement;
+    const exportBtn = modal.querySelector(
+      '#fs-export-btn'
+    ) as HTMLButtonElement;
     exportBtn?.addEventListener('click', () => {
       JsonViewerUtilities.exportJson(jsonData);
     });
 
-    const searchBtn = modal.querySelector('#fs-search-btn') as HTMLButtonElement;
+    const searchBtn = modal.querySelector(
+      '#fs-search-btn'
+    ) as HTMLButtonElement;
     searchBtn?.addEventListener('click', () => {
       fullscreenEditor.triggerFind();
     });
 
-    const collapseBtn = modal.querySelector('#fs-collapse-btn') as HTMLButtonElement;
+    const collapseBtn = modal.querySelector(
+      '#fs-collapse-btn'
+    ) as HTMLButtonElement;
     collapseBtn?.addEventListener('click', () => {
       fullscreenEditor.foldAll();
     });
 
-    const expandBtn = modal.querySelector('#fs-expand-btn') as HTMLButtonElement;
+    const expandBtn = modal.querySelector(
+      '#fs-expand-btn'
+    ) as HTMLButtonElement;
     expandBtn?.addEventListener('click', () => {
       fullscreenEditor.unfoldAll();
     });
@@ -243,7 +277,9 @@ export class JsonViewerUtilities {
       fullscreenEditor.scrollToTop();
     });
 
-    const bottomBtn = modal.querySelector('#fs-bottom-btn') as HTMLButtonElement;
+    const bottomBtn = modal.querySelector(
+      '#fs-bottom-btn'
+    ) as HTMLButtonElement;
     bottomBtn?.addEventListener('click', () => {
       fullscreenEditor.scrollToBottom();
     });
@@ -258,11 +294,11 @@ export class JsonViewerUtilities {
         size: jsonString.length,
         time: 0,
         contentType: 'application/json',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       const askAIEvent = new CustomEvent('open-ask-ai', {
-        detail: { response }
+        detail: { response },
       });
       document.dispatchEvent(askAIEvent);
 
@@ -296,12 +332,12 @@ export class JsonViewerUtilities {
 
   private static showToast(message: string, type: string = 'info'): void {
     const toast = document.createElement('div');
-    
+
     let backgroundColor = 'var(--primary-color, #007bff)';
     if (type === 'success') backgroundColor = 'var(--success-color, #28a745)';
     if (type === 'warning') backgroundColor = 'var(--warning-color, #ffc107)';
     if (type === 'error') backgroundColor = 'var(--error-color, #dc3545)';
-    
+
     toast.style.cssText = `
       position: fixed;
       top: 20px;
@@ -344,7 +380,10 @@ export class JsonViewerUtilities {
     let targetElement: HTMLElement | null = null;
 
     nodeElements.forEach((element) => {
-      if (element.getAttribute('data-node-id') === match.node.lineNumber.toString()) {
+      if (
+        element.getAttribute('data-node-id') ===
+        match.node.lineNumber.toString()
+      ) {
         targetElement = element as HTMLElement;
       }
     });
@@ -352,11 +391,15 @@ export class JsonViewerUtilities {
     if (targetElement) {
       // Find the .json-content scrollable container
       const jsonViewer = container.closest('.json-viewer');
-      const jsonContent = jsonViewer?.querySelector('.json-content') as HTMLElement;
+      const jsonContent = jsonViewer?.querySelector(
+        '.json-content'
+      ) as HTMLElement;
 
       if (jsonContent) {
         // Store parent scroll positions to prevent them from scrolling
-        const responsePanel = document.querySelector('.response-panel') as HTMLElement;
+        const responsePanel = document.querySelector(
+          '.response-panel'
+        ) as HTMLElement;
         const responsePanelScrollTop = responsePanel?.scrollTop || 0;
 
         // Calculate the position to scroll to within the json-content container only
@@ -365,14 +408,18 @@ export class JsonViewerUtilities {
         const currentScrollTop = jsonContent.scrollTop;
 
         // Calculate the target's position relative to the container's current scroll position
-        const targetOffsetFromTop = (targetRect.top - containerRect.top) + currentScrollTop;
+        const targetOffsetFromTop =
+          targetRect.top - containerRect.top + currentScrollTop;
 
         // Center the target in the json-content viewport
-        const scrollTop = targetOffsetFromTop - (jsonContent.clientHeight / 2) + (targetElement.clientHeight / 2);
+        const scrollTop =
+          targetOffsetFromTop -
+          jsonContent.clientHeight / 2 +
+          targetElement.clientHeight / 2;
 
         jsonContent.scrollTo({
           top: Math.max(0, scrollTop),
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
 
         // Restore parent scroll positions after a brief delay to prevent parent scroll
@@ -383,25 +430,36 @@ export class JsonViewerUtilities {
         }
       } else {
         // Fallback: Find the json-content from the container itself
-        const fallbackContent = container.querySelector('.json-content') as HTMLElement;
+        const fallbackContent = container.querySelector(
+          '.json-content'
+        ) as HTMLElement;
         if (fallbackContent) {
           const targetRect = targetElement.getBoundingClientRect();
           const containerRect = fallbackContent.getBoundingClientRect();
           const currentScrollTop = fallbackContent.scrollTop;
-          const targetOffsetFromTop = (targetRect.top - containerRect.top) + currentScrollTop;
-          const scrollTop = targetOffsetFromTop - (fallbackContent.clientHeight / 2) + (targetElement.clientHeight / 2);
-          
+          const targetOffsetFromTop =
+            targetRect.top - containerRect.top + currentScrollTop;
+          const scrollTop =
+            targetOffsetFromTop -
+            fallbackContent.clientHeight / 2 +
+            targetElement.clientHeight / 2;
+
           fallbackContent.scrollTo({
             top: Math.max(0, scrollTop),
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
       }
     }
   }
 
-  public static updateSearchResults(container: HTMLElement, searchInfo: { total: number, current: number }): void {
-    const resultsSpan = container.querySelector('.search-results') as HTMLElement;
+  public static updateSearchResults(
+    container: HTMLElement,
+    searchInfo: { total: number; current: number }
+  ): void {
+    const resultsSpan = container.querySelector(
+      '.search-results'
+    ) as HTMLElement;
     if (resultsSpan) {
       resultsSpan.textContent = `${searchInfo.current}/${searchInfo.total}`;
     }

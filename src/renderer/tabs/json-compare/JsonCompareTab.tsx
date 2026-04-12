@@ -19,7 +19,12 @@ const JsonCompareTab: React.FC = () => {
   const leftEditorRef = useRef<JsonEditorRef>(null);
   const rightEditorRef = useRef<JsonEditorRef>(null);
 
-  const { status, result, error, compute } = useJsonDiff(leftJson, rightJson, leftValid, rightValid);
+  const { status, result, error, compute } = useJsonDiff(
+    leftJson,
+    rightJson,
+    leftValid,
+    rightValid
+  );
 
   // Load persisted state on mount
   useEffect(() => {
@@ -35,7 +40,7 @@ const JsonCompareTab: React.FC = () => {
         leftJson,
         rightJson,
         tableFilter: '',
-        selectedTypes: ['added', 'removed', 'changed']
+        selectedTypes: ['added', 'removed', 'changed'],
       });
     }, 500);
 
@@ -116,27 +121,59 @@ const JsonCompareTab: React.FC = () => {
           </div>
 
           <div className="header-actions">
-            <button className="compare-action-btn" onClick={handleSwap} title="Swap sides">
-              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+            <button
+              className="compare-action-btn"
+              onClick={handleSwap}
+              title="Swap sides"
+            >
+              <svg
+                className="ui-icon ui-icon--sm"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="M7 7h10M13 3l4 4-4 4M17 17H7M11 13l-4 4 4 4" />
               </svg>
               Swap
             </button>
-            <button className="compare-action-btn" onClick={handleClear} title="Clear both editors">
-              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+            <button
+              className="compare-action-btn"
+              onClick={handleClear}
+              title="Clear both editors"
+            >
+              <svg
+                className="ui-icon ui-icon--sm"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="M6 6l12 12M18 6l-12 12" />
               </svg>
               Clear
             </button>
-            <button className="compare-action-btn" onClick={handleCopyLeft} title="Copy left JSON">
-              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+            <button
+              className="compare-action-btn"
+              onClick={handleCopyLeft}
+              title="Copy left JSON"
+            >
+              <svg
+                className="ui-icon ui-icon--sm"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="M8 8h10v10H8z" />
                 <path d="M6 6h10v10" />
               </svg>
               Copy left
             </button>
-            <button className="compare-action-btn" onClick={handleCopyRight} title="Copy right JSON">
-              <svg className="ui-icon ui-icon--sm" viewBox="0 0 24 24" aria-hidden="true">
+            <button
+              className="compare-action-btn"
+              onClick={handleCopyRight}
+              title="Copy right JSON"
+            >
+              <svg
+                className="ui-icon ui-icon--sm"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="M8 8h10v10H8z" />
                 <path d="M6 6h10v10" />
               </svg>
@@ -175,11 +212,11 @@ const JsonCompareTab: React.FC = () => {
         </div>
 
         <div className="diff-table-container">
-          {(!leftValid || !rightValid) ? (
+          {!leftValid || !rightValid ? (
             <div className="empty-state">
               <p>Fix JSON errors to see differences</p>
             </div>
-          ) : (status === 'error') ? (
+          ) : status === 'error' ? (
             <div className="empty-state">
               <p>Compare failed: {error || 'Unknown error'}</p>
             </div>

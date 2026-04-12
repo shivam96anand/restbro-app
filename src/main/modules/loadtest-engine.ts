@@ -1,6 +1,13 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
-import { LoadTestConfig, LoadTestProgressTick, LoadSample, LoadTestSummary, ApiRequest, LoadTestTarget } from '../../shared/types';
+import {
+  LoadTestConfig,
+  LoadTestProgressTick,
+  LoadSample,
+  LoadTestSummary,
+  ApiRequest,
+  LoadTestTarget,
+} from '../../shared/types';
 import { requestManager } from './request-manager';
 import { storeManager } from './store-manager';
 import { oauthManager } from './oauth';
@@ -59,7 +66,9 @@ class LoadTestEngine extends EventEmitter {
       const remaining = totalPlanned - run.scheduled;
 
       if (remaining > 0) {
-        console.log(`Flushing ${remaining} remaining requests before cancellation`);
+        console.log(
+          `Flushing ${remaining} remaining requests before cancellation`
+        );
         for (let i = 0; i < remaining && run.scheduled < totalPlanned; i++) {
           run.scheduled++;
           this.dispatchRequest(run);
@@ -89,15 +98,24 @@ class LoadTestEngine extends EventEmitter {
 
   private scheduleRequests(run: ActiveRun): void {
     const ratePerSec = run.config.rpm / 60;
-    const totalPlanned = Math.floor((run.config.rpm * run.config.durationSec) / 60);
-    const concurrencyLimit = Math.min(this.MAX_CONCURRENT_REQUESTS, Math.ceil(run.config.rpm / 10));
+    const totalPlanned = Math.floor(
+      (run.config.rpm * run.config.durationSec) / 60
+    );
+    const concurrencyLimit = Math.min(
+      this.MAX_CONCURRENT_REQUESTS,
+      Math.ceil(run.config.rpm / 10)
+    );
 
-    console.log(`Scheduling: RPM=${run.config.rpm}, Duration=${run.config.durationSec}s, TotalPlanned=${totalPlanned}, RatePerSec=${ratePerSec}`);
+    console.log(
+      `Scheduling: RPM=${run.config.rpm}, Duration=${run.config.durationSec}s, TotalPlanned=${totalPlanned}, RatePerSec=${ratePerSec}`
+    );
 
     run.timer = setInterval(() => {
       if (run.cancelled || run.scheduled >= totalPlanned) {
         if (run.scheduled >= totalPlanned) {
-          console.log(`Scheduling complete: ${run.scheduled}/${totalPlanned} requests scheduled`);
+          console.log(
+            `Scheduling complete: ${run.scheduled}/${totalPlanned} requests scheduled`
+          );
         }
         return;
       }
@@ -120,7 +138,9 @@ class LoadTestEngine extends EventEmitter {
       }
 
       if (dispatched > 0) {
-        console.log(`Interval: scheduled=${run.scheduled}/${totalPlanned}, bucket=${run.tokenBucket.toFixed(3)}, dispatched=${dispatched}`);
+        console.log(
+          `Interval: scheduled=${run.scheduled}/${totalPlanned}, bucket=${run.tokenBucket.toFixed(3)}, dispatched=${dispatched}`
+        );
       }
     }, 100); // 100ms intervals for smooth rate limiting
   }
@@ -139,7 +159,9 @@ class LoadTestEngine extends EventEmitter {
       });
       run.inFlight--;
       run.completed++;
-      console.log(`Request resolution failed - Samples: ${run.samples.length}, Completed: ${run.completed}`);
+      console.log(
+        `Request resolution failed - Samples: ${run.samples.length}, Completed: ${run.completed}`
+      );
 
       // Check if test should complete (all scheduled requests finished and time expired)
       if (run.cancelled && run.inFlight === 0) {
@@ -179,18 +201,24 @@ class LoadTestEngine extends EventEmitter {
     }
   }
 
-  private async resolveTarget(target: LoadTestTarget): Promise<ApiRequest | null> {
+  private async resolveTarget(
+    target: LoadTestTarget
+  ): Promise<ApiRequest | null> {
     if (target.kind === 'collection') {
       const state = storeManager.getState();
-      const collection = this.findRequestInCollections(state.collections, target.requestId);
+      const collection = this.findRequestInCollections(
+        state.collections,
+        target.requestId
+      );
       if (!collection?.request) return null;
 
       console.log('[LoadTest] Resolved request from collection:', {
         hasAuth: !!collection.request.auth,
         authType: collection.request.auth?.type,
         hasAccessToken: !!(collection.request.auth?.config as any)?.accessToken,
-        accessTokenLength: ((collection.request.auth?.config as any)?.accessToken?.length || 0),
-        tokenUrl: (collection.request.auth?.config as any)?.tokenUrl
+        accessTokenLength:
+          (collection.request.auth?.config as any)?.accessToken?.length || 0,
+        tokenUrl: (collection.request.auth?.config as any)?.tokenUrl,
       });
 
       return {
@@ -204,20 +232,27 @@ class LoadTestEngine extends EventEmitter {
         name: 'Load Test Request',
         method: target.method,
         url: target.url,
-        params: target.params ? Object.fromEntries(
-          Object.entries(target.params).map(([k, v]) => [k, String(v)])
-        ) : {},
+        params: target.params
+          ? Object.fromEntries(
+              Object.entries(target.params).map(([k, v]) => [k, String(v)])
+            )
+          : {},
         headers: target.headers || {},
-        body: target.body ? {
-          type: target.body.type,
-          content: target.body.content,
-          format: target.body.format,
-          contentType: target.body.contentType,
-        } : undefined,
-        auth: target.auth ? {
-          type: target.auth.type === 'apikey' ? 'api-key' : target.auth.type,
-          config: target.auth.data as Record<string, string> || {},
-        } : undefined,
+        body: target.body
+          ? {
+              type: target.body.type,
+              content: target.body.content,
+              format: target.body.format,
+              contentType: target.body.contentType,
+            }
+          : undefined,
+        auth: target.auth
+          ? {
+              type:
+                target.auth.type === 'apikey' ? 'api-key' : target.auth.type,
+              config: (target.auth.data as Record<string, string>) || {},
+            }
+          : undefined,
         collectionId: target.collectionId,
       };
     }
@@ -247,10 +282,11 @@ class LoadTestEngine extends EventEmitter {
     }
 
     if (!run.oauthRefreshPromise) {
-      run.oauthRefreshPromise = this.ensureOAuthToken(run.resolvedRequest)
-        .finally(() => {
-          run.oauthRefreshPromise = undefined;
-        });
+      run.oauthRefreshPromise = this.ensureOAuthToken(
+        run.resolvedRequest
+      ).finally(() => {
+        run.oauthRefreshPromise = undefined;
+      });
     }
 
     run.resolvedRequest = await run.oauthRefreshPromise;
@@ -279,7 +315,7 @@ class LoadTestEngine extends EventEmitter {
       accessTokenLength: config.accessToken?.length || 0,
       hasExpiresAt: !!config.expiresAt,
       expiresAt: config.expiresAt,
-      grantType: config.grantType
+      grantType: config.grantType,
     });
 
     if (config.accessToken && !config.expiresAt) {
@@ -307,8 +343,11 @@ class LoadTestEngine extends EventEmitter {
               config: {
                 ...request.auth.config,
                 accessToken: refreshResult.data.accessToken,
-                refreshToken: refreshResult.data.refreshToken || config.refreshToken,
-                expiresAt: new Date(Date.now() + refreshResult.data.expiresIn * 1000).toISOString(),
+                refreshToken:
+                  refreshResult.data.refreshToken || config.refreshToken,
+                expiresAt: new Date(
+                  Date.now() + refreshResult.data.expiresIn * 1000
+                ).toISOString(),
               },
             },
           };
@@ -330,8 +369,11 @@ class LoadTestEngine extends EventEmitter {
         config: {
           ...request.auth.config,
           accessToken: startResult.data.accessToken,
-          refreshToken: startResult.data.refreshToken || request.auth.config.refreshToken,
-          expiresAt: new Date(Date.now() + startResult.data.expiresIn * 1000).toISOString(),
+          refreshToken:
+            startResult.data.refreshToken || request.auth.config.refreshToken,
+          expiresAt: new Date(
+            Date.now() + startResult.data.expiresIn * 1000
+          ).toISOString(),
         },
       },
     };
@@ -343,7 +385,10 @@ class LoadTestEngine extends EventEmitter {
         return collection;
       }
       if (collection.children) {
-        const found = this.findRequestInCollections(collection.children, requestId);
+        const found = this.findRequestInCollections(
+          collection.children,
+          requestId
+        );
         if (found) return found;
       }
     }
@@ -353,7 +398,9 @@ class LoadTestEngine extends EventEmitter {
   private recordSample(run: ActiveRun, sample: LoadSample): void {
     run.samples.push(sample);
     if (sample.error) {
-      console.log(`Recorded error sample: ${sample.error}, Total samples: ${run.samples.length}`);
+      console.log(
+        `Recorded error sample: ${sample.error}, Total samples: ${run.samples.length}`
+      );
     }
   }
 
@@ -385,7 +432,10 @@ class LoadTestEngine extends EventEmitter {
 
     // Wait for in-flight requests to complete (with timeout)
     const waitForCompletion = () => {
-      if (run.inFlight === 0 || Date.now() - run.startedAt > (run.config.durationSec + 10) * 1000) {
+      if (
+        run.inFlight === 0 ||
+        Date.now() - run.startedAt > (run.config.durationSec + 10) * 1000
+      ) {
         this.generateSummary(run);
       } else {
         setTimeout(waitForCompletion, 100);
@@ -399,11 +449,18 @@ class LoadTestEngine extends EventEmitter {
     const actualFinishedAt = Date.now();
     const actualWallTimeMs = actualFinishedAt - run.startedAt;
     // Cap both wall time and finished time to the configured duration
-    const wallTimeMs = Math.min(actualWallTimeMs, run.config.durationSec * 1000);
+    const wallTimeMs = Math.min(
+      actualWallTimeMs,
+      run.config.durationSec * 1000
+    );
     const finishedAt = run.startedAt + wallTimeMs; // Use capped time for display
-    const totalPlanned = Math.floor((run.config.rpm * run.config.durationSec) / 60);
+    const totalPlanned = Math.floor(
+      (run.config.rpm * run.config.durationSec) / 60
+    );
 
-    console.log(`Load test summary - Samples: ${run.samples.length}, Planned: ${totalPlanned}, Sent: ${run.sent}, Completed: ${run.completed}`);
+    console.log(
+      `Load test summary - Samples: ${run.samples.length}, Planned: ${totalPlanned}, Sent: ${run.sent}, Completed: ${run.completed}`
+    );
 
     // Calculate response code counts
     const codeCounts: Record<string, number> = {};
@@ -448,11 +505,15 @@ class LoadTestEngine extends EventEmitter {
       codeCounts,
       minMs: durations.length > 0 ? durations[0] : 0,
       maxMs: durations.length > 0 ? durations[durations.length - 1] : 0,
-      avgMs: durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
+      avgMs:
+        durations.length > 0
+          ? durations.reduce((a, b) => a + b, 0) / durations.length
+          : 0,
       p50: percentile(50),
       p95: percentile(95),
       p99: percentile(99),
-      throughputRps: wallTimeMs > 0 ? (run.samples.length * 1000) / wallTimeMs : 0, // Use sample count for throughput too
+      throughputRps:
+        wallTimeMs > 0 ? (run.samples.length * 1000) / wallTimeMs : 0, // Use sample count for throughput too
       wallTimeMs,
       startedAt: run.startedAt,
       finishedAt,

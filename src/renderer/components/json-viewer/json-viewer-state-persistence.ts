@@ -64,9 +64,14 @@ export class JsonViewerStatePersistence {
   /**
    * Update access order for LRU tracking
    */
-  private updateAccessOrder(uiState: JsonViewerUIState, requestId: string): void {
+  private updateAccessOrder(
+    uiState: JsonViewerUIState,
+    requestId: string
+  ): void {
     // Remove from current position
-    uiState.requestAccessOrder = uiState.requestAccessOrder.filter((id) => id !== requestId);
+    uiState.requestAccessOrder = uiState.requestAccessOrder.filter(
+      (id) => id !== requestId
+    );
 
     // Add to end (most recent)
     uiState.requestAccessOrder.push(requestId);
@@ -92,7 +97,9 @@ export class JsonViewerStatePersistence {
       const uiState = await window.apiCourier.jsonViewerState.get();
 
       delete uiState.expandedNodesByRequest[requestId];
-      uiState.requestAccessOrder = uiState.requestAccessOrder.filter((id) => id !== requestId);
+      uiState.requestAccessOrder = uiState.requestAccessOrder.filter(
+        (id) => id !== requestId
+      );
 
       await window.apiCourier.jsonViewerState.set(uiState);
     } catch (error) {

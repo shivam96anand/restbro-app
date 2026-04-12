@@ -2,7 +2,10 @@ import { JsonViewer } from '../JsonViewer';
 import { iconHtml } from '../../utils/icons';
 
 export interface JsonViewerPanelEvents {
-  onStatusUpdate: (type: 'info' | 'success' | 'warning' | 'error', message: string) => void;
+  onStatusUpdate: (
+    type: 'info' | 'success' | 'warning' | 'error',
+    message: string
+  ) => void;
   onSearchToggle: () => void;
 }
 
@@ -53,15 +56,33 @@ export class JsonViewerPanel {
 
   private setupEventListeners(): void {
     // Viewer action buttons
-    this.container.querySelector('#viewer-copy-btn')?.addEventListener('click', () => this.copyJson());
-    this.container.querySelector('#viewer-export-btn')?.addEventListener('click', () => this.exportJson());
-    this.container.querySelector('#viewer-search-btn')?.addEventListener('click', () => this.events.onSearchToggle());
-    this.container.querySelector('#viewer-collapse-btn')?.addEventListener('click', () => this.collapseAll());
-    this.container.querySelector('#viewer-expand-btn')?.addEventListener('click', () => this.expandAll());
-    this.container.querySelector('#viewer-top-btn')?.addEventListener('click', () => this.scrollToTop());
-    this.container.querySelector('#viewer-bottom-btn')?.addEventListener('click', () => this.scrollToBottom());
-    this.container.querySelector('#viewer-enlarge-btn')?.addEventListener('click', () => this.toggleFullscreen());
-    this.container.querySelector('#viewer-ask-ai-btn')?.addEventListener('click', () => this.handleAskAI());
+    this.container
+      .querySelector('#viewer-copy-btn')
+      ?.addEventListener('click', () => this.copyJson());
+    this.container
+      .querySelector('#viewer-export-btn')
+      ?.addEventListener('click', () => this.exportJson());
+    this.container
+      .querySelector('#viewer-search-btn')
+      ?.addEventListener('click', () => this.events.onSearchToggle());
+    this.container
+      .querySelector('#viewer-collapse-btn')
+      ?.addEventListener('click', () => this.collapseAll());
+    this.container
+      .querySelector('#viewer-expand-btn')
+      ?.addEventListener('click', () => this.expandAll());
+    this.container
+      .querySelector('#viewer-top-btn')
+      ?.addEventListener('click', () => this.scrollToTop());
+    this.container
+      .querySelector('#viewer-bottom-btn')
+      ?.addEventListener('click', () => this.scrollToBottom());
+    this.container
+      .querySelector('#viewer-enlarge-btn')
+      ?.addEventListener('click', () => this.toggleFullscreen());
+    this.container
+      .querySelector('#viewer-ask-ai-btn')
+      ?.addEventListener('click', () => this.handleAskAI());
   }
 
   public async displayJson(jsonData: any, sourceText: string): Promise<void> {
@@ -73,8 +94,12 @@ export class JsonViewerPanel {
     await this.jsonViewer.setData(jsonData);
 
     // Show viewer container, hide empty state
-    const viewerContainer = this.container.querySelector('#json-viewer-tab-container') as HTMLElement;
-    const emptyState = this.container.querySelector('#viewer-empty-state') as HTMLElement;
+    const viewerContainer = this.container.querySelector(
+      '#json-viewer-tab-container'
+    ) as HTMLElement;
+    const emptyState = this.container.querySelector(
+      '#viewer-empty-state'
+    ) as HTMLElement;
 
     if (viewerContainer) viewerContainer.style.display = 'block';
     if (emptyState) emptyState.style.display = 'none';
@@ -89,8 +114,12 @@ export class JsonViewerPanel {
     }
 
     // Hide viewer container, show empty state
-    const viewerContainer = this.container.querySelector('#json-viewer-tab-container') as HTMLElement;
-    const emptyState = this.container.querySelector('#viewer-empty-state') as HTMLElement;
+    const viewerContainer = this.container.querySelector(
+      '#json-viewer-tab-container'
+    ) as HTMLElement;
+    const emptyState = this.container.querySelector(
+      '#viewer-empty-state'
+    ) as HTMLElement;
 
     if (viewerContainer) viewerContainer.style.display = 'none';
     if (emptyState) emptyState.style.display = 'flex';
@@ -106,11 +135,14 @@ export class JsonViewerPanel {
       return;
     }
 
-    navigator.clipboard.writeText(sourceText).then(() => {
-      this.events.onStatusUpdate('success', 'JSON copied to clipboard');
-    }).catch(() => {
-      this.events.onStatusUpdate('error', 'Failed to copy to clipboard');
-    });
+    navigator.clipboard
+      .writeText(sourceText)
+      .then(() => {
+        this.events.onStatusUpdate('success', 'JSON copied to clipboard');
+      })
+      .catch(() => {
+        this.events.onStatusUpdate('error', 'Failed to copy to clipboard');
+      });
   }
 
   private exportJson(): void {
@@ -145,7 +177,9 @@ export class JsonViewerPanel {
   private scrollToTop(): void {
     if (!this.jsonViewer) return;
 
-    const content = document.querySelector('#json-viewer-tab-container .json-content') as HTMLElement;
+    const content = document.querySelector(
+      '#json-viewer-tab-container .json-content'
+    ) as HTMLElement;
     if (content) {
       content.scrollTop = 0;
       this.events.onStatusUpdate('info', 'Scrolled to top');
@@ -155,7 +189,9 @@ export class JsonViewerPanel {
   private scrollToBottom(): void {
     if (!this.jsonViewer) return;
 
-    const content = document.querySelector('#json-viewer-tab-container .json-content') as HTMLElement;
+    const content = document.querySelector(
+      '#json-viewer-tab-container .json-content'
+    ) as HTMLElement;
     if (content) {
       content.scrollTop = content.scrollHeight;
       this.events.onStatusUpdate('info', 'Scrolled to bottom');

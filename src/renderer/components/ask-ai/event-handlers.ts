@@ -9,7 +9,9 @@ export interface EventHandlerDeps {
   container: HTMLElement;
   state: AskAiState;
   render: () => void;
-  getActiveSession: () => ReturnType<typeof import('./types').createInitialState>['sessions'][0] | undefined;
+  getActiveSession: () =>
+    | ReturnType<typeof import('./types').createInitialState>['sessions'][0]
+    | undefined;
   scrollToBottom: () => void;
   checkEngineStatus: () => Promise<void>;
   createNewSession: () => Promise<void>;
@@ -28,7 +30,7 @@ export interface EventHandlerDeps {
  */
 export function setupEventListeners(deps: EventHandlerDeps): void {
   const { container } = deps;
-  
+
   container.addEventListener('click', (e) => handleClick(e, deps));
   container.addEventListener('input', (e) => handleInput(e, deps));
   container.addEventListener('keydown', (e) => handleKeydown(e, deps));
@@ -70,9 +72,15 @@ function handleClick(e: Event, deps: EventHandlerDeps): void {
 
   // Session item (but not delete or rename button)
   const sessionItem = target.closest('.session-item') as HTMLElement;
-  if (sessionItem && !target.classList.contains('session-delete') && !target.classList.contains('session-rename') && !target.classList.contains('session-title-input')) {
+  if (
+    sessionItem &&
+    !target.classList.contains('session-delete') &&
+    !target.classList.contains('session-rename') &&
+    !target.classList.contains('session-title-input')
+  ) {
     const sessionId = sessionItem.dataset.sessionId;
-    if (sessionId && state.renamingSessionId !== sessionId) deps.selectSession(sessionId);
+    if (sessionId && state.renamingSessionId !== sessionId)
+      deps.selectSession(sessionId);
     return;
   }
 
@@ -123,7 +131,9 @@ function handleClick(e: Event, deps: EventHandlerDeps): void {
 
   // Suggestion button
   if (target.classList.contains('suggestion-btn')) {
-    const input = container.querySelector('#message-input') as HTMLTextAreaElement;
+    const input = container.querySelector(
+      '#message-input'
+    ) as HTMLTextAreaElement;
     if (input) {
       input.value = target.textContent || '';
       deps.sendMessage();
@@ -132,20 +142,29 @@ function handleClick(e: Event, deps: EventHandlerDeps): void {
   }
 
   // Copy message
-  if (target.classList.contains('copy-message') || target.closest('.copy-message')) {
-    const btn = target.classList.contains('copy-message') ? target : target.closest('.copy-message') as HTMLElement;
+  if (
+    target.classList.contains('copy-message') ||
+    target.closest('.copy-message')
+  ) {
+    const btn = target.classList.contains('copy-message')
+      ? target
+      : (target.closest('.copy-message') as HTMLElement);
     const content = btn?.dataset.content;
     if (content) {
       navigator.clipboard.writeText(content);
       btn.classList.add('copied');
-      setTimeout(() => { btn.classList.remove('copied'); }, 2000);
+      setTimeout(() => {
+        btn.classList.remove('copied');
+      }, 2000);
     }
     return;
   }
 
   // File upload zone click
   if (target.id === 'file-upload-zone' || target.closest('#file-upload-zone')) {
-    const fileInput = container.querySelector('#file-input') as HTMLInputElement;
+    const fileInput = container.querySelector(
+      '#file-input'
+    ) as HTMLInputElement;
     fileInput?.click();
     return;
   }
@@ -229,7 +248,11 @@ function handleBlur(e: FocusEvent, deps: EventHandlerDeps): void {
 /**
  * Update the streaming message in the DOM
  */
-export function updateStreamingMessage(container: HTMLElement, content: string, scrollToBottom: () => void): void {
+export function updateStreamingMessage(
+  container: HTMLElement,
+  content: string,
+  scrollToBottom: () => void
+): void {
   const chatMessages = container.querySelector('.chat-messages');
   if (!chatMessages) return;
 
@@ -238,7 +261,8 @@ export function updateStreamingMessage(container: HTMLElement, content: string, 
     const messageText = streamingMsg.querySelector('.message-text');
     if (messageText) {
       const formattedContent = formatMessageContent(content);
-      messageText.innerHTML = formattedContent + '<span class="streaming-cursor">▋</span>';
+      messageText.innerHTML =
+        formattedContent + '<span class="streaming-cursor">▋</span>';
       scrollToBottom();
     }
   }
@@ -247,13 +271,17 @@ export function updateStreamingMessage(container: HTMLElement, content: string, 
 /**
  * Show error message in the chat
  */
-export function showError(container: HTMLElement, message: string, scrollToBottom: () => void): void {
+export function showError(
+  container: HTMLElement,
+  message: string,
+  scrollToBottom: () => void
+): void {
   const chatArea = container.querySelector('.chat-messages');
   if (chatArea) {
     const div = document.createElement('div');
     div.textContent = message;
     const escapedMessage = div.innerHTML;
-    
+
     const errorEl = document.createElement('div');
     errorEl.className = 'error-message';
     errorEl.innerHTML = `
@@ -286,7 +314,9 @@ export function updateEngineStatusBanner(
   }
 
   // Update input disabled state
-  const input = container.querySelector('#message-input') as HTMLTextAreaElement;
+  const input = container.querySelector(
+    '#message-input'
+  ) as HTMLTextAreaElement;
   const sendBtn = container.querySelector('.btn-send') as HTMLButtonElement;
   if (input) input.disabled = state.engineStatus !== 'available';
   if (sendBtn) sendBtn.disabled = state.engineStatus !== 'available';

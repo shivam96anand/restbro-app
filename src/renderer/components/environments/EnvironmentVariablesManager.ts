@@ -103,7 +103,7 @@ export class EnvironmentVariablesManager {
     const varRow = document.createElement('div');
     varRow.style.cssText = EnvironmentDialogStyles.varRow;
 
-    let currentKey = key;
+    const currentKey = key;
     const isDraft = currentKey.startsWith(DRAFT_PREFIX);
 
     const keyInput = document.createElement('input');
@@ -114,7 +114,8 @@ export class EnvironmentVariablesManager {
     keyInput.spellcheck = false;
     keyInput.addEventListener('focus', () => {
       keyInput.style.borderColor = 'var(--primary-color)';
-      keyInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      keyInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     keyInput.addEventListener('blur', () => {
       keyInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -129,7 +130,8 @@ export class EnvironmentVariablesManager {
     valueInput.spellcheck = false;
     valueInput.addEventListener('focus', () => {
       valueInput.style.borderColor = 'var(--primary-color)';
-      valueInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      valueInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     valueInput.addEventListener('blur', () => {
       valueInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -140,11 +142,13 @@ export class EnvironmentVariablesManager {
     descriptionInput.type = 'text';
     descriptionInput.value = description;
     descriptionInput.placeholder = 'Description';
-    descriptionInput.style.cssText = EnvironmentDialogStyles.varInputDescription;
+    descriptionInput.style.cssText =
+      EnvironmentDialogStyles.varInputDescription;
     descriptionInput.spellcheck = false;
     descriptionInput.addEventListener('focus', () => {
       descriptionInput.style.borderColor = 'var(--primary-color)';
-      descriptionInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      descriptionInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     descriptionInput.addEventListener('blur', () => {
       descriptionInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';

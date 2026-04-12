@@ -20,9 +20,10 @@ export class CollectionsRenderer {
     const tree = document.getElementById('collections-tree');
     if (!tree) return;
 
-    let collectionsToShow = filteredCollections || collections;
+    const collectionsToShow = filteredCollections || collections;
 
-    const rootCollections = collectionsToShow.filter(c => !c.parentId)
+    const rootCollections = collectionsToShow
+      .filter((c) => !c.parentId)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     if (rootCollections.length === 0) {
@@ -40,19 +41,20 @@ export class CollectionsRenderer {
         const icon = document.createElement('div');
         icon.className = 'empty-state-icon';
         const folderIcon = createIconElement('folder-closed', {
-          style: { width: '48px', height: '48px', opacity: '0.3' }
+          style: { width: '48px', height: '48px', opacity: '0.3' },
         });
         icon.appendChild(folderIcon);
 
         const message = document.createElement('div');
         message.className = 'empty-state-message';
-        message.textContent = 'No collections yet. Get started by creating your first folder or request.';
+        message.textContent =
+          'No collections yet. Get started by creating your first folder or request.';
 
         const ctaButton = document.createElement('button');
         ctaButton.className = 'empty-state-cta';
         ctaButton.id = 'empty-state-create-btn';
         const addIcon = createIconElement('add', {
-          style: { width: '16px', height: '16px' }
+          style: { width: '16px', height: '16px' },
         });
         ctaButton.appendChild(addIcon);
         const buttonText = document.createTextNode('Create Collection');
@@ -69,7 +71,7 @@ export class CollectionsRenderer {
     }
 
     tree.innerHTML = '';
-    rootCollections.forEach(collection => {
+    rootCollections.forEach((collection) => {
       const element = this.createCollectionElement(
         collection,
         0,
@@ -99,7 +101,7 @@ export class CollectionsRenderer {
 
     const baseIndent = 4;
     const indentPerLevel = 20;
-    element.style.paddingLeft = (depth * indentPerLevel + baseIndent) + 'px';
+    element.style.paddingLeft = depth * indentPerLevel + baseIndent + 'px';
 
     if (collection.id === selectedCollectionId) {
       element.classList.add('selected');
@@ -118,7 +120,7 @@ export class CollectionsRenderer {
         isExpanded ? 'chevron-down' : 'chevron-right',
         {
           className: 'folder-toggle',
-          title: isExpanded ? 'Collapse folder' : 'Expand folder'
+          title: isExpanded ? 'Collapse folder' : 'Expand folder',
         }
       );
       toggle.dataset.folderId = collection.id;
@@ -162,7 +164,10 @@ export class CollectionsRenderer {
     name.textContent = collection.name;
     name.title = collection.name; // Add tooltip for full name
 
-    if (treeState.searchTerm && collection.name.toLowerCase().includes(treeState.searchTerm)) {
+    if (
+      treeState.searchTerm &&
+      collection.name.toLowerCase().includes(treeState.searchTerm)
+    ) {
       name.classList.add('search-highlight');
     }
 
@@ -170,7 +175,9 @@ export class CollectionsRenderer {
 
     // Add folder count badge or empty indicator for folders
     if (collection.type === 'folder') {
-      const childCount = allCollections.filter(c => c.parentId === collection.id).length;
+      const childCount = allCollections.filter(
+        (c) => c.parentId === collection.id
+      ).length;
 
       if (childCount === 0) {
         const emptyIndicator = document.createElement('span');
@@ -197,13 +204,14 @@ export class CollectionsRenderer {
       const isSearching = treeState.searchTerm.length > 0;
 
       if (isExpanded || isSearching) {
-        const children = allCollections.filter(c => c.parentId === collection.id)
+        const children = allCollections
+          .filter((c) => c.parentId === collection.id)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
         let childrenToShow = children;
         if (isSearching && filteredCollections) {
-          childrenToShow = children.filter(child =>
-            filteredCollections.some(fc => fc.id === child.id)
+          childrenToShow = children.filter((child) =>
+            filteredCollections.some((fc) => fc.id === child.id)
           );
         }
 
@@ -211,7 +219,7 @@ export class CollectionsRenderer {
           const childrenContainer = document.createElement('div');
           childrenContainer.className = 'collection-children';
 
-          childrenToShow.forEach(child => {
+          childrenToShow.forEach((child) => {
             const childElement = this.createCollectionElement(
               child,
               depth + 1,
@@ -232,7 +240,11 @@ export class CollectionsRenderer {
     return container;
   }
 
-  showCreateMenu(event: MouseEvent, onCreateFolder: () => void, onCreateRequest: () => void): void {
+  showCreateMenu(
+    event: MouseEvent,
+    onCreateFolder: () => void,
+    onCreateRequest: () => void
+  ): void {
     const button = event.target as HTMLElement;
     const rect = button.getBoundingClientRect();
 
@@ -240,7 +252,7 @@ export class CollectionsRenderer {
     menu.className = 'create-menu';
     menu.style.position = 'fixed';
     menu.style.left = rect.left + 'px';
-    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.top = rect.bottom + 4 + 'px';
     menu.style.zIndex = '10000';
 
     const createOptions = [
@@ -248,14 +260,14 @@ export class CollectionsRenderer {
         label: 'New Folder',
         icon: 'folder-closed' as const,
         action: onCreateFolder,
-        description: 'Create a new folder'
+        description: 'Create a new folder',
       },
       {
         label: 'New Request',
         icon: 'file' as const,
         action: onCreateRequest,
-        description: 'Create a new API request'
-      }
+        description: 'Create a new API request',
+      },
     ];
 
     createOptions.forEach((option) => {
@@ -263,7 +275,12 @@ export class CollectionsRenderer {
       item.className = 'create-menu-item';
 
       const icon = createIconElement(option.icon, {
-        style: { width: '14px', height: '14px', display: 'inline-block', flexShrink: '0' }
+        style: {
+          width: '14px',
+          height: '14px',
+          display: 'inline-block',
+          flexShrink: '0',
+        },
       });
       item.appendChild(icon);
 
@@ -303,11 +320,16 @@ export class CollectionsRenderer {
   showContextMenu(
     event: MouseEvent,
     collection: Collection,
-    actions: Array<{ label: string; action: (() => void) | null; destructive?: boolean; icon?: IconName }>
+    actions: Array<{
+      label: string;
+      action: (() => void) | null;
+      destructive?: boolean;
+      icon?: IconName;
+    }>
   ): void {
     // Remove any existing context menus
     const existingMenus = document.querySelectorAll('.context-menu');
-    existingMenus.forEach(menu => menu.remove());
+    existingMenus.forEach((menu) => menu.remove());
 
     const menu = document.createElement('div');
     menu.className = 'context-menu';
@@ -315,7 +337,7 @@ export class CollectionsRenderer {
     menu.style.zIndex = '10000';
     menu.style.visibility = 'hidden'; // Hide initially to measure dimensions
 
-    actions.forEach(action => {
+    actions.forEach((action) => {
       const item = document.createElement('div');
 
       if (action.label === '---') {

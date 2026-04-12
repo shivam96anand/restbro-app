@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  isApiCourierExport,
-  mapApiCourierExport,
-} from '../api-courier';
+import { isApiCourierExport, mapApiCourierExport } from '../api-courier';
 import { detectAndParse, generatePreview } from '../index';
 
 describe('importers/api-courier', () => {
   describe('isApiCourierExport', () => {
     it('returns true for object with type api-courier-export and collection', () => {
-      expect(isApiCourierExport({ type: 'api-courier-export', collection: {} })).toBe(true);
+      expect(
+        isApiCourierExport({ type: 'api-courier-export', collection: {} })
+      ).toBe(true);
     });
 
     it('returns true for object with type api-courier-export and collections array', () => {
-      expect(isApiCourierExport({ type: 'api-courier-export', collections: [] })).toBe(true);
+      expect(
+        isApiCourierExport({ type: 'api-courier-export', collections: [] })
+      ).toBe(true);
     });
 
     it('returns false for null or non-object', () => {
@@ -22,7 +23,9 @@ describe('importers/api-courier', () => {
     });
 
     it('returns false when type is not api-courier-export', () => {
-      expect(isApiCourierExport({ type: 'postman', collection: {} })).toBe(false);
+      expect(isApiCourierExport({ type: 'postman', collection: {} })).toBe(
+        false
+      );
     });
 
     it('returns false when neither collection nor collections present', () => {
@@ -44,7 +47,13 @@ describe('importers/api-courier', () => {
                 id: 'r1',
                 name: 'Req',
                 type: 'request' as const,
-                request: { id: 'req-1', name: 'Req', method: 'GET' as const, url: 'https://x.com', headers: {} },
+                request: {
+                  id: 'req-1',
+                  name: 'Req',
+                  method: 'GET' as const,
+                  url: 'https://x.com',
+                  headers: {},
+                },
                 children: [],
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -67,7 +76,9 @@ describe('importers/api-courier', () => {
       expect(result.rootFolder.children![0].name).toBe('Folder');
       expect(result.rootFolder.children![0].id).not.toBe('f1');
       expect(result.rootFolder.children![0].children).toHaveLength(1);
-      expect(result.rootFolder.children![0].children![0].request?.id).not.toBe('req-1');
+      expect(result.rootFolder.children![0].children![0].request?.id).not.toBe(
+        'req-1'
+      );
 
       expect(result.environments).toHaveLength(1);
       expect(result.environments[0].name).toBe('Dev');
@@ -100,7 +111,10 @@ describe('importers/api-courier', () => {
         type: 'api-courier-export' as const,
         collections: [],
         environments: [],
-        globals: { variables: { token: 'secret' }, variableDescriptions: { token: 'API key' } },
+        globals: {
+          variables: { token: 'secret' },
+          variableDescriptions: { token: 'API key' },
+        },
       };
 
       const result = mapApiCourierExport(exportData);
@@ -124,7 +138,13 @@ describe('importers/api-courier', () => {
                 id: 'r1',
                 name: 'Get',
                 type: 'request',
-                request: { id: 'req1', name: 'Get', method: 'GET', url: 'https://api.example.com', headers: {} },
+                request: {
+                  id: 'req1',
+                  name: 'Get',
+                  method: 'GET',
+                  url: 'https://api.example.com',
+                  headers: {},
+                },
                 children: [],
               },
             ],
@@ -133,7 +153,11 @@ describe('importers/api-courier', () => {
           },
         ],
         environments: [
-          { id: 'e1', name: 'Production', variables: { host: 'https://prod.example.com' } },
+          {
+            id: 'e1',
+            name: 'Production',
+            variables: { host: 'https://prod.example.com' },
+          },
         ],
         globals: { variables: { apiKey: 'xxx' } },
       };

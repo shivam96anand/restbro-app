@@ -14,7 +14,7 @@ export class CollectionsCore {
   private treeState: CollectionTreeState = {
     expandedFolders: new Set(),
     searchTerm: '',
-    draggedItem: undefined
+    draggedItem: undefined,
   };
 
   private search: CollectionsSearch;
@@ -26,8 +26,8 @@ export class CollectionsCore {
   constructor() {
     this.statePersistence = new CollectionsStatePersistence();
 
-    this.operations = new CollectionsOperations(
-      (message) => this.uiHandler.showError(message)
+    this.operations = new CollectionsOperations((message) =>
+      this.uiHandler.showError(message)
     );
 
     this.search = new CollectionsSearch(
@@ -40,13 +40,15 @@ export class CollectionsCore {
       (collectionId) => this.selectCollection(collectionId),
       (event) => this.showCreateMenu(event),
       (event, collectionId) => this.showContextMenu(event, collectionId),
-      (draggedId, targetFolderId) => this.handleMoveCollection(draggedId, targetFolderId),
-      (draggedId, targetId, position) => this.handleReorderCollection(draggedId, targetId, position),
+      (draggedId, targetFolderId) =>
+        this.handleMoveCollection(draggedId, targetFolderId),
+      (draggedId, targetId, position) =>
+        this.handleReorderCollection(draggedId, targetId, position),
       (id) => this.operations.findCollectionById(id)
     );
 
-    this.renderer = new CollectionsRenderer(
-      (id) => this.operations.findCollectionById(id)
+    this.renderer = new CollectionsRenderer((id) =>
+      this.operations.findCollectionById(id)
     );
   }
 
@@ -76,7 +78,6 @@ export class CollectionsCore {
     this.renderCollections();
   }
 
-
   private setupKeyboardShortcuts(): void {
     document.addEventListener('keydown', (e) => {
       const apiTab = document.getElementById('api-tab');
@@ -84,7 +85,10 @@ export class CollectionsCore {
         return;
       }
 
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
         return;
       }
 
@@ -100,20 +104,34 @@ export class CollectionsCore {
 
       if (e.key === 'Delete' && this.selectedCollectionId) {
         e.preventDefault();
-        this.operations.deleteCollection(this.selectedCollectionId).then(() => this.renderCollections());
+        this.operations
+          .deleteCollection(this.selectedCollectionId)
+          .then(() => this.renderCollections());
       }
 
       if (e.key === 'F2' && this.selectedCollectionId) {
         e.preventDefault();
-        this.operations.renameCollection(this.selectedCollectionId).then(() => this.renderCollections());
+        this.operations
+          .renameCollection(this.selectedCollectionId)
+          .then(() => this.renderCollections());
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.selectedCollectionId) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'd' &&
+        this.selectedCollectionId
+      ) {
         e.preventDefault();
-        this.operations.duplicateCollection(this.selectedCollectionId).then(() => this.renderCollections());
+        this.operations
+          .duplicateCollection(this.selectedCollectionId)
+          .then(() => this.renderCollections());
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'e' && this.selectedCollectionId) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'e' &&
+        this.selectedCollectionId
+      ) {
         e.preventDefault();
         this.operations.exportCollection(this.selectedCollectionId);
       }
@@ -124,8 +142,10 @@ export class CollectionsCore {
         // Check if we're on the API tab with a response visible
         const apiTab = document.getElementById('api-tab');
         const isApiTabActive = apiTab?.classList.contains('active');
-        const hasResponse = document.querySelector('#response-body #response-monaco-json-container') ||
-                           document.querySelector('#response-body pre');
+        const hasResponse =
+          document.querySelector(
+            '#response-body #response-monaco-json-container'
+          ) || document.querySelector('#response-body pre');
 
         if (isApiTabActive && hasResponse) {
           // Trigger Monaco search in the response viewer
@@ -133,7 +153,9 @@ export class CollectionsCore {
           document.dispatchEvent(searchEvent);
         } else {
           // Focus collections search
-          const searchInput = document.getElementById('collections-search') as HTMLInputElement;
+          const searchInput = document.getElementById(
+            'collections-search'
+          ) as HTMLInputElement;
           if (searchInput) {
             searchInput.focus();
             searchInput.select();
@@ -162,8 +184,14 @@ export class CollectionsCore {
     );
   }
 
-  private async showCreateDialog(type: 'folder' | 'request' = 'folder', parentId?: string): Promise<void> {
-    const newCollection = await this.operations.showCreateDialog(type, parentId);
+  private async showCreateDialog(
+    type: 'folder' | 'request' = 'folder',
+    parentId?: string
+  ): Promise<void> {
+    const newCollection = await this.operations.showCreateDialog(
+      type,
+      parentId
+    );
     if (newCollection) {
       this.renderCollections();
       this.selectCollection(newCollection.id);
@@ -178,26 +206,75 @@ export class CollectionsCore {
 
     if (collection.type === 'folder') {
       actions.push(
-        { label: 'Add Folder', icon: 'folder', action: () => this.showCreateDialog('folder', collectionId) },
-        { label: 'Add Request', icon: 'file', action: () => this.showCreateDialog('request', collectionId) },
+        {
+          label: 'Add Folder',
+          icon: 'folder',
+          action: () => this.showCreateDialog('folder', collectionId),
+        },
+        {
+          label: 'Add Request',
+          icon: 'file',
+          action: () => this.showCreateDialog('request', collectionId),
+        },
         { label: '---', action: null },
-        { label: 'Manage Variables', icon: 'settings', action: () => this.showFolderVariablesDialog(collectionId) },
+        {
+          label: 'Manage Variables',
+          icon: 'settings',
+          action: () => this.showFolderVariablesDialog(collectionId),
+        },
         { label: '---', action: null },
-        { label: 'Duplicate Folder', icon: 'duplicate', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
-        { label: 'Export Folder', icon: 'export', action: () => this.operations.exportCollection(collectionId) },
+        {
+          label: 'Duplicate Folder',
+          icon: 'duplicate',
+          action: () =>
+            this.operations
+              .duplicateCollection(collectionId)
+              .then(() => this.renderCollections()),
+        },
+        {
+          label: 'Export Folder',
+          icon: 'export',
+          action: () => this.operations.exportCollection(collectionId),
+        },
         { label: '---', action: null }
       );
     } else {
       actions.push(
-        { label: 'Duplicate Request', icon: 'duplicate', action: () => this.operations.duplicateCollection(collectionId).then(() => this.renderCollections()) },
-        { label: 'Export Request', icon: 'export', action: () => this.operations.exportCollection(collectionId) },
+        {
+          label: 'Duplicate Request',
+          icon: 'duplicate',
+          action: () =>
+            this.operations
+              .duplicateCollection(collectionId)
+              .then(() => this.renderCollections()),
+        },
+        {
+          label: 'Export Request',
+          icon: 'export',
+          action: () => this.operations.exportCollection(collectionId),
+        },
         { label: '---', action: null }
       );
     }
 
     actions.push(
-      { label: 'Rename', icon: 'edit', action: () => this.operations.renameCollection(collectionId).then(() => this.renderCollections()) },
-      { label: 'Delete', icon: 'trash', action: () => this.operations.deleteCollection(collectionId).then(() => this.renderCollections()), destructive: true }
+      {
+        label: 'Rename',
+        icon: 'edit',
+        action: () =>
+          this.operations
+            .renameCollection(collectionId)
+            .then(() => this.renderCollections()),
+      },
+      {
+        label: 'Delete',
+        icon: 'trash',
+        action: () =>
+          this.operations
+            .deleteCollection(collectionId)
+            .then(() => this.renderCollections()),
+        destructive: true,
+      }
     );
 
     this.renderer.showContextMenu(event, collection, actions);
@@ -216,28 +293,30 @@ export class CollectionsCore {
     if (!folder || folder.type !== 'folder') return;
 
     // Get inherited variables from parent folders (excluding current folder's variables)
-    const inheritedVars = folder.parentId 
+    const inheritedVars = folder.parentId
       ? buildFolderVars(folder.parentId, this.collections)
       : {};
 
     const result = await FolderVariablesDialog.show(folder, inheritedVars);
-    
+
     if (result) {
       try {
         // Update the folder with new variables
-        await window.apiCourier.collection.update(collectionId, { variables: result.variables });
+        await window.apiCourier.collection.update(collectionId, {
+          variables: result.variables,
+        });
         folder.variables = result.variables;
         folder.updatedAt = new Date();
 
         // Dispatch event to notify about the change
         const event = new CustomEvent('collections-changed', {
-          detail: { collections: this.collections }
+          detail: { collections: this.collections },
         });
         document.dispatchEvent(event);
 
         // Also dispatch event to refresh variable tooltips in any open requests
         const refreshEvent = new CustomEvent('folder-variables-changed', {
-          detail: { folderId: collectionId, variables: result.variables }
+          detail: { folderId: collectionId, variables: result.variables },
         });
         document.dispatchEvent(refreshEvent);
 
@@ -247,7 +326,6 @@ export class CollectionsCore {
       }
     }
   }
-
 
   private selectCollection(collectionId: string): void {
     this.selectedCollectionId = collectionId;
@@ -262,8 +340,8 @@ export class CollectionsCore {
         detail: {
           request: collection.request,
           // Use parentId for request-type collections so folder variable resolution can walk the parent chain
-          collectionId: collection.parentId || collection.id
-        }
+          collectionId: collection.parentId || collection.id,
+        },
       });
       document.dispatchEvent(event);
     }
@@ -271,7 +349,10 @@ export class CollectionsCore {
 
   private renderCollections(): void {
     const filteredCollections = this.treeState.searchTerm
-      ? this.search.getFilteredCollections(this.collections, this.treeState.searchTerm)
+      ? this.search.getFilteredCollections(
+          this.collections,
+          this.treeState.searchTerm
+        )
       : undefined;
 
     this.renderer.renderCollections(
@@ -283,17 +364,22 @@ export class CollectionsCore {
     );
   }
 
-  private async handleMoveCollection(draggedId: string, targetFolderId: string): Promise<void> {
+  private async handleMoveCollection(
+    draggedId: string,
+    targetFolderId: string
+  ): Promise<void> {
     await this.operations.moveCollection(draggedId, targetFolderId);
     this.renderCollections();
   }
 
-  private async handleReorderCollection(draggedId: string, targetId: string, position: 'before' | 'after'): Promise<void> {
+  private async handleReorderCollection(
+    draggedId: string,
+    targetId: string,
+    position: 'before' | 'after'
+  ): Promise<void> {
     await this.operations.reorderCollection(draggedId, targetId, position);
     this.renderCollections();
   }
-
-
 
   async setCollections(collections: Collection[]): Promise<void> {
     this.collections = collections;
@@ -314,29 +400,51 @@ export class CollectionsCore {
     return this.operations.findCollectionById(this.selectedCollectionId || '');
   }
 
-  updateCollectionRequest(collectionId: string, updatedRequest: ApiRequest): void {
+  updateCollectionRequest(
+    collectionId: string,
+    updatedRequest: ApiRequest
+  ): void {
     // The collectionId passed might be a folder ID, so we need to find the actual request collection
     // by searching for the request by its ID
-    const requestCollection = this.findRequestCollectionByRequestId(this.collections, updatedRequest.id);
+    const requestCollection = this.findRequestCollectionByRequestId(
+      this.collections,
+      updatedRequest.id
+    );
 
-    if (requestCollection && requestCollection.type === 'request' && requestCollection.request) {
-      requestCollection.request = { ...requestCollection.request, ...updatedRequest };
+    if (
+      requestCollection &&
+      requestCollection.type === 'request' &&
+      requestCollection.request
+    ) {
+      requestCollection.request = {
+        ...requestCollection.request,
+        ...updatedRequest,
+      };
       requestCollection.updatedAt = new Date();
 
       const event = new CustomEvent('collections-changed', {
-        detail: { collections: this.collections }
+        detail: { collections: this.collections },
       });
       document.dispatchEvent(event);
     }
   }
 
-  private findRequestCollectionByRequestId(collections: Collection[], requestId: string): Collection | null {
+  private findRequestCollectionByRequestId(
+    collections: Collection[],
+    requestId: string
+  ): Collection | null {
     for (const collection of collections) {
-      if (collection.type === 'request' && collection.request?.id === requestId) {
+      if (
+        collection.type === 'request' &&
+        collection.request?.id === requestId
+      ) {
         return collection;
       }
       if (collection.children) {
-        const found = this.findRequestCollectionByRequestId(collection.children, requestId);
+        const found = this.findRequestCollectionByRequestId(
+          collection.children,
+          requestId
+        );
         if (found) return found;
       }
     }

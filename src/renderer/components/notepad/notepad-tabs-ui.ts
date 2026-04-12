@@ -11,17 +11,25 @@ export interface TabRenderingContext {
   onTabClick: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onTabRename: (tabId: string) => void;
-  onContextMenu: (tabId: string, x: number, y: number, hasFile: boolean) => void;
+  onContextMenu: (
+    tabId: string,
+    x: number,
+    y: number,
+    hasFile: boolean
+  ) => void;
 }
 
 /**
  * Render tabs in the tab strip
  */
-export function renderTabs(ctx: TabRenderingContext, state: NotepadState): void {
+export function renderTabs(
+  ctx: TabRenderingContext,
+  state: NotepadState
+): void {
   if (!ctx.tabStrip) return;
   ctx.tabStrip.innerHTML = '';
 
-  state.tabs.forEach(tab => {
+  state.tabs.forEach((tab) => {
     const button = document.createElement('button');
     button.className = `notepad-tab ${tab.id === state.activeTabId ? 'active' : ''}`;
     button.dataset.tabId = tab.id;

@@ -24,13 +24,18 @@ export class RunSummary {
 
   public onRunAgain: ((config: any) => void) | null = null;
   public onExportCsv: ((runId: string) => void) | null = null;
-  public onExportPdf: ((runId: string, summary: LoadTestSummary) => void) | null = null;
+  public onExportPdf:
+    | ((runId: string, summary: LoadTestSummary) => void)
+    | null = null;
 
   render(container: HTMLElement, summary: LoadTestSummary): void {
     this.container = container;
     this.summary = summary;
 
-    const successRate = summary.completed > 0 ? ((summary.success / summary.completed) * 100).toFixed(1) : '0.0';
+    const successRate =
+      summary.completed > 0
+        ? ((summary.success / summary.completed) * 100).toFixed(1)
+        : '0.0';
     const startTime = new Date(summary.startedAt).toLocaleString();
     const endTime = new Date(summary.finishedAt).toLocaleString();
     const duration = this.formatDuration(summary.wallTimeMs / 1000);
@@ -139,15 +144,17 @@ export class RunSummary {
       return parseInt(a[0]) - parseInt(b[0]);
     });
 
-    return entries.map(([code, count]) => {
-      const statusClass = this.getStatusClass(code);
-      return `
+    return entries
+      .map(([code, count]) => {
+        const statusClass = this.getStatusClass(code);
+        return `
         <div class="status-code-item ${statusClass}">
           <div class="status-code">${code}</div>
           <div class="status-count">${count.toLocaleString()}</div>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   private getStatusClass(code: string): string {

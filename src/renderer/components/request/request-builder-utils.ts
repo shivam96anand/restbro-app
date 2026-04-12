@@ -24,21 +24,29 @@ export function buildHeaders(request: ApiRequest): Record<string, string> {
 
   if (request.auth?.type === 'oauth2' && request.auth.config.accessToken) {
     const headerPrefix = request.auth.config.headerPrefix || 'Bearer';
-    cleanHeaders['Authorization'] = `${headerPrefix} ${request.auth.config.accessToken}`;
+    cleanHeaders['Authorization'] =
+      `${headerPrefix} ${request.auth.config.accessToken}`;
   }
 
   if (request.auth?.type === 'bearer' && request.auth.config.token) {
     cleanHeaders['Authorization'] = `Bearer ${request.auth.config.token}`;
   }
 
-  if (request.auth?.type === 'api-key' && request.auth.config.location === 'header') {
+  if (
+    request.auth?.type === 'api-key' &&
+    request.auth.config.location === 'header'
+  ) {
     const key = request.auth.config.key || 'X-API-Key';
     if (request.auth.config.value) {
       cleanHeaders[key] = request.auth.config.value;
     }
   }
 
-  if (request.auth?.type === 'basic' && request.auth.config.username && request.auth.config.password) {
+  if (
+    request.auth?.type === 'basic' &&
+    request.auth.config.username &&
+    request.auth.config.password
+  ) {
     const credentials = `${request.auth.config.username}:${request.auth.config.password}`;
     const encoded = btoa(credentials);
     cleanHeaders['Authorization'] = `Basic ${encoded}`;
@@ -50,8 +58,13 @@ export function buildHeaders(request: ApiRequest): Record<string, string> {
 /**
  * Builds auth query parameters from a request
  */
-export function buildAuthQueryParams(request: ApiRequest): Record<string, string> {
-  if (request.auth?.type === 'api-key' && request.auth.config.location === 'query') {
+export function buildAuthQueryParams(
+  request: ApiRequest
+): Record<string, string> {
+  if (
+    request.auth?.type === 'api-key' &&
+    request.auth.config.location === 'query'
+  ) {
     const key = request.auth.config.key || 'api_key';
     const value = request.auth.config.value || '';
     if (key.trim() && value.trim()) {
@@ -65,7 +78,9 @@ export function buildAuthQueryParams(request: ApiRequest): Record<string, string
 /**
  * Resolves the content type for a request body
  */
-export function resolveContentType(body: ApiRequest['body']): string | undefined {
+export function resolveContentType(
+  body: ApiRequest['body']
+): string | undefined {
   if (!body) return undefined;
 
   if (body.contentType) {
@@ -100,7 +115,10 @@ export function resolveContentType(body: ApiRequest['body']): string | undefined
 /**
  * Builds the body data and content type from a request
  */
-export function buildBody(request: ApiRequest): { bodyData?: string; contentType?: string } {
+export function buildBody(request: ApiRequest): {
+  bodyData?: string;
+  contentType?: string;
+} {
   if (!request.body || request.body.type === 'none') {
     return {};
   }

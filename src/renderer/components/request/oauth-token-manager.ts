@@ -10,7 +10,10 @@ export class OAuthTokenManager {
   private editorsManager: RequestEditorsManager;
   private updateCurrentRequest: UpdateRequestFn;
 
-  constructor(editorsManager: RequestEditorsManager, updateCurrentRequest: UpdateRequestFn) {
+  constructor(
+    editorsManager: RequestEditorsManager,
+    updateCurrentRequest: UpdateRequestFn
+  ) {
     this.editorsManager = editorsManager;
     this.updateCurrentRequest = updateCurrentRequest;
   }
@@ -18,7 +21,10 @@ export class OAuthTokenManager {
   /**
    * Ensures a valid OAuth token exists on the request, refreshing or obtaining as needed
    */
-  async ensureValidToken(request: ApiRequest, forceFresh: boolean): Promise<ApiRequest> {
+  async ensureValidToken(
+    request: ApiRequest,
+    forceFresh: boolean
+  ): Promise<ApiRequest> {
     if (!request.auth || request.auth.type !== 'oauth2') {
       return request;
     }
@@ -28,42 +34,63 @@ export class OAuthTokenManager {
       await this.editorsManager.loadAuth(request.auth, request.collectionId);
     }
 
-    let requestToUpdate = { ...request };
+    const requestToUpdate = { ...request };
 
     // Case 1: No token exists at all
     if (!requestToUpdate.auth.config.accessToken) {
-      const newAuth = await this.editorsManager.autoGetOAuthToken(requestToUpdate.auth);
+      const newAuth = await this.editorsManager.autoGetOAuthToken(
+        requestToUpdate.auth
+      );
       if (newAuth) {
         requestToUpdate.auth = { ...newAuth, type: 'oauth2' };
         this.updateCurrentRequest({ auth: { ...newAuth, type: 'oauth2' } });
         this.editorsManager.updateTokenInfo(newAuth.config);
-        this.editorsManager.updateOAuthStatus('Token obtained successfully', 'success');
+        this.editorsManager.updateOAuthStatus(
+          'Token obtained successfully',
+          'success'
+        );
       } else {
-        throw new Error('Failed to obtain OAuth token. Please check your configuration.');
+        throw new Error(
+          'Failed to obtain OAuth token. Please check your configuration.'
+        );
       }
       return requestToUpdate;
     }
 
     // Case 2: Token exists but might be expired (check locally)
-    const isExpired = this.editorsManager.isOAuthTokenExpired(requestToUpdate.auth);
+    const isExpired = this.editorsManager.isOAuthTokenExpired(
+      requestToUpdate.auth
+    );
 
     if (isExpired || forceFresh) {
       // Try to refresh first if we have a refresh token
-      const refreshedAuth = await this.editorsManager.autoRefreshOAuthToken(requestToUpdate.auth);
+      const refreshedAuth = await this.editorsManager.autoRefreshOAuthToken(
+        requestToUpdate.auth
+      );
 
       if (refreshedAuth) {
         requestToUpdate.auth = { ...refreshedAuth, type: 'oauth2' };
-        this.updateCurrentRequest({ auth: { ...refreshedAuth, type: 'oauth2' } });
+        this.updateCurrentRequest({
+          auth: { ...refreshedAuth, type: 'oauth2' },
+        });
         this.editorsManager.updateTokenInfo(refreshedAuth.config);
-        this.editorsManager.updateOAuthStatus('Token refreshed successfully', 'success');
+        this.editorsManager.updateOAuthStatus(
+          'Token refreshed successfully',
+          'success'
+        );
       } else {
         // Refresh failed or no refresh token - get a new token
-        const newAuth = await this.editorsManager.autoGetOAuthToken(requestToUpdate.auth);
+        const newAuth = await this.editorsManager.autoGetOAuthToken(
+          requestToUpdate.auth
+        );
         if (newAuth) {
           requestToUpdate.auth = { ...newAuth, type: 'oauth2' };
           this.updateCurrentRequest({ auth: { ...newAuth, type: 'oauth2' } });
           this.editorsManager.updateTokenInfo(newAuth.config);
-          this.editorsManager.updateOAuthStatus('New token obtained successfully', 'success');
+          this.editorsManager.updateOAuthStatus(
+            'New token obtained successfully',
+            'success'
+          );
         } else {
           throw new Error('Failed to refresh or obtain new OAuth token.');
         }
@@ -89,16 +116,21 @@ export class OAuthTokenManager {
     }
 
     // Try refresh first
-    const refreshedAuth = await this.editorsManager.autoRefreshOAuthToken(request.auth);
+    const refreshedAuth = await this.editorsManager.autoRefreshOAuthToken(
+      request.auth
+    );
 
     if (refreshedAuth) {
       const updatedRequest = {
         ...request,
-        auth: { ...refreshedAuth, type: 'oauth2' } as AuthConfig
+        auth: { ...refreshedAuth, type: 'oauth2' } as AuthConfig,
       };
       this.updateCurrentRequest({ auth: { ...refreshedAuth, type: 'oauth2' } });
       this.editorsManager.updateTokenInfo(refreshedAuth.config);
-      this.editorsManager.updateOAuthStatus('Token refreshed after auth error', 'success');
+      this.editorsManager.updateOAuthStatus(
+        'Token refreshed after auth error',
+        'success'
+      );
       return updatedRequest;
     }
 
@@ -108,11 +140,14 @@ export class OAuthTokenManager {
     if (newAuth) {
       const updatedRequest = {
         ...request,
-        auth: { ...newAuth, type: 'oauth2' } as AuthConfig
+        auth: { ...newAuth, type: 'oauth2' } as AuthConfig,
       };
       this.updateCurrentRequest({ auth: { ...newAuth, type: 'oauth2' } });
       this.editorsManager.updateTokenInfo(newAuth.config);
-      this.editorsManager.updateOAuthStatus('New token obtained after auth error', 'success');
+      this.editorsManager.updateOAuthStatus(
+        'New token obtained after auth error',
+        'success'
+      );
       return updatedRequest;
     }
 
@@ -124,11 +159,13 @@ export class OAuthTokenManager {
    */
   isAuthError(errorMessage: string): boolean {
     const message = errorMessage.toLowerCase();
-    return message.includes('401') ||
-           message.includes('403') ||
-           message.includes('unauthorized') ||
-           message.includes('forbidden') ||
-           (message.includes('token') && message.includes('expir'));
+    return (
+      message.includes('401') ||
+      message.includes('403') ||
+      message.includes('unauthorized') ||
+      message.includes('forbidden') ||
+      (message.includes('token') && message.includes('expir'))
+    );
   }
 
   /**

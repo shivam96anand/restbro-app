@@ -1,6 +1,12 @@
 import { app } from 'electron';
 import { join } from 'path';
-import { writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import {
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  unlinkSync,
+} from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import {
   AppState,
@@ -15,8 +21,24 @@ import {
   ApiResponse,
 } from '../../shared/types';
 
-const defaultNavOrder = ['notepad', 'api', 'json-viewer', 'json-compare', 'load-testing', 'mock-server', 'ask-ai'];
-const legacyNavOrder = ['api', 'json-viewer', 'json-compare', 'notepad', 'load-testing', 'mock-server', 'ask-ai'];
+const defaultNavOrder = [
+  'notepad',
+  'api',
+  'json-viewer',
+  'json-compare',
+  'load-testing',
+  'mock-server',
+  'ask-ai',
+];
+const legacyNavOrder = [
+  'api',
+  'json-viewer',
+  'json-compare',
+  'notepad',
+  'load-testing',
+  'mock-server',
+  'ask-ai',
+];
 
 const defaultTheme: AppTheme = {
   name: 'blue',
@@ -81,7 +103,10 @@ class StoreManager {
 
         this.data = this.mergeLoadedData(loadedData);
       } catch (error) {
-        console.error('Failed to read database file, using default state:', error);
+        console.error(
+          'Failed to read database file, using default state:',
+          error
+        );
         this.data = defaultState;
       }
     } else {
@@ -120,7 +145,9 @@ class StoreManager {
     }
   }
 
-  private sanitizeUpdatesForPersistence(updates: Partial<AppState>): Partial<AppState> {
+  private sanitizeUpdatesForPersistence(
+    updates: Partial<AppState>
+  ): Partial<AppState> {
     const next: Partial<AppState> = { ...updates };
 
     if (updates.openTabs) {
@@ -147,7 +174,10 @@ class StoreManager {
     const MAX_BODY_CHARS = 5_000_000; // ~5 MB
     return {
       ...response,
-      body: response.body.length > MAX_BODY_CHARS ? response.body.slice(0, MAX_BODY_CHARS) : response.body,
+      body:
+        response.body.length > MAX_BODY_CHARS
+          ? response.body.slice(0, MAX_BODY_CHARS)
+          : response.body,
     };
   }
 
@@ -183,14 +213,18 @@ class StoreManager {
     }
   }
 
-  listBackups(limit = 5): Array<{ id: string; filename: string; createdAt: number }> {
+  listBackups(
+    limit = 5
+  ): Array<{ id: string; filename: string; createdAt: number }> {
     const backupDir = this.getBackupDir();
     if (!existsSync(backupDir)) {
       return [];
     }
 
     const backups = readdirSync(backupDir)
-      .filter((name) => name.startsWith('database-backup-') && name.endsWith('.json'))
+      .filter(
+        (name) => name.startsWith('database-backup-') && name.endsWith('.json')
+      )
       .map((name) => {
         const createdAt = this.parseBackupTimestamp(name);
         return { id: name, filename: name, createdAt: createdAt ?? 0 };
@@ -225,16 +259,21 @@ class StoreManager {
       environments: sanitizedLoaded.environments || [],
       activeEnvironmentId: sanitizedLoaded.activeEnvironmentId,
       globals: sanitizedLoaded.globals || defaultGlobals,
-      collectionsUIState: sanitizedLoaded.collectionsUIState || defaultCollectionsUIState,
-      jsonViewerUIState: sanitizedLoaded.jsonViewerUIState || defaultJsonViewerUIState,
+      collectionsUIState:
+        sanitizedLoaded.collectionsUIState || defaultCollectionsUIState,
+      jsonViewerUIState:
+        sanitizedLoaded.jsonViewerUIState || defaultJsonViewerUIState,
       notepad: sanitizedLoaded.notepad || defaultNotepadState,
       navOrder: this.resolveNavOrder(sanitizedLoaded.navOrder),
       mockServers: sanitizedLoaded.mockServers || defaultMockServersState,
-      hasCompletedThemeOnboarding: sanitizedLoaded.hasCompletedThemeOnboarding ?? false,
+      hasCompletedThemeOnboarding:
+        sanitizedLoaded.hasCompletedThemeOnboarding ?? false,
     };
   }
 
-  private resolveNavOrder(navOrder?: AppState['navOrder']): AppState['navOrder'] {
+  private resolveNavOrder(
+    navOrder?: AppState['navOrder']
+  ): AppState['navOrder'] {
     if (!Array.isArray(navOrder) || navOrder.length === 0) {
       return defaultNavOrder;
     }
@@ -294,15 +333,17 @@ class StoreManager {
 
   private formatTimestamp(date: Date): string {
     const pad = (value: number) => value.toString().padStart(2, '0');
-    return [
-      date.getFullYear(),
-      pad(date.getMonth() + 1),
-      pad(date.getDate()),
-    ].join('') + '-' + [
-      pad(date.getHours()),
-      pad(date.getMinutes()),
-      pad(date.getSeconds()),
-    ].join('');
+    return (
+      [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join(
+        ''
+      ) +
+      '-' +
+      [
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds()),
+      ].join('')
+    );
   }
 
   private parseBackupTimestamp(filename: string): number | null {

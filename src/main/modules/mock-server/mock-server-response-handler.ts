@@ -9,7 +9,10 @@ export class MockServerResponseHandler {
   /**
    * Send the response based on route configuration
    */
-  async sendRouteResponse(res: http.ServerResponse, route: MockRoute): Promise<void> {
+  async sendRouteResponse(
+    res: http.ServerResponse,
+    route: MockRoute
+  ): Promise<void> {
     // Set custom headers first
     for (const header of route.headers) {
       if (header.enabled && header.key) {
@@ -35,14 +38,18 @@ export class MockServerResponseHandler {
     }
   }
 
-  private async sendJsonRouteResponse(res: http.ServerResponse, route: MockRoute): Promise<void> {
+  private async sendJsonRouteResponse(
+    res: http.ServerResponse,
+    route: MockRoute
+  ): Promise<void> {
     // Validate JSON before sending
     try {
       JSON.parse(route.body || '{}');
     } catch (parseError) {
       this.sendJsonResponse(res, 500, {
         error: 'Invalid mock JSON',
-        details: parseError instanceof Error ? parseError.message : String(parseError),
+        details:
+          parseError instanceof Error ? parseError.message : String(parseError),
       });
       return;
     }
@@ -58,7 +65,10 @@ export class MockServerResponseHandler {
 
   private sendTextResponse(res: http.ServerResponse, route: MockRoute): void {
     if (!res.hasHeader('Content-Type')) {
-      res.setHeader('Content-Type', route.contentType || 'text/plain; charset=utf-8');
+      res.setHeader(
+        'Content-Type',
+        route.contentType || 'text/plain; charset=utf-8'
+      );
     }
     const body = route.body || '';
     res.setHeader('Content-Length', Buffer.byteLength(body, 'utf8'));
@@ -68,7 +78,10 @@ export class MockServerResponseHandler {
 
   private sendBinaryResponse(res: http.ServerResponse, route: MockRoute): void {
     if (!res.hasHeader('Content-Type')) {
-      res.setHeader('Content-Type', route.contentType || 'application/octet-stream');
+      res.setHeader(
+        'Content-Type',
+        route.contentType || 'application/octet-stream'
+      );
     }
     const buffer = Buffer.from(route.body || '', 'base64');
     res.setHeader('Content-Length', buffer.length);
@@ -76,7 +89,10 @@ export class MockServerResponseHandler {
     res.end(buffer);
   }
 
-  private async sendFileResponse(res: http.ServerResponse, route: MockRoute): Promise<void> {
+  private async sendFileResponse(
+    res: http.ServerResponse,
+    route: MockRoute
+  ): Promise<void> {
     const filePath = route.body;
     if (!filePath) {
       this.sendJsonResponse(res, 500, { error: 'File path not configured' });
@@ -85,7 +101,10 @@ export class MockServerResponseHandler {
     try {
       const fileContent = await readFile(filePath);
       if (!res.hasHeader('Content-Type')) {
-        res.setHeader('Content-Type', route.contentType || 'application/octet-stream');
+        res.setHeader(
+          'Content-Type',
+          route.contentType || 'application/octet-stream'
+        );
       }
       res.setHeader('Content-Length', fileContent.length);
       res.statusCode = route.statusCode;
@@ -101,7 +120,11 @@ export class MockServerResponseHandler {
   /**
    * Send a JSON error/response
    */
-  sendJsonResponse(res: http.ServerResponse, statusCode: number, body: object): void {
+  sendJsonResponse(
+    res: http.ServerResponse,
+    statusCode: number,
+    body: object
+  ): void {
     const jsonBody = JSON.stringify(body);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Length', Buffer.byteLength(jsonBody, 'utf8'));

@@ -6,21 +6,38 @@ export class TabsEventHandler {
   private onSwitchToTab: (tabId: string) => void;
   private onCloseTab: (tabId: string) => void;
   private onShowTabContextMenu: (event: MouseEvent, tabId: string) => void;
-  private onUpdateActiveTab: (updates: Partial<RequestTab>, markAsModified: boolean) => void;
+  private onUpdateActiveTab: (
+    updates: Partial<RequestTab>,
+    markAsModified: boolean
+  ) => void;
   private onCloseTabsByRequestId: (requestId: string) => void;
-  private onUpdateTabNameForRequest: (requestId: string, newName: string) => void;
+  private onUpdateTabNameForRequest: (
+    requestId: string,
+    newName: string
+  ) => void;
 
-  private onUpdateTabByRequestId: (requestId: string, updates: Partial<RequestTab>, markAsModified: boolean) => void;
+  private onUpdateTabByRequestId: (
+    requestId: string,
+    updates: Partial<RequestTab>,
+    markAsModified: boolean
+  ) => void;
 
   constructor(
     onCreateNewTab: () => void,
     onSwitchToTab: (tabId: string) => void,
     onCloseTab: (tabId: string) => void,
     onShowTabContextMenu: (event: MouseEvent, tabId: string) => void,
-    onUpdateActiveTab: (updates: Partial<RequestTab>, markAsModified: boolean) => void,
+    onUpdateActiveTab: (
+      updates: Partial<RequestTab>,
+      markAsModified: boolean
+    ) => void,
     onCloseTabsByRequestId: (requestId: string) => void,
     onUpdateTabNameForRequest: (requestId: string, newName: string) => void,
-    onUpdateTabByRequestId: (requestId: string, updates: Partial<RequestTab>, markAsModified: boolean) => void
+    onUpdateTabByRequestId: (
+      requestId: string,
+      updates: Partial<RequestTab>,
+      markAsModified: boolean
+    ) => void
   ) {
     this.onCreateNewTab = onCreateNewTab;
     this.onSwitchToTab = onSwitchToTab;
@@ -77,7 +94,9 @@ export class TabsEventHandler {
     document.addEventListener('request-updated', (e: Event) => {
       const customEvent = e as CustomEvent;
       const updatedRequest = customEvent.detail.request;
-      const requestMode = customEvent.detail.requestMode as RequestMode | undefined;
+      const requestMode = customEvent.detail.requestMode as
+        | RequestMode
+        | undefined;
       if (updatedRequest) {
         const updates: Partial<RequestTab> = { request: updatedRequest };
         if (requestMode === 'soap') {
@@ -135,18 +154,21 @@ export class TabsEventHandler {
       }
     });
 
-    document.addEventListener('response-view-preference-updated', (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const requestId = customEvent.detail?.requestId as string | undefined;
-      const responseViewState = customEvent.detail?.responseViewState;
-      if (!responseViewState) return;
+    document.addEventListener(
+      'response-view-preference-updated',
+      (e: Event) => {
+        const customEvent = e as CustomEvent;
+        const requestId = customEvent.detail?.requestId as string | undefined;
+        const responseViewState = customEvent.detail?.responseViewState;
+        if (!responseViewState) return;
 
-      if (requestId) {
-        this.onUpdateTabByRequestId(requestId, { responseViewState }, false);
-      } else {
-        this.onUpdateActiveTab({ responseViewState }, false);
+        if (requestId) {
+          this.onUpdateTabByRequestId(requestId, { responseViewState }, false);
+        } else {
+          this.onUpdateActiveTab({ responseViewState }, false);
+        }
       }
-    });
+    );
 
     document.addEventListener('request-deleted', (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -176,8 +198,10 @@ export class TabsEventHandler {
     onCloseOtherTabs: (keepTabId: string) => void
   ): void {
     // Remove any existing context menus
-    const existingMenus = document.querySelectorAll('.context-menu, .tab-context-menu');
-    existingMenus.forEach(menu => menu.remove());
+    const existingMenus = document.querySelectorAll(
+      '.context-menu, .tab-context-menu'
+    );
+    existingMenus.forEach((menu) => menu.remove());
 
     const menu = document.createElement('div');
     menu.className = 'context-menu';
@@ -190,40 +214,40 @@ export class TabsEventHandler {
         label: 'Duplicate Tab',
         icon: 'duplicate',
         action: () => onDuplicateTab(tab.id),
-        destructive: false
+        destructive: false,
       },
       {
         label: 'Copy Request URL',
         icon: 'clipboard',
         action: () => onCopyRequestUrl(tab.id),
-        destructive: false
+        destructive: false,
       },
       {
         label: '---',
         action: null,
-        destructive: false
+        destructive: false,
       },
       {
         label: 'Close Tab',
         icon: 'close',
         action: () => this.onCloseTab(tab.id),
-        destructive: false
+        destructive: false,
       },
       {
         label: 'Close All Tabs',
         icon: 'trash',
         action: () => onCloseAllTabs(),
-        destructive: true
+        destructive: true,
       },
       {
         label: 'Close Other Tabs',
         icon: 'layers',
         action: () => onCloseOtherTabs(tab.id),
-        destructive: false
-      }
+        destructive: false,
+      },
     ];
 
-    menuOptions.forEach(option => {
+    menuOptions.forEach((option) => {
       const item = document.createElement('div');
 
       if (option.label === '---') {
@@ -344,9 +368,13 @@ export class TabsEventHandler {
         ? request.headers.map((header) => ({ ...header }))
         : { ...request.headers },
       body: request.body ? { ...request.body } : request.body,
-      auth: request.auth ? { ...request.auth, config: { ...request.auth.config } } : request.auth,
+      auth: request.auth
+        ? { ...request.auth, config: { ...request.auth.config } }
+        : request.auth,
       soap: request.soap ? { ...request.soap } : request.soap,
-      variables: request.variables ? { ...request.variables } : request.variables,
+      variables: request.variables
+        ? { ...request.variables }
+        : request.variables,
     };
   }
 }

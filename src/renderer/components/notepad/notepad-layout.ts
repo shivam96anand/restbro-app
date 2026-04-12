@@ -92,18 +92,34 @@ export function buildNotepadLayout(
     statusCursor: container.querySelector('#np-status-cursor') as HTMLElement,
     statusLines: container.querySelector('#np-status-lines') as HTMLElement,
     statusChars: container.querySelector('#np-status-chars') as HTMLElement,
-    contextMenu: container.querySelector('#notepad-context-menu') as HTMLElement,
+    contextMenu: container.querySelector(
+      '#notepad-context-menu'
+    ) as HTMLElement,
     dirtyModal: container.querySelector('#notepad-dirty-modal') as HTMLElement,
   };
 
   // Attach button event listeners
-  container.querySelector('#np-zoom-out')?.addEventListener('click', callbacks.onZoomOut);
-  container.querySelector('#np-zoom-in')?.addEventListener('click', callbacks.onZoomIn);
-  container.querySelector('#np-add-tab')?.addEventListener('click', callbacks.onAddTab);
-  container.querySelector('#np-new-tab')?.addEventListener('click', callbacks.onAddTab);
-  container.querySelector('#np-open-file')?.addEventListener('click', callbacks.onOpenFile);
-  container.querySelector('#np-save')?.addEventListener('click', callbacks.onSave);
-  container.querySelector('#np-save-as')?.addEventListener('click', callbacks.onSaveAs);
+  container
+    .querySelector('#np-zoom-out')
+    ?.addEventListener('click', callbacks.onZoomOut);
+  container
+    .querySelector('#np-zoom-in')
+    ?.addEventListener('click', callbacks.onZoomIn);
+  container
+    .querySelector('#np-add-tab')
+    ?.addEventListener('click', callbacks.onAddTab);
+  container
+    .querySelector('#np-new-tab')
+    ?.addEventListener('click', callbacks.onAddTab);
+  container
+    .querySelector('#np-open-file')
+    ?.addEventListener('click', callbacks.onOpenFile);
+  container
+    .querySelector('#np-save')
+    ?.addEventListener('click', callbacks.onSave);
+  container
+    .querySelector('#np-save-as')
+    ?.addEventListener('click', callbacks.onSaveAs);
 
   return elements;
 }

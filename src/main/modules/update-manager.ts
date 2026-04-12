@@ -28,18 +28,22 @@ class UpdateManager {
 
     // First check shortly after the window appears, then on a schedule.
     setTimeout(() => this.checkForUpdates(), 10_000);
-    this.checkInterval = setInterval(() => this.checkForUpdates(), this.CHECK_INTERVAL_MS);
+    this.checkInterval = setInterval(
+      () => this.checkForUpdates(),
+      this.CHECK_INTERVAL_MS
+    );
   }
 
   private checkForUpdates(): void {
-    autoUpdater.checkForUpdates().catch(err => {
+    autoUpdater.checkForUpdates().catch((err) => {
       // Update checks failing (e.g. no network) is non-fatal — log silently.
       console.error('[updater] Update check failed:', err?.message ?? err);
     });
   }
 
   private send(channel: string, payload?: unknown): void {
-    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    const win =
+      BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
     if (win && !win.isDestroyed()) {
       win.webContents.send(channel, payload);
     }
@@ -52,7 +56,7 @@ class UpdateManager {
 
       // Ask the user before downloading via the renderer (or auto-download here).
       // For now we trigger download immediately and let the renderer show progress.
-      autoUpdater.downloadUpdate().catch(err => {
+      autoUpdater.downloadUpdate().catch((err) => {
         console.error('[updater] Download failed:', err?.message ?? err);
       });
     });
@@ -61,7 +65,7 @@ class UpdateManager {
       console.log('[updater] App is up to date.');
     });
 
-    autoUpdater.on('download-progress', progress => {
+    autoUpdater.on('download-progress', (progress) => {
       this.send('update:download-progress', {
         percent: Math.round(progress.percent),
         bytesPerSecond: progress.bytesPerSecond,

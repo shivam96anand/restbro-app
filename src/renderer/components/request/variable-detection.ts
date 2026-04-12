@@ -22,7 +22,7 @@ export function buildFolderVars(
   // Build ancestor chain from child to root
   let currentId: string | undefined = collectionId;
   while (currentId) {
-    const collection = collections.find(c => c.id === currentId);
+    const collection = collections.find((c) => c.id === currentId);
     if (!collection) break;
 
     ancestorChain.push(collection);
@@ -43,7 +43,9 @@ export function buildFolderVars(
 /**
  * Detects variables in text and returns their positions
  */
-export function detectVariables(text: string): Array<{ start: number; end: number; name: string }> {
+export function detectVariables(
+  text: string
+): Array<{ start: number; end: number; name: string }> {
   const variables: Array<{ start: number; end: number; name: string }> = [];
   const regex = /\{\{([^}]+)\}\}/g;
   let match;

@@ -26,11 +26,12 @@ export class NodeRenderer {
       const childrenCount = node.children ? node.children.length : 0;
       const preview = node.isExpanded ? '' : ` (${childrenCount} items)`;
 
-      const keyPart = hasKey ?
-        `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>` :
-        '';
+      const keyPart = hasKey
+        ? `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>`
+        : '';
 
-      const commaPart = needsComma && !node.isExpanded ? '<span class="comma">,</span>' : '';
+      const commaPart =
+        needsComma && !node.isExpanded ? '<span class="comma">,</span>' : '';
 
       contentDiv.innerHTML = `
         <span class="expand-icon">${expandIcon}</span>
@@ -48,9 +49,9 @@ export class NodeRenderer {
         searchMatches,
         currentSearchIndex
       );
-      const keyPart = hasKey ?
-        `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>` :
-        '';
+      const keyPart = hasKey
+        ? `<span class="key">"${JsonFormatter.highlightSearchTerm(node.key, node.lineNumber, true, searchQuery, searchMatches, currentSearchIndex)}"</span><span class="separator">: </span>`
+        : '';
 
       const commaPart = needsComma ? '<span class="comma">,</span>' : '';
 
@@ -97,7 +98,7 @@ export class NodeRenderer {
 
   public static renderNodesOptimized(
     container: HTMLElement,
-    visibleNodes: Array<{node?: JsonNode, isClosingBracket: boolean}>,
+    visibleNodes: Array<{ node?: JsonNode; isClosingBracket: boolean }>,
     searchQuery: string,
     searchMatches: any[],
     currentSearchIndex: number
@@ -107,12 +108,17 @@ export class NodeRenderer {
     // but 602 nodes is not large enough to need it
     const fragment = document.createDocumentFragment();
 
-    visibleNodes.forEach(nodeData => {
+    visibleNodes.forEach((nodeData) => {
       if (nodeData.isClosingBracket) {
         const closingElement = this.createClosingBracketElement(nodeData.node!);
         fragment.appendChild(closingElement);
       } else {
-        const nodeElement = this.createNodeElement(nodeData.node!, searchQuery, searchMatches, currentSearchIndex);
+        const nodeElement = this.createNodeElement(
+          nodeData.node!,
+          searchQuery,
+          searchMatches,
+          currentSearchIndex
+        );
         fragment.appendChild(nodeElement);
       }
     });
@@ -124,7 +130,7 @@ export class NodeRenderer {
   // Keep this for potential future use with very large datasets
   private static renderNodesInChunks(
     container: HTMLElement,
-    visibleNodes: Array<{node?: JsonNode, isClosingBracket: boolean}>,
+    visibleNodes: Array<{ node?: JsonNode; isClosingBracket: boolean }>,
     searchQuery: string,
     searchMatches: any[],
     currentSearchIndex: number
@@ -141,10 +147,17 @@ export class NodeRenderer {
       for (let i = currentIndex; i < endIndex; i++) {
         const nodeData = visibleNodes[i];
         if (nodeData.isClosingBracket) {
-          const closingElement = this.createClosingBracketElement(nodeData.node!);
+          const closingElement = this.createClosingBracketElement(
+            nodeData.node!
+          );
           fragment.appendChild(closingElement);
         } else {
-          const nodeElement = this.createNodeElement(nodeData.node!, searchQuery, searchMatches, currentSearchIndex);
+          const nodeElement = this.createNodeElement(
+            nodeData.node!,
+            searchQuery,
+            searchMatches,
+            currentSearchIndex
+          );
           fragment.appendChild(nodeElement);
         }
       }

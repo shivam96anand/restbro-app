@@ -48,7 +48,7 @@ export class EnvironmentDialogUI {
     const envListBody = document.createElement('div');
     envListBody.style.cssText = EnvironmentDialogStyles.envListBody;
 
-    state.workingEnvs.forEach(env => {
+    state.workingEnvs.forEach((env) => {
       const envItem = document.createElement('div');
       envItem.style.cssText = EnvironmentDialogStyles.getEnvItemStyle(
         state.selectedEnvId === env.id
@@ -146,7 +146,8 @@ export class EnvironmentDialogUI {
 
     nameInput.addEventListener('focus', () => {
       nameInput.style.borderColor = 'var(--primary-color)';
-      nameInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.15)';
+      nameInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.15)';
     });
     nameInput.addEventListener('blur', () => {
       nameInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -158,7 +159,8 @@ export class EnvironmentDialogUI {
     });
 
     // Variables section
-    const varsSection = EnvironmentVariablesManager.renderVariablesSection(selectedEnv);
+    const varsSection =
+      EnvironmentVariablesManager.renderVariablesSection(selectedEnv);
 
     // Delete environment button
     const deleteEnvBtn = document.createElement('button');
@@ -186,7 +188,8 @@ export class EnvironmentDialogUI {
    */
   static createEmptyState(): HTMLDivElement {
     const emptyState = document.createElement('div');
-    emptyState.textContent = 'No environments. Click "+ New Environment" to create one.';
+    emptyState.textContent =
+      'No environments. Click "+ New Environment" to create one.';
     emptyState.style.cssText = EnvironmentDialogStyles.emptyState;
     return emptyState;
   }
@@ -207,7 +210,9 @@ export class EnvironmentDialogUI {
     const envList = this.createEnvironmentList(state, onSelectEnv);
     layout.appendChild(envList);
 
-    const selectedEnv = state.workingEnvs.find(e => e.id === state.selectedEnvId);
+    const selectedEnv = state.workingEnvs.find(
+      (e) => e.id === state.selectedEnvId
+    );
     if (selectedEnv) {
       const envDetails = this.createEnvironmentDetails(
         selectedEnv,
@@ -296,12 +301,16 @@ export class EnvironmentDialogUI {
 
     const envTab = document.createElement('button');
     envTab.textContent = 'Environments';
-    envTab.style.cssText = EnvironmentDialogStyles.getTabStyle(activeTab === 'environments');
+    envTab.style.cssText = EnvironmentDialogStyles.getTabStyle(
+      activeTab === 'environments'
+    );
     envTab.addEventListener('click', () => onTabChange('environments'));
 
     const globalsTab = document.createElement('button');
     globalsTab.textContent = 'Globals';
-    globalsTab.style.cssText = EnvironmentDialogStyles.getTabStyle(activeTab === 'globals');
+    globalsTab.style.cssText = EnvironmentDialogStyles.getTabStyle(
+      activeTab === 'globals'
+    );
     globalsTab.addEventListener('click', () => onTabChange('globals'));
 
     tabsContainer.appendChild(envTab);
@@ -320,7 +329,8 @@ export class EnvironmentDialogUI {
     // Description
     const description = document.createElement('div');
     description.style.cssText = EnvironmentDialogStyles.globalsDescription;
-    description.textContent = 'Global variables are available in all requests, regardless of the selected environment. They have the lowest priority and will be overridden by environment or folder variables with the same name.';
+    description.textContent =
+      'Global variables are available in all requests, regardless of the selected environment. They have the lowest priority and will be overridden by environment or folder variables with the same name.';
     panel.appendChild(description);
 
     // Variables header
@@ -376,7 +386,12 @@ export class EnvironmentDialogUI {
       varsContainer.appendChild(headerRow);
 
       Object.entries(globals.variables).forEach(([key, value]) => {
-        const varRow = this.createGlobalVariableRow(key, value, globals, renderVars);
+        const varRow = this.createGlobalVariableRow(
+          key,
+          value,
+          globals,
+          renderVars
+        );
         varsContainer.appendChild(varRow);
       });
 
@@ -418,7 +433,7 @@ export class EnvironmentDialogUI {
       globals.variableDescriptions = {};
     }
     const descriptions = globals.variableDescriptions;
-    let currentKey = key;
+    const currentKey = key;
     const isDraft = currentKey.startsWith(DRAFT_PREFIX);
 
     const keyInput = document.createElement('input');
@@ -429,7 +444,8 @@ export class EnvironmentDialogUI {
     keyInput.spellcheck = false;
     keyInput.addEventListener('focus', () => {
       keyInput.style.borderColor = 'var(--primary-color)';
-      keyInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      keyInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     keyInput.addEventListener('blur', () => {
       keyInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -444,7 +460,8 @@ export class EnvironmentDialogUI {
     valueInput.spellcheck = false;
     valueInput.addEventListener('focus', () => {
       valueInput.style.borderColor = 'var(--primary-color)';
-      valueInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      valueInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     valueInput.addEventListener('blur', () => {
       valueInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -455,11 +472,13 @@ export class EnvironmentDialogUI {
     descriptionInput.type = 'text';
     descriptionInput.value = descriptions[currentKey] || '';
     descriptionInput.placeholder = 'Description';
-    descriptionInput.style.cssText = EnvironmentDialogStyles.varInputDescription;
+    descriptionInput.style.cssText =
+      EnvironmentDialogStyles.varInputDescription;
     descriptionInput.spellcheck = false;
     descriptionInput.addEventListener('focus', () => {
       descriptionInput.style.borderColor = 'var(--primary-color)';
-      descriptionInput.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+      descriptionInput.style.boxShadow =
+        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
     });
     descriptionInput.addEventListener('blur', () => {
       descriptionInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';

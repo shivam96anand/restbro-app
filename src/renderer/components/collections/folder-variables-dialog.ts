@@ -20,7 +20,9 @@ export class FolderVariablesDialog {
   ): Promise<FolderVariablesDialogResult | null> {
     return new Promise((resolve) => {
       // Create working copy of variables
-      const workingVars: Record<string, string> = { ...(folder.variables || {}) };
+      const workingVars: Record<string, string> = {
+        ...(folder.variables || {}),
+      };
 
       // Create overlay
       const overlay = document.createElement('div');
@@ -61,7 +63,8 @@ export class FolderVariablesDialog {
       // Description
       const description = document.createElement('p');
       description.className = 'folder-vars-dialog-description';
-      description.textContent = 'Variables defined here will be available to all requests within this folder and its subfolders. Child folder variables override parent folder variables.';
+      description.textContent =
+        'Variables defined here will be available to all requests within this folder and its subfolders. Child folder variables override parent folder variables.';
       body.appendChild(description);
 
       // Variables section
@@ -158,7 +161,10 @@ export class FolderVariablesDialog {
               const newKey = keyInput.value.trim();
               if (newKey && newKey !== originalKey) {
                 // Check for duplicate keys
-                if (workingVars[newKey] !== undefined && newKey !== originalKey) {
+                if (
+                  workingVars[newKey] !== undefined &&
+                  newKey !== originalKey
+                ) {
                   keyInput.value = originalKey;
                   keyInput.classList.add('error');
                   setTimeout(() => keyInput.classList.remove('error'), 1500);
@@ -209,7 +215,9 @@ export class FolderVariablesDialog {
         renderVars();
         // Focus the new key input
         setTimeout(() => {
-          const inputs = varsContainer.querySelectorAll('.folder-vars-key-input');
+          const inputs = varsContainer.querySelectorAll(
+            '.folder-vars-key-input'
+          );
           const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
           if (lastInput) {
             lastInput.focus();

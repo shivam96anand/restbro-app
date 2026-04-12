@@ -168,9 +168,11 @@ export class EnvironmentDialogStyles {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: ${isSelected
-        ? 'linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.14) 0%, rgba(0, 0, 0, 0.22) 100%)'
-        : 'rgba(0, 0, 0, 0.18)'};
+      background: ${
+        isSelected
+          ? 'linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.14) 0%, rgba(0, 0, 0, 0.22) 100%)'
+          : 'rgba(0, 0, 0, 0.18)'
+      };
       box-shadow: ${isSelected ? 'inset 2px 0 0 var(--primary-color)' : 'none'};
       transition: all 0.2s ease;
     `;
@@ -433,9 +435,11 @@ export class EnvironmentDialogStyles {
   static getTabStyle(isActive: boolean): string {
     return `
       padding: 8px 14px;
-      background: ${isActive
-        ? 'linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.3) 0%, rgba(var(--primary-color-rgb), 0.15) 100%)'
-        : 'transparent'};
+      background: ${
+        isActive
+          ? 'linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.3) 0%, rgba(var(--primary-color-rgb), 0.15) 100%)'
+          : 'transparent'
+      };
       border: 1px solid ${isActive ? 'rgba(var(--primary-color-rgb), 0.4)' : 'transparent'};
       border-radius: 8px;
       color: ${isActive ? 'var(--text-primary)' : 'var(--text-secondary)'};

@@ -1,4 +1,10 @@
-import { ApiRequest, Collection, Environment, Globals, SoapCerts } from '../../../shared/types';
+import {
+  ApiRequest,
+  Collection,
+  Environment,
+  Globals,
+  SoapCerts,
+} from '../../../shared/types';
 import { CollectionsDialogs } from './collections-dialogs';
 import { showExportDialog } from './export-dialog';
 
@@ -17,10 +23,13 @@ export class CollectionsOperations {
   }
 
   findCollectionById(id: string): Collection | undefined {
-    return this.collections.find(c => c.id === id);
+    return this.collections.find((c) => c.id === id);
   }
 
-  async moveCollection(draggedId: string, targetFolderId: string): Promise<void> {
+  async moveCollection(
+    draggedId: string,
+    targetFolderId: string
+  ): Promise<void> {
     const draggedCollection = this.findCollectionById(draggedId);
     const targetFolder = this.findCollectionById(targetFolderId);
 
@@ -34,7 +43,9 @@ export class CollectionsOperations {
     }
 
     try {
-      await window.apiCourier.collection.update(draggedId, { parentId: targetFolderId });
+      await window.apiCourier.collection.update(draggedId, {
+        parentId: targetFolderId,
+      });
       draggedCollection.parentId = targetFolderId;
 
       // Reorder items in the target folder
@@ -45,7 +56,11 @@ export class CollectionsOperations {
     }
   }
 
-  async reorderCollection(draggedId: string, targetId: string, position: 'before' | 'after'): Promise<void> {
+  async reorderCollection(
+    draggedId: string,
+    targetId: string,
+    position: 'before' | 'after'
+  ): Promise<void> {
     const draggedCollection = this.findCollectionById(draggedId);
     const targetCollection = this.findCollectionById(targetId);
 
@@ -59,7 +74,10 @@ export class CollectionsOperations {
     }
 
     // Prevent moving folder into its descendants
-    if (draggedCollection.type === 'folder' && this.isDescendant(targetId, draggedId)) {
+    if (
+      draggedCollection.type === 'folder' &&
+      this.isDescendant(targetId, draggedId)
+    ) {
       this.onShowError('Cannot move folder into itself or its descendants');
       return;
     }
@@ -67,33 +85,35 @@ export class CollectionsOperations {
     try {
       // Get siblings at the target level
       const siblings = this.collections
-        .filter(c => c.parentId === targetCollection.parentId)
+        .filter((c) => c.parentId === targetCollection.parentId)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       // Find target index
-      const targetIndex = siblings.findIndex(c => c.id === targetId);
+      const targetIndex = siblings.findIndex((c) => c.id === targetId);
       if (targetIndex === -1) return;
 
       // Calculate new position
       const newIndex = position === 'before' ? targetIndex : targetIndex + 1;
 
       // If dragged item is being moved within same parent, adjust for removal
-      const draggedIndex = siblings.findIndex(c => c.id === draggedId);
-      const isDraggedInSameParent = draggedCollection.parentId === targetCollection.parentId;
-      const adjustedNewIndex = isDraggedInSameParent && draggedIndex !== -1 && draggedIndex < newIndex
-        ? newIndex - 1
-        : newIndex;
+      const draggedIndex = siblings.findIndex((c) => c.id === draggedId);
+      const isDraggedInSameParent =
+        draggedCollection.parentId === targetCollection.parentId;
+      const adjustedNewIndex =
+        isDraggedInSameParent && draggedIndex !== -1 && draggedIndex < newIndex
+          ? newIndex - 1
+          : newIndex;
 
       // Update parent if needed
       if (draggedCollection.parentId !== targetCollection.parentId) {
         await window.apiCourier.collection.update(draggedId, {
-          parentId: targetCollection.parentId
+          parentId: targetCollection.parentId,
         });
         draggedCollection.parentId = targetCollection.parentId;
       }
 
       // Remove dragged item from its current position in siblings array
-      const filteredSiblings = siblings.filter(c => c.id !== draggedId);
+      const filteredSiblings = siblings.filter((c) => c.id !== draggedId);
 
       // Insert dragged item at new position
       filteredSiblings.splice(adjustedNewIndex, 0, draggedCollection);
@@ -104,14 +124,16 @@ export class CollectionsOperations {
         const newOrder = i * 1000; // Use increments of 1000 for easier future insertions
 
         if (collection.order !== newOrder) {
-          await window.apiCourier.collection.update(collection.id, { order: newOrder });
+          await window.apiCourier.collection.update(collection.id, {
+            order: newOrder,
+          });
           collection.order = newOrder;
         }
       }
 
       // Dispatch collections changed event
       const event = new CustomEvent('collections-changed', {
-        detail: { collections: this.collections }
+        detail: { collections: this.collections },
       });
       document.dispatchEvent(event);
     } catch (error) {
@@ -123,13 +145,15 @@ export class CollectionsOperations {
   private async reorderItemsInParent(parentId?: string): Promise<void> {
     // Get all items at this level and reorder them
     const items = this.collections
-      .filter(c => c.parentId === parentId)
+      .filter((c) => c.parentId === parentId)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     for (let i = 0; i < items.length; i++) {
       const newOrder = i * 1000;
       if (items[i].order !== newOrder) {
-        await window.apiCourier.collection.update(items[i].id, { order: newOrder });
+        await window.apiCourier.collection.update(items[i].id, {
+          order: newOrder,
+        });
         items[i].order = newOrder;
       }
     }
@@ -142,7 +166,7 @@ export class CollectionsOperations {
 
   private getDescendants(folderId: string): string[] {
     const descendants: string[] = [];
-    const children = this.collections.filter(c => c.parentId === folderId);
+    const children = this.collections.filter((c) => c.parentId === folderId);
 
     for (const child of children) {
       descendants.push(child.id);
@@ -184,24 +208,29 @@ export class CollectionsOperations {
 
       // Calculate order to place duplicate right after the original
       const siblings = this.collections
-        .filter(c => c.parentId === collection.parentId)
+        .filter((c) => c.parentId === collection.parentId)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-      const originalIndex = siblings.findIndex(c => c.id === collectionId);
-      const newOrder = originalIndex !== -1 && originalIndex < siblings.length - 1
-        ? ((collection.order ?? 0) + (siblings[originalIndex + 1].order ?? 0)) / 2
-        : (collection.order ?? 0) + 1000;
+      const originalIndex = siblings.findIndex((c) => c.id === collectionId);
+      const newOrder =
+        originalIndex !== -1 && originalIndex < siblings.length - 1
+          ? ((collection.order ?? 0) +
+              (siblings[originalIndex + 1].order ?? 0)) /
+            2
+          : (collection.order ?? 0) + 1000;
 
       const newCollection = await window.apiCourier.collection.create({
         name: duplicatedName,
         type: collection.type,
         parentId: collection.parentId,
         order: newOrder,
-        request: collection.request ? { ...collection.request } : undefined
+        request: collection.request ? { ...collection.request } : undefined,
       });
 
       // Insert the duplicate right after the original in the array
-      const insertIndex = this.collections.findIndex(c => c.id === collectionId);
+      const insertIndex = this.collections.findIndex(
+        (c) => c.id === collectionId
+      );
       if (insertIndex !== -1) {
         this.collections.splice(insertIndex + 1, 0, newCollection);
       } else {
@@ -214,7 +243,7 @@ export class CollectionsOperations {
 
       // Dispatch collections changed event
       const event = new CustomEvent('collections-changed', {
-        detail: { collections: this.collections }
+        detail: { collections: this.collections },
       });
       document.dispatchEvent(event);
     } catch (error) {
@@ -223,8 +252,13 @@ export class CollectionsOperations {
     }
   }
 
-  private async duplicateChildren(originalParentId: string, newParentId: string): Promise<void> {
-    const children = this.collections.filter(c => c.parentId === originalParentId);
+  private async duplicateChildren(
+    originalParentId: string,
+    newParentId: string
+  ): Promise<void> {
+    const children = this.collections.filter(
+      (c) => c.parentId === originalParentId
+    );
 
     for (const child of children) {
       try {
@@ -232,7 +266,7 @@ export class CollectionsOperations {
           name: child.name,
           type: child.type,
           parentId: newParentId,
-          request: child.request ? { ...child.request } : undefined
+          request: child.request ? { ...child.request } : undefined,
         });
 
         this.collections.push(newChild);
@@ -292,7 +326,9 @@ export class CollectionsOperations {
       .filter((c): c is Collection => c != null);
 
     const collectionTrees = rootCollections.map((c) => this.buildExportData(c));
-    const selectedEnvs = environments.filter((e) => selection.environmentIds.includes(e.id));
+    const selectedEnvs = environments.filter((e) =>
+      selection.environmentIds.includes(e.id)
+    );
     const exportData = this.buildApiCourierExportPayload(
       collectionTrees,
       selectedEnvs,
@@ -336,26 +372,31 @@ export class CollectionsOperations {
     const collectionExport = {
       info: {
         name: 'Restbro Export',
-        schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+        schema:
+          'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
       },
-      item: rootItems
+      item: rootItems,
     };
 
     this.downloadJson('restbro-collection', collectionExport);
 
-    const environments = Array.isArray(state.environments) ? state.environments : [];
+    const environments = Array.isArray(state.environments)
+      ? state.environments
+      : [];
     environments.forEach((env) => {
-      const values = Object.entries(env.variables || {}).map(([key, value]) => ({
-        key,
-        value,
-        enabled: true
-      }));
+      const values = Object.entries(env.variables || {}).map(
+        ([key, value]) => ({
+          key,
+          value,
+          enabled: true,
+        })
+      );
       if (values.length === 0) return;
       const envExport = {
         id: env.id,
         name: env.name || 'Environment',
         values,
-        _postman_variable_scope: 'environment'
+        _postman_variable_scope: 'environment',
       };
       this.downloadJson(`restbro-env-${env.name || env.id}`, envExport);
     });
@@ -364,20 +405,22 @@ export class CollectionsOperations {
     const globalValues = Object.entries(globals).map(([key, value]) => ({
       key,
       value,
-      enabled: true
+      enabled: true,
     }));
     if (globalValues.length > 0) {
       const globalsExport = {
         id: 'restbro-globals',
         name: 'Globals',
         values: globalValues,
-        _postman_variable_scope: 'globals'
+        _postman_variable_scope: 'globals',
       };
       this.downloadJson('restbro-globals', globalsExport);
     }
   }
 
-  private sanitizeRequestForExport(request: ApiRequest | undefined): ApiRequest | undefined {
+  private sanitizeRequestForExport(
+    request: ApiRequest | undefined
+  ): ApiRequest | undefined {
     if (!request) return undefined;
     if (!request.soapCerts) return request;
 
@@ -387,15 +430,38 @@ export class CollectionsOperations {
     const sanitizedCerts: SoapCerts = { mode: sc.mode };
 
     if (sc.keystoreSource) sanitizedCerts.keystoreSource = sc.keystoreSource;
-    if (sc.keystoreFilePath) sanitizedCerts.keystoreFilePath = sc.keystoreFilePath;
-    if (sc.truststoreSource) sanitizedCerts.truststoreSource = sc.truststoreSource;
-    if (sc.truststoreFilePath) sanitizedCerts.truststoreFilePath = sc.truststoreFilePath;
+    if (sc.keystoreFilePath)
+      sanitizedCerts.keystoreFilePath = sc.keystoreFilePath;
+    if (sc.truststoreSource)
+      sanitizedCerts.truststoreSource = sc.truststoreSource;
+    if (sc.truststoreFilePath)
+      sanitizedCerts.truststoreFilePath = sc.truststoreFilePath;
 
     // PEM mode: keep source type and file path hints only
-    if (sc.clientCert?.filePath) sanitizedCerts.clientCert = { source: sc.clientCert.source, content: '', filePath: sc.clientCert.filePath };
-    if (sc.clientKey?.filePath)  sanitizedCerts.clientKey  = { source: sc.clientKey.source,  content: '', filePath: sc.clientKey.filePath };
-    if (sc.caCert?.filePath)     sanitizedCerts.caCert     = { source: sc.caCert.source,     content: '', filePath: sc.caCert.filePath };
-    if (sc.pfx?.filePath)        sanitizedCerts.pfx        = { source: sc.pfx.source,        content: '', filePath: sc.pfx.filePath };
+    if (sc.clientCert?.filePath)
+      sanitizedCerts.clientCert = {
+        source: sc.clientCert.source,
+        content: '',
+        filePath: sc.clientCert.filePath,
+      };
+    if (sc.clientKey?.filePath)
+      sanitizedCerts.clientKey = {
+        source: sc.clientKey.source,
+        content: '',
+        filePath: sc.clientKey.filePath,
+      };
+    if (sc.caCert?.filePath)
+      sanitizedCerts.caCert = {
+        source: sc.caCert.source,
+        content: '',
+        filePath: sc.caCert.filePath,
+      };
+    if (sc.pfx?.filePath)
+      sanitizedCerts.pfx = {
+        source: sc.pfx.source,
+        content: '',
+        filePath: sc.pfx.filePath,
+      };
 
     return { ...request, soapCerts: sanitizedCerts };
   }
@@ -407,14 +473,14 @@ export class CollectionsOperations {
       type: collection.type,
       request: this.sanitizeRequestForExport(collection.request),
       variables: collection.variables,
-      children: []
+      children: [],
     };
 
     if (collection.type === 'folder') {
       const children = this.collections
-        .filter(c => c.parentId === collection.id)
+        .filter((c) => c.parentId === collection.id)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      data.children = children.map(child => this.buildExportData(child));
+      data.children = children.map((child) => this.buildExportData(child));
     }
 
     return data;
@@ -422,7 +488,7 @@ export class CollectionsOperations {
 
   private buildPostmanItems(parentId?: string): any[] {
     const items = this.collections
-      .filter(c => c.parentId === parentId)
+      .filter((c) => c.parentId === parentId)
       .sort((a, b) => {
         const orderA = a.order ?? 0;
         const orderB = b.order ?? 0;
@@ -434,13 +500,13 @@ export class CollectionsOperations {
       if (collection.type === 'folder') {
         return {
           name: collection.name,
-          item: this.buildPostmanItems(collection.id)
+          item: this.buildPostmanItems(collection.id),
         };
       }
 
       return {
         name: collection.request?.name || collection.name,
-        request: this.buildPostmanRequest(collection.request)
+        request: this.buildPostmanRequest(collection.request),
       };
     });
   }
@@ -453,19 +519,21 @@ export class CollectionsOperations {
       };
     }
 
-    const headers = this.normalizeKeyValuePairs(request.headers)
-      .map(({ key, value, enabled }) => ({
+    const headers = this.normalizeKeyValuePairs(request.headers).map(
+      ({ key, value, enabled }) => ({
         key,
         value,
-        disabled: !enabled
-      }));
+        disabled: !enabled,
+      })
+    );
 
-    const params = this.normalizeKeyValuePairs(request.params)
-      .map(({ key, value, enabled }) => ({
+    const params = this.normalizeKeyValuePairs(request.params).map(
+      ({ key, value, enabled }) => ({
         key,
         value,
-        disabled: !enabled
-      }));
+        disabled: !enabled,
+      })
+    );
 
     const body = this.buildPostmanBody(request.body);
     const auth = this.buildPostmanAuth(request.auth);
@@ -475,10 +543,10 @@ export class CollectionsOperations {
       header: headers,
       url: {
         raw: request.url || '',
-        query: params
+        query: params,
       },
       body,
-      auth
+      auth,
     };
   }
 
@@ -510,7 +578,10 @@ export class CollectionsOperations {
     }
 
     if (auth.type === 'bearer' && auth.config.token) {
-      return { type: 'bearer', bearer: [{ key: 'token', value: auth.config.token }] };
+      return {
+        type: 'bearer',
+        bearer: [{ key: 'token', value: auth.config.token }],
+      };
     }
 
     if (auth.type === 'basic') {
@@ -518,8 +589,8 @@ export class CollectionsOperations {
         type: 'basic',
         basic: [
           { key: 'username', value: auth.config.username || '' },
-          { key: 'password', value: auth.config.password || '' }
-        ]
+          { key: 'password', value: auth.config.password || '' },
+        ],
       };
     }
 
@@ -529,15 +600,15 @@ export class CollectionsOperations {
         apikey: [
           { key: 'key', value: auth.config.key || '' },
           { key: 'value', value: auth.config.value || '' },
-          { key: 'in', value: auth.config.in || 'header' }
-        ]
+          { key: 'in', value: auth.config.in || 'header' },
+        ],
       };
     }
 
     if (auth.type === 'oauth2' && auth.config.accessToken) {
       return {
         type: 'oauth2',
-        oauth2: [{ key: 'accessToken', value: auth.config.accessToken }]
+        oauth2: [{ key: 'accessToken', value: auth.config.accessToken }],
       };
     }
 
@@ -549,32 +620,41 @@ export class CollectionsOperations {
   ): Array<{ key: string; value: string; enabled: boolean }> {
     if (!data) return [];
     if (Array.isArray(data)) {
-      return data.map(item => ({
-        key: item.key,
-        value: item.value,
-        enabled: item.enabled !== false
-      })).filter(item => item.key);
+      return data
+        .map((item) => ({
+          key: item.key,
+          value: item.value,
+          enabled: item.enabled !== false,
+        }))
+        .filter((item) => item.key);
     }
 
     return Object.entries(data).map(([key, value]) => ({
       key,
       value,
-      enabled: true
+      enabled: true,
     }));
   }
 
-  private parseUrlEncoded(content: string): Array<{ key: string; value: string; disabled?: boolean }> {
+  private parseUrlEncoded(
+    content: string
+  ): Array<{ key: string; value: string; disabled?: boolean }> {
     if (!content) return [];
-    return content.split('&').map((pair) => {
-      const [rawKey, rawValue = ''] = pair.split('=');
-      return {
-        key: decodeURIComponent(rawKey || ''),
-        value: decodeURIComponent(rawValue || '')
-      };
-    }).filter(item => item.key);
+    return content
+      .split('&')
+      .map((pair) => {
+        const [rawKey, rawValue = ''] = pair.split('=');
+        return {
+          key: decodeURIComponent(rawKey || ''),
+          value: decodeURIComponent(rawValue || ''),
+        };
+      })
+      .filter((item) => item.key);
   }
 
-  private parseFormData(content: string): Array<{ key: string; value: string; type?: string; disabled?: boolean }> {
+  private parseFormData(
+    content: string
+  ): Array<{ key: string; value: string; type?: string; disabled?: boolean }> {
     if (!content) return [];
     return content
       .split('\n')
@@ -584,10 +664,12 @@ export class CollectionsOperations {
         const [key, ...rest] = trimmed.split('=');
         return {
           key: key.trim(),
-          value: rest.join('=').trim()
+          value: rest.join('=').trim(),
         };
       })
-      .filter((item): item is { key: string; value: string } => !!item && !!item.key);
+      .filter(
+        (item): item is { key: string; value: string } => !!item && !!item.key
+      );
   }
 
   private downloadJson(baseName: string, data: unknown): void {
@@ -604,7 +686,10 @@ export class CollectionsOperations {
     URL.revokeObjectURL(url);
   }
 
-  async showCreateDialog(type: 'folder' | 'request' = 'folder', parentId?: string): Promise<Collection | null> {
+  async showCreateDialog(
+    type: 'folder' | 'request' = 'folder',
+    parentId?: string
+  ): Promise<Collection | null> {
     const newCollection = await this.dialogs.showCreateDialog(type, parentId);
     if (newCollection) {
       this.collections.push(newCollection);
@@ -620,7 +705,9 @@ export class CollectionsOperations {
     if (!newName) return;
 
     try {
-      await window.apiCourier.collection.update(collectionId, { name: newName });
+      await window.apiCourier.collection.update(collectionId, {
+        name: newName,
+      });
       collection.name = newName;
       collection.updatedAt = new Date();
 
@@ -628,13 +715,13 @@ export class CollectionsOperations {
         detail: {
           collectionId,
           newName,
-          collection
-        }
+          collection,
+        },
       });
       document.dispatchEvent(event);
 
       const collectionsChangedEvent = new CustomEvent('collections-changed', {
-        detail: { collections: this.collections }
+        detail: { collections: this.collections },
       });
       document.dispatchEvent(collectionsChangedEvent);
     } catch (error) {
@@ -647,7 +734,10 @@ export class CollectionsOperations {
     const collection = this.findCollectionById(collectionId);
     if (!collection) return;
 
-    const confirmed = await this.dialogs.showConfirm(`Delete "${collection.name}"?`, 'This action cannot be undone.');
+    const confirmed = await this.dialogs.showConfirm(
+      `Delete "${collection.name}"?`,
+      'This action cannot be undone.'
+    );
     if (!confirmed) return;
 
     try {
@@ -659,12 +749,12 @@ export class CollectionsOperations {
       // Dispatch deletion events for all affected requests
       for (const requestId of affectedRequestIds) {
         const event = new CustomEvent('request-deleted', {
-          detail: { requestId }
+          detail: { requestId },
         });
         document.dispatchEvent(event);
       }
 
-      const index = this.collections.findIndex(c => c.id === collectionId);
+      const index = this.collections.findIndex((c) => c.id === collectionId);
       if (index !== -1) {
         this.collections.splice(index, 1);
       }

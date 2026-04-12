@@ -21,10 +21,13 @@ export class TabsManager {
       (tabId) => this.switchToTabAndRender(tabId),
       (tabId) => this.closeTabAndRender(tabId),
       (event, tabId) => this.showTabContextMenu(event, tabId),
-      (updates, markAsModified) => this.updateActiveTabAndRender(updates, markAsModified),
+      (updates, markAsModified) =>
+        this.updateActiveTabAndRender(updates, markAsModified),
       (requestId) => this.closeTabsByRequestIdAndRender(requestId),
-      (requestId, newName) => this.updateTabNameForRequestAndRender(requestId, newName),
-      (requestId, updates, markAsModified) => this.updateTabByRequestIdAndRender(requestId, updates, markAsModified)
+      (requestId, newName) =>
+        this.updateTabNameForRequestAndRender(requestId, newName),
+      (requestId, updates, markAsModified) =>
+        this.updateTabByRequestIdAndRender(requestId, updates, markAsModified)
     );
   }
 
@@ -32,7 +35,10 @@ export class TabsManager {
     this.eventHandler.setupTabEvents();
     this.eventHandler.setupEventListeners();
     this.setupKeyboardShortcuts();
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private isApiTabActive(): boolean {
@@ -70,41 +76,72 @@ export class TabsManager {
 
   private createNewTabAndRender(): void {
     this.stateManager.createNewTab();
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private switchToTabAndRender(tabId: string): void {
     this.stateManager.switchToTab(tabId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private closeTabAndRender(tabId: string): void {
     this.stateManager.closeTab(tabId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
-  private updateActiveTabAndRender(updates: Partial<RequestTab>, markAsModified: boolean): void {
+  private updateActiveTabAndRender(
+    updates: Partial<RequestTab>,
+    markAsModified: boolean
+  ): void {
     this.stateManager.updateActiveTab(updates, markAsModified);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
-  private updateTabByRequestIdAndRender(requestId: string, updates: Partial<RequestTab>, markAsModified: boolean): void {
+  private updateTabByRequestIdAndRender(
+    requestId: string,
+    updates: Partial<RequestTab>,
+    markAsModified: boolean
+  ): void {
     this.stateManager.updateTabByRequestId(requestId, updates, markAsModified);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private closeTabsByRequestIdAndRender(requestId: string): void {
     this.stateManager.closeTabsByRequestId(requestId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
-  private updateTabNameForRequestAndRender(requestId: string, newName: string): void {
+  private updateTabNameForRequestAndRender(
+    requestId: string,
+    newName: string
+  ): void {
     this.stateManager.updateTabNameForRequest(requestId, newName);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private showTabContextMenu(event: MouseEvent, tabId: string): void {
-    const tab = this.stateManager.getTabs().find(t => t.id === tabId);
+    const tab = this.stateManager.getTabs().find((t) => t.id === tabId);
     if (!tab) return;
 
     this.eventHandler.showTabContextMenu(
@@ -119,17 +156,26 @@ export class TabsManager {
 
   private duplicateTabAndRender(tabId: string): void {
     this.stateManager.duplicateTab(tabId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private closeAllTabsAndRender(): void {
     this.stateManager.closeAllTabs();
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private closeOtherTabsAndRender(keepTabId: string): void {
     this.stateManager.closeOtherTabs(keepTabId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   closeActiveTab(): void {
@@ -141,25 +187,34 @@ export class TabsManager {
 
   switchToNextTab(): void {
     this.stateManager.switchToNextTab();
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   switchToPrevTab(): void {
     this.stateManager.switchToPrevTab();
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   private notifyTabChange(): void {
     const activeTab = this.stateManager.getActiveTab();
     const event = new CustomEvent('tab-changed', {
-      detail: { activeTab }
+      detail: { activeTab },
     });
     document.dispatchEvent(event);
   }
 
   setTabs(tabs: RequestTab[], activeTabId?: string): void {
     this.stateManager.setTabs(tabs, activeTabId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
     this.notifyTabChange();
   }
 
@@ -175,28 +230,54 @@ export class TabsManager {
     return this.stateManager.getActiveTabId();
   }
 
-  updateActiveTab(updates: Partial<RequestTab>, markAsModified: boolean = true): void {
+  updateActiveTab(
+    updates: Partial<RequestTab>,
+    markAsModified: boolean = true
+  ): void {
     this.stateManager.updateActiveTab(updates, markAsModified);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   openRequestInTab(request: ApiRequest, collectionId?: string): void {
     this.stateManager.openRequestInTab(request, collectionId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
-  openRequestInTabWithResponse(request: ApiRequest, response: ApiResponse, collectionId?: string): void {
-    this.stateManager.openRequestInTabWithResponse(request, response, collectionId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+  openRequestInTabWithResponse(
+    request: ApiRequest,
+    response: ApiResponse,
+    collectionId?: string
+  ): void {
+    this.stateManager.openRequestInTabWithResponse(
+      request,
+      response,
+      collectionId
+    );
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   closeTabsByRequestId(requestId: string): void {
     this.stateManager.closeTabsByRequestId(requestId);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 
   updateTabNameForRequest(requestId: string, newName: string): void {
     this.stateManager.updateTabNameForRequest(requestId, newName);
-    this.renderer.renderTabs(this.stateManager.getTabs(), this.stateManager.getActiveTabId());
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
   }
 }

@@ -38,11 +38,13 @@ export class LoadTestForm {
   private renderCollectionTree(): void {
     if (!this.container) return;
 
-    const tree = this.container.querySelector('#collection-tree') as HTMLElement | null;
+    const tree = this.container.querySelector(
+      '#collection-tree'
+    ) as HTMLElement | null;
     if (!tree) return;
 
     const rootCollections = this.collections
-      .filter(c => !c.parentId)
+      .filter((c) => !c.parentId)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     if (rootCollections.length === 0) {
@@ -55,13 +57,16 @@ export class LoadTestForm {
     }
 
     tree.innerHTML = '';
-    rootCollections.forEach(collection => {
+    rootCollections.forEach((collection) => {
       const element = this.createCollectionElement(collection, 0);
       tree.appendChild(element);
     });
   }
 
-  private createCollectionElement(collection: Collection, depth: number): HTMLElement {
+  private createCollectionElement(
+    collection: Collection,
+    depth: number
+  ): HTMLElement {
     const container = document.createElement('div');
     container.className = 'loadtest-collection-container';
 
@@ -74,7 +79,10 @@ export class LoadTestForm {
       item.classList.add('folder');
     }
 
-    if (collection.type === 'request' && collection.request?.id === this.selectedRequestId) {
+    if (
+      collection.type === 'request' &&
+      collection.request?.id === this.selectedRequestId
+    ) {
       item.classList.add('selected');
     }
 
@@ -90,7 +98,9 @@ export class LoadTestForm {
       const toggle = document.createElement('span');
       toggle.className = 'loadtest-folder-toggle';
       toggle.dataset.folderId = collection.id;
-      toggle.innerHTML = iconHtml(isExpanded ? 'chevron-down' : 'chevron-right');
+      toggle.innerHTML = iconHtml(
+        isExpanded ? 'chevron-down' : 'chevron-right'
+      );
       content.appendChild(toggle);
 
       const icon = document.createElement('span');
@@ -119,15 +129,18 @@ export class LoadTestForm {
     item.appendChild(content);
     container.appendChild(item);
 
-    if (collection.type === 'folder' && this.expandedFolders.has(collection.id)) {
+    if (
+      collection.type === 'folder' &&
+      this.expandedFolders.has(collection.id)
+    ) {
       const children = this.collections
-        .filter(child => child.parentId === collection.id)
+        .filter((child) => child.parentId === collection.id)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       if (children.length > 0) {
         const childrenContainer = document.createElement('div');
         childrenContainer.className = 'loadtest-collection-children';
-        children.forEach(child => {
+        children.forEach((child) => {
           const childElement = this.createCollectionElement(child, depth + 1);
           childrenContainer.appendChild(childElement);
         });
@@ -247,7 +260,7 @@ export class LoadTestForm {
 
     // Target type radio buttons
     const targetRadios = this.container.querySelectorAll('.target-radio');
-    targetRadios.forEach(radio => {
+    targetRadios.forEach((radio) => {
       radio.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement;
         this.toggleTargetSelector(target.value);
@@ -263,7 +276,9 @@ export class LoadTestForm {
     const collectionTree = this.container.querySelector('#collection-tree');
     collectionTree?.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
-      const item = target.closest('.loadtest-collection-item') as HTMLElement | null;
+      const item = target.closest(
+        '.loadtest-collection-item'
+      ) as HTMLElement | null;
       if (!item) return;
 
       const collectionId = item.dataset.collectionId;
@@ -287,14 +302,16 @@ export class LoadTestForm {
       }
     });
 
-    const collectionHeader = this.container.querySelector('.loadtest-collection-header');
+    const collectionHeader = this.container.querySelector(
+      '.loadtest-collection-header'
+    );
     collectionHeader?.addEventListener('click', () => {
       this.toggleCollectionPicker();
     });
 
     // Form validation on input
     const inputs = this.container.querySelectorAll('input, select');
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       input.addEventListener('input', () => {
         this.clearValidationErrors();
       });
@@ -304,7 +321,9 @@ export class LoadTestForm {
   private toggleTargetSelector(type: string): void {
     if (!this.container) return;
 
-    const collectionSelector = this.container.querySelector('#collection-selector');
+    const collectionSelector = this.container.querySelector(
+      '#collection-selector'
+    );
     const adhocEditor = this.container.querySelector('#adhoc-editor');
 
     if (type === 'collection') {
@@ -325,8 +344,11 @@ export class LoadTestForm {
     }
   }
 
-  private selectRequestFromCollections(requestId: string, collectionId: string): void {
-    const collection = this.collections.find(col => col.id === collectionId);
+  private selectRequestFromCollections(
+    requestId: string,
+    collectionId: string
+  ): void {
+    const collection = this.collections.find((col) => col.id === collectionId);
     if (!collection || !collection.request) return;
 
     this.selectedRequestId = requestId;
@@ -334,7 +356,9 @@ export class LoadTestForm {
 
     // Update the header to show selected request
     if (this.container) {
-      const titleEl = this.container.querySelector('.loadtest-collection-title');
+      const titleEl = this.container.querySelector(
+        '.loadtest-collection-title'
+      );
       const hintEl = this.container.querySelector('.loadtest-collection-hint');
       if (titleEl && hintEl) {
         titleEl.textContent = collection.name;
@@ -343,7 +367,10 @@ export class LoadTestForm {
     }
 
     // Prefill the target editor (for preview only, won't be used when building config)
-    const target = this.requestToTarget(collection.request, this.selectedCollectionId);
+    const target = this.requestToTarget(
+      collection.request,
+      this.selectedCollectionId
+    );
     this.targetEditor.prefillTarget(target);
     this.setCollectionPickerCollapsed(true);
     this.renderCollectionTree();
@@ -364,7 +391,9 @@ export class LoadTestForm {
   }
 
   private requestToTarget(request: ApiRequest, collectionId?: string): any {
-    const toRecord = (pairs?: ApiRequest['params'] | ApiRequest['headers']): Record<string, string> => {
+    const toRecord = (
+      pairs?: ApiRequest['params'] | ApiRequest['headers']
+    ): Record<string, string> => {
       if (!pairs) return {};
       if (Array.isArray(pairs)) {
         return pairs.reduce<Record<string, string>>((acc, pair) => {
@@ -374,18 +403,21 @@ export class LoadTestForm {
           return acc;
         }, {});
       }
-      return Object.entries(pairs).reduce<Record<string, string>>((acc, [key, value]) => {
-        if (key.trim() && value.trim()) {
-          acc[key.trim()] = value.trim();
-        }
-        return acc;
-      }, {});
+      return Object.entries(pairs).reduce<Record<string, string>>(
+        (acc, [key, value]) => {
+          if (key.trim() && value.trim()) {
+            acc[key.trim()] = value.trim();
+          }
+          return acc;
+        },
+        {}
+      );
     };
 
     const auth = request.auth
       ? {
           type: request.auth.type === 'api-key' ? 'apikey' : request.auth.type,
-          data: { ...request.auth.config }
+          data: { ...request.auth.config },
         }
       : { type: 'none' };
 
@@ -397,7 +429,7 @@ export class LoadTestForm {
       headers: toRecord(request.headers),
       auth,
       body: request.body ? { ...request.body } : { type: 'none', content: '' },
-      collectionId
+      collectionId,
     };
   }
 
@@ -418,24 +450,39 @@ export class LoadTestForm {
   private buildConfig(): LoadTestConfig {
     if (!this.container) throw new Error('Form not rendered');
 
-    const rpmInput = this.container.querySelector('#rpm-input') as HTMLInputElement;
-    const durationValue = this.container.querySelector('#duration-value') as HTMLInputElement;
-    const durationUnit = this.container.querySelector('#duration-unit') as HTMLSelectElement;
-    const targetType = this.container.querySelector('input[name="target-type"]:checked') as HTMLInputElement;
-    const followRedirects = this.container.querySelector('#follow-redirects') as HTMLInputElement;
-    const insecureTLS = this.container.querySelector('#insecure-tls') as HTMLInputElement;
-    const timeout = this.container.querySelector('#timeout-input') as HTMLInputElement;
+    const rpmInput = this.container.querySelector(
+      '#rpm-input'
+    ) as HTMLInputElement;
+    const durationValue = this.container.querySelector(
+      '#duration-value'
+    ) as HTMLInputElement;
+    const durationUnit = this.container.querySelector(
+      '#duration-unit'
+    ) as HTMLSelectElement;
+    const targetType = this.container.querySelector(
+      'input[name="target-type"]:checked'
+    ) as HTMLInputElement;
+    const followRedirects = this.container.querySelector(
+      '#follow-redirects'
+    ) as HTMLInputElement;
+    const insecureTLS = this.container.querySelector(
+      '#insecure-tls'
+    ) as HTMLInputElement;
+    const timeout = this.container.querySelector(
+      '#timeout-input'
+    ) as HTMLInputElement;
 
     const rpm = parseInt(rpmInput.value);
     const duration = parseInt(durationValue.value);
-    const durationSec = durationUnit.value === 'minutes' ? duration * 60 : duration;
+    const durationSec =
+      durationUnit.value === 'minutes' ? duration * 60 : duration;
 
     let target: any;
     if (targetType.value === 'collection' && this.selectedRequestId) {
       // Use proper collection target that will be resolved from saved request
       target = {
         kind: 'collection',
-        requestId: this.selectedRequestId
+        requestId: this.selectedRequestId,
       };
     } else {
       // Use ad-hoc target from the editor
@@ -448,7 +495,7 @@ export class LoadTestForm {
       target,
       followRedirects: followRedirects.checked,
       insecureTLS: insecureTLS.checked,
-      requestTimeoutMs: parseInt(timeout.value)
+      requestTimeoutMs: parseInt(timeout.value),
     };
   }
 
@@ -459,12 +506,18 @@ export class LoadTestForm {
       errors.push('RPM must be between 1 and 10,000');
     }
 
-    if (!config.durationSec || config.durationSec < 1 || config.durationSec > 86400) {
+    if (
+      !config.durationSec ||
+      config.durationSec < 1 ||
+      config.durationSec > 86400
+    ) {
       errors.push('Duration must be between 1 second and 24 hours');
     }
 
     if (this.container) {
-      const targetType = this.container.querySelector('input[name="target-type"]:checked') as HTMLInputElement;
+      const targetType = this.container.querySelector(
+        'input[name="target-type"]:checked'
+      ) as HTMLInputElement;
       if (targetType?.value === 'collection' && !this.selectedRequestId) {
         errors.push('Please select a request from collections');
       }
@@ -475,7 +528,11 @@ export class LoadTestForm {
       errors.push(...adhocErrors);
     }
 
-    if (!config.requestTimeoutMs || config.requestTimeoutMs < 1000 || config.requestTimeoutMs > 300000) {
+    if (
+      !config.requestTimeoutMs ||
+      config.requestTimeoutMs < 1000 ||
+      config.requestTimeoutMs > 300000
+    ) {
       errors.push('Request timeout must be between 1 and 300 seconds');
     }
 
@@ -485,10 +542,12 @@ export class LoadTestForm {
   private showValidationErrors(errors: string[]): void {
     if (!this.container) return;
 
-    const errorContainer = this.container.querySelector('#validation-errors') as HTMLElement;
+    const errorContainer = this.container.querySelector(
+      '#validation-errors'
+    ) as HTMLElement;
     errorContainer.innerHTML = `
       <div class="error-list">
-        ${errors.map(error => `<div class="error-item">• ${error}</div>`).join('')}
+        ${errors.map((error) => `<div class="error-item">• ${error}</div>`).join('')}
       </div>
     `;
     errorContainer.style.display = 'block';
@@ -497,19 +556,33 @@ export class LoadTestForm {
   private clearValidationErrors(): void {
     if (!this.container) return;
 
-    const errorContainer = this.container.querySelector('#validation-errors') as HTMLElement;
+    const errorContainer = this.container.querySelector(
+      '#validation-errors'
+    ) as HTMLElement;
     errorContainer.style.display = 'none';
   }
 
   prefillConfig(config: LoadTestConfig): void {
     if (!this.container) return;
 
-    const rpmInput = this.container.querySelector('#rpm-input') as HTMLInputElement;
-    const durationValue = this.container.querySelector('#duration-value') as HTMLInputElement;
-    const durationUnit = this.container.querySelector('#duration-unit') as HTMLSelectElement;
-    const followRedirects = this.container.querySelector('#follow-redirects') as HTMLInputElement;
-    const insecureTLS = this.container.querySelector('#insecure-tls') as HTMLInputElement;
-    const timeout = this.container.querySelector('#timeout-input') as HTMLInputElement;
+    const rpmInput = this.container.querySelector(
+      '#rpm-input'
+    ) as HTMLInputElement;
+    const durationValue = this.container.querySelector(
+      '#duration-value'
+    ) as HTMLInputElement;
+    const durationUnit = this.container.querySelector(
+      '#duration-unit'
+    ) as HTMLSelectElement;
+    const followRedirects = this.container.querySelector(
+      '#follow-redirects'
+    ) as HTMLInputElement;
+    const insecureTLS = this.container.querySelector(
+      '#insecure-tls'
+    ) as HTMLInputElement;
+    const timeout = this.container.querySelector(
+      '#timeout-input'
+    ) as HTMLInputElement;
 
     rpmInput.value = config.rpm.toString();
 
@@ -526,7 +599,9 @@ export class LoadTestForm {
     timeout.value = (config.requestTimeoutMs || 30000).toString();
 
     if (config.target.kind === 'collection') {
-      const collectionRadio = this.container.querySelector('input[value="collection"]') as HTMLInputElement;
+      const collectionRadio = this.container.querySelector(
+        'input[value="collection"]'
+      ) as HTMLInputElement;
       collectionRadio.checked = true;
       this.toggleTargetSelector('collection');
 
@@ -539,7 +614,9 @@ export class LoadTestForm {
         }
       }
     } else {
-      const adhocRadio = this.container.querySelector('input[value="adhoc"]') as HTMLInputElement;
+      const adhocRadio = this.container.querySelector(
+        'input[value="adhoc"]'
+      ) as HTMLInputElement;
       adhocRadio.checked = true;
       this.toggleTargetSelector('adhoc');
       this.targetEditor.prefillTarget(config.target);

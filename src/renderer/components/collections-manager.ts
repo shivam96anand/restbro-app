@@ -24,7 +24,10 @@ export class CollectionsManager {
     return this.core.getSelectedCollection();
   }
 
-  updateCollectionRequest(collectionId: string, updatedRequest: ApiRequest): void {
+  updateCollectionRequest(
+    collectionId: string,
+    updatedRequest: ApiRequest
+  ): void {
     this.core.updateCollectionRequest(collectionId, updatedRequest);
   }
 

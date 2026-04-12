@@ -56,7 +56,11 @@ export function createVariableTooltip(
   value: string | undefined,
   source: string,
   onCopy?: (value: string) => void,
-  onEdit?: (variableName: string, currentValue: string | undefined, source: string) => void
+  onEdit?: (
+    variableName: string,
+    currentValue: string | undefined,
+    source: string
+  ) => void
 ): HTMLDivElement {
   const tooltip = document.createElement('div');
   tooltip.className = 'variable-tooltip';
@@ -74,7 +78,9 @@ export function createVariableTooltip(
 
   const sourceDiv = document.createElement('div');
   sourceDiv.className = 'variable-tooltip-source';
-  sourceDiv.appendChild(createIconElement('pin', { style: { width: '12px', height: '12px' } }));
+  sourceDiv.appendChild(
+    createIconElement('pin', { style: { width: '12px', height: '12px' } })
+  );
   sourceDiv.appendChild(document.createTextNode(source));
 
   tooltip.appendChild(nameDiv);
@@ -96,7 +102,9 @@ export function createVariableTooltip(
       if (onCopy) {
         onCopy(value);
       } else {
-        navigator.clipboard.writeText(value).catch(err => console.error('Failed to copy:', err));
+        navigator.clipboard
+          .writeText(value)
+          .catch((err) => console.error('Failed to copy:', err));
       }
       copyButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg><span>Copied!</span>`;
       copyButton.classList.add('copied');
@@ -113,7 +121,7 @@ export function createVariableTooltip(
   editButton.className = 'variable-tooltip-edit';
   editButton.title = 'Edit variable value';
   editButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg><span>Edit</span>`;
-  
+
   if (onEdit) {
     editButton.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -124,7 +132,7 @@ export function createVariableTooltip(
     editButton.addEventListener('click', (e) => {
       e.stopPropagation();
       const event = new CustomEvent('edit-variable-requested', {
-        detail: { variableName, value, source }
+        detail: { variableName, value, source },
       });
       document.dispatchEvent(event);
     });

@@ -19,9 +19,10 @@ export class RunProgress {
     this.config = config;
     this.totalPlanned = Math.floor((config.rpm * config.durationSec) / 60);
 
-    const targetDescription = config.target.kind === 'adhoc'
-      ? `${config.target.method} ${config.target.url}`
-      : `Collection Request`;
+    const targetDescription =
+      config.target.kind === 'adhoc'
+        ? `${config.target.method} ${config.target.url}`
+        : `Collection Request`;
 
     container.innerHTML = `
       <div class="load-test-progress">
@@ -109,9 +110,16 @@ export class RunProgress {
     if (!this.container) return;
 
     // Update progress bar
-    const percentage = this.totalPlanned > 0 ? (progress.completed / this.totalPlanned) * 100 : 0;
-    const progressFill = this.container.querySelector('#progress-fill') as HTMLElement;
-    const progressPercentage = this.container.querySelector('#progress-percentage') as HTMLElement;
+    const percentage =
+      this.totalPlanned > 0
+        ? (progress.completed / this.totalPlanned) * 100
+        : 0;
+    const progressFill = this.container.querySelector(
+      '#progress-fill'
+    ) as HTMLElement;
+    const progressPercentage = this.container.querySelector(
+      '#progress-percentage'
+    ) as HTMLElement;
 
     progressFill.style.width = `${Math.min(percentage, 100)}%`;
     progressPercentage.textContent = `${Math.round(percentage)}%`;
@@ -131,7 +139,9 @@ export class RunProgress {
   private updateStat(statId: string, value: number): void {
     if (!this.container) return;
 
-    const statElement = this.container.querySelector(`#${statId}`) as HTMLElement;
+    const statElement = this.container.querySelector(
+      `#${statId}`
+    ) as HTMLElement;
     if (statElement) {
       statElement.textContent = value.toLocaleString();
     }
@@ -140,7 +150,9 @@ export class RunProgress {
   private updateElapsedTime(elapsedSec: number): void {
     if (!this.container) return;
 
-    const elapsedElement = this.container.querySelector('#elapsed-time') as HTMLElement;
+    const elapsedElement = this.container.querySelector(
+      '#elapsed-time'
+    ) as HTMLElement;
     if (elapsedElement) {
       elapsedElement.textContent = this.formatDuration(elapsedSec);
     }
@@ -175,7 +187,9 @@ export class RunProgress {
   private updateCurrentRate(progress: LoadTestProgressTick): void {
     if (!this.container) return;
 
-    const rateElement = this.container.querySelector('#current-rate') as HTMLElement;
+    const rateElement = this.container.querySelector(
+      '#current-rate'
+    ) as HTMLElement;
     if (!rateElement) return;
 
     if (progress.elapsedSec > 0) {

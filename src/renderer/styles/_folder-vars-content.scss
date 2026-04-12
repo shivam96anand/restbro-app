@@ -117,9 +117,11 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  background: linear-gradient(135deg,
-              rgba(var(--primary-color-rgb), 0.02) 0%,
-              rgba(var(--primary-color-rgb), 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.02) 0%,
+    rgba(var(--primary-color-rgb), 0.05) 100%
+  );
   border-radius: 0 0 16px 16px;
 }
 
@@ -142,7 +144,11 @@
 
 .folder-vars-save-btn {
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   border: none;
   border-radius: 8px;
   color: white;

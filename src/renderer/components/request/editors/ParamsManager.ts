@@ -14,7 +14,11 @@ export class ParamsManager {
     this.setupEventListeners();
   }
 
-  public setVariableContext(activeEnvironment: any, globals: any, folderVars?: any): void {
+  public setVariableContext(
+    activeEnvironment: any,
+    globals: any,
+    folderVars?: any
+  ): void {
     this.activeEnvironment = activeEnvironment;
     this.globals = globals;
     this.folderVars = folderVars;
@@ -25,7 +29,9 @@ export class ParamsManager {
       const rows = paramsEditor.querySelectorAll('.kv-row');
       rows.forEach((row) => {
         const keyInput = row.querySelector('.key-input') as HTMLInputElement;
-        const valueInput = row.querySelector('.value-input') as HTMLInputElement;
+        const valueInput = row.querySelector(
+          '.value-input'
+        ) as HTMLInputElement;
         if (keyInput) {
           this.addVariableSupport(keyInput);
         }
@@ -115,13 +121,18 @@ export class ParamsManager {
     setupAutocomplete(input, () => ({
       activeEnvironment: this.activeEnvironment,
       globals: this.globals,
-      folderVars: this.folderVars || {}
+      folderVars: this.folderVars || {},
     }));
   }
 
   private refreshVariableDecorations(input: HTMLInputElement): void {
     // Only use addVariableHighlighting - it handles both coloring and tooltips on hover
-    addVariableHighlighting(input, this.activeEnvironment, this.globals, this.folderVars);
+    addVariableHighlighting(
+      input,
+      this.activeEnvironment,
+      this.globals,
+      this.folderVars
+    );
   }
 
   private updateParamsFromDOM(): void {
@@ -131,7 +142,7 @@ export class ParamsManager {
     const params: KeyValuePair[] = [];
     const rows = paramsEditor.querySelectorAll('.kv-row');
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const checkbox = row.querySelector('.kv-checkbox') as HTMLInputElement;
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
@@ -140,7 +151,7 @@ export class ParamsManager {
         params.push({
           key: keyInput.value.trim(),
           value: valueInput.value.trim(),
-          enabled: checkbox ? checkbox.checked : true
+          enabled: checkbox ? checkbox.checked : true,
         });
       }
     });
@@ -159,7 +170,9 @@ export class ParamsManager {
     }
   }
 
-  public loadParams(params: KeyValuePair[] | Record<string, string> | undefined): void {
+  public loadParams(
+    params: KeyValuePair[] | Record<string, string> | undefined
+  ): void {
     const paramsEditor = this.container.querySelector('#params-editor');
     if (!paramsEditor) return;
 
@@ -173,7 +186,7 @@ export class ParamsManager {
       paramsArray = Object.entries(params).map(([key, value]) => ({
         key,
         value,
-        enabled: true
+        enabled: true,
       }));
     } else {
       paramsArray = [];
@@ -193,7 +206,7 @@ export class ParamsManager {
       // Set values after creating elements to avoid HTML escaping issues
       const keyInput = row.querySelector('.key-input') as HTMLInputElement;
       const valueInput = row.querySelector('.value-input') as HTMLInputElement;
-      
+
       if (keyInput) keyInput.value = key;
       if (valueInput) valueInput.value = value;
 

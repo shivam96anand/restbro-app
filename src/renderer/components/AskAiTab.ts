@@ -1,12 +1,34 @@
 // Ask AI Tab - Main Class (Orchestrates AI chat functionality)
 
-import { AiSession, AiContext, AskAiState, ApiRequest, ApiResponse, createInitialState } from './ask-ai/types';
+import {
+  AiSession,
+  AiContext,
+  AskAiState,
+  ApiRequest,
+  ApiResponse,
+  createInitialState,
+} from './ask-ai/types';
 import { AI_MAX_CONTEXT_CHARS } from '../../shared/types';
 import { iconHtml } from '../utils/icons';
-import { escapeHtml, calculateContextSize, showSizeWarning } from './ask-ai/utils';
-import { renderSessionsList, renderEngineStatusBanner, renderWelcome, renderQuickSuggestions, renderInputArea } from './ask-ai/render-sidebar';
+import {
+  escapeHtml,
+  calculateContextSize,
+  showSizeWarning,
+} from './ask-ai/utils';
+import {
+  renderSessionsList,
+  renderEngineStatusBanner,
+  renderWelcome,
+  renderQuickSuggestions,
+  renderInputArea,
+} from './ask-ai/render-sidebar';
 import { renderContextPanel, renderChatMessages } from './ask-ai/render-chat';
-import { setupEventListeners, updateStreamingMessage, showError, updateEngineStatusBanner } from './ask-ai/event-handlers';
+import {
+  setupEventListeners,
+  updateStreamingMessage,
+  showError,
+  updateEngineStatusBanner,
+} from './ask-ai/event-handlers';
 import { sendMessageToAI } from './ask-ai/messaging';
 
 declare const apiCourier: {
@@ -14,8 +36,13 @@ declare const apiCourier: {
     getSessions: () => Promise<{ sessions: AiSession[] }>;
     createSession: (context?: AiContext) => Promise<AiSession>;
     deleteSession: (sessionId: string) => Promise<boolean>;
-    updateSession: (sessionId: string, updates: { title?: string; context?: AiContext }) => Promise<AiSession | null>;
-    onMessageStream: (callback: (data: { requestId: string; chunk: string }) => void) => () => void;
+    updateSession: (
+      sessionId: string,
+      updates: { title?: string; context?: AiContext }
+    ) => Promise<AiSession | null>;
+    onMessageStream: (
+      callback: (data: { requestId: string; chunk: string }) => void
+    ) => () => void;
     checkEngine: () => Promise<{ available: boolean; error?: string }>;
   };
 };
@@ -72,7 +99,11 @@ export class AskAiTab {
         }
         if (data.requestId === this.state.currentRequestId) {
           this.state.streamingContent += data.chunk;
-          updateStreamingMessage(this.container, this.state.streamingContent, () => this.scrollToBottom());
+          updateStreamingMessage(
+            this.container,
+            this.state.streamingContent,
+            () => this.scrollToBottom()
+          );
         }
       }
     });
@@ -84,7 +115,10 @@ export class AskAiTab {
     }
   }
 
-  async openWithContext(request?: ApiRequest, response?: ApiResponse): Promise<void> {
+  async openWithContext(
+    request?: ApiRequest,
+    response?: ApiResponse
+  ): Promise<void> {
     const context: AiContext = {};
     if (request) context.request = request;
     if (response) context.response = response;
@@ -106,7 +140,9 @@ export class AskAiTab {
       console.error('Failed to create session with context:', error);
     }
 
-    document.dispatchEvent(new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } }));
+    document.dispatchEvent(
+      new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } })
+    );
   }
 
   private async loadSessions(): Promise<void> {
@@ -127,11 +163,16 @@ export class AskAiTab {
       const result = await apiCourier.ai.checkEngine();
       this.state.engineStatus = result.available ? 'available' : 'unavailable';
       this.state.engineError = result.error;
-      updateEngineStatusBanner(this.container, this.state, () => renderEngineStatusBanner(this.state));
+      updateEngineStatusBanner(this.container, this.state, () =>
+        renderEngineStatusBanner(this.state)
+      );
     } catch (error) {
       this.state.engineStatus = 'unavailable';
-      this.state.engineError = error instanceof Error ? error.message : 'Unknown error';
-      updateEngineStatusBanner(this.container, this.state, () => renderEngineStatusBanner(this.state));
+      this.state.engineError =
+        error instanceof Error ? error.message : 'Unknown error';
+      updateEngineStatusBanner(this.container, this.state, () =>
+        renderEngineStatusBanner(this.state)
+      );
     }
   }
 
@@ -169,17 +210,30 @@ export class AskAiTab {
     this.state.renamingSessionId = sessionId;
     this.render();
     setTimeout(() => {
-      const input = this.container.querySelector('.session-title-input') as HTMLInputElement;
-      if (input) { input.focus(); input.select(); }
+      const input = this.container.querySelector(
+        '.session-title-input'
+      ) as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
     }, 0);
   }
 
-  private async finishRenameSession(sessionId: string, newTitle: string): Promise<void> {
-    if (!newTitle) { this.cancelRenameSession(); return; }
-    const session = this.state.sessions.find(s => s.id === sessionId);
+  private async finishRenameSession(
+    sessionId: string,
+    newTitle: string
+  ): Promise<void> {
+    if (!newTitle) {
+      this.cancelRenameSession();
+      return;
+    }
+    const session = this.state.sessions.find((s) => s.id === sessionId);
     if (session && session.title !== newTitle) {
       try {
-        const updated = await apiCourier.ai.updateSession(sessionId, { title: newTitle });
+        const updated = await apiCourier.ai.updateSession(sessionId, {
+          title: newTitle,
+        });
         if (updated) session.title = updated.title;
       } catch (error) {
         console.error('Failed to rename session:', error);
@@ -196,15 +250,23 @@ export class AskAiTab {
 
   private async handleFileUpload(file: File): Promise<void> {
     const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) { alert('File too large. Maximum size is 10MB.'); return; }
+    if (file.size > maxSize) {
+      alert('File too large. Maximum size is 10MB.');
+      return;
+    }
 
     try {
       const content = await file.text();
-      if (content.length > AI_MAX_CONTEXT_CHARS) { showSizeWarning(content.length, AI_MAX_CONTEXT_CHARS); return; }
+      if (content.length > AI_MAX_CONTEXT_CHARS) {
+        showSizeWarning(content.length, AI_MAX_CONTEXT_CHARS);
+        return;
+      }
 
       const context: AiContext = { fileContent: content, fileName: file.name };
       if (this.state.activeSessionId) {
-        await apiCourier.ai.updateSession(this.state.activeSessionId, { context });
+        await apiCourier.ai.updateSession(this.state.activeSessionId, {
+          context,
+        });
         const session = this.getActiveSession();
         if (session) session.context = context;
       } else {
@@ -243,7 +305,9 @@ export class AskAiTab {
     if (!confirm('Delete this conversation?')) return;
     try {
       await apiCourier.ai.deleteSession(sessionId);
-      this.state.sessions = this.state.sessions.filter(s => s.id !== sessionId);
+      this.state.sessions = this.state.sessions.filter(
+        (s) => s.id !== sessionId
+      );
       if (this.state.activeSessionId === sessionId) {
         this.state.activeSessionId = this.state.sessions[0]?.id || null;
       }
@@ -255,13 +319,17 @@ export class AskAiTab {
 
   private async sendMessage(): Promise<void> {
     await sendMessageToAI(
-      this.container, this.state, () => this.getActiveSession(),
-      () => this.createNewSession(), () => this.render(), () => this.scrollToBottom()
+      this.container,
+      this.state,
+      () => this.getActiveSession(),
+      () => this.createNewSession(),
+      () => this.render(),
+      () => this.scrollToBottom()
     );
   }
 
   private getActiveSession(): AiSession | undefined {
-    return this.state.sessions.find(s => s.id === this.state.activeSessionId);
+    return this.state.sessions.find((s) => s.id === this.state.activeSessionId);
   }
 
   private scrollToBottom(): void {
@@ -270,7 +338,10 @@ export class AskAiTab {
   }
 
   destroy(): void {
-    if (this.streamCleanup) { this.streamCleanup(); this.streamCleanup = null; }
+    if (this.streamCleanup) {
+      this.streamCleanup();
+      this.streamCleanup = null;
+    }
     this.isInitialized = false;
   }
 }

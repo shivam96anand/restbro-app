@@ -61,7 +61,10 @@ function getAllVariables(
   // 3. Global variables (lowest priority)
   Object.entries(globals.variables).forEach(([name, value]) => {
     // Skip if already exists in folder or environment vars
-    if (!folderVars[name] && (!activeEnvironment || !activeEnvironment.variables[name])) {
+    if (
+      !folderVars[name] &&
+      (!activeEnvironment || !activeEnvironment.variables[name])
+    ) {
       options.push({ name, value, source: 'Global' });
       seen.add(name);
     }
@@ -85,13 +88,16 @@ function getAllVariables(
 /**
  * Filters options based on the search query
  */
-function filterOptions(options: AutocompleteOption[], query: string): AutocompleteOption[] {
+function filterOptions(
+  options: AutocompleteOption[],
+  query: string
+): AutocompleteOption[] {
   if (!query) {
     return options;
   }
 
   const lowerQuery = query.toLowerCase();
-  return options.filter(option =>
+  return options.filter((option) =>
     option.name.toLowerCase().includes(lowerQuery)
   );
 }
@@ -99,7 +105,9 @@ function filterOptions(options: AutocompleteOption[], query: string): Autocomple
 /**
  * Detects if cursor is inside "{{...}}" and returns the search query
  */
-function detectVariableContext(input: HTMLInputElement): { isInVariable: boolean; query: string; startPos: number } | null {
+function detectVariableContext(
+  input: HTMLInputElement
+): { isInVariable: boolean; query: string; startPos: number } | null {
   const value = input.value;
   const cursorPos = input.selectionStart || 0;
 
@@ -124,7 +132,7 @@ function detectVariableContext(input: HTMLInputElement): { isInVariable: boolean
   return {
     isInVariable: true,
     query,
-    startPos: lastOpenIndex
+    startPos: lastOpenIndex,
   };
 }
 
@@ -198,7 +206,10 @@ function createAutocompleteBox(
 /**
  * Positions the autocomplete box below the input
  */
-function positionAutocompleteBox(inputElement: HTMLInputElement, box: HTMLDivElement): void {
+function positionAutocompleteBox(
+  inputElement: HTMLInputElement,
+  box: HTMLDivElement
+): void {
   const inputRect = inputElement.getBoundingClientRect();
 
   box.style.position = 'fixed';
@@ -214,7 +225,9 @@ function positionAutocompleteBox(inputElement: HTMLInputElement, box: HTMLDivEle
 function updateSelection(): void {
   if (!globalAutocompleteBox) return;
 
-  const items = globalAutocompleteBox.querySelectorAll('.variable-autocomplete-item:not(.empty)');
+  const items = globalAutocompleteBox.querySelectorAll(
+    '.variable-autocomplete-item:not(.empty)'
+  );
   items.forEach((item, index) => {
     if (index === selectedIndex) {
       item.classList.add('selected');
@@ -229,7 +242,10 @@ function updateSelection(): void {
 /**
  * Selects an option and inserts it into the input
  */
-function selectOption(inputElement: HTMLInputElement, option: AutocompleteOption): void {
+function selectOption(
+  inputElement: HTMLInputElement,
+  option: AutocompleteOption
+): void {
   const context = detectVariableContext(inputElement);
   if (!context) return;
 
@@ -368,7 +384,12 @@ export function setupAutocomplete(
   // Handle input changes
   inputElement.addEventListener('input', () => {
     const context = getContext();
-    showAutocomplete(inputElement, context.activeEnvironment, context.globals, context.folderVars);
+    showAutocomplete(
+      inputElement,
+      context.activeEnvironment,
+      context.globals,
+      context.folderVars
+    );
   });
 
   // Handle keyboard navigation
@@ -390,7 +411,10 @@ export function setupAutocomplete(
   document.addEventListener('click', (event) => {
     if (currentInputElement === inputElement) {
       const target = event.target as HTMLElement;
-      if (!inputElement.contains(target) && !globalAutocompleteBox?.contains(target)) {
+      if (
+        !inputElement.contains(target) &&
+        !globalAutocompleteBox?.contains(target)
+      ) {
         removeAutocompleteBox();
       }
     }

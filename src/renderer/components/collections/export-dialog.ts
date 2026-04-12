@@ -40,7 +40,9 @@ export interface ExportDialogOptions {
  * Environments: list with checkboxes (all checked by default).
  * Globals: single checkbox (checked by default).
  */
-export function showExportDialog(options: ExportDialogOptions): Promise<ExportSelection | null> {
+export function showExportDialog(
+  options: ExportDialogOptions
+): Promise<ExportSelection | null> {
   const { collections, environments, globals } = options;
   const rootItems = collections
     .filter((c) => !c.parentId)
@@ -51,7 +53,8 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
   const expandedFolderIds = new Set<string>(); // collapsed by default
   let includeGlobals = true;
 
-  const hasAnyGlobals = globals?.variables && Object.keys(globals.variables).length > 0;
+  const hasAnyGlobals =
+    globals?.variables && Object.keys(globals.variables).length > 0;
 
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -88,7 +91,8 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
     title.textContent = 'Export';
     title.style.cssText = `margin: 0; color: var(--text-primary); font-size: 18px; font-weight: 600;`;
     const subtitle = document.createElement('div');
-    subtitle.textContent = 'Choose collections, environments, and globals to include in the export file.';
+    subtitle.textContent =
+      'Choose collections, environments, and globals to include in the export file.';
     subtitle.style.cssText = `margin-top: 6px; color: var(--text-secondary); font-size: 13px;`;
     header.appendChild(title);
     header.appendChild(subtitle);
@@ -136,22 +140,28 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
         checkedCollectionIds.add(id);
         const c = collections.find((x) => x.id === id);
         if (c?.type === 'folder') {
-          collections.filter((x) => x.parentId === id).forEach((child) => setCollectionChecked(child.id, true));
+          collections
+            .filter((x) => x.parentId === id)
+            .forEach((child) => setCollectionChecked(child.id, true));
         }
       } else {
         checkedCollectionIds.delete(id);
         const c = collections.find((x) => x.id === id);
         if (c?.type === 'folder') {
-          collections.filter((x) => x.parentId === id).forEach((child) => setCollectionChecked(child.id, false));
+          collections
+            .filter((x) => x.parentId === id)
+            .forEach((child) => setCollectionChecked(child.id, false));
         }
       }
     }
 
     function syncCheckboxesFromSet(): void {
-      collTree.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-id]').forEach((input) => {
-        const id = input.dataset.id;
-        if (id) input.checked = checkedCollectionIds.has(id);
-      });
+      collTree
+        .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-id]')
+        .forEach((input) => {
+          const id = input.dataset.id;
+          if (id) input.checked = checkedCollectionIds.has(id);
+        });
     }
 
     function renderCollectionTree(): void {
@@ -168,12 +178,17 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
 
       if (c.type === 'folder') {
         const expanded = expandedFolderIds.has(c.id);
-        const children = collections.filter((x) => x.parentId === c.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const children = collections
+          .filter((x) => x.parentId === c.id)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const hasChildren = children.length > 0;
 
         const caretBtn = document.createElement('button');
         caretBtn.type = 'button';
-        caretBtn.setAttribute('aria-label', expanded ? 'Collapse folder' : 'Expand folder');
+        caretBtn.setAttribute(
+          'aria-label',
+          expanded ? 'Collapse folder' : 'Expand folder'
+        );
         caretBtn.style.cssText = `
           width: 20px; height: 20px; padding: 0; border: none; background: none; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
@@ -200,10 +215,13 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
           setCollectionChecked(c.id, cb.checked);
           syncCheckboxesFromSet();
         });
-        const icon = createIconElement('folder', { style: { width: '14px', height: '14px' } });
+        const icon = createIconElement('folder', {
+          style: { width: '14px', height: '14px' },
+        });
         const name = document.createElement('span');
         name.textContent = c.name;
-        name.style.cssText = 'color: var(--text-primary); font-size: 13px; cursor: pointer; flex: 1;';
+        name.style.cssText =
+          'color: var(--text-primary); font-size: 13px; cursor: pointer; flex: 1;';
         name.addEventListener('click', () => {
           if (hasChildren) {
             if (expandedFolderIds.has(c.id)) expandedFolderIds.delete(c.id);
@@ -232,9 +250,13 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
           setCollectionChecked(c.id, cb.checked);
           syncCheckboxesFromSet();
         });
-        const icon = createIconElement('file', { style: { width: '14px', height: '14px' } });
+        const icon = createIconElement('file', {
+          style: { width: '14px', height: '14px' },
+        });
         const name = document.createElement('span');
-        name.textContent = c.request ? `${c.request.method ?? 'GET'} ${c.name}` : c.name;
+        name.textContent = c.request
+          ? `${c.request.method ?? 'GET'} ${c.name}`
+          : c.name;
         name.style.cssText = 'color: var(--text-primary); font-size: 13px;';
         row.appendChild(spacer);
         row.appendChild(cb);
@@ -285,7 +307,9 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
         if (cb.checked) checkedEnvironmentIds.add(env.id);
         else checkedEnvironmentIds.delete(env.id);
       });
-      const icon = createIconElement('globe', { style: { width: '14px', height: '14px' } });
+      const icon = createIconElement('globe', {
+        style: { width: '14px', height: '14px' },
+      });
       const name = document.createElement('span');
       name.textContent = env.name;
       name.style.cssText = 'color: var(--text-primary); font-size: 13px;';
@@ -307,7 +331,9 @@ export function showExportDialog(options: ExportDialogOptions): Promise<ExportSe
       const globCb = document.createElement('input');
       globCb.type = 'checkbox';
       globCb.checked = true;
-      globCb.addEventListener('change', () => { includeGlobals = globCb.checked; });
+      globCb.addEventListener('change', () => {
+        includeGlobals = globCb.checked;
+      });
       const globText = document.createElement('span');
       globText.textContent = `Include globals (${Object.keys(globals?.variables ?? {}).length} variables)`;
       globText.style.cssText = 'color: var(--text-primary); font-size: 13px;';

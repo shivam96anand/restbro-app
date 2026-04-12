@@ -7,7 +7,11 @@ export class CollectionsUIHandler {
   private onShowCreateMenu: (event: MouseEvent) => void;
   private onShowContextMenu: (event: MouseEvent, collectionId: string) => void;
   private onMoveCollection: (draggedId: string, targetFolderId: string) => void;
-  private onReorderCollection: (draggedId: string, targetId: string, position: 'before' | 'after') => void;
+  private onReorderCollection: (
+    draggedId: string,
+    targetId: string,
+    position: 'before' | 'after'
+  ) => void;
   private findCollectionById: (id: string) => Collection | undefined;
 
   constructor(
@@ -16,7 +20,11 @@ export class CollectionsUIHandler {
     onShowCreateMenu: (event: MouseEvent) => void,
     onShowContextMenu: (event: MouseEvent, collectionId: string) => void,
     onMoveCollection: (draggedId: string, targetFolderId: string) => void,
-    onReorderCollection: (draggedId: string, targetId: string, position: 'before' | 'after') => void,
+    onReorderCollection: (
+      draggedId: string,
+      targetId: string,
+      position: 'before' | 'after'
+    ) => void,
     findCollectionById: (id: string) => Collection | undefined
   ) {
     this.onToggleFolder = onToggleFolder;
@@ -57,17 +65,21 @@ export class CollectionsUIHandler {
         return;
       }
 
-      if (target.classList.contains('collection-item') || target.closest('.collection-item')) {
+      if (
+        target.classList.contains('collection-item') ||
+        target.closest('.collection-item')
+      ) {
         const collectionElement = target.classList.contains('collection-item')
           ? target
-          : target.closest('.collection-item') as HTMLElement;
+          : (target.closest('.collection-item') as HTMLElement);
         const collectionId = collectionElement?.dataset.collectionId;
         if (collectionId) {
           const collection = this.findCollectionById(collectionId);
 
-          const isActionButton = target.classList.contains('action-btn') ||
-                               target.closest('.action-btn') ||
-                               target.closest('.collection-actions');
+          const isActionButton =
+            target.classList.contains('action-btn') ||
+            target.closest('.action-btn') ||
+            target.closest('.collection-actions');
 
           if (collection && collection.type === 'folder' && !isActionButton) {
             this.onToggleFolder(collectionId);
@@ -83,7 +95,9 @@ export class CollectionsUIHandler {
     collectionsTree.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
 
       if (collectionElement) {
         const collectionId = collectionElement.dataset.collectionId;
@@ -94,10 +108,15 @@ export class CollectionsUIHandler {
     });
   }
 
-  private setupDragDropEvents(collectionsTree: HTMLElement, treeState: CollectionTreeState): void {
+  private setupDragDropEvents(
+    collectionsTree: HTMLElement,
+    treeState: CollectionTreeState
+  ): void {
     collectionsTree.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
       if (collectionElement) {
         const collectionId = collectionElement.dataset.collectionId;
         if (collectionId) {
@@ -110,12 +129,14 @@ export class CollectionsUIHandler {
 
     collectionsTree.addEventListener('dragend', (e) => {
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
       if (collectionElement) {
         collectionElement.classList.remove('dragging');
       }
       // Clean up all drop indicators
-      document.querySelectorAll('.collection-item').forEach(el => {
+      document.querySelectorAll('.collection-item').forEach((el) => {
         el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
       });
       treeState.draggedItem = undefined;
@@ -124,7 +145,9 @@ export class CollectionsUIHandler {
     collectionsTree.addEventListener('dragover', (e) => {
       e.preventDefault();
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
 
       if (!collectionElement || !treeState.draggedItem) return;
 
@@ -132,7 +155,7 @@ export class CollectionsUIHandler {
       if (!targetId || targetId === treeState.draggedItem) return;
 
       // Remove all previous drag indicators
-      document.querySelectorAll('.collection-item').forEach(el => {
+      document.querySelectorAll('.collection-item').forEach((el) => {
         el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
       });
 
@@ -169,18 +192,29 @@ export class CollectionsUIHandler {
 
     collectionsTree.addEventListener('dragleave', (e) => {
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
 
       // Only remove classes if we're actually leaving this element
-      if (collectionElement && !collectionElement.contains(e.relatedTarget as Node)) {
-        collectionElement.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+      if (
+        collectionElement &&
+        !collectionElement.contains(e.relatedTarget as Node)
+      ) {
+        collectionElement.classList.remove(
+          'drag-over',
+          'drag-over-top',
+          'drag-over-bottom'
+        );
       }
     });
 
     collectionsTree.addEventListener('drop', (e) => {
       e.preventDefault();
       const target = e.target as HTMLElement;
-      const collectionElement = target.closest('.collection-item') as HTMLElement;
+      const collectionElement = target.closest(
+        '.collection-item'
+      ) as HTMLElement;
 
       if (!collectionElement || !treeState.draggedItem) return;
 
@@ -189,7 +223,11 @@ export class CollectionsUIHandler {
 
       if (!targetId || !draggedId || targetId === draggedId) {
         // Clean up
-        collectionElement.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
+        collectionElement.classList.remove(
+          'drag-over',
+          'drag-over-top',
+          'drag-over-bottom'
+        );
         return;
       }
 
@@ -197,7 +235,10 @@ export class CollectionsUIHandler {
       if (!collection) return;
 
       // Determine what action to take based on which class was applied
-      if (collectionElement.classList.contains('drag-over') && collection.type === 'folder') {
+      if (
+        collectionElement.classList.contains('drag-over') &&
+        collection.type === 'folder'
+      ) {
         // Drop INTO folder
         this.onMoveCollection(draggedId, targetId);
       } else if (collectionElement.classList.contains('drag-over-top')) {
@@ -209,7 +250,7 @@ export class CollectionsUIHandler {
       }
 
       // Clean up all indicators
-      document.querySelectorAll('.collection-item').forEach(el => {
+      document.querySelectorAll('.collection-item').forEach((el) => {
         el.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom');
       });
     });
@@ -227,7 +268,7 @@ export class CollectionsUIHandler {
       { key: '↑/↓', description: 'Navigate up/down' },
       { key: '→', description: 'Expand folder' },
       { key: '←', description: 'Collapse folder' },
-      { key: 'Escape', description: 'Clear search' }
+      { key: 'Escape', description: 'Clear search' },
     ];
 
     const overlay = document.createElement('div');
@@ -272,7 +313,7 @@ export class CollectionsUIHandler {
       gap: 8px;
     `;
 
-    shortcuts.forEach(shortcut => {
+    shortcuts.forEach((shortcut) => {
       const item = document.createElement('div');
       item.style.cssText = `
         display: flex;

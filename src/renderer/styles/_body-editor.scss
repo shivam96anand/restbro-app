@@ -133,17 +133,17 @@
   &:not(:empty) {
     display: inline-flex;
   }
-  
+
   &.valid {
     color: var(--success-color);
     background-color: var(--success-bg);
   }
-  
+
   &.invalid {
     color: var(--error-color);
     background-color: var(--error-bg);
   }
-  
+
   &.info {
     color: var(--text-secondary);
   }

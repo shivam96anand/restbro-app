@@ -85,7 +85,7 @@ export function resolveParamsOrHeaders(
     return input.map(({ key, value, enabled }) => ({
       key: resolve(key),
       value: resolve(value),
-      enabled
+      enabled,
     }));
   }
 
@@ -95,21 +95,26 @@ export function resolveParamsOrHeaders(
 /**
  * Resolves all variables in a request, returning a new request with resolved values
  */
-export async function resolveRequestVariables(request: ApiRequest): Promise<ApiRequest> {
+export async function resolveRequestVariables(
+  request: ApiRequest
+): Promise<ApiRequest> {
   try {
     const state = await window.apiCourier.store.get();
     const activeEnvironment = state.activeEnvironmentId
       ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
       : undefined;
     const globals = state.globals || { variables: {} };
-    const folderVars = buildFolderVars(request.collectionId, state.collections || []);
+    const folderVars = buildFolderVars(
+      request.collectionId,
+      state.collections || []
+    );
     const requestVars = request.variables || {};
 
     const vars: VariableSources = {
       requestVars,
       folderVars,
       envVars: activeEnvironment?.variables || {},
-      globalVars: globals.variables || {}
+      globalVars: globals.variables || {},
     };
 
     const resolve = (input: string) => resolveTemplate(input, vars);
@@ -123,15 +128,17 @@ export async function resolveRequestVariables(request: ApiRequest): Promise<ApiR
         ? {
             ...request.body,
             content: resolve(request.body.content || ''),
-            contentType: request.body.contentType ? resolve(request.body.contentType) : request.body.contentType
+            contentType: request.body.contentType
+              ? resolve(request.body.contentType)
+              : request.body.contentType,
           }
         : undefined,
       auth: request.auth
         ? {
             ...request.auth,
-            config: resolveObject(request.auth.config || {}, resolve)
+            config: resolveObject(request.auth.config || {}, resolve),
           }
-        : undefined
+        : undefined,
     };
 
     return resolved;

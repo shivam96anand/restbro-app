@@ -5,7 +5,12 @@
 
 import { Environment } from '../../../shared/types';
 import { detectVariables, resolveVariable } from './variable-detection';
-import { createVariableTooltip, removeGlobalTooltip, getGlobalTooltip, setGlobalTooltip } from './variable-tooltip';
+import {
+  createVariableTooltip,
+  removeGlobalTooltip,
+  getGlobalTooltip,
+  setGlobalTooltip,
+} from './variable-tooltip';
 
 /**
  * Adds hover tooltips to an input field for variables
@@ -24,7 +29,9 @@ export function addVariableTooltips(
   };
 
   // Remove existing handlers to prevent duplicates when reinitializing
-  const existingHandlers = (inputElement as any).__variableTooltipHandlers as TooltipHandlers | undefined;
+  const existingHandlers = (inputElement as any).__variableTooltipHandlers as
+    | TooltipHandlers
+    | undefined;
   if (existingHandlers) {
     inputElement.removeEventListener('mouseenter', existingHandlers.mouseenter);
     inputElement.removeEventListener('mousemove', existingHandlers.mousemove);
@@ -47,7 +54,12 @@ export function addVariableTooltips(
     const hoveredVariable = variables[0];
 
     // Resolve the variable
-    const { value, source } = resolveVariable(hoveredVariable.name, activeEnvironment, globals, folderVars);
+    const { value, source } = resolveVariable(
+      hoveredVariable.name,
+      activeEnvironment,
+      globals,
+      folderVars
+    );
 
     // Remove existing global tooltip
     removeGlobalTooltip();
@@ -60,7 +72,12 @@ export function addVariableTooltips(
     };
 
     // Create and position new tooltip
-    const tooltip = createVariableTooltip(hoveredVariable.name, value, source, handleCopy);
+    const tooltip = createVariableTooltip(
+      hoveredVariable.name,
+      value,
+      source,
+      handleCopy
+    );
     setGlobalTooltip(tooltip);
     document.body.appendChild(tooltip);
 
@@ -94,21 +111,29 @@ export function addVariableTooltips(
       if (!isMouseOver && globalTooltip) {
         // Check if mouse is over the tooltip
         const tooltipRect = globalTooltip.getBoundingClientRect();
-        const isOverTooltip = document.elementFromPoint(
-          tooltipRect.left + tooltipRect.width / 2,
-          tooltipRect.top + tooltipRect.height / 2
-        ) === globalTooltip || globalTooltip.contains(document.elementFromPoint(
-          tooltipRect.left + tooltipRect.width / 2,
-          tooltipRect.top + tooltipRect.height / 2
-        ) as Node);
+        const isOverTooltip =
+          document.elementFromPoint(
+            tooltipRect.left + tooltipRect.width / 2,
+            tooltipRect.top + tooltipRect.height / 2
+          ) === globalTooltip ||
+          globalTooltip.contains(
+            document.elementFromPoint(
+              tooltipRect.left + tooltipRect.width / 2,
+              tooltipRect.top + tooltipRect.height / 2
+            ) as Node
+          );
 
         if (!isOverTooltip) {
           hideTooltip();
         } else {
           // Add mouse leave handler to tooltip itself
-          globalTooltip.addEventListener('mouseleave', () => {
-            hideTooltip();
-          }, { once: true });
+          globalTooltip.addEventListener(
+            'mouseleave',
+            () => {
+              hideTooltip();
+            },
+            { once: true }
+          );
         }
       }
     }, 100);
@@ -128,6 +153,6 @@ export function addVariableTooltips(
     mouseenter: handleMouseEnter,
     mousemove: handleMouseMove,
     mouseleave: handleMouseLeave,
-    blur: handleBlur
+    blur: handleBlur,
   };
 }

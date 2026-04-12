@@ -7,7 +7,11 @@
     align-items: flex-start;
     margin-bottom: 16px;
     padding: 20px 24px;
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(12, 12, 12, 0.8));
+    background: linear-gradient(
+      145deg,
+      rgba(20, 20, 20, 0.9),
+      rgba(12, 12, 12, 0.8)
+    );
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
@@ -33,7 +37,11 @@
   }
 
   .progress-section {
-    background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(12, 12, 12, 0.8));
+    background: linear-gradient(
+      145deg,
+      rgba(20, 20, 20, 0.9),
+      rgba(12, 12, 12, 0.8)
+    );
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
@@ -59,7 +67,11 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
 
       .progress-fill {
-        background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--primary-light)
+        );
         height: 100%;
         transition: width 0.3s ease;
         border-radius: 999px;

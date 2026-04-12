@@ -40,7 +40,7 @@ export function buildFolderVars(
   // Build ancestor chain from child to root
   let currentId: string | undefined = collectionId;
   while (currentId) {
-    const collection = collections.find(c => c.id === currentId);
+    const collection = collections.find((c) => c.id === currentId);
     if (!collection) break;
 
     ancestorChain.push(collection);
@@ -62,7 +62,10 @@ export function buildFolderVars(
  * Resolves variable placeholders in a template string
  * Supports nested variables and default values
  */
-export function resolveTemplate(input: string, opts: ResolveOptions = {}): string {
+export function resolveTemplate(
+  input: string,
+  opts: ResolveOptions = {}
+): string {
   // Handle undefined/null input gracefully
   if (input === undefined || input === null) {
     return '';
@@ -75,7 +78,7 @@ export function resolveTemplate(input: string, opts: ResolveOptions = {}): strin
     globalVars = {},
     systemVars,
     urlEncodeValues = false,
-    maxDepth = 5
+    maxDepth = 5,
   } = opts;
 
   let output = input;
@@ -142,7 +145,12 @@ export function resolveObject(
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip entries with undefined/null keys or values
-    if (key === undefined || key === null || value === undefined || value === null) {
+    if (
+      key === undefined ||
+      key === null ||
+      value === undefined ||
+      value === null
+    ) {
       continue;
     }
     resolved[resolveTemplate(key, opts)] = resolveTemplate(value, opts);
@@ -161,7 +169,7 @@ export function resolveKeyValueArray(
   return arr.map(({ key, value, enabled }) => ({
     key: resolveTemplate(key || '', opts),
     value: resolveTemplate(value || '', opts),
-    enabled
+    enabled,
   }));
 }
 
@@ -173,7 +181,7 @@ export function resolveParamsOrHeaders(
   opts: ResolveOptions = {}
 ): KeyValuePair[] | Record<string, string> {
   if (!input) return {};
-  
+
   if (Array.isArray(input)) {
     return resolveKeyValueArray(input, opts);
   } else {
@@ -185,8 +193,16 @@ export function resolveParamsOrHeaders(
  * Scans a string for unresolved variable placeholders
  * Returns array of variable names that couldn't be resolved
  */
-export function scanUnresolvedVars(input: string, opts: ResolveOptions = {}): string[] {
-  const { requestVars = {}, folderVars = {}, envVars = {}, globalVars = {} } = opts;
+export function scanUnresolvedVars(
+  input: string,
+  opts: ResolveOptions = {}
+): string[] {
+  const {
+    requestVars = {},
+    folderVars = {},
+    envVars = {},
+    globalVars = {},
+  } = opts;
   const unresolved: string[] = [];
 
   // After resolution, find remaining {{var}} patterns

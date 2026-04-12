@@ -1,6 +1,10 @@
 import { ApiRequest, ApiResponse } from '../../shared/types';
 import { oauthManager } from './oauth';
-import { composeFinalRequest, buildFolderVars, scanUnresolvedVars } from './variables';
+import {
+  composeFinalRequest,
+  buildFolderVars,
+  scanUnresolvedVars,
+} from './variables';
 import { storeManager } from './store-manager';
 import * as http from 'http';
 import * as https from 'https';
@@ -11,7 +15,10 @@ import { RequestErrorFormatter } from './request-error-formatter';
 import { parseKeystoreJks, parseTruststoreJks } from './jks-parser';
 
 class RequestManager {
-  private activeRequests = new Map<string, { req: http.ClientRequest; reject: (err: Error) => void }>();
+  private activeRequests = new Map<
+    string,
+    { req: http.ClientRequest; reject: (err: Error) => void }
+  >();
 
   async sendRequest(request: ApiRequest): Promise<ApiResponse> {
     const startTime = Date.now();
@@ -27,17 +34,16 @@ class RequestManager {
     // buildFolderVars() only processes folder-type collections, so we need the parent folder ID
     let collectionIdForVars = request.collectionId;
     if (collectionIdForVars) {
-      const collection = state.collections.find(c => c.id === collectionIdForVars);
+      const collection = state.collections.find(
+        (c) => c.id === collectionIdForVars
+      );
       if (collection && collection.type === 'request' && collection.parentId) {
         collectionIdForVars = collection.parentId;
       }
     }
 
     // Build folder variables from ancestor chain
-    const folderVars = buildFolderVars(
-      collectionIdForVars,
-      state.collections
-    );
+    const folderVars = buildFolderVars(collectionIdForVars, state.collections);
 
     const resolvedRequest = composeFinalRequest(
       request,
@@ -105,11 +111,17 @@ class RequestManager {
       };
 
       try {
-        const authQueryParams = RequestBuilder.buildAuthQueryParams(updatedRequest);
-        const mergedParams = RequestBuilder.mergeParams(updatedRequest.params, authQueryParams);
+        const authQueryParams =
+          RequestBuilder.buildAuthQueryParams(updatedRequest);
+        const mergedParams = RequestBuilder.mergeParams(
+          updatedRequest.params,
+          authQueryParams
+        );
         // Build URL with query parameters
         const rawUrl = updatedRequest.url.trim();
-        const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `http://${rawUrl}`;
+        const normalizedUrl = /^https?:\/\//i.test(rawUrl)
+          ? rawUrl
+          : `http://${rawUrl}`;
         const urlString = RequestBuilder.buildUrlWithParams(
           normalizedUrl,
           mergedParams
@@ -154,15 +166,20 @@ class RequestManager {
               if (ks.key) agentOptions.key = ks.key;
             }
             if (sc.truststoreJks && sc.truststorePassword) {
-              const ts = parseTruststoreJks(sc.truststoreJks, sc.truststorePassword);
+              const ts = parseTruststoreJks(
+                sc.truststoreJks,
+                sc.truststorePassword
+              );
               if (ts.ca) agentOptions.ca = ts.ca;
             }
           } else {
             // PEM mode
-            if (sc.clientCert?.content) agentOptions.cert = sc.clientCert.content;
+            if (sc.clientCert?.content)
+              agentOptions.cert = sc.clientCert.content;
             if (sc.clientKey?.content) agentOptions.key = sc.clientKey.content;
             if (sc.caCert?.content) agentOptions.ca = sc.caCert.content;
-            if (sc.pfx?.content) agentOptions.pfx = Buffer.from(sc.pfx.content, 'base64');
+            if (sc.pfx?.content)
+              agentOptions.pfx = Buffer.from(sc.pfx.content, 'base64');
             if (sc.passphrase) agentOptions.passphrase = sc.passphrase;
           }
 
@@ -188,7 +205,12 @@ class RequestManager {
 
         req.end();
       } catch (error) {
-        this.handleGeneralError(error, updatedRequest.url, startTime, safeResolve);
+        this.handleGeneralError(
+          error,
+          updatedRequest.url,
+          startTime,
+          safeResolve
+        );
       }
     });
   }
@@ -263,8 +285,7 @@ class RequestManager {
 
     responseStream.on('error', (error) => {
       const endTime = Date.now();
-      const errorBody =
-        RequestErrorFormatter.formatDecompressionError(error);
+      const errorBody = RequestErrorFormatter.formatDecompressionError(error);
       resolve({
         status: 422,
         statusText: 'Decompression Error',
@@ -316,16 +337,12 @@ class RequestManager {
     });
   }
 
-  private async handleOAuthRefresh(
-    request: ApiRequest
-  ): Promise<ApiRequest> {
+  private async handleOAuthRefresh(request: ApiRequest): Promise<ApiRequest> {
     if (!request.auth || request.auth.type !== 'oauth2') {
       return request;
     }
 
-    const tokenInfo = oauthManager.getTokenInfo(
-      request.auth.config as any
-    );
+    const tokenInfo = oauthManager.getTokenInfo(request.auth.config as any);
 
     if (tokenInfo.isValid) {
       return request;

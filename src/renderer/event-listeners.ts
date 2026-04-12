@@ -52,7 +52,11 @@ export function setupEventListeners(deps: EventListenersDeps): void {
 
       if (lastData && lastData.response.body) {
         // Open tab with the last known state (request + response)
-        tabsManager.openRequestInTabWithResponse(lastData.request, lastData.response, collectionId);
+        tabsManager.openRequestInTabWithResponse(
+          lastData.request,
+          lastData.response,
+          collectionId
+        );
       } else {
         // Open tab with just the request
         tabsManager.openRequestInTab(request, collectionId);
@@ -80,7 +84,10 @@ export function setupEventListeners(deps: EventListenersDeps): void {
 
       // If this tab belongs to a collection, save the changes back to the collection
       if (activeTab && activeTab.collectionId) {
-        collectionsManager.updateCollectionRequest(activeTab.collectionId, updatedRequest);
+        collectionsManager.updateCollectionRequest(
+          activeTab.collectionId,
+          updatedRequest
+        );
       }
     }
   });
@@ -127,7 +134,9 @@ export function setupEventListeners(deps: EventListenersDeps): void {
 
     if (tabName) {
       // Use the app manager to switch tabs
-      const navTab = document.querySelector(`[data-tab="${tabName}"]`) as HTMLElement;
+      const navTab = document.querySelector(
+        `[data-tab="${tabName}"]`
+      ) as HTMLElement;
       if (navTab) {
         navTab.click();
       }
@@ -159,10 +168,15 @@ export function setupEventListeners(deps: EventListenersDeps): void {
       try {
         if (result.source === 'environment' && result.environmentId) {
           // Update environment variable
-          const envIndex = state.environments.findIndex((e: any) => e.id === result.environmentId);
+          const envIndex = state.environments.findIndex(
+            (e: any) => e.id === result.environmentId
+          );
           if (envIndex !== -1) {
-            state.environments[envIndex].variables[result.variableName] = result.newValue;
-            await window.apiCourier.store.set({ environments: state.environments });
+            state.environments[envIndex].variables[result.variableName] =
+              result.newValue;
+            await window.apiCourier.store.set({
+              environments: state.environments,
+            });
             environmentManager.setEnvironments(state.environments);
             document.dispatchEvent(new CustomEvent('environment-changed'));
           }
@@ -175,17 +189,21 @@ export function setupEventListeners(deps: EventListenersDeps): void {
         } else if (result.source === 'folder' && result.folderId) {
           // Update folder variable
           await window.apiCourier.collection.update(result.folderId, {
-            variables: { 
-              ...(collectionsManager.getCollections().find(c => c.id === result.folderId)?.variables || {}),
-              [result.variableName]: result.newValue 
-            }
+            variables: {
+              ...(collectionsManager
+                .getCollections()
+                .find((c) => c.id === result.folderId)?.variables || {}),
+              [result.variableName]: result.newValue,
+            },
           });
           // Refresh collections
           const updatedState = await window.apiCourier.store.get();
           await collectionsManager.setCollections(updatedState.collections);
-          document.dispatchEvent(new CustomEvent('folder-variables-changed', {
-            detail: { folderId: result.folderId }
-          }));
+          document.dispatchEvent(
+            new CustomEvent('folder-variables-changed', {
+              detail: { folderId: result.folderId },
+            })
+          );
         }
       } catch (error) {
         console.error('Failed to save variable:', error);

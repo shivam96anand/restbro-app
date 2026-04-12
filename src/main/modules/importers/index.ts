@@ -107,7 +107,7 @@ export function generatePreview(importResult: ImportResult): ImportPreview {
     environments: importResult.environments.length,
   };
 
-  let previewName = importResult.name;
+  const previewName = importResult.name;
 
   if (importResult.rootFolder) {
     const counts = countCollectionItems(importResult.rootFolder);
@@ -131,14 +131,17 @@ export function generatePreview(importResult: ImportResult): ImportPreview {
 /**
  * Recursively counts folders and requests in a collection tree
  */
-function countCollectionItems(collection: Collection): { folders: number; requests: number } {
+function countCollectionItems(collection: Collection): {
+  folders: number;
+  requests: number;
+} {
   let folders = 0;
   let requests = 0;
 
   if (collection.type === 'folder') {
     folders++;
     if (collection.children) {
-      collection.children.forEach(child => {
+      collection.children.forEach((child) => {
         const counts = countCollectionItems(child);
         folders += counts.folders;
         requests += counts.requests;
@@ -163,7 +166,9 @@ export function parseJsonFile(content: string): any {
     try {
       return yaml.load(content);
     } catch (yamlError) {
-      throw new Error(`Invalid file format. Must be valid JSON or YAML. JSON error: ${jsonError instanceof Error ? jsonError.message : 'Unknown'}. YAML error: ${yamlError instanceof Error ? yamlError.message : 'Unknown'}`);
+      throw new Error(
+        `Invalid file format. Must be valid JSON or YAML. JSON error: ${jsonError instanceof Error ? jsonError.message : 'Unknown'}. YAML error: ${yamlError instanceof Error ? yamlError.message : 'Unknown'}`
+      );
     }
   }
 }

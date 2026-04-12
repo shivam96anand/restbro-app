@@ -31,7 +31,9 @@
     .node-content {
       flex: 1;
       white-space: nowrap;
-      span { display: inline; }
+      span {
+        display: inline;
+      }
     }
 
     .expand-icon {
@@ -49,18 +51,33 @@
       margin-left: 2px;
     }
 
-    .separator { color: var(--text-primary); margin: 0 2px; }
-    .comma { color: var(--json-bracket); margin-left: 0; }
+    .separator {
+      color: var(--text-primary);
+      margin: 0 2px;
+    }
+    .comma {
+      color: var(--json-bracket);
+      margin-left: 0;
+    }
 
     .value {
       white-space: pre-wrap;
       word-break: break-word;
       overflow-wrap: break-word;
 
-      &.value-string { color: white; }
-      &.value-number { color: white; }
-      &.value-boolean { color: white; }
-      &.value-null { color: white; font-style: italic; }
+      &.value-string {
+        color: white;
+      }
+      &.value-number {
+        color: white;
+      }
+      &.value-boolean {
+        color: white;
+      }
+      &.value-null {
+        color: white;
+        font-style: italic;
+      }
     }
 
     // Search highlights
@@ -97,7 +114,10 @@
       animation: pulse-active 1s ease-in-out infinite;
     }
 
-    .bracket { color: var(--json-bracket); font-weight: bold; }
+    .bracket {
+      color: var(--json-bracket);
+      font-weight: bold;
+    }
 
     .preview {
       color: var(--text-secondary);
@@ -107,7 +127,8 @@
     }
 
     @keyframes pulse-active {
-      0%, 100% {
+      0%,
+      100% {
         box-shadow:
           0 0 12px rgba(255, 152, 0, 0.8),
           0 0 24px rgba(245, 124, 0, 0.5),
@@ -127,14 +148,18 @@
 
     &.json-node-object,
     &.json-node-array {
-      .expand-icon { visibility: visible; }
+      .expand-icon {
+        visibility: visible;
+      }
     }
 
     &.json-node-string,
     &.json-node-number,
     &.json-node-boolean,
     &.json-node-null {
-      .expand-icon { visibility: hidden; }
+      .expand-icon {
+        visibility: hidden;
+      }
     }
   }
 
@@ -159,12 +184,16 @@
     letter-spacing: -0.02em;
     transition: background-color 0.1s ease-out;
 
-    &:hover { background-color: var(--hover-color); }
+    &:hover {
+      background-color: var(--hover-color);
+    }
 
     .node-content {
       flex: 1;
       white-space: nowrap;
-      span { display: inline; }
+      span {
+        display: inline;
+      }
     }
 
     .expand-icon {
@@ -177,7 +206,13 @@
       visibility: hidden;
     }
 
-    .bracket { color: var(--json-bracket); font-weight: bold; }
-    .comma { color: var(--json-bracket); margin-left: 0; }
+    .bracket {
+      color: var(--json-bracket);
+      font-weight: bold;
+    }
+    .comma {
+      color: var(--json-bracket);
+      margin-left: 0;
+    }
   }
 }
