@@ -1,6 +1,6 @@
 {
   "name": "restbro",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A modern API testing tool similar to Postman and Insomnia",
   "main": "dist/main/main/index.js",
   "scripts": {
@@ -90,7 +90,7 @@
   "build": {
     "appId": "com.restbro.app",
     "productName": "Restbro",
-    "copyright": "Copyright © 2024 Restbro",
+    "copyright": "Copyright © 2026 Restbro",
     "directories": {
       "buildResources": "build",
       "output": "release"
@@ -104,7 +104,7 @@
       {
         "provider": "github",
         "owner": "shivam96anand",
-        "repo": "restbro"
+        "repo": "api-courier"
       }
     ],
     "mac": {
