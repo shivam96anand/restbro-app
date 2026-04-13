@@ -1,6 +1,6 @@
 {
   "name": "restbro",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A modern API testing tool similar to Postman and Insomnia",
   "main": "dist/main/main/index.js",
   "scripts": {
@@ -133,6 +133,7 @@
       "strictVerify": false
     },
     "dmg": {
+      "sign": false,
       "title": "${productName} ${version}",
       "artifactName": "${productName}-${version}-universal.${ext}",
       "background": "build/dmg-background.png",
