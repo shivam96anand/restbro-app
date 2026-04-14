@@ -53,10 +53,12 @@ export function parseCurlCommand(raw: string): CurlParsed {
       token === '--data-raw' ||
       token === '--data-binary'
     ) {
-      body = tokens[++i] || '';
+      const data = tokens[++i] || '';
+      body = body ? `${body}&${data}` : data;
       if (method === 'GET') method = 'POST';
     } else if (token === '--data-urlencode') {
-      body = tokens[++i] || '';
+      const data = tokens[++i] || '';
+      body = body ? `${body}&${data}` : data;
       if (method === 'GET') method = 'POST';
       if (!headers['Content-Type']) {
         headers['Content-Type'] = 'application/x-www-form-urlencoded';
