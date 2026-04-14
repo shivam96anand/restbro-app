@@ -25,6 +25,7 @@ class ApiCourierApp {
     ipcManager.initialize();
     updateManager.initialize();
     this.createWindow();
+    updateManager.notifyIfJustUpdated();
     this.setupEventHandlers();
   }
 
@@ -68,6 +69,10 @@ class ApiCourierApp {
     await storeManager.flush();
     storeManager.stopAutoBackup();
     await aiEngine.flush();
+    // If an update was downloaded, install it on quit so next launch is updated
+    if (updateManager.isUpdateReady()) {
+      updateManager.installOnQuitIfReady();
+    }
     updateManager.destroy();
     console.log('Database flushed successfully');
   }

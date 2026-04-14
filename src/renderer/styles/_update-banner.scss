@@ -1,67 +1,101 @@
 /* ──────────────────────────────────────────────────────
-   Update notification banner — sticks to bottom of app
+   Update styles — header restart button + post-update popup
    ────────────────────────────────────────────────────── */
-.update-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  font-size: 12px;
-  font-family: inherit;
-  transition: background-color 0.2s;
-}
 
-.update-banner--downloading {
-  background: var(--color-surface-200, #e5e5e5);
-  color: var(--color-surface-800, #333);
-}
-
-.update-banner--ready {
-  background: var(--color-brand-600, #4f46e5);
-  color: #fff;
-}
-
-.update-banner__text {
-  flex: 1;
-}
-
-.update-banner__progress {
-  font-variant-numeric: tabular-nums;
-  min-width: 36px;
-  text-align: right;
-}
-
-.update-banner__action {
-  background: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Header restart button — matches Time Machine / Theme buttons */
+.update-restart-button {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.12) 0%,
+    var(--bg-tertiary) 100%
+  );
+  color: var(--text-primary);
+  border: 1px solid rgba(var(--primary-color-rgb), 0.3);
   border-radius: 6px;
-  padding: 4px 12px;
+  padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.12);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  }
 }
 
-.update-banner__action:hover {
-  background: rgba(255, 255, 255, 0.35);
+/* Post-update popup overlay */
+.update-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-.update-banner__dismiss {
-  background: none;
-  border: none;
-  color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
-}
-
-.update-banner__dismiss:hover {
+.update-popup-overlay--visible {
   opacity: 1;
+}
+
+/* Popup card */
+.update-popup {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  min-width: 280px;
+}
+
+.update-popup__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.update-popup__version {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.update-popup__ok {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.12) 0%,
+    var(--bg-tertiary) 100%
+  );
+  color: var(--text-primary);
+  border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+  border-radius: 6px;
+  padding: 6px 28px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.12);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+  }
 }

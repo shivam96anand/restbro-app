@@ -1,13 +1,11 @@
 /**
  * UpdateNotificationManager
  *
- * Listens for auto-update events from the main process and shows
- * a non-intrusive banner at the bottom of the app.
- *
- * States: hidden → "downloading vX.Y.Z" → "ready to install" → (user clicks) → restart
+ * - When an update is downloaded, shows a header button "Updates installed, please restart"
+ *   styled like the Time Machine / Theme buttons.
+ * - On post-update launch, shows a centered popup: "RestBro is now up to date" + version.
  */
 export class UpdateNotificationManager {
-  private banner: HTMLElement | null = null;
   private cleanups: (() => void)[] = [];
 
   initialize(): void {
@@ -15,26 +13,14 @@ export class UpdateNotificationManager {
     if (!api) return;
 
     this.cleanups.push(
-      api.onAvailable(({ version }) => {
-        this.showBanner('downloading', version);
-      })
-    );
-
-    this.cleanups.push(
-      api.onDownloadProgress(({ percent }) => {
-        this.updateProgress(percent);
-      })
-    );
-
-    this.cleanups.push(
       api.onDownloaded(({ version }) => {
-        this.showBanner('ready', version);
+        this.showHeaderButton(version);
       })
     );
 
     this.cleanups.push(
-      api.onError(() => {
-        this.hideBanner();
+      api.onJustUpdated(({ version }) => {
+        this.showUpdatedPopup(version);
       })
     );
   }
@@ -42,59 +28,61 @@ export class UpdateNotificationManager {
   destroy(): void {
     this.cleanups.forEach((fn) => fn());
     this.cleanups = [];
-    this.hideBanner();
   }
 
-  private showBanner(state: 'downloading' | 'ready', version: string): void {
-    this.ensureBanner();
-    if (!this.banner) return;
+  private showHeaderButton(version: string): void {
+    // Don't add duplicate
+    if (document.getElementById('update-restart-btn')) return;
 
-    this.banner.className = 'update-banner';
-    this.banner.classList.add(`update-banner--${state}`);
+    const headerRight = document.querySelector('.header-right');
+    if (!headerRight) return;
 
-    if (state === 'downloading') {
-      this.banner.innerHTML = `
-        <span class="update-banner__text">Downloading update v${this.escapeHtml(version)}…</span>
-        <span class="update-banner__progress">0%</span>
-      `;
-    } else {
-      this.banner.innerHTML = `
-        <span class="update-banner__text">RestBro v${this.escapeHtml(version)} is ready</span>
-        <button class="update-banner__action" id="update-install-btn">Restart to update</button>
-        <button class="update-banner__dismiss" id="update-dismiss-btn" title="Dismiss">✕</button>
-      `;
-      document
-        .getElementById('update-install-btn')
-        ?.addEventListener('click', () => {
-          window.apiCourier.update.install();
-        });
-      document
-        .getElementById('update-dismiss-btn')
-        ?.addEventListener('click', () => {
-          this.hideBanner();
-        });
-    }
+    const btn = document.createElement('button');
+    btn.id = 'update-restart-btn';
+    btn.className = 'update-restart-button';
+    btn.title = `RestBro v${this.escapeHtml(version)} is ready to install`;
+    btn.textContent = 'Updates installed, please restart';
+    btn.addEventListener('click', () => {
+      window.apiCourier.update.install();
+    });
 
-    this.banner.style.display = 'flex';
+    // Insert before the first child (left of Time Machine)
+    headerRight.insertBefore(btn, headerRight.firstChild);
   }
 
-  private updateProgress(percent: number): void {
-    if (!this.banner) return;
-    const el = this.banner.querySelector('.update-banner__progress');
-    if (el) el.textContent = `${Math.round(percent)}%`;
-  }
+  private showUpdatedPopup(version: string): void {
+    const overlay = document.createElement('div');
+    overlay.className = 'update-popup-overlay';
 
-  private hideBanner(): void {
-    if (this.banner) this.banner.style.display = 'none';
-  }
+    const popup = document.createElement('div');
+    popup.className = 'update-popup';
+    popup.innerHTML = `
+      <div class="update-popup__title">RestBro is now up to date</div>
+      <div class="update-popup__version">v${this.escapeHtml(version)}</div>
+      <button class="update-popup__ok" id="update-popup-ok">Okay</button>
+    `;
 
-  private ensureBanner(): void {
-    if (this.banner) return;
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
 
-    this.banner = document.createElement('div');
-    this.banner.className = 'update-banner';
-    this.banner.style.display = 'none';
-    document.body.appendChild(this.banner);
+    // Trigger reflow then add visible class for animation
+    requestAnimationFrame(() => {
+      overlay.classList.add('update-popup-overlay--visible');
+    });
+
+    const dismiss = () => {
+      overlay.classList.remove('update-popup-overlay--visible');
+      overlay.addEventListener('transitionend', () => overlay.remove(), {
+        once: true,
+      });
+    };
+
+    popup
+      .querySelector('#update-popup-ok')
+      ?.addEventListener('click', dismiss);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) dismiss();
+    });
   }
 
   private escapeHtml(str: string): string {

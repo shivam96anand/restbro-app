@@ -82,10 +82,8 @@ const IPC_CHANNELS = {
 
   // Auto-updater channels
   UPDATE_INSTALL: 'update:install',
-  UPDATE_AVAILABLE: 'update:available',
-  UPDATE_DOWNLOAD_PROGRESS: 'update:download-progress',
   UPDATE_DOWNLOADED: 'update:downloaded',
-  UPDATE_ERROR: 'update:error',
+  UPDATE_JUST_UPDATED: 'update:just-updated',
 } as const;
 
 // Define types inline to avoid import issues
@@ -630,29 +628,6 @@ const apiCourierAPI = {
   update: {
     install: (): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL),
-    onAvailable: (
-      callback: (data: { version: string }) => void
-    ): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_AVAILABLE, (_, data) =>
-        callback(data)
-      );
-      return () =>
-        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_AVAILABLE);
-    },
-    onDownloadProgress: (
-      callback: (data: {
-        percent: number;
-        bytesPerSecond: number;
-        transferred: number;
-        total: number;
-      }) => void
-    ): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS, (_, data) =>
-        callback(data)
-      );
-      return () =>
-        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOAD_PROGRESS);
-    },
     onDownloaded: (
       callback: (data: { version: string }) => void
     ): (() => void) => {
@@ -662,9 +637,14 @@ const apiCourierAPI = {
       return () =>
         ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_DOWNLOADED);
     },
-    onError: (callback: (data: { message: string }) => void): (() => void) => {
-      ipcRenderer.on(IPC_CHANNELS.UPDATE_ERROR, (_, data) => callback(data));
-      return () => ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_ERROR);
+    onJustUpdated: (
+      callback: (data: { version: string }) => void
+    ): (() => void) => {
+      ipcRenderer.on(IPC_CHANNELS.UPDATE_JUST_UPDATED, (_, data) =>
+        callback(data)
+      );
+      return () =>
+        ipcRenderer.removeAllListeners(IPC_CHANNELS.UPDATE_JUST_UPDATED);
     },
   },
 };

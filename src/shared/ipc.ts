@@ -79,10 +79,8 @@ export const IPC_CHANNELS = {
 
   // Auto-updater channels
   UPDATE_INSTALL: 'update:install',
-  UPDATE_AVAILABLE: 'update:available',
-  UPDATE_DOWNLOAD_PROGRESS: 'update:download-progress',
   UPDATE_DOWNLOADED: 'update:downloaded',
-  UPDATE_ERROR: 'update:error',
+  UPDATE_JUST_UPDATED: 'update:just-updated',
 } as const;
 
 export type IpcChannelKey = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

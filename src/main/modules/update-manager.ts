@@ -1,17 +1,21 @@
 import { autoUpdater, UpdateInfo } from 'electron-updater';
 import { app, BrowserWindow } from 'electron';
+import { join } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 /**
  * UpdateManager — wraps electron-updater with safe defaults.
  *
  * - Only runs in packaged (production) builds; no-ops in dev mode.
  * - Checks for updates immediately on app start and again every 4 hours.
- * - Downloads updates silently; prompts the user before installing.
- * - Forwards progress/status to the renderer via the focused window so the
- *   UI can surface a non-intrusive update badge.
+ * - Downloads updates completely silently in the background.
+ * - Only notifies renderer when download is complete (header button).
+ * - Auto-installs pending updates on quit.
+ * - Detects post-update launch and notifies renderer to show a popup.
  */
 class UpdateManager {
   private checkInterval: NodeJS.Timeout | null = null;
+  private updateReady = false;
   private readonly CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
   initialize(): void {
@@ -20,7 +24,6 @@ class UpdateManager {
       return;
     }
 
-    // Disable auto-downloading; we want to show a prompt first on macOS.
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
 
@@ -34,9 +37,66 @@ class UpdateManager {
     );
   }
 
+  /**
+   * Check if the app was just updated by comparing current version to
+   * the last stored version. Sends 'update:just-updated' to the renderer
+   * if a version change is detected.
+   */
+  notifyIfJustUpdated(): void {
+    const currentVersion = app.getVersion();
+    const lastVersionPath = join(app.getPath('userData'), '.last-version');
+
+    let justUpdated = false;
+    if (existsSync(lastVersionPath)) {
+      try {
+        const lastVersion = readFileSync(lastVersionPath, 'utf-8').trim();
+        if (lastVersion && lastVersion !== currentVersion) {
+          justUpdated = true;
+        }
+      } catch {
+        // ignore read errors
+      }
+    }
+
+    writeFileSync(lastVersionPath, currentVersion, 'utf-8');
+
+    if (justUpdated) {
+      // Delay slightly so the renderer is ready to receive the event
+      setTimeout(() => {
+        this.send('update:just-updated', { version: currentVersion });
+      }, 2000);
+    }
+  }
+
+  /** Returns true if an update has been downloaded and is ready to install. */
+  isUpdateReady(): boolean {
+    return this.updateReady;
+  }
+
+  /** Installs the pending update and restarts the app. */
+  installAndRestart(): void {
+    autoUpdater.quitAndInstall(false, true);
+  }
+
+  /**
+   * Called during graceful shutdown. If an update is downloaded,
+   * install it so the next launch gets the new version.
+   */
+  installOnQuitIfReady(): void {
+    if (this.updateReady) {
+      autoUpdater.quitAndInstall(true, true);
+    }
+  }
+
+  destroy(): void {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+  }
+
   private checkForUpdates(): void {
     autoUpdater.checkForUpdates().catch((err) => {
-      // Update checks failing (e.g. no network) is non-fatal — log silently.
       console.error('[updater] Update check failed:', err?.message ?? err);
     });
   }
@@ -52,10 +112,7 @@ class UpdateManager {
   private registerListeners(): void {
     autoUpdater.on('update-available', (info: UpdateInfo) => {
       console.log(`[updater] Update available: ${info.version}`);
-      this.send('update:available', { version: info.version });
-
-      // Ask the user before downloading via the renderer (or auto-download here).
-      // For now we trigger download immediately and let the renderer show progress.
+      // Download silently — no UI shown to user
       autoUpdater.downloadUpdate().catch((err) => {
         console.error('[updater] Download failed:', err?.message ?? err);
       });
@@ -66,36 +123,20 @@ class UpdateManager {
     });
 
     autoUpdater.on('download-progress', (progress) => {
-      this.send('update:download-progress', {
-        percent: Math.round(progress.percent),
-        bytesPerSecond: progress.bytesPerSecond,
-        transferred: progress.transferred,
-        total: progress.total,
-      });
+      // Silent — no UI shown to user
+      console.log(`[updater] Download progress: ${Math.round(progress.percent)}%`);
     });
 
     autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
       console.log(`[updater] Update downloaded: ${info.version}`);
-      // Notify the renderer so it can show an "Install & restart" prompt.
+      this.updateReady = true;
+      // Notify the renderer to show the header restart button
       this.send('update:downloaded', { version: info.version });
     });
 
     autoUpdater.on('error', (err: Error) => {
       console.error('[updater] Error:', err?.message ?? err);
-      this.send('update:error', { message: err?.message ?? String(err) });
     });
-  }
-
-  /** Called by the renderer (via IPC) when the user accepts the update. */
-  installAndRestart(): void {
-    autoUpdater.quitAndInstall(false, true);
-  }
-
-  destroy(): void {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
   }
 }
 
