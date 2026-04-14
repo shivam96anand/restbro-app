@@ -21,6 +21,7 @@ class WindowManager {
     });
 
     this.mainWindow.once('ready-to-show', () => {
+      this.mainWindow?.maximize();
       this.mainWindow?.show();
     });
 
