@@ -323,11 +323,11 @@ export class SoapCertsManager {
     clearBtn.style.display = currentPath ? 'inline-flex' : 'none';
 
     browseBtn.addEventListener('click', async () => {
-      const result = await window.apiCourier.files.openDialog();
+      const result = await window.restbro.files.openDialog();
       if (result.canceled || result.filePaths.length === 0) return;
       const filePath = result.filePaths[0];
       try {
-        const res = await window.apiCourier.files.readBinary(filePath);
+        const res = await window.restbro.files.readBinary(filePath);
         pathSpan.textContent = this.basename(filePath);
         pathSpan.title = filePath;
         clearBtn.style.display = 'inline-flex';
@@ -493,7 +493,7 @@ export class SoapCertsManager {
     clearBtn.style.display = currentPath ? 'inline-flex' : 'none';
 
     browseBtn.addEventListener('click', async () => {
-      const result = await window.apiCourier.files.openDialog();
+      const result = await window.restbro.files.openDialog();
       if (result.canceled || result.filePaths.length === 0) return;
       const filePath = result.filePaths[0];
       const ext = this.extname(filePath).toLowerCase();
@@ -501,10 +501,10 @@ export class SoapCertsManager {
       try {
         let content: string;
         if (isBinary) {
-          const res = await window.apiCourier.files.readBinary(filePath);
+          const res = await window.restbro.files.readBinary(filePath);
           content = res.content;
         } else {
-          const res = await window.apiCourier.files.readContent(filePath);
+          const res = await window.restbro.files.readContent(filePath);
           content = res.content;
         }
         this.current[field] = { source: 'file', content, filePath };

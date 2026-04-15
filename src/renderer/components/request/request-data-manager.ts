@@ -359,7 +359,7 @@ export class RequestDataManager {
     }
 
     try {
-      const response = await window.apiCourier.request.send(requestToSend);
+      const response = await window.restbro.request.send(requestToSend);
       return response;
     } catch (error) {
       const message = (error as Error).message || '';
@@ -403,7 +403,7 @@ export class RequestDataManager {
     this.toggleRequestButtons(true);
 
     try {
-      const cancelled = await window.apiCourier.request.cancel(requestId);
+      const cancelled = await window.restbro.request.cancel(requestId);
       if (!cancelled) {
         this.cancelledRequestIds.delete(requestId);
         this.toggleRequestButtons(this.sendingRequestIds.has(requestId));

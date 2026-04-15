@@ -17,7 +17,7 @@ export function isInsomniaExport(data: any): boolean {
 }
 
 /**
- * Maps an Insomnia export to API Courier format
+ * Maps an Insomnia export to Restbro format
  */
 export function mapInsomniaExport(data: any): {
   rootFolder: Collection;

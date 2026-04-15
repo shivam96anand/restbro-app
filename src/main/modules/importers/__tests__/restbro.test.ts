@@ -1,42 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import { isApiCourierExport, mapApiCourierExport } from '../api-courier';
+import { isRestbroExport, mapRestbroExport } from '../restbro';
 import { detectAndParse, generatePreview } from '../index';
 
-describe('importers/api-courier', () => {
-  describe('isApiCourierExport', () => {
-    it('returns true for object with type api-courier-export and collection', () => {
+describe('importers/restbro', () => {
+  describe('isRestbroExport', () => {
+    it('returns true for object with type restbro-export and collection', () => {
       expect(
-        isApiCourierExport({ type: 'api-courier-export', collection: {} })
+        isRestbroExport({ type: 'restbro-export', collection: {} })
       ).toBe(true);
     });
 
-    it('returns true for object with type api-courier-export and collections array', () => {
+    it('returns true for object with type restbro-export and collections array', () => {
       expect(
-        isApiCourierExport({ type: 'api-courier-export', collections: [] })
+        isRestbroExport({ type: 'restbro-export', collections: [] })
+      ).toBe(true);
+    });
+
+    it('returns true for legacy api-courier-export type (backward compat)', () => {
+      expect(
+        isRestbroExport({ type: 'api-courier-export', collection: {} })
+      ).toBe(true);
+      expect(
+        isRestbroExport({ type: 'api-courier-export', collections: [] })
       ).toBe(true);
     });
 
     it('returns false for null or non-object', () => {
-      expect(isApiCourierExport(null)).toBe(false);
-      expect(isApiCourierExport(undefined)).toBe(false);
-      expect(isApiCourierExport('string')).toBe(false);
+      expect(isRestbroExport(null)).toBe(false);
+      expect(isRestbroExport(undefined)).toBe(false);
+      expect(isRestbroExport('string')).toBe(false);
     });
 
-    it('returns false when type is not api-courier-export', () => {
-      expect(isApiCourierExport({ type: 'postman', collection: {} })).toBe(
+    it('returns false when type is not restbro-export or api-courier-export', () => {
+      expect(isRestbroExport({ type: 'postman', collection: {} })).toBe(
         false
       );
     });
 
     it('returns false when neither collection nor collections present', () => {
-      expect(isApiCourierExport({ type: 'api-courier-export' })).toBe(false);
+      expect(isRestbroExport({ type: 'restbro-export' })).toBe(false);
+      expect(isRestbroExport({ type: 'api-courier-export' })).toBe(false);
     });
   });
 
-  describe('mapApiCourierExport', () => {
+  describe('mapRestbroExport', () => {
     it('produces rootFolder with children and environments', () => {
       const exportData = {
-        type: 'api-courier-export' as const,
+        type: 'restbro-export' as const,
         collections: [
           {
             id: 'f1',
@@ -68,7 +78,7 @@ describe('importers/api-courier', () => {
         ],
       };
 
-      const result = mapApiCourierExport(exportData);
+      const result = mapRestbroExport(exportData);
 
       expect(result.rootFolder.type).toBe('folder');
       expect(result.rootFolder.name).toBe('Restbro Export');
@@ -88,7 +98,7 @@ describe('importers/api-courier', () => {
 
     it('supports legacy single collection shape', () => {
       const exportData = {
-        type: 'api-courier-export' as const,
+        type: 'restbro-export' as const,
         collection: {
           id: 'c1',
           name: 'My Collection',
@@ -100,7 +110,7 @@ describe('importers/api-courier', () => {
         environments: [],
       };
 
-      const result = mapApiCourierExport(exportData);
+      const result = mapRestbroExport(exportData);
 
       expect(result.rootFolder.children).toHaveLength(1);
       expect(result.rootFolder.children![0].name).toBe('My Collection');
@@ -108,7 +118,7 @@ describe('importers/api-courier', () => {
 
     it('passes through globals when present', () => {
       const exportData = {
-        type: 'api-courier-export' as const,
+        type: 'restbro-export' as const,
         collections: [],
         environments: [],
         globals: {
@@ -117,16 +127,16 @@ describe('importers/api-courier', () => {
         },
       };
 
-      const result = mapApiCourierExport(exportData);
+      const result = mapRestbroExport(exportData);
 
       expect(result.globals).toEqual(exportData.globals);
     });
   });
 
-  describe('detectAndParse + generatePreview (api-courier-export)', () => {
-    it('detects and parses api-courier-export and produces preview with kind and globals', () => {
+  describe('detectAndParse + generatePreview (restbro-export)', () => {
+    it('detects and parses restbro-export and produces preview with kind and globals', () => {
       const json = {
-        type: 'api-courier-export',
+        type: 'restbro-export',
         version: '1.0',
         collections: [
           {
@@ -164,7 +174,7 @@ describe('importers/api-courier', () => {
 
       const importResult = detectAndParse(json);
 
-      expect(importResult.kind).toBe('api-courier-export');
+      expect(importResult.kind).toBe('restbro-export');
       expect(importResult.name).toBe('Restbro Export');
       expect(importResult.rootFolder?.children).toHaveLength(1);
       expect(importResult.environments).toHaveLength(1);
@@ -172,16 +182,16 @@ describe('importers/api-courier', () => {
 
       const preview = generatePreview(importResult);
 
-      expect(preview.kind).toBe('api-courier-export');
+      expect(preview.kind).toBe('restbro-export');
       expect(preview.summary.folders).toBe(1);
       expect(preview.summary.requests).toBe(1);
       expect(preview.summary.environments).toBe(1);
       expect(preview.globals?.variables?.apiKey).toBe('xxx');
     });
 
-    it('api-courier-export is preferred over Postman when both could match', () => {
+    it('restbro-export is preferred over Postman when both could match', () => {
       const json = {
-        type: 'api-courier-export',
+        type: 'restbro-export',
         collection: {
           id: 'c1',
           name: 'Collection',
@@ -194,7 +204,25 @@ describe('importers/api-courier', () => {
       };
 
       const result = detectAndParse(json);
-      expect(result.kind).toBe('api-courier-export');
+      expect(result.kind).toBe('restbro-export');
+    });
+
+    it('detects legacy api-courier-export type (backward compat)', () => {
+      const json = {
+        type: 'api-courier-export',
+        collection: {
+          id: 'c1',
+          name: 'Legacy Collection',
+          type: 'folder',
+          children: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        environments: [],
+      };
+
+      const result = detectAndParse(json);
+      expect(result.kind).toBe('restbro-export');
     });
   });
 });

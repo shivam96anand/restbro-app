@@ -19,7 +19,7 @@ export class JsonViewerStatePersistence {
    */
   async loadExpandedPaths(requestId: string): Promise<Set<string>> {
     try {
-      const uiState = await window.apiCourier.jsonViewerState.get();
+      const uiState = await window.restbro.jsonViewerState.get();
 
       // Update access order (move to end)
       this.updateAccessOrder(uiState, requestId);
@@ -42,7 +42,7 @@ export class JsonViewerStatePersistence {
 
     this.debounceTimer = setTimeout(async () => {
       try {
-        const uiState = await window.apiCourier.jsonViewerState.get();
+        const uiState = await window.restbro.jsonViewerState.get();
 
         // Update expanded paths
         uiState.expandedNodesByRequest[requestId] = Array.from(expandedPaths);
@@ -53,7 +53,7 @@ export class JsonViewerStatePersistence {
         // Apply LRU eviction
         this.evictOldRequests(uiState);
 
-        await window.apiCourier.jsonViewerState.set(uiState);
+        await window.restbro.jsonViewerState.set(uiState);
       } catch (error) {
         console.error('Failed to save JSON viewer UI state:', error);
       }
@@ -94,14 +94,14 @@ export class JsonViewerStatePersistence {
    */
   async clearRequestState(requestId: string): Promise<void> {
     try {
-      const uiState = await window.apiCourier.jsonViewerState.get();
+      const uiState = await window.restbro.jsonViewerState.get();
 
       delete uiState.expandedNodesByRequest[requestId];
       uiState.requestAccessOrder = uiState.requestAccessOrder.filter(
         (id) => id !== requestId
       );
 
-      await window.apiCourier.jsonViewerState.set(uiState);
+      await window.restbro.jsonViewerState.set(uiState);
     } catch (error) {
       console.error('Failed to clear JSON viewer state for request:', error);
     }

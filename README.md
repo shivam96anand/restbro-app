@@ -344,7 +344,7 @@ The renderer receives these IPC events from the main process:
 | `update:downloaded` | `{ version }` |
 | `update:error` | `{ message }` |
 
-Call `window.apiCourier.update.install()` (once exposed in preload) to quit
+Call `window.restbro.update.install()` (once exposed in preload) to quit
 and install the downloaded update.
 
 ---
@@ -392,7 +392,7 @@ Restbro is built with **security-first architecture** following Electron securit
                             ↕ IPC (secure bridge)
 ┌─────────────────────────────────────────────────────────────┐
 │                    Preload Script                           │
-│  • contextBridge API (window.apiCourier.*)                  │
+│  • contextBridge API (window.restbro.*)                  │
 │  • Type-safe IPC wrapper                                    │
 │  • No business logic                                        │
 └─────────────────────────────────────────────────────────────┘

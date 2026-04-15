@@ -31,7 +31,7 @@ import {
 } from './ask-ai/event-handlers';
 import { sendMessageToAI } from './ask-ai/messaging';
 
-declare const apiCourier: {
+declare const restbro: {
   ai: {
     getSessions: () => Promise<{ sessions: AiSession[] }>;
     createSession: (context?: AiContext) => Promise<AiSession>;
@@ -92,7 +92,7 @@ export class AskAiTab {
   }
 
   private setupStreamListener(): void {
-    this.streamCleanup = apiCourier.ai.onMessageStream((data) => {
+    this.streamCleanup = restbro.ai.onMessageStream((data) => {
       if (this.state.isSending) {
         if (!this.state.currentRequestId && data.requestId) {
           this.state.currentRequestId = data.requestId;
@@ -130,7 +130,7 @@ export class AskAiTab {
     }
 
     try {
-      const session = await apiCourier.ai.createSession(context);
+      const session = await restbro.ai.createSession(context);
       this.state.sessions.unshift(session);
       this.state.activeSessionId = session.id;
       this.state.showContextPanel = false;
@@ -147,7 +147,7 @@ export class AskAiTab {
 
   private async loadSessions(): Promise<void> {
     try {
-      const result = await apiCourier.ai.getSessions();
+      const result = await restbro.ai.getSessions();
       this.state.sessions = result.sessions;
       this.state.isLoading = false;
       this.render();
@@ -160,7 +160,7 @@ export class AskAiTab {
 
   private async checkEngineStatus(): Promise<void> {
     try {
-      const result = await apiCourier.ai.checkEngine();
+      const result = await restbro.ai.checkEngine();
       this.state.engineStatus = result.available ? 'available' : 'unavailable';
       this.state.engineError = result.error;
       updateEngineStatusBanner(this.container, this.state, () =>
@@ -218,7 +218,7 @@ export class AskAiTab {
     const session = this.state.sessions.find((s) => s.id === sessionId);
     if (session && session.title !== newTitle) {
       try {
-        const updated = await apiCourier.ai.updateSession(sessionId, {
+        const updated = await restbro.ai.updateSession(sessionId, {
           title: newTitle,
         });
         if (updated) session.title = updated.title;
@@ -251,13 +251,13 @@ export class AskAiTab {
 
       const context: AiContext = { fileContent: content, fileName: file.name };
       if (this.state.activeSessionId) {
-        await apiCourier.ai.updateSession(this.state.activeSessionId, {
+        await restbro.ai.updateSession(this.state.activeSessionId, {
           context,
         });
         const session = this.getActiveSession();
         if (session) session.context = context;
       } else {
-        const session = await apiCourier.ai.createSession(context);
+        const session = await restbro.ai.createSession(context);
         this.state.sessions.unshift(session);
         this.state.activeSessionId = session.id;
       }
@@ -271,7 +271,7 @@ export class AskAiTab {
 
   private async createNewSession(): Promise<void> {
     try {
-      const session = await apiCourier.ai.createSession();
+      const session = await restbro.ai.createSession();
       this.state.sessions.unshift(session);
       this.state.activeSessionId = session.id;
       this.state.showContextPanel = false;
@@ -291,7 +291,7 @@ export class AskAiTab {
   private async deleteSession(sessionId: string): Promise<void> {
     if (!confirm('Delete this conversation?')) return;
     try {
-      await apiCourier.ai.deleteSession(sessionId);
+      await restbro.ai.deleteSession(sessionId);
       this.state.sessions = this.state.sessions.filter(
         (s) => s.id !== sessionId
       );

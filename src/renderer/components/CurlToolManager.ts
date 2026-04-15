@@ -223,7 +223,7 @@ export class CurlToolManager {
     this.hideResponse();
 
     try {
-      const result = await window.apiCourier.curl.execute({
+      const result = await window.restbro.curl.execute({
         id: requestId,
         rawCommand: raw,
       });
@@ -259,7 +259,7 @@ export class CurlToolManager {
 
   private async cancel(): Promise<void> {
     if (this.activeRequestId) {
-      await window.apiCourier.curl.cancel(this.activeRequestId);
+      await window.restbro.curl.cancel(this.activeRequestId);
       this.activeRequestId = null;
       this.isExecuting = false;
       this.showLoading(false);

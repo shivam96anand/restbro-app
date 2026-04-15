@@ -9,7 +9,7 @@ import {
 } from '../../../shared/types';
 
 declare global {
-  const apiCourier: {
+  const restbro: {
     ai: {
       getSessions: () => Promise<{ sessions: AiSession[] }>;
       createSession: (context?: AiContext) => Promise<AiSession>;

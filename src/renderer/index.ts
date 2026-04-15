@@ -6,7 +6,7 @@ if (process.env.NODE_ENV !== 'development') {
   console.info = () => {};
 }
 
-import { ApiCourierAPI } from '../preload/index';
+import { RestbroAPI } from '../preload/index';
 import { AppManager } from './components/app-manager';
 import { TabsManager } from './components/tabs-manager';
 import { CollectionsManager } from './components/collections-manager';
@@ -35,11 +35,11 @@ import {
 
 declare global {
   interface Window {
-    apiCourier: ApiCourierAPI;
+    restbro: RestbroAPI;
   }
 }
 
-class ApiCourierRenderer {
+class RestbroRenderer {
   private appManager: AppManager;
   private tabsManager: TabsManager;
   private collectionsManager: CollectionsManager;
@@ -142,7 +142,7 @@ class ApiCourierRenderer {
 
   private async loadInitialState(): Promise<void> {
     try {
-      const state = await window.apiCourier.store.get();
+      const state = await window.restbro.store.get();
       this.themeManager.setTheme(state.theme);
       this.appManager.setNavOrder(state.navOrder);
       await this.collectionsManager.setCollections(state.collections);
@@ -195,7 +195,7 @@ class ApiCourierRenderer {
         environments: this.environmentManager.getEnvironments(),
         activeEnvironmentId: this.environmentManager.getActiveEnvironmentId(),
       };
-      await window.apiCourier.store.set(state);
+      await window.restbro.store.set(state);
     } catch (error) {
       console.error('Failed to save state:', error);
     }
@@ -230,7 +230,7 @@ class ApiCourierRenderer {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const app = new ApiCourierRenderer();
+  const app = new RestbroRenderer();
   await app.initialize();
 
   // Remove loading overlay with a smooth fade

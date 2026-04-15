@@ -69,7 +69,7 @@ interface PostmanEnvironment {
 }
 
 /**
- * Maps a Postman collection to API Courier collections
+ * Maps a Postman collection to Restbro collections
  */
 export function mapPostmanCollection(data: PostmanCollection): {
   rootFolder: Collection;
@@ -258,7 +258,7 @@ function mapPostmanRequest(
 }
 
 /**
- * Maps a Postman environment to API Courier Environment
+ * Maps a Postman environment to Restbro Environment
  */
 export function mapPostmanEnvironment(data: PostmanEnvironment): Environment {
   const variables: Record<string, string> = {};

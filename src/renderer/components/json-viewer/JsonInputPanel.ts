@@ -13,7 +13,7 @@ import { MonacoInputEditor } from './MonacoInputEditor';
 export class JsonInputPanel {
   private container: HTMLElement;
   private events: JsonInputPanelEvents;
-  private readonly storageKey = 'apiCourier.jsonViewer.lastInput';
+  private readonly storageKey = 'restbro.jsonViewer.lastInput';
   private monacoEditor: MonacoInputEditor | null = null;
   private isValid: boolean = true;
   private errorMessage: string = '';

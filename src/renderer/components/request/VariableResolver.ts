@@ -17,7 +17,7 @@ export class VariableResolver {
   ): Promise<Record<string, string>> {
     try {
       // Get current app state
-      const state: any = await window.apiCourier.store.get();
+      const state: any = await window.restbro.store.get();
 
       // Get active environment
       const activeEnvironment = state.activeEnvironmentId

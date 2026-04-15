@@ -6,7 +6,7 @@ import { Environment } from '../../../shared/types';
 import { iconHtml } from '../../utils/icons';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 
-const DRAFT_PREFIX = '__apicourier_draft__';
+const DRAFT_PREFIX = '__restbro_draft__';
 
 export class EnvironmentVariablesManager {
   /**

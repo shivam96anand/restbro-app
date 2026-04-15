@@ -16,7 +16,7 @@ export interface FileOperationsContext {
  * Open a file and create or switch to a tab
  */
 export async function openFile(ctx: FileOperationsContext): Promise<void> {
-  const result = await window.apiCourier.notepad.openFile();
+  const result = await window.restbro.notepad.openFile();
   if (result?.canceled || !result.filePath || result.content === undefined)
     return;
 
@@ -79,7 +79,7 @@ export async function saveTab(
     }
 
     const useSaveAs = forceSaveAs || !tab.filePath;
-    const result = await window.apiCourier.notepad.saveFile({
+    const result = await window.restbro.notepad.saveFile({
       filePath: useSaveAs ? undefined : tab.filePath,
       content: tab.content,
       defaultName: tab.title,

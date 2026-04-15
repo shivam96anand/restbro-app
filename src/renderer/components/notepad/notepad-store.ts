@@ -33,7 +33,7 @@ export class NotepadStore {
   async hydrate(prefetchedState?: {
     notepad?: NotepadState;
   }): Promise<NotepadState> {
-    const stored = prefetchedState ?? (await window.apiCourier.store.get());
+    const stored = prefetchedState ?? (await window.restbro.store.get());
     const persisted = (stored as any).notepad as NotepadState | undefined;
 
     if (persisted) {
@@ -191,7 +191,7 @@ export class NotepadStore {
       clearTimeout(this.persistTimer);
     }
     this.persistTimer = window.setTimeout(async () => {
-      await window.apiCourier.store.set({ notepad: this.state });
+      await window.restbro.store.set({ notepad: this.state });
       this.persistTimer = null;
     }, 300);
   }
@@ -204,6 +204,6 @@ export class NotepadStore {
       clearTimeout(this.persistTimer);
       this.persistTimer = null;
     }
-    window.apiCourier.store.set({ notepad: this.state });
+    window.restbro.store.set({ notepad: this.state });
   }
 }

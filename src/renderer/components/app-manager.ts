@@ -45,8 +45,8 @@ export class AppManager {
     if (feedbackBtn) {
       feedbackBtn.addEventListener('click', () => {
         const url = 'https://forms.gle/knkLgwdyUzjRxuQt5';
-        if (window.apiCourier?.system?.openExternal) {
-          window.apiCourier.system.openExternal(url);
+        if (window.restbro?.system?.openExternal) {
+          window.restbro.system.openExternal(url);
         } else {
           window.open(url, '_blank');
         }

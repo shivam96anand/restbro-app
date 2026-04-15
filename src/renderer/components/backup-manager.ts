@@ -48,7 +48,7 @@ export class BackupManager {
 
   private async fetchBackups(): Promise<BackupInfo[]> {
     try {
-      return await window.apiCourier.backups.list();
+      return await window.restbro.backups.list();
     } catch (error) {
       console.error('Failed to load backups:', error);
       return [];
@@ -84,7 +84,7 @@ export class BackupManager {
           );
           if (!ok) return;
           try {
-            await window.apiCourier.backups.restore(backup.id);
+            await window.restbro.backups.restore(backup.id);
             window.location.reload();
           } catch (error) {
             console.error('Failed to restore backup:', error);

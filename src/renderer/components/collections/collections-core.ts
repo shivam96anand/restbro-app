@@ -302,7 +302,7 @@ export class CollectionsCore {
     if (result) {
       try {
         // Update the folder with new variables
-        await window.apiCourier.collection.update(collectionId, {
+        await window.restbro.collection.update(collectionId, {
           variables: result.variables,
         });
         folder.variables = result.variables;

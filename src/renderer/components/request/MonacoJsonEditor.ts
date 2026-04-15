@@ -44,7 +44,7 @@ export class MonacoJsonEditor {
     const lineNumberColor =
       this.getCssHexVariable('--json-line-number') || '6e6e6e';
 
-    monaco.editor.defineTheme('api-courier-json', {
+    monaco.editor.defineTheme('restbro-json', {
       base: 'vs-dark',
       inherit: true,
       rules: [
@@ -84,7 +84,7 @@ export class MonacoJsonEditor {
     });
 
     // Apply theme globally (affects all Monaco editors)
-    monaco.editor.setTheme('api-courier-json');
+    monaco.editor.setTheme('restbro-json');
   }
 
   private initialize(value: string): void {
@@ -95,7 +95,7 @@ export class MonacoJsonEditor {
     this.editor = monaco.editor.create(this.container, {
       value,
       language: 'json',
-      theme: 'api-courier-json',
+      theme: 'restbro-json',
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,

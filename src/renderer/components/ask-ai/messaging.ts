@@ -3,7 +3,7 @@
 import { AiSession, AiContext, AskAiState } from './types';
 import { showError } from './event-handlers';
 
-declare const apiCourier: {
+declare const restbro: {
   ai: {
     createSession: (context?: AiContext) => Promise<AiSession>;
     sendMessage: (params: {
@@ -65,7 +65,7 @@ export async function sendMessageToAI(
   scrollToBottom();
 
   try {
-    const result = await apiCourier.ai.sendMessage({ sessionId, message });
+    const result = await restbro.ai.sendMessage({ sessionId, message });
     if (result.success && result.message && session) {
       session.messages = session.messages.filter(
         (m) => !m.id.startsWith('temp-')
@@ -115,7 +115,7 @@ export function setupStreamListener(
   container: HTMLElement,
   onChunk: (chunk: string) => void
 ): () => void {
-  return apiCourier.ai.onMessageStream(
+  return restbro.ai.onMessageStream(
     (data: { requestId: string; chunk: string }) => {
       if (state.isSending) {
         if (!state.currentRequestId && data.requestId) {
@@ -133,7 +133,7 @@ export function setupStreamListener(
 // Re-declare for setupStreamListener
 declare global {
   interface Window {
-    apiCourier: {
+    restbro: {
       ai: {
         onMessageStream: (
           callback: (data: { requestId: string; chunk: string }) => void
@@ -144,12 +144,12 @@ declare global {
 }
 
 // Use the actual API
-const apiCourierExt = (window as any).apiCourier || apiCourier;
+const restbroExt = (window as any).restbro || restbro;
 export function createStreamListener(
   state: AskAiState,
   onChunk: (chunk: string) => void
 ): () => void {
-  return apiCourierExt.ai.onMessageStream(
+  return restbroExt.ai.onMessageStream(
     (data: { requestId: string; chunk: string }) => {
       if (state.isSending) {
         if (!state.currentRequestId && data.requestId) {

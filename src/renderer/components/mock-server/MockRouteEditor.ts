@@ -192,7 +192,7 @@ export class MockRouteEditor {
     container
       .querySelector('#pick-file-btn')
       ?.addEventListener('click', async () => {
-        const result = await window.apiCourier.mockServer.pickFile();
+        const result = await window.restbro.mockServer.pickFile();
         if (
           result.success &&
           result.data &&
@@ -293,7 +293,7 @@ export class MockRouteEditor {
         bodyField
           .querySelector('#pick-file-btn')
           ?.addEventListener('click', async () => {
-            const result = await window.apiCourier.mockServer.pickFile();
+            const result = await window.restbro.mockServer.pickFile();
             if (
               result.success &&
               result.data &&

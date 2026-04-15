@@ -130,7 +130,7 @@ export class NotepadManager {
         onReveal: (id) => {
           const tab = this.store.getState().tabs.find((t) => t.id === id);
           if (tab?.filePath)
-            window.apiCourier.notepad.revealInFolder(tab.filePath);
+            window.restbro.notepad.revealInFolder(tab.filePath);
         },
       });
     });

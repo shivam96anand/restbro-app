@@ -13,7 +13,7 @@ export class ImportManager {
   async showImportDialog(): Promise<void> {
     // Open file dialog
     try {
-      const result = await window.apiCourier.files.openDialog();
+      const result = await window.restbro.files.openDialog();
 
       if (result.canceled || result.filePaths.length === 0) {
         return;
@@ -21,7 +21,7 @@ export class ImportManager {
 
       // Read file content
       const filePath = result.filePaths[0];
-      const fileResult = await window.apiCourier.files.readContent(filePath);
+      const fileResult = await window.restbro.files.readContent(filePath);
 
       if (!fileResult.success) {
         this.showError('Failed to read file');
@@ -29,7 +29,7 @@ export class ImportManager {
       }
 
       // Parse and preview
-      const parseResult = await window.apiCourier.import.parsePreview(
+      const parseResult = await window.restbro.import.parsePreview(
         fileResult.content
       );
 
@@ -48,7 +48,7 @@ export class ImportManager {
 
   private async handleImport(preview: any): Promise<boolean> {
     try {
-      const result = await window.apiCourier.import.commit(preview);
+      const result = await window.restbro.import.commit(preview);
 
       if (!result.success) {
         this.showError(result.error || 'Failed to import');

@@ -16,7 +16,7 @@ export class CollectionsStatePersistence {
    */
   async loadExpandedFolders(): Promise<Set<string>> {
     try {
-      const uiState = await window.apiCourier.collectionsState.get();
+      const uiState = await window.restbro.collectionsState.get();
       return new Set(uiState.expandedFolderIds || []);
     } catch (error) {
       console.error('Failed to load collections UI state:', error);
@@ -39,7 +39,7 @@ export class CollectionsStatePersistence {
         const uiState: CollectionsUIState = {
           expandedFolderIds: Array.from(expandedFolders),
         };
-        await window.apiCourier.collectionsState.set(uiState);
+        await window.restbro.collectionsState.set(uiState);
       } catch (error) {
         console.error('Failed to save collections UI state:', error);
       }

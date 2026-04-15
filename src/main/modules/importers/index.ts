@@ -10,11 +10,11 @@ import {
   isPostmanEnvironment,
 } from './postman';
 import { mapInsomniaExport, isInsomniaExport } from './insomnia';
-import { isApiCourierExport, mapApiCourierExport } from './api-courier';
+import { isRestbroExport, mapRestbroExport } from './restbro';
 import * as yaml from 'js-yaml';
 
 export type ImportKind =
-  | 'api-courier-export'
+  | 'restbro-export'
   | 'postman-collection'
   | 'postman-environment'
   | 'insomnia'
@@ -46,10 +46,10 @@ export interface ImportPreview {
  */
 export function detectAndParse(jsonData: any): ImportResult {
   // Detect Restbro native export first
-  if (isApiCourierExport(jsonData)) {
-    const { rootFolder, environments, globals } = mapApiCourierExport(jsonData);
+  if (isRestbroExport(jsonData)) {
+    const { rootFolder, environments, globals } = mapRestbroExport(jsonData);
     return {
-      kind: 'api-courier-export',
+      kind: 'restbro-export',
       name: rootFolder.name,
       rootFolder,
       environments,

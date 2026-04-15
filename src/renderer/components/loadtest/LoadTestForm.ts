@@ -27,7 +27,7 @@ export class LoadTestForm {
 
   async loadCollections(): Promise<void> {
     try {
-      const state = await window.apiCourier.store.get();
+      const state = await window.restbro.store.get();
       this.collections = state.collections || [];
       this.renderCollectionTree();
     } catch (error) {

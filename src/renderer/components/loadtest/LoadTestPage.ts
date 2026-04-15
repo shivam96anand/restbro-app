@@ -70,7 +70,7 @@ export class LoadTestPage {
   }
 
   private setupIpcListeners(): void {
-    this.progressCleanup = window.apiCourier.loadtest.onProgress(
+    this.progressCleanup = window.restbro.loadtest.onProgress(
       (progress: LoadTestProgressTick) => {
         if (progress.runId === this.currentRunId) {
           this.progress.updateProgress(progress);
@@ -78,7 +78,7 @@ export class LoadTestPage {
       }
     );
 
-    this.summaryCleanup = window.apiCourier.loadtest.onSummary(
+    this.summaryCleanup = window.restbro.loadtest.onSummary(
       (summary: LoadTestSummary) => {
         if (summary.runId === this.currentRunId) {
           this.showSummary(summary);
@@ -90,7 +90,7 @@ export class LoadTestPage {
   private async startLoadTest(config: any): Promise<void> {
     try {
       this.currentConfig = config;
-      const result = await window.apiCourier.loadtest.start(config);
+      const result = await window.restbro.loadtest.start(config);
       this.currentRunId = result.runId;
       this.showProgress(config);
     } catch (error) {
@@ -105,7 +105,7 @@ export class LoadTestPage {
     if (!this.currentRunId) return;
 
     try {
-      await window.apiCourier.loadtest.cancel(this.currentRunId);
+      await window.restbro.loadtest.cancel(this.currentRunId);
     } catch (error) {
       console.error('Failed to cancel load test:', error);
     }
@@ -113,7 +113,7 @@ export class LoadTestPage {
 
   private async exportCsv(runId: string): Promise<void> {
     try {
-      const result = await window.apiCourier.loadtest.exportCsv(runId);
+      const result = await window.restbro.loadtest.exportCsv(runId);
       if (!result.ok) {
         this.showError(result.error || 'Export failed');
       }
@@ -128,7 +128,7 @@ export class LoadTestPage {
     summary: LoadTestSummary
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.loadtest.exportPdf(runId, summary);
+      const result = await window.restbro.loadtest.exportPdf(runId, summary);
       if (!result.ok) {
         this.showError(result.error || 'Export failed');
       }

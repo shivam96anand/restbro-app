@@ -4,7 +4,7 @@ Restbro is a secure Electron desktop app for API testing (Postman/Insomnia-like)
 
 ## Non-negotiables (hard rules)
 - Keep Electron security: `nodeIntegration:false`, `contextIsolation:true`, `sandbox:true` (see `src/main/modules/window-manager.ts`).
-- Renderer must NOT use Node/Electron APIs directly. Use only `window.apiCourier.*` (preload bridge).
+- Renderer must NOT use Node/Electron APIs directly. Use only `window.restbro.*` (preload bridge).
 - Persistence is **main-process only** via StoreManager → `app.getPath('userData')/database.json`. **Never use localStorage**.
 - IPC must stay **whitelisted + explicit** (no dynamic channel names, no generic “invoke anything”).
 - Any file/network/native operation must be done in **main** and exposed via IPC.
@@ -19,7 +19,7 @@ Restbro is a secure Electron desktop app for API testing (Postman/Insomnia-like)
 ## Repo map (where code goes)
 - `src/main/index.ts`: boot (store, AI, IPC, window) + graceful shutdown flush.
 - `src/main/modules/*`: main services (request, oauth, store, loadtest, ai, import, etc.).
-- `src/preload/index.ts`: `contextBridge` API only (`window.apiCourier`); minimal logic.
+- `src/preload/index.ts`: `contextBridge` API only (`window.restbro`); minimal logic.
 - `src/shared/{types.ts, ipc.ts}`: shared contracts + IPC channel constants.
 - `src/renderer/*`: UI; mostly vanilla TS “managers” + DOM events.
 - React allowed only as **isolated islands** wrapped by a vanilla manager (e.g., Json Compare).
@@ -28,9 +28,9 @@ Restbro is a secure Electron desktop app for API testing (Postman/Insomnia-like)
 1) Add/extend types in `src/shared/types.ts` (keep renderer/main aligned).
 2) Add IPC constants in `src/shared/ipc.ts` (`IPC_CHANNELS.*`).
 3) Implement main handler in `src/main/modules/ipc-manager.ts`.
-4) Expose typed API in `src/preload/index.ts` under `window.apiCourier.<group>.*`.
+4) Expose typed API in `src/preload/index.ts` under `window.restbro.<group>.*`.
    - If shared shapes change, update preload typings too.
-5) Consume in renderer via `window.apiCourier...` (never `ipcRenderer` directly).
+5) Consume in renderer via `window.restbro...` (never `ipcRenderer` directly).
 6) Persist via store IPC (`store:set` etc.). Renderer never writes files.
 
 ## Persistence rules (current design)

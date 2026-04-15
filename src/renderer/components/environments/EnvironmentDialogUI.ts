@@ -7,7 +7,7 @@ import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 import { EnvironmentVariablesManager } from './EnvironmentVariablesManager';
 import { iconHtml } from '../../utils/icons';
 
-const DRAFT_PREFIX = '__apicourier_draft__';
+const DRAFT_PREFIX = '__restbro_draft__';
 
 export type DialogTab = 'environments' | 'globals';
 

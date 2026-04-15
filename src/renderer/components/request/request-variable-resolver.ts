@@ -99,7 +99,7 @@ export async function resolveRequestVariables(
   request: ApiRequest
 ): Promise<ApiRequest> {
   try {
-    const state = await window.apiCourier.store.get();
+    const state = await window.restbro.store.get();
     const activeEnvironment = state.activeEnvironmentId
       ? state.environments.find((e: any) => e.id === state.activeEnvironmentId)
       : undefined;

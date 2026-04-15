@@ -27,10 +27,10 @@ describe('variables.ts', () => {
 
     it('resolves repeated placeholders and whitespace inside braces', () => {
       const result = resolveTemplate('{{ name }} -> {{name}}', {
-        requestVars: { name: 'api-courier' },
+        requestVars: { name: 'restbro' },
       });
 
-      expect(result).toBe('api-courier -> api-courier');
+      expect(result).toBe('restbro -> restbro');
     });
 
     it('supports nested resolution up to the default max depth', () => {

@@ -1,4 +1,4 @@
-// Event listeners for ApiCourierRenderer
+// Event listeners for RestbroRenderer
 import { TabsManager } from './components/tabs-manager';
 import { CollectionsManager } from './components/collections-manager';
 import { HistoryManager } from './components/history-manager';
@@ -16,7 +16,7 @@ interface EventListenersDeps {
 }
 
 /**
- * Sets up all event listeners for the ApiCourierRenderer
+ * Sets up all event listeners for the RestbroRenderer
  */
 export function setupEventListeners(deps: EventListenersDeps): void {
   const {
@@ -149,7 +149,7 @@ export function setupEventListeners(deps: EventListenersDeps): void {
     const { variableName, value, source } = customEvent.detail;
 
     // Get current state to populate the dialog
-    const state = await window.apiCourier.store.get();
+    const state = await window.restbro.store.get();
     const activeTab = tabsManager.getActiveTab();
     const collectionId = activeTab?.collectionId;
 
@@ -174,7 +174,7 @@ export function setupEventListeners(deps: EventListenersDeps): void {
           if (envIndex !== -1) {
             state.environments[envIndex].variables[result.variableName] =
               result.newValue;
-            await window.apiCourier.store.set({
+            await window.restbro.store.set({
               environments: state.environments,
             });
             environmentManager.setEnvironments(state.environments);
@@ -184,11 +184,11 @@ export function setupEventListeners(deps: EventListenersDeps): void {
           // Update global variable
           const globals = state.globals || { variables: {} };
           globals.variables[result.variableName] = result.newValue;
-          await window.apiCourier.store.set({ globals });
+          await window.restbro.store.set({ globals });
           document.dispatchEvent(new CustomEvent('globals-updated'));
         } else if (result.source === 'folder' && result.folderId) {
           // Update folder variable
-          await window.apiCourier.collection.update(result.folderId, {
+          await window.restbro.collection.update(result.folderId, {
             variables: {
               ...(collectionsManager
                 .getCollections()
@@ -197,7 +197,7 @@ export function setupEventListeners(deps: EventListenersDeps): void {
             },
           });
           // Refresh collections
-          const updatedState = await window.apiCourier.store.get();
+          const updatedState = await window.restbro.store.get();
           await collectionsManager.setCollections(updatedState.collections);
           document.dispatchEvent(
             new CustomEvent('folder-variables-changed', {

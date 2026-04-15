@@ -35,7 +35,7 @@ export class EnvironmentDialogs {
     // Load globals from store
     let loadedGlobals: Globals = { variables: {}, variableDescriptions: {} };
     try {
-      const storeState = await window.apiCourier.store.get();
+      const storeState = await window.restbro.store.get();
       loadedGlobals = storeState.globals || {
         variables: {},
         variableDescriptions: {},
@@ -173,7 +173,7 @@ export class EnvironmentDialogs {
           resolve(null);
         },
         () => {
-          const DRAFT_PREFIX = '__apicourier_draft__';
+          const DRAFT_PREFIX = '__restbro_draft__';
           state.workingEnvs.forEach((env) => {
             const descriptions = env.variableDescriptions || {};
             Object.keys(env.variables).forEach((key) => {

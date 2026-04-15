@@ -9,7 +9,7 @@ export class UpdateNotificationManager {
   private cleanups: (() => void)[] = [];
 
   initialize(): void {
-    const api = window.apiCourier?.update;
+    const api = window.restbro?.update;
     if (!api) return;
 
     this.cleanups.push(
@@ -43,7 +43,7 @@ export class UpdateNotificationManager {
     btn.title = `RestBro v${this.escapeHtml(version)} is ready to install`;
     btn.textContent = 'Updates installed, please restart';
     btn.addEventListener('click', () => {
-      window.apiCourier.update.install();
+      window.restbro.update.install();
     });
 
     // Insert before the first child (left of Time Machine)

@@ -45,7 +45,7 @@ export class CollectionsDialogs {
       }
 
       const newCollection =
-        await window.apiCourier.collection.create(collectionData);
+        await window.restbro.collection.create(collectionData);
       return newCollection;
     } catch (error) {
       console.error('Failed to create collection:', error);

@@ -12,7 +12,7 @@ if (process.env.NODE_ENV !== 'development') {
   console.info = () => {};
 }
 
-class ApiCourierApp {
+class RestbroApp {
   private isQuitting = false;
 
   async initialize(): Promise<void> {
@@ -87,8 +87,8 @@ class ApiCourierApp {
   }
 }
 
-const apiCourierApp = new ApiCourierApp();
+const restbroApp = new RestbroApp();
 
 if (require.main === module) {
-  apiCourierApp.initialize().catch(console.error);
+  restbroApp.initialize().catch(console.error);
 }

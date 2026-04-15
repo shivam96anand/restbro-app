@@ -9,7 +9,7 @@ export class ThemeOnboarding {
   }
 
   async maybeShow(): Promise<void> {
-    const state = await window.apiCourier.store.get();
+    const state = await window.restbro.store.get();
     if (state.hasCompletedThemeOnboarding) {
       return;
     }
@@ -59,7 +59,7 @@ export class ThemeOnboarding {
 
       swatch.addEventListener('click', async () => {
         this.themeManager.setTheme(theme);
-        await window.apiCourier.store.set({
+        await window.restbro.store.set({
           theme,
           hasCompletedThemeOnboarding: true,
         });
@@ -77,7 +77,7 @@ export class ThemeOnboarding {
     keepButton.className = 'theme-onboarding-keep';
     keepButton.textContent = 'Keep current theme';
     keepButton.addEventListener('click', async () => {
-      await window.apiCourier.store.set({ hasCompletedThemeOnboarding: true });
+      await window.restbro.store.set({ hasCompletedThemeOnboarding: true });
       this.close();
     });
 

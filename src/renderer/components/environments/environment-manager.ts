@@ -267,7 +267,7 @@ export class EnvironmentManager {
         // Dispatch event to notify other components that globals changed
         document.dispatchEvent(new CustomEvent('globals-updated'));
       }
-      await window.apiCourier.store.set(updates);
+      await window.restbro.store.set(updates);
     } catch (error) {
       console.error('Failed to save environments:', error);
     }

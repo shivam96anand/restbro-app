@@ -1083,7 +1083,7 @@ export class RequestManager {
       return this.storeCache;
     }
 
-    this.storeCache = await window.apiCourier.store.get();
+    this.storeCache = await window.restbro.store.get();
     this.storeCacheTime = now;
     return this.storeCache;
   }

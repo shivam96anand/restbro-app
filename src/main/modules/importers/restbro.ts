@@ -5,9 +5,9 @@
 import { Collection, Environment, Globals } from '../../../shared/types';
 import { generateId } from './mappers';
 
-export interface ApiCourierExportData {
+export interface RestbroExportData {
   version?: string;
-  type: 'api-courier-export';
+  type: 'restbro-export' | 'api-courier-export';
   timestamp?: string;
   collection?: Collection;
   collections?: Collection[];
@@ -15,15 +15,16 @@ export interface ApiCourierExportData {
   globals?: Globals;
 }
 
-export function isApiCourierExport(
+export function isRestbroExport(
   data: unknown
-): data is ApiCourierExportData {
+): data is RestbroExportData {
   return (
     typeof data === 'object' &&
     data !== null &&
-    (data as ApiCourierExportData).type === 'api-courier-export' &&
-    ((data as ApiCourierExportData).collection !== undefined ||
-      Array.isArray((data as ApiCourierExportData).collections))
+    ((data as RestbroExportData).type === 'restbro-export' ||
+      (data as RestbroExportData).type === 'api-courier-export') &&
+    ((data as RestbroExportData).collection !== undefined ||
+      Array.isArray((data as RestbroExportData).collections))
   );
 }
 
@@ -78,7 +79,7 @@ function reassignCollectionIds(
 /**
  * Maps Restbro export to ImportResult shape. Assigns new IDs to avoid conflicts.
  */
-export function mapApiCourierExport(data: ApiCourierExportData): {
+export function mapRestbroExport(data: RestbroExportData): {
   rootFolder: Collection;
   environments: Environment[];
   globals?: Globals;

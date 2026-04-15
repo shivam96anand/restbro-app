@@ -43,7 +43,7 @@ export class CollectionsOperations {
     }
 
     try {
-      await window.apiCourier.collection.update(draggedId, {
+      await window.restbro.collection.update(draggedId, {
         parentId: targetFolderId,
       });
       draggedCollection.parentId = targetFolderId;
@@ -106,7 +106,7 @@ export class CollectionsOperations {
 
       // Update parent if needed
       if (draggedCollection.parentId !== targetCollection.parentId) {
-        await window.apiCourier.collection.update(draggedId, {
+        await window.restbro.collection.update(draggedId, {
           parentId: targetCollection.parentId,
         });
         draggedCollection.parentId = targetCollection.parentId;
@@ -124,7 +124,7 @@ export class CollectionsOperations {
         const newOrder = i * 1000; // Use increments of 1000 for easier future insertions
 
         if (collection.order !== newOrder) {
-          await window.apiCourier.collection.update(collection.id, {
+          await window.restbro.collection.update(collection.id, {
             order: newOrder,
           });
           collection.order = newOrder;
@@ -151,7 +151,7 @@ export class CollectionsOperations {
     for (let i = 0; i < items.length; i++) {
       const newOrder = i * 1000;
       if (items[i].order !== newOrder) {
-        await window.apiCourier.collection.update(items[i].id, {
+        await window.restbro.collection.update(items[i].id, {
           order: newOrder,
         });
         items[i].order = newOrder;
@@ -219,7 +219,7 @@ export class CollectionsOperations {
             2
           : (collection.order ?? 0) + 1000;
 
-      const newCollection = await window.apiCourier.collection.create({
+      const newCollection = await window.restbro.collection.create({
         name: duplicatedName,
         type: collection.type,
         parentId: collection.parentId,
@@ -262,7 +262,7 @@ export class CollectionsOperations {
 
     for (const child of children) {
       try {
-        const newChild = await window.apiCourier.collection.create({
+        const newChild = await window.restbro.collection.create({
           name: child.name,
           type: child.type,
           parentId: newParentId,
@@ -284,7 +284,7 @@ export class CollectionsOperations {
     const collection = this.findCollectionById(collectionId);
     if (!collection) return;
 
-    const exportData = this.buildApiCourierExportPayload(
+    const exportData = this.buildRestbroExportPayload(
       [this.buildExportData(collection)],
       [],
       undefined
@@ -308,7 +308,7 @@ export class CollectionsOperations {
    * environments, and optionally globals (restbro-export format).
    */
   async showExportDialog(): Promise<void> {
-    const state = await window.apiCourier.store.get();
+    const state = await window.restbro.store.get();
     const collections = state.collections ?? [];
     const environments = (state.environments ?? []) as Environment[];
     const globals = state.globals as Globals | undefined;
@@ -329,7 +329,7 @@ export class CollectionsOperations {
     const selectedEnvs = environments.filter((e) =>
       selection.environmentIds.includes(e.id)
     );
-    const exportData = this.buildApiCourierExportPayload(
+    const exportData = this.buildRestbroExportPayload(
       collectionTrees,
       selectedEnvs,
       selection.includeGlobals ? globals : undefined
@@ -347,14 +347,14 @@ export class CollectionsOperations {
     URL.revokeObjectURL(url);
   }
 
-  private buildApiCourierExportPayload(
+  private buildRestbroExportPayload(
     collectionTrees: any[],
     environments: Environment[],
     globals?: Globals
   ): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       version: '1.0',
-      type: 'api-courier-export',
+      type: 'restbro-export',
       timestamp: new Date().toISOString(),
       collections: collectionTrees,
       environments,
@@ -366,7 +366,7 @@ export class CollectionsOperations {
   }
 
   async exportAllCollections(): Promise<void> {
-    const state = await window.apiCourier.store.get();
+    const state = await window.restbro.store.get();
     const rootItems = this.buildPostmanItems();
 
     const collectionExport = {
@@ -705,7 +705,7 @@ export class CollectionsOperations {
     if (!newName) return;
 
     try {
-      await window.apiCourier.collection.update(collectionId, {
+      await window.restbro.collection.update(collectionId, {
         name: newName,
       });
       collection.name = newName;
@@ -744,7 +744,7 @@ export class CollectionsOperations {
       // Get all request IDs that will be deleted (for closing tabs)
       const affectedRequestIds = this.getAllRequestsInFolder(collectionId);
 
-      await window.apiCourier.collection.delete(collectionId);
+      await window.restbro.collection.delete(collectionId);
 
       // Dispatch deletion events for all affected requests
       for (const requestId of affectedRequestIds) {

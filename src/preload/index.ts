@@ -410,7 +410,7 @@ interface MockServerStatusChangedEvent {
   error?: string;
 }
 
-const apiCourierAPI = {
+const restbroAPI = {
   store: {
     get: (): Promise<AppState> => ipcRenderer.invoke(IPC_CHANNELS.STORE_GET),
     set: (updates: Partial<AppState>): Promise<void> =>
@@ -649,7 +649,7 @@ const apiCourierAPI = {
   },
 };
 
-contextBridge.exposeInMainWorld('apiCourier', apiCourierAPI);
-contextBridge.exposeInMainWorld('electronAPI', apiCourierAPI);
+contextBridge.exposeInMainWorld('restbro', restbroAPI);
+contextBridge.exposeInMainWorld('electronAPI', restbroAPI);
 
-export type ApiCourierAPI = typeof apiCourierAPI;
+export type RestbroAPI = typeof restbroAPI;

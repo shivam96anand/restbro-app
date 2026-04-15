@@ -125,7 +125,7 @@ export class MockServerTabManager {
   }
 
   private setupIpcListeners(): void {
-    this.statusCleanup = window.apiCourier.mockServer.onStatusChanged(
+    this.statusCleanup = window.restbro.mockServer.onStatusChanged(
       (event) => {
         this.handleStatusChanged(event);
       }
@@ -134,7 +134,7 @@ export class MockServerTabManager {
 
   private async loadServers(): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.list();
+      const result = await window.restbro.mockServer.list();
       if (result.success && result.data) {
         this.servers = result.data.servers;
         this.runtimeStatus = result.data.runtimeStatus;
@@ -188,7 +188,7 @@ export class MockServerTabManager {
 
   private async handleAddServer(): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.createServer({
+      const result = await window.restbro.mockServer.createServer({
         name: 'New Server',
         host: '127.0.0.1',
         port: null,
@@ -207,7 +207,7 @@ export class MockServerTabManager {
 
   private async handleDeleteServer(serverId: string): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.deleteServer(serverId);
+      const result = await window.restbro.mockServer.deleteServer(serverId);
       if (result.success) {
         this.servers = this.servers.filter((s) => s.id !== serverId);
         this.runtimeStatus = this.runtimeStatus.filter(
@@ -230,7 +230,7 @@ export class MockServerTabManager {
     updates: { name?: string; host?: string; port?: number | null }
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.updateServer({
+      const result = await window.restbro.mockServer.updateServer({
         serverId,
         ...updates,
       });
@@ -248,7 +248,7 @@ export class MockServerTabManager {
 
   private async handleServerStart(serverId: string): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.startServer(serverId);
+      const result = await window.restbro.mockServer.startServer(serverId);
       if (!result.success) {
         // Show error in editor
         const status = this.runtimeStatus.find((s) => s.serverId === serverId);
@@ -264,7 +264,7 @@ export class MockServerTabManager {
 
   private async handleServerStop(serverId: string): Promise<void> {
     try {
-      await window.apiCourier.mockServer.stopServer(serverId);
+      await window.restbro.mockServer.stopServer(serverId);
     } catch (error) {
       console.error('Failed to stop server:', error);
     }
@@ -275,7 +275,7 @@ export class MockServerTabManager {
     route: Omit<MockRoute, 'id'>
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.addRoute({
+      const result = await window.restbro.mockServer.addRoute({
         serverId,
         route,
       });
@@ -297,7 +297,7 @@ export class MockServerTabManager {
     updates: Partial<Omit<MockRoute, 'id'>>
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.updateRoute({
+      const result = await window.restbro.mockServer.updateRoute({
         serverId,
         routeId,
         updates,
@@ -322,7 +322,7 @@ export class MockServerTabManager {
     routeId: string
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.deleteRoute({
+      const result = await window.restbro.mockServer.deleteRoute({
         serverId,
         routeId,
       });
@@ -344,7 +344,7 @@ export class MockServerTabManager {
     enabled: boolean
   ): Promise<void> {
     try {
-      const result = await window.apiCourier.mockServer.toggleRoute({
+      const result = await window.restbro.mockServer.toggleRoute({
         serverId,
         routeId,
         enabled,

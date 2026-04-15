@@ -5,7 +5,7 @@
 
 import type { CompareState } from '../types';
 
-const STORAGE_KEY = 'apiCourier.jsonCompare.v1';
+const STORAGE_KEY = 'restbro.jsonCompare.v1';
 
 const DEFAULT_STATE: CompareState = {
   leftJson: '',

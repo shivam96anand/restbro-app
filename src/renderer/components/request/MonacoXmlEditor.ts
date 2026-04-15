@@ -39,7 +39,7 @@ export class MonacoXmlEditor {
     const lineNumColor =
       this.getCssHexVariable('--json-line-number') || '6e6e6e';
 
-    monaco.editor.defineTheme('api-courier-xml', {
+    monaco.editor.defineTheme('restbro-xml', {
       base: 'vs-dark',
       inherit: true,
       rules: [
@@ -72,7 +72,7 @@ export class MonacoXmlEditor {
       },
     });
 
-    monaco.editor.setTheme('api-courier-xml');
+    monaco.editor.setTheme('restbro-xml');
   }
 
   private initialize(value: string): void {
@@ -81,7 +81,7 @@ export class MonacoXmlEditor {
     this.editor = monaco.editor.create(this.container, {
       value,
       language: 'xml',
-      theme: 'api-courier-xml',
+      theme: 'restbro-xml',
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
