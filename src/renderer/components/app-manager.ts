@@ -44,7 +44,7 @@ export class AppManager {
     const feedbackBtn = document.getElementById('feedback-btn');
     if (feedbackBtn) {
       feedbackBtn.addEventListener('click', () => {
-        const url = 'https://forms.gle/knkLgwdyUzjRxuQt5';
+        const url = 'https://github.com/shivam96anand/restbro-app/issues/new/choose';
         if (window.restbro?.system?.openExternal) {
           window.restbro.system.openExternal(url);
         } else {
