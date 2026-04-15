@@ -60,6 +60,12 @@ if [[ -n "$ZIP" ]]; then ASSETS+=("$ZIP"); ok "ZIP: $(basename "$ZIP")"; fi
 YML=$(find "$RELEASE_DIR" -maxdepth 1 -name "latest-mac.yml" | head -1)
 if [[ -n "$YML" ]]; then ASSETS+=("$YML"); ok "YML: latest-mac.yml (auto-updater manifest)"; fi
 
+EXE=$(find "$RELEASE_DIR" -maxdepth 1 -name "*.exe" | head -1)
+if [[ -n "$EXE" ]]; then ASSETS+=("$EXE"); ok "EXE: $(basename "$EXE")"; fi
+
+WIN_YML=$(find "$RELEASE_DIR" -maxdepth 1 -name "latest.yml" | head -1)
+if [[ -n "$WIN_YML" ]]; then ASSETS+=("$WIN_YML"); ok "YML: latest.yml (Windows auto-updater manifest)"; fi
+
 BLOCKMAP=$(find "$RELEASE_DIR" -maxdepth 1 -name "*.blockmap" 2>/dev/null)
 for bm in $BLOCKMAP; do
   ASSETS+=("$bm")

@@ -24,8 +24,10 @@
     "release": "npm run build && electron-builder --mac --publish always",
     "release:mac": "bash scripts/release-mac.sh",
     "release:mac:universal": "bash scripts/release-mac.sh",
+    "release:win": "bash scripts/release-win.sh",
     "publish:github": "bash scripts/publish-github-release.sh",
-    "ship:mac": "bash scripts/release-mac.sh && bash scripts/publish-github-release.sh"
+    "ship:mac": "bash scripts/release-mac.sh && bash scripts/publish-github-release.sh",
+    "ship:win": "bash scripts/release-win.sh && bash scripts/publish-github-release.sh"
   },
   "devDependencies": {
     "@electron/notarize": "^3.1.1",
@@ -143,6 +145,23 @@
       ],
       "window": { "width": 660, "height": 400 },
       "iconSize": 100
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-${version}-win-x64.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-${version}-win-x64-setup.${ext}"
     }
   }
 }
