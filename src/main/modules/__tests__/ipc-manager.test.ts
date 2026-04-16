@@ -174,6 +174,7 @@ describe('ipc-manager.ts', () => {
         IPC_CHANNELS.FILE_OPEN_DIALOG,
         IPC_CHANNELS.FILE_READ_CONTENT,
         IPC_CHANNELS.FILE_READ_BINARY,
+        IPC_CHANNELS.FILE_PICK_FOR_UPLOAD,
         IPC_CHANNELS.IMPORT_PARSE_PREVIEW,
         IPC_CHANNELS.IMPORT_COMMIT,
         IPC_CHANNELS.COLLECTIONS_STATE_GET,
@@ -790,10 +791,75 @@ describe('ipc-manager.ts', () => {
     });
 
     it('file:read-binary reads file as base64', async () => {
+      // First approve the file path via the file dialog
+      const dialogHandler = getHandler(IPC_CHANNELS.FILE_OPEN_DIALOG)!;
+      await dialogHandler();
+      
       const handler = getHandler(IPC_CHANNELS.FILE_READ_BINARY)!;
-      const result = await handler({}, '/tmp/test.bin');
+      const result = await handler({}, '/tmp/test.json');
       expect(result.success).toBe(true);
-      expect(result.filePath).toBe('/tmp/test.bin');
+      expect(result.filePath).toBe('/tmp/test.json');
+    });
+
+    it('file:pick-for-upload returns file info with inferred MIME type', async () => {
+      // Mock dialog to return a PNG file
+      const { dialog } = await import('electron');
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/tmp/uploads/photo.png'],
+      });
+
+      const handler = getHandler(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD)!;
+      const result = await handler();
+
+      expect(result.canceled).toBe(false);
+      expect(result.filePath).toBe('/tmp/uploads/photo.png');
+      expect(result.fileName).toBe('photo.png');
+      expect(result.contentType).toBe('image/png');
+    });
+
+    it('file:pick-for-upload returns canceled when user cancels', async () => {
+      const { dialog } = await import('electron');
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: true,
+        filePaths: [],
+      });
+
+      const handler = getHandler(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD)!;
+      const result = await handler();
+
+      expect(result.canceled).toBe(true);
+      expect(result.filePath).toBeUndefined();
+    });
+
+    it('file:pick-for-upload uses octet-stream for unknown extensions', async () => {
+      const { dialog } = await import('electron');
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/tmp/data.xyz'],
+      });
+
+      const handler = getHandler(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD)!;
+      const result = await handler();
+
+      expect(result.contentType).toBe('application/octet-stream');
+      expect(result.fileName).toBe('data.xyz');
+    });
+
+    it('file:pick-for-upload approves the file path for subsequent reads', async () => {
+      const { dialog } = await import('electron');
+      vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['/tmp/uploads/secret.pdf'],
+      });
+
+      const pickHandler = getHandler(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD)!;
+      await pickHandler();
+
+      // Now reading the file should work (path is approved)
+      const readHandler = getHandler(IPC_CHANNELS.FILE_READ_BINARY)!;
+      const result = await readHandler({}, '/tmp/uploads/secret.pdf');
+      expect(result.success).toBe(true);
     });
   });
 

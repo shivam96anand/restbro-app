@@ -338,18 +338,6 @@ export class TabsStateManager {
         .catch(() => {
           this.onShowNotification('Failed to copy URL', 'error');
         });
-    } else {
-      const textArea = document.createElement('textarea');
-      textArea.value = tab.request.url;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        this.onShowNotification('URL copied to clipboard', 'success');
-      } catch (err) {
-        this.onShowNotification('Failed to copy URL', 'error');
-      }
-      document.body.removeChild(textArea);
     }
   }
 

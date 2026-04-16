@@ -158,11 +158,8 @@ export class OAuthManager {
     try {
       console.log('[OAuth] Client Credentials Flow:', {
         hasClientId: !!config.clientId,
-        clientIdLength: config.clientId?.length || 0,
         hasClientSecret: !!config.clientSecret,
-        clientSecretLength: config.clientSecret?.length || 0,
         hasTokenUrl: !!config.tokenUrl,
-        credentials: (config as any).credentials || 'headers (default)',
       });
       const response = await this.makeTokenRequest(config.tokenUrl, config);
       return { success: true, data: response };
@@ -238,7 +235,18 @@ export class OAuthManager {
 
       // Step 3: Poll for token
       return new Promise((resolve, reject) => {
+        let pollCount = 0;
+        const maxPolls = 60; // Max ~5 minutes with default 5s interval
+
         const pollForToken = async () => {
+          pollCount++;
+
+          if (pollCount > maxPolls) {
+            userCodeWindow.close();
+            reject(new Error('Device authorization timed out. Please try again.'));
+            return;
+          }
+
           try {
             const tokenParams = new URLSearchParams({
               grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
@@ -373,15 +381,10 @@ export class OAuthManager {
       headers['Content-Type'] = 'application/x-www-form-urlencoded';
     }
 
-    // Debug logging (redact client_secret)
+    // Debug logging (redact secrets)
     console.log('[OAuth] Token request:', {
       url: tokenUrl,
       hasAuthHeader: !!headers['Authorization'],
-      authHeaderPrefix: headers['Authorization']?.substring(0, 15) || 'none',
-      bodyParams: requestBody.replace(
-        /client_secret=[^&]*/g,
-        'client_secret=[REDACTED]'
-      ),
       credentialsMode:
         (configOrParams as any).credentials || 'headers (default)',
     });

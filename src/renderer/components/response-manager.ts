@@ -469,14 +469,7 @@ export class ResponseManager {
           this.showToast('Response copied to clipboard');
         })
         .catch(() => {
-          // Fallback for older browsers
-          const textArea = document.createElement('textarea');
-          textArea.value = textToCopy;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          this.showToast('Response copied to clipboard');
+          this.showToast('Failed to copy response');
         });
     } catch (error) {
       this.showToast('Failed to copy response');

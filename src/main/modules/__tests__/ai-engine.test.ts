@@ -184,7 +184,7 @@ describe('ai-engine.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const session = aiEngine.createSession();
       const result = await aiEngine.sendMessage({
@@ -208,7 +208,7 @@ describe('ai-engine.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const session = aiEngine.createSession();
       expect(session.title).toBe('New Chat');
@@ -245,7 +245,7 @@ describe('ai-engine.ts', () => {
 
   describe('checkEngine', () => {
     it('returns available: true when health endpoint responds', async () => {
-      const mockResponse = { ok: true };
+      const mockResponse = { ok: true } as any;
       vi.mocked(net.fetch).mockResolvedValue(mockResponse);
 
       const result = await aiEngine.checkEngine();
@@ -257,8 +257,8 @@ describe('ai-engine.ts', () => {
       vi.mocked(net.fetch).mockImplementation(async () => {
         callCount++;
         if (callCount === 1) throw new Error('Not found');
-        return { ok: true };
-      }) as any;
+        return { ok: true } as any;
+      });
 
       const result = await aiEngine.checkEngine();
       expect(result.available).toBe(true);
@@ -321,7 +321,7 @@ describe('ai-engine.ts', () => {
         status: 500,
         text: vi.fn().mockResolvedValue('Internal Server Error'),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const session = aiEngine.createSession();
       const result = await aiEngine.sendMessage({
@@ -342,7 +342,7 @@ describe('ai-engine.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const session = aiEngine.createSession();
       await aiEngine.sendMessage({

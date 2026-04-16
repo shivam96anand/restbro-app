@@ -236,13 +236,6 @@ export class RequestDataManager {
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(curlCommand);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = curlCommand;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
       }
       this.uiHelpers.showToast('cURL copied to clipboard');
     } catch (error) {

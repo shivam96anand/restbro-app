@@ -77,6 +77,7 @@ export class RequestErrorFormatter {
     if (error.code === 'EPIPE') return 0; // Broken pipe
     if (error.code === 'EHOSTUNREACH') return 0; // Host unreachable
     if (error.code === 'ENETUNREACH') return 0; // Network unreachable
+    if (error.message?.includes('timed out')) return 408; // Request Timeout
 
     // SSL/TLS errors
     if (error.code === 'CERT_HAS_EXPIRED') return 495; // SSL Certificate Error
@@ -99,6 +100,7 @@ export class RequestErrorFormatter {
     if (error.code === 'EPIPE') return 'Broken Pipe';
     if (error.code === 'EHOSTUNREACH') return 'Host Unreachable';
     if (error.code === 'ENETUNREACH') return 'Network Unreachable';
+    if (error.message?.includes('timed out')) return 'Request Timeout';
     if (error.code === 'CERT_HAS_EXPIRED') return 'SSL Certificate Expired';
     if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE')
       return 'SSL Certificate Invalid';
@@ -126,6 +128,9 @@ export class RequestErrorFormatter {
     if (code === 'ECONNRESET') {
       return 'The connection was reset by the server. This may indicate a server-side issue.';
     }
+    if (error.message?.includes('timed out')) {
+      return error.message;
+    }
     if (code === 'CERT_HAS_EXPIRED') {
       return 'The SSL certificate has expired. The server needs to renew its certificate.';
     }
@@ -152,6 +157,10 @@ export class RequestErrorFormatter {
       suggestions.push('Check your internet connection');
       suggestions.push('Verify the server is responding');
       suggestions.push('Try increasing the timeout value');
+    } else if (error.message?.includes('timed out')) {
+      suggestions.push('Increase the default timeout in Settings');
+      suggestions.push('Check if the server is slow to respond');
+      suggestions.push('Verify your network connection');
     } else if (
       code === 'CERT_HAS_EXPIRED' ||
       code === 'SELF_SIGNED_CERT_IN_CHAIN'

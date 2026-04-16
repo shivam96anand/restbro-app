@@ -24,6 +24,7 @@ export const IPC_CHANNELS = {
   FILE_OPEN_DIALOG: 'file:open-dialog',
   FILE_READ_CONTENT: 'file:read-content',
   FILE_READ_BINARY: 'file:read-binary',
+  FILE_PICK_FOR_UPLOAD: 'file:pick-for-upload',
 
   // Import channels
   IMPORT_PARSE_PREVIEW: 'import:parse-preview',

@@ -39,6 +39,9 @@ import {
 } from './importers';
 
 class IpcManager {
+  // Track file paths approved by user via native dialogs
+  private approvedFilePaths = new Set<string>();
+
   initialize(): void {
     ipcMain.handle(IPC_CHANNELS.STORE_GET, (): AppState => {
       return storeManager.getState();
@@ -272,6 +275,9 @@ class IpcManager {
           return { canceled: true, filePaths: [] };
         }
 
+        // Track approved file paths
+        result.filePaths.forEach((fp) => this.approvedFilePaths.add(fp));
+
         return { canceled: false, filePaths: result.filePaths };
       } catch (error) {
         throw new Error(
@@ -283,6 +289,9 @@ class IpcManager {
     ipcMain.handle(
       IPC_CHANNELS.FILE_READ_CONTENT,
       async (_, filePath: string) => {
+        if (!this.approvedFilePaths.has(filePath)) {
+          throw new Error('File access not permitted. Open the file using the file dialog first.');
+        }
         try {
           const content = readFileSync(filePath, 'utf-8');
           return { success: true, content, filePath };
@@ -297,6 +306,9 @@ class IpcManager {
     ipcMain.handle(
       IPC_CHANNELS.FILE_READ_BINARY,
       async (_, filePath: string) => {
+        if (!this.approvedFilePaths.has(filePath)) {
+          throw new Error('File access not permitted. Open the file using the file dialog first.');
+        }
         try {
           const content = readFileSync(filePath).toString('base64');
           return { success: true, content, filePath };
@@ -307,6 +319,64 @@ class IpcManager {
         }
       }
     );
+
+    ipcMain.handle(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD, async () => {
+      try {
+        const result = await dialog.showOpenDialog({
+          properties: ['openFile'],
+          filters: [{ name: 'All Files', extensions: ['*'] }],
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+          return { canceled: true };
+        }
+
+        const filePath = result.filePaths[0];
+        // Track approved file paths for subsequent reads
+        this.approvedFilePaths.add(filePath);
+
+        const fileName = require('path').basename(filePath);
+        const ext = require('path').extname(filePath).toLowerCase();
+        // Infer MIME type from extension
+        const mimeTypes: Record<string, string> = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.svg': 'image/svg+xml',
+          '.pdf': 'application/pdf',
+          '.zip': 'application/zip',
+          '.gz': 'application/gzip',
+          '.tar': 'application/x-tar',
+          '.json': 'application/json',
+          '.xml': 'application/xml',
+          '.csv': 'text/csv',
+          '.txt': 'text/plain',
+          '.html': 'text/html',
+          '.css': 'text/css',
+          '.js': 'application/javascript',
+          '.ts': 'application/typescript',
+          '.doc': 'application/msword',
+          '.docx':
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          '.xls': 'application/vnd.ms-excel',
+          '.xlsx':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          '.mp3': 'audio/mpeg',
+          '.mp4': 'video/mp4',
+          '.wav': 'audio/wav',
+          '.avi': 'video/x-msvideo',
+        };
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+        return { canceled: false, filePath, fileName, contentType };
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : 'Failed to pick file'
+        );
+      }
+    });
 
     // Import IPC handlers
     ipcMain.handle(
@@ -470,6 +540,14 @@ class IpcManager {
       IPC_CHANNELS.OPEN_EXTERNAL,
       async (_, url: string): Promise<void> => {
         if (!url) {
+          return;
+        }
+        try {
+          const parsed = new URL(url);
+          if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+            return;
+          }
+        } catch {
           return;
         }
         await shell.openExternal(url);

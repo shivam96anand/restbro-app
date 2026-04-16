@@ -27,6 +27,7 @@ const IPC_CHANNELS = {
   FILE_OPEN_DIALOG: 'file:open-dialog',
   FILE_READ_CONTENT: 'file:read-content',
   FILE_READ_BINARY: 'file:read-binary',
+  FILE_PICK_FOR_UPLOAD: 'file:pick-for-upload',
 
   // Import channels
   IMPORT_PARSE_PREVIEW: 'import:parse-preview',
@@ -87,6 +88,15 @@ const IPC_CHANNELS = {
 } as const;
 
 // Define types inline to avoid import issues
+interface FormDataField {
+  key: string;
+  value: string;
+  type: 'text' | 'file';
+  enabled: boolean;
+  fileName?: string;
+  contentType?: string;
+}
+
 interface ApiRequest {
   id: string;
   name: string;
@@ -96,6 +106,7 @@ interface ApiRequest {
   body?: {
     type: 'none' | 'json' | 'raw' | 'form-data' | 'form-urlencoded';
     content: string;
+    formDataFields?: FormDataField[];
   };
   auth?: {
     type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth2';
@@ -487,6 +498,12 @@ const restbroAPI = {
       filePath: string
     ): Promise<{ success: boolean; content: string; filePath: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_READ_BINARY, filePath),
+    pickForUpload: (): Promise<{
+      canceled: boolean;
+      filePath?: string;
+      fileName?: string;
+      contentType?: string;
+    }> => ipcRenderer.invoke(IPC_CHANNELS.FILE_PICK_FOR_UPLOAD),
   },
 
   import: {

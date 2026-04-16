@@ -16,6 +16,7 @@ import {
   JsonViewerUIState,
   NotepadState,
   MockServersState,
+  RequestSettings,
   RequestTab,
   HistoryItem,
   ApiResponse,
@@ -69,6 +70,13 @@ const defaultMockServersState: MockServersState = {
   servers: [],
 };
 
+const defaultRequestSettings: RequestSettings = {
+  defaultTimeoutMs: 60000,
+  followRedirects: true,
+  maxRedirects: 10,
+  maxResponseSizeBytes: 50 * 1024 * 1024, // 50 MB
+};
+
 const defaultState: AppState = {
   collections: [],
   openTabs: [],
@@ -82,6 +90,7 @@ const defaultState: AppState = {
   notepad: defaultNotepadState,
   mockServers: defaultMockServersState,
   hasCompletedThemeOnboarding: false,
+  requestSettings: defaultRequestSettings,
 };
 
 class StoreManager {
@@ -235,6 +244,10 @@ class StoreManager {
   }
 
   async restoreBackup(backupId: string): Promise<void> {
+    // Validate backup ID to prevent path traversal
+    if (!backupId || /[\/\\]|\.\./.test(backupId)) {
+      throw new Error('Invalid backup ID');
+    }
     const backupDir = this.getBackupDir();
     const backupPath = join(backupDir, backupId);
     if (!existsSync(backupPath)) {
@@ -268,6 +281,10 @@ class StoreManager {
       mockServers: sanitizedLoaded.mockServers || defaultMockServersState,
       hasCompletedThemeOnboarding:
         sanitizedLoaded.hasCompletedThemeOnboarding ?? false,
+      requestSettings: {
+        ...defaultRequestSettings,
+        ...(sanitizedLoaded.requestSettings || {}),
+      },
     };
   }
 

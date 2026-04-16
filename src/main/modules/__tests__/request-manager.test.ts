@@ -60,6 +60,7 @@ const mockReq = {
   end: vi.fn(),
   on: vi.fn(),
   destroy: vi.fn(),
+  setTimeout: vi.fn(),
 };
 
 vi.mock('http', () => ({
@@ -341,10 +342,23 @@ describe('request-manager.ts', () => {
     it('cancels an in-flight request and returns true', async () => {
       // Set up https.request to capture the request but not respond immediately
       let capturedReq: any;
+      let capturedErrorHandler: any;
       vi.mocked(https.request).mockImplementation((_opts: any, _cb: any) => {
         capturedReq = {
           ...mockReq,
-          destroy: vi.fn(),
+          destroy: vi.fn((err: any) => {
+            // Simulate Node's behavior: destroy triggers the error handler
+            if (capturedErrorHandler) {
+              setTimeout(() => capturedErrorHandler(err), 0);
+            }
+          }),
+          on: vi.fn((event: string, handler: any) => {
+            if (event === 'error') {
+              capturedErrorHandler = handler;
+            }
+            return capturedReq;
+          }),
+          setTimeout: vi.fn(),
         };
         return capturedReq as any;
       });
@@ -366,8 +380,9 @@ describe('request-manager.ts', () => {
       const cancelled = requestManager.cancelRequest('cancel-me');
       expect(cancelled).toBe(true);
 
-      // The promise should reject due to cancellation
-      await expect(promise).rejects.toThrow('Request cancelled by user');
+      // The promise resolves (not rejects) with an error response after cancellation
+      const response = await promise;
+      expect(response.status).toBe(0);
     });
 
     it('returns false when cancelling an unknown request ID', () => {
@@ -417,6 +432,7 @@ describe('request-manager.ts', () => {
           write: vi.fn(),
           end: vi.fn(),
           destroy: vi.fn(),
+          setTimeout: vi.fn(),
         };
         return reqObj as any;
       });

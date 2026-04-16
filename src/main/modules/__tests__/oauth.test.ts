@@ -104,7 +104,7 @@ describe('oauth.ts', () => {
         text: vi.fn(),
       };
 
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({
         refreshToken: 'old-refresh-token',
@@ -126,7 +126,7 @@ describe('oauth.ts', () => {
         text: vi.fn().mockResolvedValue('Invalid grant'),
       };
 
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({
         refreshToken: 'bad-refresh-token',
@@ -150,7 +150,7 @@ describe('oauth.ts', () => {
         text: vi.fn(),
       };
 
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({ grantType: 'client_credentials' });
 
@@ -173,7 +173,7 @@ describe('oauth.ts', () => {
         text: vi.fn().mockResolvedValue('Invalid client'),
       };
 
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({ grantType: 'client_credentials' });
 
@@ -220,9 +220,9 @@ describe('oauth.ts', () => {
 
       // Mock token response (authorization_pending then success)
       let callCount = 0;
-      vi.mocked(net.fetch).mockImplementation(async (url: string) => {
+      vi.mocked(net.fetch).mockImplementation(async (url) => {
         if (String(url).includes('/device')) {
-          return deviceCodeResponse;
+          return deviceCodeResponse as any;
         }
         callCount++;
         if (callCount === 1) {
@@ -235,8 +235,8 @@ describe('oauth.ts', () => {
             expires_in: 3600,
             token_type: 'Bearer',
           }),
-        };
-      }) as any;
+        } as any;
+      });
 
       const config = createConfig({
         grantType: 'device_code',
@@ -270,7 +270,7 @@ describe('oauth.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({
         grantType: 'client_credentials',
@@ -298,7 +298,7 @@ describe('oauth.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({ grantType: 'client_credentials' });
 
@@ -332,7 +332,7 @@ describe('oauth.ts', () => {
         }),
         text: vi.fn(),
       };
-      vi.mocked(net.fetch).mockResolvedValue(mockResponse);
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
 
       const config = createConfig({ refreshToken: 'old-refresh' });
       const result = await oauthManager.refreshToken(config);

@@ -1,6 +1,22 @@
-import { describe, expect, it } from 'vitest';
-import { ApiRequest } from '../../../shared/types';
+import { describe, expect, it, vi } from 'vitest';
+import { ApiRequest, FormDataField } from '../../../shared/types';
 import { RequestBuilder } from '../request-builder';
+
+// Mock fs for file upload tests
+vi.mock('fs', () => ({
+  readFileSync: vi.fn((filePath: string) => {
+    if (filePath === '/tmp/photo.png') {
+      return Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
+    }
+    if (filePath === '/tmp/doc.pdf') {
+      return Buffer.from('%PDF-1.4');
+    }
+    if (filePath === '/tmp/missing.txt') {
+      throw new Error('ENOENT: no such file or directory');
+    }
+    return Buffer.from('file-content');
+  }),
+}));
 
 function createRequest(overrides: Partial<ApiRequest> = {}): ApiRequest {
   return {
@@ -35,7 +51,7 @@ describe('request-builder.ts', () => {
         ]
       );
 
-      expect(url).toBe('https://api.example.com/users?page=1&sort=name');
+      expect(url).toBe('https://api.example.com/users?page=1&missing-value=&sort=name');
     });
 
     it('merges params into existing query strings without duplicating keys', () => {
@@ -64,7 +80,7 @@ describe('request-builder.ts', () => {
       );
 
       expect(url).toBe(
-        'https://api.example.com/search?q=hello+world&category=a%26b'
+        'https://api.example.com/search?q=hello+world&category=a%26b&empty='
       );
     });
 
@@ -99,7 +115,7 @@ describe('request-builder.ts', () => {
         })
       );
 
-      expect(headers).toEqual({ 'X-Test': '123' });
+      expect(headers).toEqual({ 'X-Test': '123', 'Missing-Value': '' });
     });
 
     it('includes only non-empty object headers', () => {
@@ -344,11 +360,11 @@ describe('request-builder.ts', () => {
         contentType: 'application/x-www-form-urlencoded',
       });
 
-      expect(
-        RequestBuilder.buildBody(
-          createRequest({ body: { type: 'form-data', content: 'file=test' } })
-        )
-      ).toEqual({ bodyData: 'file=test', contentType: 'multipart/form-data' });
+      const formDataResult = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: 'file=test' } })
+      );
+      expect(formDataResult.contentType).toContain('multipart/form-data');
+      expect(formDataResult.contentType).toContain('boundary=');
 
       expect(
         RequestBuilder.buildBody(
@@ -415,8 +431,9 @@ describe('request-builder.ts', () => {
       const result = RequestBuilder.buildBody(
         createRequest({ body: { type: 'form-data', content: 'field1=value1' } })
       );
-      expect(result.contentType).toBe('multipart/form-data');
-      expect(result.bodyData).toBe('field1=value1');
+      expect(result.contentType).toContain('multipart/form-data');
+      expect(result.contentType).toContain('boundary=');
+      expect(result.bodyData).toBeInstanceOf(Buffer);
     });
 
     it('respects explicit contentType override', () => {
@@ -452,6 +469,203 @@ describe('request-builder.ts', () => {
     it('handles empty URL', () => {
       const url = RequestBuilder.buildUrlWithParams('', { key: 'val' });
       expect(url).toContain('key=val');
+    });
+  });
+
+  describe('buildBody — form-data with formDataFields', () => {
+    it('builds multipart body with text fields', () => {
+      const fields: FormDataField[] = [
+        { key: 'name', value: 'John', type: 'text', enabled: true },
+        { key: 'email', value: 'john@example.com', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      expect(result.contentType).toContain('multipart/form-data');
+      expect(result.contentType).toContain('boundary=');
+      expect(result.bodyData).toBeInstanceOf(Buffer);
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('Content-Disposition: form-data; name="name"');
+      expect(bodyStr).toContain('John');
+      expect(bodyStr).toContain('Content-Disposition: form-data; name="email"');
+      expect(bodyStr).toContain('john@example.com');
+    });
+
+    it('builds multipart body with file fields', () => {
+      const fields: FormDataField[] = [
+        {
+          key: 'avatar',
+          value: '/tmp/photo.png',
+          type: 'file',
+          enabled: true,
+          fileName: 'photo.png',
+          contentType: 'image/png',
+        },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      expect(result.contentType).toContain('multipart/form-data');
+      const bodyBuf = result.bodyData as Buffer;
+      const bodyStr = bodyBuf.toString();
+
+      expect(bodyStr).toContain('name="avatar"; filename="photo.png"');
+      expect(bodyStr).toContain('Content-Type: image/png');
+      // The buffer should contain the PNG magic bytes
+      expect(bodyBuf.includes(Buffer.from([0x89, 0x50, 0x4e, 0x47]))).toBe(true);
+    });
+
+    it('handles mixed text and file fields', () => {
+      const fields: FormDataField[] = [
+        { key: 'description', value: 'My file upload', type: 'text', enabled: true },
+        {
+          key: 'document',
+          value: '/tmp/doc.pdf',
+          type: 'file',
+          enabled: true,
+          fileName: 'doc.pdf',
+          contentType: 'application/pdf',
+        },
+        { key: 'tag', value: 'important', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="description"');
+      expect(bodyStr).toContain('My file upload');
+      expect(bodyStr).toContain('name="document"; filename="doc.pdf"');
+      expect(bodyStr).toContain('Content-Type: application/pdf');
+      expect(bodyStr).toContain('name="tag"');
+      expect(bodyStr).toContain('important');
+    });
+
+    it('skips disabled fields', () => {
+      const fields: FormDataField[] = [
+        { key: 'included', value: 'yes', type: 'text', enabled: true },
+        { key: 'excluded', value: 'no', type: 'text', enabled: false },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="included"');
+      expect(bodyStr).not.toContain('name="excluded"');
+    });
+
+    it('skips fields with empty keys', () => {
+      const fields: FormDataField[] = [
+        { key: '', value: 'orphan-value', type: 'text', enabled: true },
+        { key: '  ', value: 'whitespace-key', type: 'text', enabled: true },
+        { key: 'valid', value: 'ok', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).not.toContain('orphan-value');
+      expect(bodyStr).not.toContain('whitespace-key');
+      expect(bodyStr).toContain('name="valid"');
+    });
+
+    it('skips unreadable file fields gracefully', () => {
+      const fields: FormDataField[] = [
+        {
+          key: 'file',
+          value: '/tmp/missing.txt',
+          type: 'file',
+          enabled: true,
+          fileName: 'missing.txt',
+        },
+        { key: 'name', value: 'still works', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      // File field should be skipped, text field should be present
+      expect(bodyStr).not.toContain('name="file"');
+      expect(bodyStr).toContain('name="name"');
+      expect(bodyStr).toContain('still works');
+    });
+
+    it('uses application/octet-stream when file contentType is missing', () => {
+      const fields: FormDataField[] = [
+        {
+          key: 'upload',
+          value: '/tmp/data.bin',
+          type: 'file',
+          enabled: true,
+          fileName: 'data.bin',
+        },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('Content-Type: application/octet-stream');
+    });
+
+    it('falls back to legacy text format when formDataFields is empty', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: { type: 'form-data', content: 'key1=val1', formDataFields: [] },
+        })
+      );
+
+      expect(result.contentType).toContain('multipart/form-data');
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="key1"');
+      expect(bodyStr).toContain('val1');
+    });
+
+    it('prefers formDataFields over legacy content when both are present', () => {
+      const fields: FormDataField[] = [
+        { key: 'field', value: 'from-fields', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: {
+            type: 'form-data',
+            content: 'legacy=from-content',
+            formDataFields: fields,
+          },
+        })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('from-fields');
+      expect(bodyStr).not.toContain('from-content');
+    });
+
+    it('returns empty for form-data with no content and no fields', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '' } })
+      );
+      expect(result.bodyData).toBeUndefined();
+      expect(result.contentType).toBeUndefined();
+    });
+
+    it('ends multipart body with closing boundary', () => {
+      const fields: FormDataField[] = [
+        { key: 'x', value: 'y', type: 'text', enabled: true },
+      ];
+      const result = RequestBuilder.buildBody(
+        createRequest({ body: { type: 'form-data', content: '', formDataFields: fields } })
+      );
+
+      const bodyStr = (result.bodyData as Buffer).toString();
+      // Extract boundary from content type
+      const boundary = result.contentType!.split('boundary=')[1];
+      expect(bodyStr).toContain(`--${boundary}--`);
     });
   });
 });

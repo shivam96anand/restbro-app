@@ -73,7 +73,15 @@ export class VariableEditDialog {
 
       const nameValue = document.createElement('div');
       nameValue.className = 'var-edit-name-value';
-      nameValue.innerHTML = `<span class="var-edit-braces">{{</span>${variableName}<span class="var-edit-braces">}}</span>`;
+      const openBrace = document.createElement('span');
+      openBrace.className = 'var-edit-braces';
+      openBrace.textContent = '{{';
+      const closeBrace = document.createElement('span');
+      closeBrace.className = 'var-edit-braces';
+      closeBrace.textContent = '}}';
+      nameValue.appendChild(openBrace);
+      nameValue.appendChild(document.createTextNode(variableName));
+      nameValue.appendChild(closeBrace);
 
       nameGroup.appendChild(nameLabel);
       nameGroup.appendChild(nameValue);
@@ -81,7 +89,11 @@ export class VariableEditDialog {
       // Current source info
       const sourceInfo = document.createElement('div');
       sourceInfo.className = 'var-edit-source-info';
-      sourceInfo.innerHTML = `<span class="var-edit-source-icon">${iconHtml('pin')}</span> ${source}`;
+      const sourceIcon = document.createElement('span');
+      sourceIcon.className = 'var-edit-source-icon';
+      sourceIcon.innerHTML = iconHtml('pin');
+      sourceInfo.appendChild(sourceIcon);
+      sourceInfo.appendChild(document.createTextNode(` ${source}`));
 
       // Value input
       const valueGroup = document.createElement('div');

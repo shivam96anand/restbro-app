@@ -3,8 +3,23 @@ import { MonacoJsonEditor } from './MonacoJsonEditor';
 import { MonacoXmlEditor } from './MonacoXmlEditor';
 import { setupAutocomplete } from './variable-autocomplete';
 
-type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded';
-type BodyFormat = 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
+type BodyType = 'none' | 'json' | 'raw' | 'form-urlencoded' | 'form-data';
+type BodyFormat =
+  | 'json'
+  | 'xml'
+  | 'yaml'
+  | 'text'
+  | 'form-urlencoded'
+  | 'form-data';
+
+interface FormDataField {
+  key: string;
+  value: string;
+  type: 'text' | 'file';
+  enabled: boolean;
+  fileName?: string;
+  contentType?: string;
+}
 
 export interface RequestBodyEditorEvents {
   onBodyChange: (body: {
@@ -12,6 +27,7 @@ export interface RequestBodyEditorEvents {
     content: string;
     format?: BodyFormat;
     contentType?: string;
+    formDataFields?: FormDataField[];
   }) => void;
   onContentTypeChange?: (contentType: string | null | undefined) => void;
   onStatusUpdate: (
@@ -32,12 +48,14 @@ export class RequestBodyEditor {
   private monacoEditor: MonacoJsonEditor | null = null;
   private monacoXmlEditor: MonacoXmlEditor | null = null;
   private forcedContentType?: string;
+  private formDataFields: FormDataField[] = [];
   private readonly formatContentTypes: Record<BodyFormat, string> = {
     json: 'application/json',
     xml: 'application/xml',
     yaml: 'application/x-yaml',
     text: 'text/plain',
     'form-urlencoded': 'application/x-www-form-urlencoded',
+    'form-data': 'multipart/form-data',
   };
 
   constructor(container: HTMLElement, events: RequestBodyEditorEvents) {
@@ -99,6 +117,7 @@ export class RequestBodyEditor {
             <option value="yaml">YAML</option>
             <option value="text">Plain Text</option>
             <option value="form-urlencoded">Form URL Encoded</option>
+            <option value="form-data">Form Data</option>
           </select>
         </div>
       </div>
@@ -121,6 +140,12 @@ export class RequestBodyEditor {
             spellcheck="false"
           ></textarea>
         </div>
+      </div>
+      <div class="form-data-container" id="form-data-container" style="display: none;">
+        <div class="form-data-fields" id="form-data-fields"></div>
+        <button class="form-data-add-btn" id="form-data-add-btn" type="button">
+          <span class="form-data-add-icon">+</span> Add Field
+        </button>
       </div>
     `;
   }
@@ -167,6 +192,16 @@ export class RequestBodyEditor {
 
     // Watch for body section becoming visible to reset scroll position
     this.setupVisibilityWatcher();
+
+    // Form data add button
+    const addBtn = this.container.querySelector('#form-data-add-btn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        this.addFormDataField({ key: '', value: '', type: 'text', enabled: true });
+        this.renderFormDataFields();
+        this.emitFormDataChange();
+      });
+    }
 
     // Action buttons
     this.container
@@ -358,6 +393,9 @@ export class RequestBodyEditor {
     const bodyEditorContainer = this.container.querySelector(
       '#body-editor-container'
     ) as HTMLElement;
+    const formDataContainer = this.container.querySelector(
+      '#form-data-container'
+    ) as HTMLElement;
     const bodyEditor = this.container.querySelector(
       '#request-body'
     ) as HTMLTextAreaElement;
@@ -365,6 +403,7 @@ export class RequestBodyEditor {
 
     if (normalizedType === 'none') {
       bodyEditorContainer.style.display = 'none';
+      formDataContainer.style.display = 'none';
       // Clean up Monaco editor if active
       this.switchToTextareaEditor();
       this.currentBodyType = 'none';
@@ -376,8 +415,23 @@ export class RequestBodyEditor {
         contentType: undefined,
       });
       this.events.onContentTypeChange?.(null);
+    } else if (selection === 'form-data') {
+      bodyEditorContainer.style.display = 'none';
+      formDataContainer.style.display = 'flex';
+      this.switchToTextareaEditor();
+      this.currentBodyType = 'form-data';
+      this.currentFormat = 'form-data';
+
+      // Add a default empty row if no fields exist
+      if (this.formDataFields.length === 0) {
+        this.formDataFields.push({ key: '', value: '', type: 'text', enabled: true });
+      }
+      this.renderFormDataFields();
+      this.emitFormDataChange();
+      this.events.onContentTypeChange?.(this.getCurrentContentType());
     } else {
       bodyEditorContainer.style.display = 'flex';
+      formDataContainer.style.display = 'none';
 
       if (selection === 'form-urlencoded') {
         this.currentBodyType = 'form-urlencoded';
@@ -577,6 +631,7 @@ export class RequestBodyEditor {
     content: string;
     format?: BodyFormat;
     contentType?: string;
+    formDataFields?: FormDataField[];
   }): void {
     const normalizedType = body.type === 'json' ? 'raw' : body.type;
     const inferredFormat = this.inferFormat(body);
@@ -589,6 +644,11 @@ export class RequestBodyEditor {
 
     this.currentFormat = inferredFormat;
 
+    // Load form-data fields if present
+    if (body.type === 'form-data' && body.formDataFields) {
+      this.formDataFields = body.formDataFields.map((f) => ({ ...f }));
+    }
+
     if (bodyTypeSelect) {
       const selectionValue =
         normalizedType === 'none' ? 'none' : inferredFormat;
@@ -597,7 +657,9 @@ export class RequestBodyEditor {
     }
 
     // Set the value in the appropriate editor
-    if (inferredFormat === 'json' && this.monacoEditor) {
+    if (inferredFormat === 'form-data') {
+      // Already handled by handleBodySelectionChange → renderFormDataFields
+    } else if (inferredFormat === 'json' && this.monacoEditor) {
       // Monaco editor is active for JSON
       this.monacoEditor.setValue(body.content);
     } else if (inferredFormat === 'xml' && this.monacoXmlEditor) {
@@ -617,10 +679,18 @@ export class RequestBodyEditor {
     content: string;
     format?: BodyFormat;
     contentType?: string;
+    formDataFields?: FormDataField[];
   } {
-    const bodyTypeSelect = this.container.querySelector(
-      '#body-type-select'
-    ) as HTMLSelectElement;
+    if (this.currentBodyType === 'form-data') {
+      return {
+        type: 'form-data',
+        content: '',
+        format: 'form-data',
+        contentType: this.getCurrentContentType() || undefined,
+        formDataFields: this.formDataFields.map((f) => ({ ...f })),
+      };
+    }
+
     const bodyEditor = this.container.querySelector(
       '#request-body'
     ) as HTMLTextAreaElement;
@@ -650,6 +720,9 @@ export class RequestBodyEditor {
       this.monacoXmlEditor.dispose();
       this.monacoXmlEditor = null;
     }
+
+    // Clear form-data fields
+    this.formDataFields = [];
 
     const bodyTypeSelect = this.container.querySelector(
       '#body-type-select'
@@ -690,6 +763,164 @@ export class RequestBodyEditor {
     if (this.monacoXmlEditor) {
       this.monacoXmlEditor.dispose();
       this.monacoXmlEditor = null;
+    }
+  }
+
+  // --- Form Data field management ---
+
+  private addFormDataField(field: FormDataField): void {
+    this.formDataFields.push(field);
+  }
+
+  private removeFormDataField(index: number): void {
+    this.formDataFields.splice(index, 1);
+    this.renderFormDataFields();
+    this.emitFormDataChange();
+  }
+
+  private emitFormDataChange(): void {
+    this.events.onBodyChange({
+      type: 'form-data',
+      content: '',
+      format: 'form-data',
+      contentType: this.getCurrentContentType(),
+      formDataFields: this.formDataFields.map((f) => ({ ...f })),
+    });
+  }
+
+  private renderFormDataFields(): void {
+    const container = this.container.querySelector(
+      '#form-data-fields'
+    ) as HTMLElement;
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    this.formDataFields.forEach((field, index) => {
+      const row = document.createElement('div');
+      row.className = 'form-data-row';
+
+      // Enable checkbox
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = field.enabled;
+      checkbox.className = 'form-data-checkbox';
+      checkbox.addEventListener('change', () => {
+        this.formDataFields[index].enabled = checkbox.checked;
+        this.emitFormDataChange();
+      });
+
+      // Key input
+      const keyInput = document.createElement('input');
+      keyInput.type = 'text';
+      keyInput.className = 'form-data-key';
+      keyInput.placeholder = 'Key';
+      keyInput.value = field.key;
+      keyInput.addEventListener('input', () => {
+        this.formDataFields[index].key = keyInput.value;
+        this.emitFormDataChange();
+      });
+
+      // Type selector
+      const typeSelect = document.createElement('select');
+      typeSelect.className = 'form-data-type-select';
+      const textOpt = document.createElement('option');
+      textOpt.value = 'text';
+      textOpt.textContent = 'Text';
+      const fileOpt = document.createElement('option');
+      fileOpt.value = 'file';
+      fileOpt.textContent = 'File';
+      typeSelect.appendChild(textOpt);
+      typeSelect.appendChild(fileOpt);
+      typeSelect.value = field.type;
+
+      // Value area — text input or file picker
+      const valueContainer = document.createElement('div');
+      valueContainer.className = 'form-data-value-container';
+      this.renderValueField(valueContainer, field, index);
+
+      typeSelect.addEventListener('change', () => {
+        const newType = typeSelect.value as 'text' | 'file';
+        this.formDataFields[index].type = newType;
+        this.formDataFields[index].value = '';
+        this.formDataFields[index].fileName = undefined;
+        this.formDataFields[index].contentType = undefined;
+        this.renderValueField(valueContainer, this.formDataFields[index], index);
+        this.emitFormDataChange();
+      });
+
+      // Delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'form-data-delete-btn';
+      deleteBtn.textContent = '×';
+      deleteBtn.title = 'Remove field';
+      deleteBtn.addEventListener('click', () => {
+        this.removeFormDataField(index);
+      });
+
+      row.appendChild(checkbox);
+      row.appendChild(keyInput);
+      row.appendChild(typeSelect);
+      row.appendChild(valueContainer);
+      row.appendChild(deleteBtn);
+      container.appendChild(row);
+    });
+  }
+
+  private renderValueField(
+    container: HTMLElement,
+    field: FormDataField,
+    index: number
+  ): void {
+    container.innerHTML = '';
+
+    if (field.type === 'text') {
+      const valueInput = document.createElement('input');
+      valueInput.type = 'text';
+      valueInput.className = 'form-data-value';
+      valueInput.placeholder = 'Value';
+      valueInput.value = field.value;
+      valueInput.addEventListener('input', () => {
+        this.formDataFields[index].value = valueInput.value;
+        this.emitFormDataChange();
+      });
+      container.appendChild(valueInput);
+    } else {
+      // File type
+      const fileBtn = document.createElement('button');
+      fileBtn.type = 'button';
+      fileBtn.className = 'form-data-file-btn';
+      fileBtn.textContent = field.fileName || 'Choose File';
+      if (field.fileName) {
+        fileBtn.classList.add('has-file');
+      }
+
+      fileBtn.addEventListener('click', async () => {
+        try {
+          const result = await (window as any).restbro.files.pickForUpload();
+          if (!result.canceled && result.filePath) {
+            this.formDataFields[index].value = result.filePath;
+            this.formDataFields[index].fileName = result.fileName;
+            this.formDataFields[index].contentType = result.contentType;
+            fileBtn.textContent = result.fileName;
+            fileBtn.classList.add('has-file');
+            this.emitFormDataChange();
+          }
+        } catch (err) {
+          console.error('Failed to pick file:', err);
+        }
+      });
+
+      container.appendChild(fileBtn);
+
+      // Show filename hint if file is selected
+      if (field.fileName) {
+        const hint = document.createElement('span');
+        hint.className = 'form-data-file-hint';
+        hint.textContent = field.contentType || '';
+        container.appendChild(hint);
+      }
     }
   }
 
@@ -778,6 +1009,10 @@ export class RequestBodyEditor {
 
     if (body.type === 'form-urlencoded') {
       return 'form-urlencoded';
+    }
+
+    if (body.type === 'form-data') {
+      return 'form-data';
     }
 
     return 'text';

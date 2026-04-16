@@ -1,4 +1,4 @@
-import { ApiRequest, ApiResponse } from '../../shared/types';
+import { ApiRequest, ApiResponse, RequestSettings } from '../../shared/types';
 import { oauthManager } from './oauth';
 import {
   composeFinalRequest,
@@ -127,83 +127,159 @@ class RequestManager {
           mergedParams
         );
 
-        const parsedUrl = new URL(urlString);
-        const isHttps = parsedUrl.protocol === 'https:';
-        const httpModule = isHttps ? https : http;
+        // Get request settings
+        const settings = state.requestSettings;
+        const timeoutMs = settings?.defaultTimeoutMs ?? 60000;
+        const followRedirects = settings?.followRedirects ?? true;
+        const maxRedirects = settings?.maxRedirects ?? 10;
+        const maxResponseSize = settings?.maxResponseSizeBytes ?? 50 * 1024 * 1024;
 
-        // Build headers
-        let cleanHeaders = RequestBuilder.buildHeaders(updatedRequest);
+        const executeRequest = (
+          targetUrl: string,
+          redirectCount: number
+        ): void => {
+          const parsedUrl = new URL(targetUrl);
+          const isHttps = parsedUrl.protocol === 'https:';
+          const httpModule = isHttps ? https : http;
 
-        // Build body
-        const { bodyData, contentType } =
-          RequestBuilder.buildBody(updatedRequest);
+          // Build headers
+          let cleanHeaders = RequestBuilder.buildHeaders(updatedRequest);
 
-        // Add default headers
-        cleanHeaders = RequestBuilder.addDefaultHeaders(
-          cleanHeaders,
-          bodyData,
-          contentType
-        );
+          // Build body
+          const { bodyData, contentType } =
+            RequestBuilder.buildBody(updatedRequest);
 
-        const options: http.RequestOptions = {
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port || (isHttps ? 443 : 80),
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: updatedRequest.method,
-          headers: cleanHeaders,
+          // Add default headers
+          cleanHeaders = RequestBuilder.addDefaultHeaders(
+            cleanHeaders,
+            bodyData,
+            contentType
+          );
+
+          // Add Accept-Encoding if not specified by user
+          if (
+            !cleanHeaders['Accept-Encoding'] &&
+            !cleanHeaders['accept-encoding']
+          ) {
+            cleanHeaders['Accept-Encoding'] = 'gzip, deflate, br';
+          }
+
+          const options: http.RequestOptions = {
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || (isHttps ? 443 : 80),
+            path: parsedUrl.pathname + parsedUrl.search,
+            method: updatedRequest.method,
+            headers: cleanHeaders,
+          };
+
+          // Build mTLS agent for SOAP requests with cert config
+          if (isHttps && updatedRequest.soapCerts) {
+            const sc = updatedRequest.soapCerts;
+            const agentOptions: https.AgentOptions = {};
+
+            if (!sc.mode || sc.mode === 'jks') {
+              // JKS mode — parse on the fly using jks-js
+              if (sc.keystoreJks && sc.keystorePassword) {
+                const ks = parseKeystoreJks(sc.keystoreJks, sc.keystorePassword);
+                if (ks.cert) agentOptions.cert = ks.cert;
+                if (ks.key) agentOptions.key = ks.key;
+              }
+              if (sc.truststoreJks && sc.truststorePassword) {
+                const ts = parseTruststoreJks(
+                  sc.truststoreJks,
+                  sc.truststorePassword
+                );
+                if (ts.ca) agentOptions.ca = ts.ca;
+              }
+            } else {
+              // PEM mode
+              if (sc.clientCert?.content)
+                agentOptions.cert = sc.clientCert.content;
+              if (sc.clientKey?.content) agentOptions.key = sc.clientKey.content;
+              if (sc.caCert?.content) agentOptions.ca = sc.caCert.content;
+              if (sc.pfx?.content)
+                agentOptions.pfx = Buffer.from(sc.pfx.content, 'base64');
+              if (sc.passphrase) agentOptions.passphrase = sc.passphrase;
+            }
+
+            if (Object.keys(agentOptions).length > 0) {
+              options.agent = new https.Agent(agentOptions);
+            }
+          }
+
+          const req = httpModule.request(options, (res) => {
+            // Handle redirects
+            const statusCode = res.statusCode || 0;
+            if (
+              followRedirects &&
+              [301, 302, 303, 307, 308].includes(statusCode) &&
+              res.headers.location
+            ) {
+              if (redirectCount >= maxRedirects) {
+                const endTime = Date.now();
+                const errorBody = JSON.stringify({
+                  error: 'Too Many Redirects',
+                  message: `Exceeded maximum of ${maxRedirects} redirects`,
+                  url: targetUrl,
+                  redirectCount,
+                  timestamp: new Date().toISOString(),
+                }, null, 2);
+                safeResolve({
+                  status: 0,
+                  statusText: 'Too Many Redirects',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: errorBody,
+                  time: endTime - startTime,
+                  size: Buffer.byteLength(errorBody),
+                  timestamp: endTime,
+                });
+                return;
+              }
+
+              // Resolve relative redirect URLs
+              const redirectUrl = new URL(res.headers.location, targetUrl).toString();
+
+              // For 303, switch to GET and drop body
+              if (statusCode === 303) {
+                updatedRequest.method = 'GET';
+                if (updatedRequest.body) {
+                  updatedRequest.body = { type: 'none', content: '' };
+                }
+              }
+
+              // Consume current response and follow redirect
+              res.resume();
+              executeRequest(redirectUrl, redirectCount + 1);
+              return;
+            }
+
+            this.handleResponse(res, startTime, safeResolve, maxResponseSize);
+          });
+
+          req.on('error', (error) => {
+            this.handleRequestError(error, targetUrl, startTime, safeResolve);
+          });
+
+          // Set timeout
+          if (timeoutMs > 0) {
+            req.setTimeout(timeoutMs, () => {
+              req.destroy(new Error(`Request timed out after ${timeoutMs / 1000}s`));
+            });
+          }
+
+          this.activeRequests.set(requestId, { req, reject: safeReject });
+
+          // Write body data if present (skip for redirected GET)
+          if (bodyData && updatedRequest.method !== 'GET') {
+            req.write(bodyData);
+          } else if (bodyData) {
+            req.write(bodyData);
+          }
+
+          req.end();
         };
 
-        // Build mTLS agent for SOAP requests with cert config
-        if (isHttps && updatedRequest.soapCerts) {
-          const sc = updatedRequest.soapCerts;
-          const agentOptions: https.AgentOptions = {};
-
-          if (!sc.mode || sc.mode === 'jks') {
-            // JKS mode — parse on the fly using jks-js
-            if (sc.keystoreJks && sc.keystorePassword) {
-              const ks = parseKeystoreJks(sc.keystoreJks, sc.keystorePassword);
-              if (ks.cert) agentOptions.cert = ks.cert;
-              if (ks.key) agentOptions.key = ks.key;
-            }
-            if (sc.truststoreJks && sc.truststorePassword) {
-              const ts = parseTruststoreJks(
-                sc.truststoreJks,
-                sc.truststorePassword
-              );
-              if (ts.ca) agentOptions.ca = ts.ca;
-            }
-          } else {
-            // PEM mode
-            if (sc.clientCert?.content)
-              agentOptions.cert = sc.clientCert.content;
-            if (sc.clientKey?.content) agentOptions.key = sc.clientKey.content;
-            if (sc.caCert?.content) agentOptions.ca = sc.caCert.content;
-            if (sc.pfx?.content)
-              agentOptions.pfx = Buffer.from(sc.pfx.content, 'base64');
-            if (sc.passphrase) agentOptions.passphrase = sc.passphrase;
-          }
-
-          if (Object.keys(agentOptions).length > 0) {
-            options.agent = new https.Agent(agentOptions);
-          }
-        }
-
-        const req = httpModule.request(options, (res) => {
-          this.handleResponse(res, startTime, safeResolve);
-        });
-
-        req.on('error', (error) => {
-          this.handleRequestError(error, urlString, startTime, safeResolve);
-        });
-
-        this.activeRequests.set(requestId, { req, reject: safeReject });
-
-        // Write body data if present
-        if (bodyData) {
-          req.write(bodyData);
-        }
-
-        req.end();
+        executeRequest(urlString, 0);
       } catch (error) {
         this.handleGeneralError(
           error,
@@ -222,18 +298,22 @@ class RequestManager {
       return false;
     }
 
+    // Remove from active requests first to prevent double-settle
+    this.activeRequests.delete(requestId);
     active.req.destroy(new Error('Request cancelled by user'));
-    active.reject(new Error('Request cancelled by user'));
     return true;
   }
 
   private handleResponse(
     res: http.IncomingMessage,
     startTime: number,
-    resolve: (value: ApiResponse) => void
+    resolve: (value: ApiResponse) => void,
+    maxResponseSize: number = 50 * 1024 * 1024
   ): void {
     const chunks: Buffer[] = [];
     const rawChunks: Buffer[] = [];
+    let totalDecompressedSize = 0;
+    let sizeLimitExceeded = false;
 
     // Handle compressed responses
     const encoding = res.headers['content-encoding'];
@@ -253,10 +333,48 @@ class RequestManager {
     }
 
     responseStream.on('data', (chunk: Buffer) => {
+      totalDecompressedSize += chunk.length;
+      if (totalDecompressedSize > maxResponseSize) {
+        if (!sizeLimitExceeded) {
+          sizeLimitExceeded = true;
+          // Destroy the response stream to stop reading
+          res.destroy();
+        }
+        return;
+      }
       chunks.push(chunk);
     });
 
     responseStream.on('end', () => {
+      if (sizeLimitExceeded) {
+        const endTime = Date.now();
+        const errorBody = JSON.stringify({
+          error: 'Response Too Large',
+          message: `Response body exceeded the ${(maxResponseSize / 1024 / 1024).toFixed(0)} MB limit and was truncated`,
+          truncatedSize: totalDecompressedSize,
+          maxSize: maxResponseSize,
+          timestamp: new Date().toISOString(),
+        }, null, 2);
+
+        const responseHeaders: Record<string, string> = {};
+        Object.entries(res.headers).forEach(([key, value]) => {
+          responseHeaders[key] = Array.isArray(value)
+            ? value.join(', ')
+            : value || '';
+        });
+
+        resolve({
+          status: res.statusCode || 0,
+          statusText: res.statusMessage || '',
+          headers: responseHeaders,
+          body: Buffer.concat(chunks).toString() + '\n\n... [TRUNCATED] ...',
+          time: endTime - startTime,
+          size: totalDecompressedSize,
+          timestamp: endTime,
+        });
+        return;
+      }
+
       const endTime = Date.now();
       const body = Buffer.concat(chunks).toString();
 

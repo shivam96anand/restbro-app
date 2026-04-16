@@ -49,6 +49,15 @@ export interface SoapCerts {
   passphrase?: string;
 }
 
+export interface FormDataField {
+  key: string;
+  value: string; // text value or file path
+  type: 'text' | 'file';
+  enabled: boolean;
+  fileName?: string; // original filename for display
+  contentType?: string; // MIME type for file fields
+}
+
 export interface ApiRequest {
   id: string;
   name: string;
@@ -61,6 +70,7 @@ export interface ApiRequest {
     content: string;
     format?: 'json' | 'xml' | 'yaml' | 'text' | 'form-urlencoded';
     contentType?: string;
+    formDataFields?: FormDataField[];
   };
   auth?: {
     type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth2';
@@ -154,6 +164,13 @@ export interface NotepadState {
   untitledCounter: number;
 }
 
+export interface RequestSettings {
+  defaultTimeoutMs: number; // Default request timeout in ms (0 = no timeout)
+  followRedirects: boolean; // Whether to follow 3xx redirects
+  maxRedirects: number; // Maximum redirect hops
+  maxResponseSizeBytes: number; // Max response body size to buffer
+}
+
 export interface AppState {
   collections: Collection[];
   openTabs: RequestTab[];
@@ -170,6 +187,7 @@ export interface AppState {
   notepad?: NotepadState;
   mockServers?: MockServersState;
   hasCompletedThemeOnboarding?: boolean;
+  requestSettings?: RequestSettings;
 }
 
 // Load Testing Types

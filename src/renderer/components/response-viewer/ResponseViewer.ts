@@ -606,10 +606,17 @@ export class ResponseViewer {
     const tbody = document.createElement('tbody');
     Object.entries(response.headers).forEach(([name, value]) => {
       const row = document.createElement('tr');
-      row.innerHTML = `
-        <td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: 500;">${name}</td>
-        <td style="padding: 8px; border-bottom: 1px solid var(--border-color); word-break: break-word;">${value}</td>
-      `;
+
+      const nameCell = document.createElement('td');
+      nameCell.style.cssText = 'padding: 8px; border-bottom: 1px solid var(--border-color); font-weight: 500;';
+      nameCell.textContent = name;
+
+      const valueCell = document.createElement('td');
+      valueCell.style.cssText = 'padding: 8px; border-bottom: 1px solid var(--border-color); word-break: break-word;';
+      valueCell.textContent = value;
+
+      row.appendChild(nameCell);
+      row.appendChild(valueCell);
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
