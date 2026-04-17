@@ -58,9 +58,13 @@ describe('store-manager.ts', () => {
       expect(state.collections[0].name).toBe('Mocks');
       expect(state.collections[0].type).toBe('folder');
       expect(state.collections[1].name).toBe('Small');
-      expect(state.collections[1].request?.url).toBe('https://jsonplaceholder.typicode.com/posts/1');
+      expect(state.collections[1].request?.url).toBe(
+        'https://jsonplaceholder.typicode.com/posts/1'
+      );
       expect(state.collections[2].name).toBe('Big');
-      expect(state.collections[2].request?.url).toBe('https://jsonplaceholder.typicode.com/posts');
+      expect(state.collections[2].request?.url).toBe(
+        'https://jsonplaceholder.typicode.com/posts'
+      );
       expect(state.hasSeededDefaults).toBe(true);
       expect(state.openTabs).toEqual([]);
       expect(state.history).toEqual([]);
