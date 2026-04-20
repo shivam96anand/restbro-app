@@ -243,13 +243,16 @@ class StoreManager {
     };
   }
 
-  // For history entries: strip body to keep the store lean
+  // For history entries: keep body up to 1 MB so "Compare with previous
+  // response" works across app restarts; strip anything larger.
   private sanitizeResponse(response?: ApiResponse): ApiResponse | undefined {
     if (!response) return undefined;
 
+    const MAX_HISTORY_BODY_CHARS = 1_000_000; // ~1 MB
+    const body = response.body || '';
     return {
       ...response,
-      body: '',
+      body: body.length <= MAX_HISTORY_BODY_CHARS ? body : '',
     };
   }
 

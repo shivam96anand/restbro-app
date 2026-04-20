@@ -96,6 +96,17 @@ export class PreviousResponsesDropdown {
     this.position();
 
     menu
+      .querySelectorAll<HTMLButtonElement>('.response-history-row__open')
+      .forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = Number(btn.dataset.idx);
+          const item = previous[idx];
+          if (item) this.openPrevious(item);
+        });
+      });
+
+    menu
       .querySelectorAll<HTMLButtonElement>('.response-history-row__compare')
       .forEach((btn) => {
         btn.addEventListener('click', (e) => {
@@ -124,7 +135,7 @@ export class PreviousResponsesDropdown {
   private position(): void {
     if (!this.menu || !this.button) return;
     const rect = this.button.getBoundingClientRect();
-    const menuWidth = 320;
+    const menuWidth = 420;
     const left = Math.min(
       window.innerWidth - menuWidth - 8,
       Math.max(8, rect.right - menuWidth)
@@ -154,11 +165,36 @@ export class PreviousResponsesDropdown {
         <div class="response-history-row__meta">
           <span class="response-history-row__status ${statusClass}">${status}</span>
           <span class="response-history-row__time">${time}</span>
-          <span class="response-history-row__ts">${ts.toLocaleString()}</span>
+          <span class="response-history-row__ts">${ts.toLocaleString(undefined, { hour12: true })}</span>
         </div>
+        <button type="button" class="response-history-row__open" data-idx="${idx}">Open</button>
         <button type="button" class="response-history-row__compare" data-idx="${idx}">Compare</button>
       </div>
     `;
+  }
+
+  private openPrevious(previous: HistoryItem): void {
+    const body = previous.response?.body || '';
+    if (!body.trim()) {
+      document.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            type: 'info',
+            message:
+              'This previous response has no body. Re-send the request to capture a fresh snapshot.',
+          },
+        })
+      );
+      this.close();
+      return;
+    }
+
+    document.dispatchEvent(
+      new CustomEvent('display-previous-response', {
+        detail: { response: previous.response },
+      })
+    );
+    this.close();
   }
 
   private openCompare(previous: HistoryItem): void {

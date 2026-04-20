@@ -148,6 +148,17 @@ export class ResponseManager {
       }
     });
 
+    // View a previous response in the response viewer without adding it to
+    // history or overwriting the tab's stored response.
+    document.addEventListener('display-previous-response', async (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const response = customEvent.detail?.response;
+      if (response) {
+        this.hideLoadingState();
+        await this.displayResponse(response, this.activeTabRequestMode);
+      }
+    });
+
     document.addEventListener('request-cancelled', (e: Event) => {
       const customEvent = e as CustomEvent;
       const requestId = customEvent.detail.requestId;

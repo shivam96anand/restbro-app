@@ -891,9 +891,9 @@ export class ResponseViewer {
   private formatResponseTime(timeMs: number): string {
     if (timeMs >= 1000) {
       const timeInSeconds = timeMs / 1000;
-      return `${timeInSeconds.toFixed(2)}s`;
+      return `${timeInSeconds.toFixed(2)} s`;
     }
-    return `${timeMs}ms`;
+    return `${timeMs} ms`;
   }
 
   private updateResponseTimestamp(timestamp: number): void {

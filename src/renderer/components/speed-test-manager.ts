@@ -240,7 +240,7 @@ export class SpeedTestManager {
         this.popup
           ?.querySelector('[data-stat="upload"]')
           ?.classList.add('is-done');
-        this.setStatus(qualify(result.downloadMbps, result.uploadMbps), 'ok');
+        this.setStatus('', 'ok');
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'unknown error';
@@ -309,12 +309,4 @@ function formatMbps(mbps: number): string {
   if (mbps < 10) return mbps.toFixed(2);
   if (mbps < 100) return mbps.toFixed(1);
   return Math.round(mbps).toString();
-}
-
-function qualify(down: number, up: number): string {
-  const min = Math.min(down, up);
-  if (min >= 100) return 'Excellent connection';
-  if (min >= 25) return 'Great for HD streaming & video calls';
-  if (min >= 5) return 'Good for general browsing';
-  return 'Connection appears slow';
 }

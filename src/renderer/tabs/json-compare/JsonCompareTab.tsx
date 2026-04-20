@@ -336,7 +336,7 @@ const JsonCompareTab: React.FC = () => {
           }))
         }
         onClear={() =>
-          setState((s) => ({ ...s, leftJson: '', rightJson: '' }))
+          setState((s) => ({ ...s, leftJson: '', rightJson: '', leftLabel: 'Left', rightLabel: 'Right' }))
         }
         onCopyLeft={() => {
           void copyText(state.leftJson).then((ok) =>

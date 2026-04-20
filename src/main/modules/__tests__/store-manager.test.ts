@@ -181,7 +181,7 @@ describe('store-manager.ts', () => {
       expect(state.openTabs[0].response!.body.length).toBe(5_000_000);
     });
 
-    it('sanitizes history responses: strips body to empty string', async () => {
+    it('sanitizes history responses: preserves body up to 1 MB', async () => {
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(writeFile).mockResolvedValue(undefined);
 
@@ -205,6 +205,42 @@ describe('store-manager.ts', () => {
               body: 'some response body',
               time: 50,
               size: 100,
+              timestamp: Date.now(),
+            },
+            timestamp: new Date(),
+          },
+        ],
+      });
+
+      const state = storeManager.getState();
+      expect(state.history[0].response.body).toBe('some response body');
+    });
+
+    it('sanitizes history responses: strips body exceeding 1 MB', async () => {
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(writeFile).mockResolvedValue(undefined);
+
+      await storeManager.initialize();
+
+      const largeBody = 'x'.repeat(1_000_001);
+      storeManager.setState({
+        history: [
+          {
+            id: 'h2',
+            request: {
+              id: 'r2',
+              name: 'R2',
+              method: 'GET',
+              url: '/',
+              headers: [],
+            },
+            response: {
+              status: 200,
+              statusText: 'OK',
+              headers: {},
+              body: largeBody,
+              time: 50,
+              size: largeBody.length,
               timestamp: Date.now(),
             },
             timestamp: new Date(),

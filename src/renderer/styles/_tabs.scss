@@ -197,7 +197,7 @@
 .response-toolbar__meta {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   padding: 0 12px;
   height: 100%;
 }
@@ -248,19 +248,23 @@
   }
 }
 
-// ── Stat chips (time / size) ──
+// ── Stat chips (time / size) — pill style matching response-action-btn ──
 .meta-chip--time,
 .meta-chip--size {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  opacity: 0.7;
-  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 4px 8px;
   white-space: nowrap;
   line-height: 1;
+  letter-spacing: 0.15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .meta-chip--soap-fault {
@@ -279,27 +283,28 @@
   line-height: 1;
 }
 
-// ── Divider dot between chips ──
+// ── Divider dot between chips (hidden with pill style) ──
 .meta-divider {
-  color: var(--border-color);
-  font-size: 12px;
-  line-height: 1;
-  user-select: none;
-  flex-shrink: 0;
+  display: none;
 }
 
-// ── Timestamp (far right) ──
+// ── Timestamp (far right) — pill style matching response-action-btn ──
 .response-toolbar__timestamp {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  opacity: 0.7;
-  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 4px 8px;
   white-space: nowrap;
   line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:empty {
     display: none;
