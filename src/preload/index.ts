@@ -22,6 +22,7 @@ const IPC_CHANNELS = {
   OAUTH_START_FLOW: 'oauth:start-flow',
   OAUTH_REFRESH_TOKEN: 'oauth:refresh-token',
   OAUTH_GET_TOKEN_INFO: 'oauth:get-token-info',
+  OAUTH_CANCEL_ALL: 'oauth:cancel-all',
 
   // File operations channels
   FILE_OPEN_DIALOG: 'file:open-dialog',
@@ -511,6 +512,8 @@ const restbroAPI = {
       config: OAuthConfig
     ): Promise<{ isValid: boolean; expiresIn?: number }> =>
       ipcRenderer.invoke(IPC_CHANNELS.OAUTH_GET_TOKEN_INFO, config),
+    cancelAll: (): Promise<{ ok: boolean; cancelled: boolean }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_CANCEL_ALL),
   },
 
   files: {

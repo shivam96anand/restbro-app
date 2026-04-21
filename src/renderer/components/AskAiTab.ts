@@ -116,30 +116,14 @@ export class AskAiTab {
   }
 
   async openWithContext(
-    request?: ApiRequest,
-    response?: ApiResponse
+    _request?: ApiRequest,
+    _response?: ApiResponse
   ): Promise<void> {
-    const context: AiContext = {};
-    if (request) context.request = request;
-    if (response) context.response = response;
-
-    const size = calculateContextSize(context);
-    if (size > AI_MAX_CONTEXT_CHARS) {
-      showSizeWarning(size, AI_MAX_CONTEXT_CHARS);
-      return;
-    }
-
-    try {
-      const session = await restbro.ai.createSession(context);
-      this.state.sessions.unshift(session);
-      this.state.activeSessionId = session.id;
-      this.state.showContextPanel = false;
-      this.render();
-      this.scrollToBottom();
-    } catch (error) {
-      console.error('Failed to create session with context:', error);
-    }
-
+    // The Ask AI tab is currently in "coming soon" mode for all users, so
+    // every entry point (sidebar nav + response "Ask AI" button) should land
+    // on the same placeholder screen. Skip context-size checks and session
+    // creation — they'd surface a confusing "content too large" dialog for
+    // a feature the user can't actually use yet.
     document.dispatchEvent(
       new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } })
     );

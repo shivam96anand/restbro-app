@@ -6,6 +6,8 @@ import { createIconElement } from '../../utils/icons';
 export class FormUIHandler {
   /**
    * Updates the method select element's color class based on the current HTTP method
+   * and sizes the select to the verb's text length so short verbs (GET) don't
+   * leave a big gap before the URL.
    */
   public updateMethodSelectColor(methodSelect: HTMLSelectElement): void {
     // Remove all existing method color classes
@@ -21,6 +23,12 @@ export class FormUIHandler {
     // Add the appropriate class for the current method
     const method = methodSelect.value.toLowerCase();
     methodSelect.classList.add(`method-${method}`);
+
+    // Reserve room for left padding (12px) + right padding incl. chevron
+    // (26px) + a small safety margin so the verb never clips. Using `ch`
+    // works because the select uses the mono font.
+    const verbLength = methodSelect.value.length || 3;
+    methodSelect.style.width = `calc(${verbLength}ch + 46px)`;
   }
 
   /**

@@ -13,6 +13,57 @@ export class OAuthManager {
     { resolve: (result: OAuthResult) => void; reject: (error: Error) => void }
   > = new Map();
 
+  // AbortControllers for every in-flight token HTTP exchange. Populated by
+  // makeTokenRequest() so cancelAll() can interrupt a slow token endpoint —
+  // that's the primary reason the user-facing Cancel button appeared to do
+  // nothing: the HTTP request owning the click was the OAuth token fetch,
+  // not the actual API request (which hadn't started yet).
+  private tokenAbortControllers: Set<AbortController> = new Set();
+  // Cancel hooks for device-code pollers (setTimeout handles + window refs).
+  private deviceFlowCancels: Set<() => void> = new Set();
+
+  cancelAll(): { cancelled: boolean } {
+    const hadWork =
+      this.tokenAbortControllers.size > 0 ||
+      this.deviceFlowCancels.size > 0 ||
+      this.pendingRequests.size > 0 ||
+      this.authWindows.size > 0;
+
+    // Abort in-flight token fetches
+    for (const ctrl of this.tokenAbortControllers) {
+      try {
+        ctrl.abort();
+      } catch {
+        /* ignore */
+      }
+    }
+    this.tokenAbortControllers.clear();
+
+    // Stop device-code pollers
+    for (const cancel of this.deviceFlowCancels) {
+      try {
+        cancel();
+      } catch {
+        /* ignore */
+      }
+    }
+    this.deviceFlowCancels.clear();
+
+    // Close any auth browser windows and reject their pending promises
+    for (const [id, pending] of this.pendingRequests) {
+      pending.reject(new Error('OAuth flow cancelled by user'));
+      this.pendingRequests.delete(id);
+    }
+    for (const [id, win] of this.authWindows) {
+      if (win && !win.isDestroyed()) {
+        win.close();
+      }
+      this.authWindows.delete(id);
+    }
+
+    return { cancelled: hadWork };
+  }
+
   async startFlow(config: OAuthConfig): Promise<OAuthResult> {
     try {
       switch (config.grantType) {
@@ -237,12 +288,24 @@ export class OAuthManager {
       return new Promise((resolve, reject) => {
         let pollCount = 0;
         const maxPolls = 60; // Max ~5 minutes with default 5s interval
+        let pollTimer: NodeJS.Timeout | null = null;
+        let cancelled = false;
+
+        const cancelHook = (): void => {
+          cancelled = true;
+          if (pollTimer) clearTimeout(pollTimer);
+          if (!userCodeWindow.isDestroyed()) userCodeWindow.close();
+          reject(new Error('Device authorization cancelled by user'));
+        };
+        this.deviceFlowCancels.add(cancelHook);
 
         const pollForToken = async () => {
+          if (cancelled) return;
           pollCount++;
 
           if (pollCount > maxPolls) {
-            userCodeWindow.close();
+            this.deviceFlowCancels.delete(cancelHook);
+            if (!userCodeWindow.isDestroyed()) userCodeWindow.close();
             reject(
               new Error('Device authorization timed out. Please try again.')
             );
@@ -260,24 +323,30 @@ export class OAuthManager {
               config.tokenUrl,
               tokenParams
             );
-            userCodeWindow.close();
+            if (cancelled) return;
+            this.deviceFlowCancels.delete(cancelHook);
+            if (!userCodeWindow.isDestroyed()) userCodeWindow.close();
             resolve({ success: true, data: tokenResponse });
           } catch (error) {
+            if (cancelled) return;
             const errorMessage =
               error instanceof Error ? error.message : 'Unknown error';
             if (errorMessage.includes('authorization_pending')) {
               // Continue polling
-              setTimeout(pollForToken, interval * 1000);
+              pollTimer = setTimeout(pollForToken, interval * 1000);
             } else {
-              userCodeWindow.close();
+              this.deviceFlowCancels.delete(cancelHook);
+              if (!userCodeWindow.isDestroyed()) userCodeWindow.close();
               reject(error);
             }
           }
         };
 
-        setTimeout(pollForToken, interval * 1000);
+        pollTimer = setTimeout(pollForToken, interval * 1000);
 
         userCodeWindow.on('closed', () => {
+          if (cancelled) return;
+          this.deviceFlowCancels.delete(cancelHook);
           reject(new Error('Device authorization window was closed'));
         });
       });
@@ -391,11 +460,30 @@ export class OAuthManager {
         (configOrParams as any).credentials || 'headers (default)',
     });
 
-    const response = await net.fetch(tokenUrl, {
-      method: 'POST',
-      headers,
-      body: requestBody,
-    });
+    const abortController = new AbortController();
+    this.tokenAbortControllers.add(abortController);
+
+    let response: Response;
+    try {
+      response = await net.fetch(tokenUrl, {
+        method: 'POST',
+        headers,
+        body: requestBody,
+        signal: abortController.signal,
+      });
+    } catch (err) {
+      this.tokenAbortControllers.delete(abortController);
+      const name = (err as Error)?.name || '';
+      if (
+        name === 'AbortError' ||
+        abortController.signal.aborted ||
+        /abort/i.test((err as Error)?.message || '')
+      ) {
+        throw new Error('OAuth token request cancelled by user');
+      }
+      throw err;
+    }
+    this.tokenAbortControllers.delete(abortController);
 
     if (!response.ok) {
       const errorText = await response.text();

@@ -24,6 +24,7 @@ import { UpdateNotificationManager } from './components/update-notification-mana
 import { SpeedTestManager } from './components/speed-test-manager';
 import { ToastManager } from './components/toast-manager';
 import { HistoryPanel } from './components/history-panel';
+import { SendOptionsManager } from './components/request/send-options-manager';
 import { ThemeManager } from './utils/theme-manager';
 import { resizeManager } from './utils/resize-manager';
 import { EnvironmentManager } from './components/environments/environment-manager';
@@ -65,6 +66,7 @@ class RestbroRenderer {
   private speedTestManager: SpeedTestManager;
   private toastManager: ToastManager;
   private historyPanel: HistoryPanel;
+  private sendOptionsManager!: SendOptionsManager;
 
   constructor() {
     this.themeManager = new ThemeManager();
@@ -130,6 +132,12 @@ class RestbroRenderer {
     this.toastManager.initialize();
     this.historyPanel.initialize();
     resizeManager.initialize();
+
+    // Split-button Send-options menu (scheduled/interval/N-times/load-test).
+    // Needs tabsManager for active-request context. Must run after
+    // requestManager so the Send button exists to be driven.
+    this.sendOptionsManager = new SendOptionsManager(this.tabsManager);
+    this.sendOptionsManager.initialize();
 
     // Parallelize independent async initializations
     await Promise.all([

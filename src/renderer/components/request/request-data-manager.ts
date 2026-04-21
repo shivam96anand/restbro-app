@@ -493,7 +493,10 @@ export class RequestDataManager {
       console.error('Request failed:', error);
       const message = (error as Error).message || '';
 
-      if (message.toLowerCase().includes('cancel')) {
+      if (
+        this.cancelledRequestIds.has(requestId) ||
+        message.toLowerCase().includes('cancel')
+      ) {
         this.emitCancellationEvent(requestId);
       } else {
         this.onShowError('Request failed: ' + message);
@@ -578,8 +581,21 @@ export class RequestDataManager {
     this.toggleRequestButtons(true);
 
     try {
+      // Cancel any in-flight OAuth token exchange first. If the user clicked
+      // Cancel while the token endpoint was hanging, the actual API request
+      // hasn't been registered in the main-process activeRequests map yet, so
+      // request.cancel() below returns false. Aborting the OAuth fetch here
+      // makes Cancel work during the "generating token" phase too.
+      let oauthCancelled = false;
+      try {
+        const res = await window.restbro.oauth.cancelAll();
+        oauthCancelled = !!res?.cancelled;
+      } catch (err) {
+        console.warn('Failed to cancel OAuth flow:', err);
+      }
+
       const cancelled = await window.restbro.request.cancel(requestId);
-      if (!cancelled) {
+      if (!cancelled && !oauthCancelled) {
         this.cancelledRequestIds.delete(requestId);
         this.toggleRequestButtons(this.sendingRequestIds.has(requestId));
       }

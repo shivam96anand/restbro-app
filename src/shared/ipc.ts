@@ -19,6 +19,7 @@ export const IPC_CHANNELS = {
   OAUTH_START_FLOW: 'oauth:start-flow',
   OAUTH_REFRESH_TOKEN: 'oauth:refresh-token',
   OAUTH_GET_TOKEN_INFO: 'oauth:get-token-info',
+  OAUTH_CANCEL_ALL: 'oauth:cancel-all',
 
   // File operations channels
   FILE_OPEN_DIALOG: 'file:open-dialog',

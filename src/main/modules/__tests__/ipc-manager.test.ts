@@ -58,6 +58,7 @@ vi.mock('../oauth', () => ({
     startFlow: vi.fn().mockResolvedValue({ success: true }),
     refreshToken: vi.fn().mockResolvedValue({ success: true }),
     getTokenInfo: vi.fn().mockReturnValue({ isValid: true }),
+    cancelAll: vi.fn().mockReturnValue({ cancelled: false }),
   },
 }));
 
@@ -172,6 +173,7 @@ describe('ipc-manager.ts', () => {
         IPC_CHANNELS.OAUTH_START_FLOW,
         IPC_CHANNELS.OAUTH_REFRESH_TOKEN,
         IPC_CHANNELS.OAUTH_GET_TOKEN_INFO,
+        IPC_CHANNELS.OAUTH_CANCEL_ALL,
         IPC_CHANNELS.FILE_OPEN_DIALOG,
         IPC_CHANNELS.FILE_READ_CONTENT,
         IPC_CHANNELS.FILE_READ_BINARY,

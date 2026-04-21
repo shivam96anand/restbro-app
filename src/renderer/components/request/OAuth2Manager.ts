@@ -249,7 +249,14 @@ export class OAuth2Manager {
           config: refreshedConfig,
         };
       }
+
+      // Propagate user-triggered cancellation so the caller can distinguish
+      // it from a real failure (otherwise the UI shows "Request failed").
+      if (result.error && /cancel/i.test(result.error)) {
+        throw new Error(result.error);
+      }
     } catch (error) {
+      if (/cancel/i.test((error as Error)?.message || '')) throw error;
       console.error('Auto refresh failed:', error);
     }
 
@@ -301,7 +308,14 @@ export class OAuth2Manager {
           config: updatedConfig,
         };
       }
+
+      // Propagate user-triggered cancellation so the caller can distinguish
+      // it from a real failure (otherwise the UI shows "Request failed").
+      if (result.error && /cancel/i.test(result.error)) {
+        throw new Error(result.error);
+      }
     } catch (error) {
+      if (/cancel/i.test((error as Error)?.message || '')) throw error;
       console.error('Auto token generation failed:', error);
     }
 

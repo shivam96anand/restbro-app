@@ -1,0 +1,211 @@
+// Send-options dropdown menu (opened by the chevron next to Send).
+// Keep visuals consistent with the rest of the app chrome — dark surface,
+// subtle borders, primary-color accents on hover/focus.
+
+.send-options-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.2),
+    0 10px 20px -3px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: sendMenuFade 0.12s ease-out;
+
+  @keyframes sendMenuFade {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  &__sep {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 2px;
+  }
+
+  &__item {
+    padding: 8px 10px;
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(var(--primary-color-rgb), 0.06);
+    }
+  }
+
+  &__item-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  &__item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+  }
+
+  &__item-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  &__form {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    height: 28px;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    }
+  }
+
+  &__unit {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--bg-primary);
+
+    button {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 8px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+
+      & + button {
+        border-left: 1px solid var(--border-color);
+      }
+
+      &:hover {
+        color: var(--text-primary);
+      }
+
+      &.active {
+        background: var(--primary-color);
+        color: white;
+      }
+    }
+  }
+
+  &__unit-static {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__submit {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 0 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--primary-dark);
+    }
+  }
+
+  &__action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(var(--primary-color-rgb), 0.08);
+    }
+  }
+
+  &__action-label {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__action-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+}
+
+// Inline status bar shown during scheduled / interval / N-times runs.
+// Appears right below the request pill so it's always in context.
+.send-options-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(var(--primary-color-rgb), 0.08);
+  border: 1px solid rgba(var(--primary-color-rgb), 0.25);
+  border-radius: 6px;
+  font-size: 12px;
+
+  &__label {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  &__cancel {
+    background: transparent;
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: rgba(var(--error-color-rgb), 0.12);
+    }
+  }
+}

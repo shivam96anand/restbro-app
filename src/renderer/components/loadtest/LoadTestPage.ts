@@ -58,6 +58,34 @@ export class LoadTestPage {
   async initialize(): Promise<void> {
     await this.renderForm();
     this.setupIpcListeners();
+    this.setupPrefillListener();
+  }
+
+  /**
+   * Listen for `loadtest-prefill-request` events (fired by the main
+   * request bar's "Load test…" send option). Routes the request into the
+   * form and, if we're mid-run or showing a summary, snaps back to the
+   * editable form first.
+   */
+  private setupPrefillListener(): void {
+    document.addEventListener('loadtest-prefill-request', (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      const { request, collectionId } = detail as {
+        request?: any;
+        collectionId?: string;
+      };
+      if (!request) return;
+
+      const applyPrefill = () => {
+        this.form.prefillFromApiRequest(request, collectionId);
+      };
+
+      if (this.state !== 'form') {
+        void this.renderForm().then(applyPrefill);
+      } else {
+        applyPrefill();
+      }
+    });
   }
 
   private setupEventListeners(): void {

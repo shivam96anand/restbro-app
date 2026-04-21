@@ -260,6 +260,11 @@ class IpcManager {
       }
     );
 
+    ipcMain.handle(IPC_CHANNELS.OAUTH_CANCEL_ALL, () => {
+      const result = oauthManager.cancelAll();
+      return { ok: true, cancelled: result.cancelled };
+    });
+
     // File operations IPC handlers
     ipcMain.handle(IPC_CHANNELS.FILE_OPEN_DIALOG, async () => {
       try {

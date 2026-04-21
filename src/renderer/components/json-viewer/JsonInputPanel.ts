@@ -431,15 +431,11 @@ export class JsonInputPanel {
   }
 
   private handleAskAI(): void {
-    const text = this.monacoEditor?.getValue()?.trim();
-    if (!text) {
-      this.events.onStatusUpdate('warning', 'No JSON to analyze');
-      return;
-    }
+    // Ask AI is currently a "coming soon" placeholder — every entry point
+    // (sidebar, response viewer, JSON viewer) should land on the same screen.
+    // The previous `ask-ai-with-context` event had no listener anyway.
     document.dispatchEvent(
-      new CustomEvent('ask-ai-with-context', {
-        detail: { context: text, source: 'json-viewer' },
-      })
+      new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } })
     );
   }
 

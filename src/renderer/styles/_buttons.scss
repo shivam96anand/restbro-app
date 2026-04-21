@@ -57,15 +57,23 @@
   background-color: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
+  border-left: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: 0 22px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.3px;
   flex-shrink: 0; // Prevent button from being compressed
   white-space: nowrap; // Prevent text wrapping
+  transition: background-color 0.15s ease;
 
   &:hover {
     background-color: var(--primary-dark);
+  }
+
+  &:active {
+    transform: translateY(1px);
   }
 
   &:disabled {

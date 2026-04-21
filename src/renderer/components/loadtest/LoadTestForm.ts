@@ -390,6 +390,53 @@ export class LoadTestForm {
     picker.classList.toggle('is-collapsed', isCollapsed);
   }
 
+  /**
+   * Prefill the form from an external ApiRequest (e.g. the Send Options
+   * menu's "Load test…" action). If a collectionId is provided and the
+   * request exists in collections, we route through the saved "from
+   * request" picker; otherwise we fall back to the ad-hoc editor.
+   *
+   * Either way the user only needs to set RPM + duration.
+   */
+  public prefillFromApiRequest(
+    request: ApiRequest,
+    collectionId?: string
+  ): void {
+    if (!this.container) return;
+
+    const savedCollection =
+      collectionId && request.id
+        ? this.findRequestCollectionById(request.id)
+        : null;
+
+    if (savedCollection) {
+      const radio = this.container.querySelector(
+        'input[value="collection"]'
+      ) as HTMLInputElement | null;
+      if (radio) radio.checked = true;
+      this.toggleTargetSelector('collection');
+      this.setCollectionPickerCollapsed(false);
+      this.selectRequestFromCollections(request.id, savedCollection.id);
+    } else {
+      const radio = this.container.querySelector(
+        'input[value="adhoc"]'
+      ) as HTMLInputElement | null;
+      if (radio) radio.checked = true;
+      this.toggleTargetSelector('adhoc');
+      this.targetEditor.prefillTarget(
+        this.requestToTarget(request, collectionId)
+      );
+    }
+
+    // Focus the RPM input so the user's next keystroke tweaks the number
+    // they actually need to set.
+    const rpmInput = this.container.querySelector(
+      '#rpm-input'
+    ) as HTMLInputElement | null;
+    rpmInput?.focus();
+    rpmInput?.select();
+  }
+
   private requestToTarget(request: ApiRequest, collectionId?: string): any {
     const toRecord = (
       pairs?: ApiRequest['params'] | ApiRequest['headers']

@@ -3,59 +3,170 @@
 
 .request-form {
   flex: 1;
-  padding: 10px 16px;
+  padding: 12px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 14px;
   background: var(--bg-primary);
   min-height: 0;
 }
 
+// Unified request bar — method selector, URL input, and Send button are
+// visually joined into a single segmented pill (Postman/Insomnia style).
+// Fixed-height row so nothing (send button padding, variable overlay, inherited
+// line-heights) can inflate it.
 .request-line {
   display: flex;
-  gap: 10px;
+  align-items: stretch;
+  gap: 0;
   position: relative;
-}
-
-.method-select {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--primary-color-rgb), 0.12) 0%,
-    var(--bg-tertiary) 100%
-  );
-  color: var(--text-primary);
-  border: 1px solid rgba(var(--primary-color-rgb), 0.3);
+  height: 34px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 8px 8px;
-  min-width: 65px;
-  max-width: 90px;
-  font-size: 11px;
-  font-weight: 600;
-  text-align: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     border-color: var(--primary-color);
-    background: linear-gradient(
+  }
+
+  // Whole bar lights up when any child is focused.
+  &:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+  }
+
+  // Every direct child stretches to the full bar height and drops its own
+  // radius / shadow — this beats legacy rules on .send-btn / .method-select
+  // without needing !important.
+  > .method-select,
+  > .url-input-wrapper,
+  > .send-btn,
+  > .send-options-btn {
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    align-self: stretch;
+  }
+
+  > .send-btn {
+    border: none;
+    border-left: 1px solid var(--border-color);
+    padding: 0 14px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Split-button caret for the Send-options menu. Sits flush on the right
+  // edge of the pill, separated from Send by a subtle inner divider.
+  > .send-options-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    padding: 0 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    transition: background-color 0.15s ease;
+
+    &:hover,
+    &[aria-expanded='true'] {
+      background-color: var(--primary-dark);
+    }
+
+    svg {
+      display: block;
+    }
+  }
+}
+
+.method-select {
+  // Match Import/Export/History toolbar buttons — dark surface with a
+  // subtle primary-tinted overlay so the verb feels like part of the same
+  // button family rather than a bright pill.
+  color: var(--text-primary);
+  border: none;
+  border-right: 1px solid rgba(var(--primary-color-rgb), 0.2);
+  border-radius: 0;
+  padding: 0 26px 0 12px;
+  // Width is set dynamically by FormUIHandler.updateMethodSelectColor based
+  // on the verb's character count so short verbs (GET) don't waste room.
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-align: left;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+
+  // Custom chevron + tinted dark surface stacked into a single
+  // background-image so the shorthand can't blow away the chevron.
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--bg-secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%),
+    linear-gradient(
       135deg,
-      rgba(var(--primary-color-rgb), 0.2) 0%,
-      var(--bg-tertiary) 100%
+      rgba(var(--primary-color-rgb), 0.12) 0%,
+      rgba(var(--primary-color-rgb), 0) 100%
     );
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%,
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
+  background-repeat: no-repeat;
+
+  &:hover {
+    background-color: var(--bg-tertiary);
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%),
+      linear-gradient(
+        135deg,
+        rgba(var(--primary-color-rgb), 0.22) 0%,
+        rgba(var(--primary-color-rgb), 0.04) 100%
+      );
+    border-right-color: rgba(var(--primary-color-rgb), 0.4);
   }
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
   }
 
   &.locked {
     opacity: 0.75;
     cursor: not-allowed;
+  }
+
+  // Verb text stays white so it reads consistently with the rest of the
+  // toolbar chrome (Import / Export / History) regardless of method.
+  &.method-get,
+  &.method-post,
+  &.method-put,
+  &.method-patch,
+  &.method-delete,
+  &.method-head,
+  &.method-options {
+    color: var(--text-primary);
   }
 }
 
@@ -63,6 +174,8 @@
   flex: 1;
   min-width: 0; // Allow flex item to shrink below content size
   position: relative;
+  display: flex;
+  align-items: stretch;
 
   // Variable highlight container gets appended here by JS
   // Default: on top of input (z-index: 3) so hover tooltips work on variable spans
@@ -74,14 +187,15 @@
     z-index: 3; // Above input by default for tooltip hover
     display: flex;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0 12px;
     overflow: hidden; // Prevent overlay from overflowing parent
     white-space: nowrap;
     font-family: var(--font-mono);
     font-size: 13px;
+    line-height: 1;
     background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border: none;
+    border-radius: 0;
     max-width: 100%; // Ensure overlay never exceeds parent width
 
     // Hide scrollbar but keep scrolling functionality
@@ -100,30 +214,25 @@
 .url-input {
   flex: 1;
   width: 100%;
+  height: 100%;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border: none;
+  border-radius: 0;
+  padding: 0 12px;
   position: relative;
   z-index: 2; // Below overlay by default, above when focused
-  transition: all 0.2s ease;
   font-family: var(--font-mono);
   font-size: 13px;
+  line-height: 1;
 
   &::placeholder {
     color: var(--text-secondary);
     opacity: 0.7;
   }
 
-  &:hover {
-    border-color: var(--primary-color);
-  }
-
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
     z-index: 4; // Jump above overlay when focused for cursor visibility
   }
 }
@@ -134,6 +243,9 @@
   flex-direction: column;
   min-height: 0;
   position: relative;
+  // Push the PARAMS / BODY / AUTH / HEADERS / CURL row down so it has
+  // breathing room from the request pill above.
+  margin-top: 10px;
 
   &.mode-transition {
     animation: requestModeFadeSlide 200ms ease;
@@ -146,7 +258,7 @@
     gap: 12px;
     background: transparent;
     padding: 0;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
   }
 
@@ -158,9 +270,9 @@
   .tabs-right {
     display: flex;
     align-items: center;
-    position: absolute;
-    top: -12px;
-    right: 0;
+    // Nudge the REST/SOAP segmented toggle up so it sits closer to the
+    // request pill instead of riding the tabs baseline.
+    transform: translateY(-10px);
   }
 
   .tab {

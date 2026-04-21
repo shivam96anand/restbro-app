@@ -208,14 +208,12 @@ export class JsonViewerPanel {
   }
 
   private handleAskAI(): void {
-    const sourceText = (this as any).sourceText;
-    if (!sourceText) {
-      this.events.onStatusUpdate('warning', 'No JSON to analyze');
-      return;
-    }
-
-    // Placeholder for AI integration
-    this.events.onStatusUpdate('info', 'Ask AI feature coming soon...');
+    // Ask AI is currently a "coming soon" placeholder — every entry point
+    // (sidebar, response viewer, JSON viewer) should land on the same screen
+    // instead of a one-off status toast or a half-functional context flow.
+    document.dispatchEvent(
+      new CustomEvent('switch-to-tab', { detail: { tabName: 'ask-ai' } })
+    );
   }
 
   public getJsonViewer(): JsonViewer | null {

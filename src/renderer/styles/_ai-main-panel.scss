@@ -90,55 +90,58 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-// Request Context Styles
-.request-line {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
+// Request Context Styles — scoped to the Ask-AI context panel so they
+// don't clobber the main request bar's `.request-line` in _request-form.scss.
+.context-content {
+  .request-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
 
-.method-badge {
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-size: 9px;
-  font-weight: 600;
+  .method-badge {
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
 
-  &.method-get {
-    background: var(--success-color);
-    color: white;
+    &.method-get {
+      background: var(--success-color);
+      color: white;
+    }
+    &.method-post {
+      background: var(--primary-color);
+      color: white;
+    }
+    &.method-put {
+      background: var(--warning-color);
+      color: white;
+    }
+    &.method-patch {
+      background: var(--accent-color);
+      color: white;
+    }
+    &.method-delete {
+      background: var(--error-color);
+      color: white;
+    }
+    &.method-head,
+    &.method-options {
+      background: var(--text-secondary);
+      color: white;
+    }
   }
-  &.method-post {
-    background: var(--primary-color);
-    color: white;
-  }
-  &.method-put {
-    background: var(--warning-color);
-    color: white;
-  }
-  &.method-patch {
-    background: var(--accent-color);
-    color: white;
-  }
-  &.method-delete {
-    background: var(--error-color);
-    color: white;
-  }
-  &.method-head,
-  &.method-options {
-    background: var(--text-secondary);
-    color: white;
-  }
-}
 
-.request-url {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-primary);
-  word-break: break-all;
-  flex: 1;
+  .request-url {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    word-break: break-all;
+    flex: 1;
+  }
 }
 
 .request-tabs {
