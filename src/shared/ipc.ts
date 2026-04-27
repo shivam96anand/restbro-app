@@ -44,6 +44,7 @@ export const IPC_CHANNELS = {
   // Backup channels
   BACKUP_LIST: 'backup:list',
   BACKUP_RESTORE: 'backup:restore',
+  BACKUP_DESCRIBE: 'backup:describe',
 
   // System helpers
   OPEN_EXTERNAL: 'system:open-external',

@@ -67,6 +67,7 @@ class RestbroRenderer {
   private toastManager: ToastManager;
   private historyPanel: HistoryPanel;
   private sendOptionsManager!: SendOptionsManager;
+  private autoSaveTimer: number | null = null;
 
   constructor() {
     this.themeManager = new ThemeManager();
@@ -78,7 +79,9 @@ class RestbroRenderer {
     this.importManager = new ImportManager(
       this.handleImportComplete.bind(this)
     );
-    this.backupManager = new BackupManager();
+    this.backupManager = new BackupManager({
+      onBeforeRestore: () => this.stopAutoSave(),
+    });
     this.themeOnboarding = new ThemeOnboarding(this.themeManager);
     this.updateNotificationManager = new UpdateNotificationManager();
     this.speedTestManager = new SpeedTestManager();
@@ -181,9 +184,22 @@ class RestbroRenderer {
 
   private setupAutoSave(): void {
     // Auto-save every 30 seconds to ensure no data loss
-    setInterval(() => {
+    this.autoSaveTimer = window.setInterval(() => {
       this.saveState();
     }, 30000);
+  }
+
+  /**
+   * Pause renderer-driven persistence. Used by Time Machine restore so
+   * the periodic autosave can't race the restore and re-publish stale
+   * in-memory state to the store between restoreBackup() resolving and
+   * window.location.reload() actually navigating.
+   */
+  public stopAutoSave(): void {
+    if (this.autoSaveTimer !== null) {
+      clearInterval(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
   }
 
   private setupImportButton(): void {

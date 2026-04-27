@@ -2,6 +2,7 @@ import { app } from 'electron';
 import { join } from 'path';
 import {
   writeFileSync,
+  readFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -117,11 +118,23 @@ const defaultState: AppState = {
   requestSettings: defaultRequestSettings,
 };
 
+// Backup retention. Higher than the previous "5" so the user has more
+// rollback room — auto-backups still only fire every 24h via
+// `startAutoBackup`, this just controls how many are kept on disk.
+const MAX_BACKUPS = 30;
+
+// After a restore, ignore renderer-driven setState writes for this long
+// so any in-flight autosave (the renderer pushes its in-memory snapshot
+// every 30s) cannot overwrite the just-restored data before the renderer
+// has had a chance to reload from disk.
+const RESTORE_LOCK_MS = 5_000;
+
 class StoreManager {
   private dbPath: string;
   private data: AppState;
   private writeQueue: NodeJS.Timeout | null = null;
   private backupTimer: NodeJS.Timeout | null = null;
+  private restoreLockUntil = 0;
 
   constructor() {
     this.dbPath = join(app.getPath('userData'), 'database.json');
@@ -158,6 +171,12 @@ class StoreManager {
   }
 
   setState(updates: Partial<AppState>): void {
+    // While a Time Machine restore is settling (the renderer is about
+    // to `window.location.reload()` after restoreBackup resolves), drop
+    // any incoming writes. Otherwise the renderer's 30s autosave can
+    // race the restore and re-publish the pre-restore in-memory state.
+    if (Date.now() < this.restoreLockUntil) return;
+
     const sanitizedUpdates = this.sanitizeUpdatesForPersistence(updates);
     this.data = { ...this.data, ...sanitizedUpdates };
     this.queueWrite();
@@ -310,12 +329,50 @@ class StoreManager {
       throw new Error('Backup file not found');
     }
 
+    // Cancel any pending debounced write so a setState from moments
+    // before the restore can't fire after and stomp on the restored data.
+    if (this.writeQueue) {
+      clearTimeout(this.writeQueue);
+      this.writeQueue = null;
+    }
+
+    // Snapshot the current state so the user can also undo the restore
+    // itself if they picked the wrong timestamp.
     this.createBackup();
 
     const fileContent = await readFile(backupPath, 'utf-8');
     const loadedData = JSON.parse(fileContent);
     this.data = this.mergeLoadedData(loadedData);
+
+    // Engage the restore lock BEFORE writing so any setState that arrives
+    // while the renderer is still mid-reload is dropped instead of
+    // re-publishing the pre-restore in-memory state.
+    this.restoreLockUntil = Date.now() + RESTORE_LOCK_MS;
+
     await this.writeToFile();
+  }
+
+  /** Returns lightweight stats for a backup file (collections / requests). */
+  describeBackup(
+    backupId: string
+  ): { collections: number; requests: number; sizeBytes: number } | null {
+    if (!backupId || /[\/\\]|\.\./.test(backupId)) return null;
+    const backupPath = join(this.getBackupDir(), backupId);
+    if (!existsSync(backupPath)) return null;
+    try {
+      const raw = readFileSync(backupPath, 'utf-8');
+      const parsed = JSON.parse(raw) as Partial<AppState>;
+      const collections = Array.isArray(parsed.collections)
+        ? parsed.collections
+        : [];
+      return {
+        collections: collections.filter((c) => c.type === 'folder').length,
+        requests: collections.filter((c) => c.type === 'request').length,
+        sizeBytes: Buffer.byteLength(raw, 'utf-8'),
+      };
+    } catch {
+      return null;
+    }
   }
 
   private mergeLoadedData(loadedData: Partial<AppState>): AppState {
@@ -373,6 +430,16 @@ class StoreManager {
     return a.every((value, index) => value === b[index]);
   }
 
+  /**
+   * Public entry point for callers that want to capture the current state
+   * (e.g. before a destructive bulk operation). Currently unused by the
+   * automatic backup pipeline — auto-backups remain strictly 24h — but
+   * exposed so future callers can request an on-demand snapshot.
+   */
+  createSnapshot(): void {
+    this.createBackup();
+  }
+
   private createBackup(): void {
     try {
       const backupDir = this.getBackupDir();
@@ -380,7 +447,7 @@ class StoreManager {
       const filename = `database-backup-${this.formatTimestamp(new Date())}.json`;
       const backupPath = join(backupDir, filename);
       writeFileSync(backupPath, JSON.stringify(this.data, null, 2), 'utf-8');
-      this.pruneBackups(5);
+      this.pruneBackups(MAX_BACKUPS);
     } catch (error) {
       console.error('Failed to create backup:', error);
     }

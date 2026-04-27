@@ -1,6 +1,7 @@
 import { ipcMain, dialog, shell } from 'electron';
 import { readFileSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
+import { dirname } from 'path';
 import { IPC_CHANNELS } from '../../shared/ipc';
 import { storeManager } from './store-manager';
 import { requestManager } from './request-manager';
@@ -271,8 +272,18 @@ class IpcManager {
     // File operations IPC handlers
     ipcMain.handle(IPC_CHANNELS.FILE_OPEN_DIALOG, async () => {
       try {
+        // On macOS we can offer file + directory selection in a single dialog
+        // (covers Bruno's folder-based collections without a separate prompt).
+        // Windows / Linux only honour one type at a time, so we fall back to
+        // file selection there — Bruno users on those platforms can pick the
+        // collection's `bruno.json` (or any `.bru`) and we treat its parent
+        // folder as the collection root.
+        const properties: ('openFile' | 'openDirectory' | 'multiSelections')[] =
+          process.platform === 'darwin'
+            ? ['openFile', 'openDirectory']
+            : ['openFile', 'multiSelections'];
         const result = await dialog.showOpenDialog({
-          properties: ['openFile', 'multiSelections'],
+          properties,
           filters: [
             {
               name: 'Collection Files',
@@ -288,6 +299,7 @@ class IpcManager {
                 'curl',
                 'sh',
                 'txt',
+                'bru',
               ],
             },
             { name: 'JSON Files', extensions: ['json'] },
@@ -295,6 +307,7 @@ class IpcManager {
             { name: 'HAR Files', extensions: ['har'] },
             { name: 'REST Client Files', extensions: ['http', 'rest'] },
             { name: 'WSDL / XML', extensions: ['wsdl', 'xml'] },
+            { name: 'Bruno Files', extensions: ['bru'] },
             { name: 'cURL / Shell', extensions: ['curl', 'sh', 'txt'] },
             { name: 'All Files', extensions: ['*'] },
           ],
@@ -304,8 +317,14 @@ class IpcManager {
           return { canceled: true, filePaths: [] };
         }
 
-        // Track approved file paths
-        result.filePaths.forEach((fp) => this.approvedFilePaths.add(fp));
+        // Track approved file paths (and parent folders so Bruno
+        // collection imports work even when the user picked a single
+        // file inside the folder).
+        result.filePaths.forEach((fp) => {
+          this.approvedFilePaths.add(fp);
+          this.approvedFolderPaths.add(dirname(fp));
+          this.approvedFolderPaths.add(fp);
+        });
 
         return { canceled: false, filePaths: result.filePaths };
       } catch (error) {
@@ -625,7 +644,10 @@ class IpcManager {
     ipcMain.handle(
       IPC_CHANNELS.BACKUP_LIST,
       (): Array<{ id: string; filename: string; createdAt: number }> => {
-        return storeManager.listBackups(5);
+        // Show a generous list so the user can roll back to snapshots
+        // taken before bursts of destructive operations, not just the
+        // last few automatic ones.
+        return storeManager.listBackups(20);
       }
     );
 
@@ -633,6 +655,20 @@ class IpcManager {
       IPC_CHANNELS.BACKUP_RESTORE,
       async (_, backupId: string): Promise<void> => {
         await storeManager.restoreBackup(backupId);
+      }
+    );
+
+    ipcMain.handle(
+      IPC_CHANNELS.BACKUP_DESCRIBE,
+      (
+        _,
+        backupId: string
+      ): {
+        collections: number;
+        requests: number;
+        sizeBytes: number;
+      } | null => {
+        return storeManager.describeBackup(backupId);
       }
     );
 

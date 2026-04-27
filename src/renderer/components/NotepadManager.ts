@@ -394,12 +394,17 @@ export class NotepadManager {
       );
       if (activeTab.previewMode) {
         this.renderPreview(activeTab.content, activeTab.language);
+      } else {
+        // Clear any leftover inline flex sizing from a prior resize so the
+        // editor reclaims the full width when the preview pane is hidden.
+        this.clearSplitSizing();
       }
     } else {
       this.applyContentToEditor('', undefined);
       this.doUpdateStatusBar(undefined);
       this.elements.previewPane.classList.add('hidden');
       this.elements.resizeSplitter.classList.add('hidden');
+      this.clearSplitSizing();
     }
   }
 
@@ -599,7 +604,18 @@ export class NotepadManager {
     if (next && this.editor) {
       this.renderPreview(this.editor.getValue(), active.language);
       this.editor.layout();
+    } else {
+      // Reset any inline flex set by the resize splitter so the editor
+      // expands to fill the now-empty preview area.
+      this.clearSplitSizing();
+      this.editor?.layout();
     }
+  }
+
+  /** Remove inline flex sizing applied by the resize splitter. */
+  private clearSplitSizing(): void {
+    this.elements.editorHost.style.flex = '';
+    this.elements.previewPane.style.flex = '';
   }
 
   private schedulePreviewRender(value: string): void {

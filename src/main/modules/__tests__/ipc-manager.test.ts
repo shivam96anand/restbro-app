@@ -26,6 +26,7 @@ vi.mock('../store-manager', () => ({
     setState: vi.fn(),
     listBackups: vi.fn().mockReturnValue([]),
     restoreBackup: vi.fn().mockResolvedValue(undefined),
+    createSnapshot: vi.fn(),
   },
 }));
 
@@ -668,7 +669,7 @@ describe('ipc-manager.ts', () => {
     it('backup:list returns backups from storeManager', () => {
       const handler = getHandler(IPC_CHANNELS.BACKUP_LIST)!;
       const result = handler();
-      expect(storeManager.listBackups).toHaveBeenCalledWith(5);
+      expect(storeManager.listBackups).toHaveBeenCalledWith(20);
       expect(result).toEqual([]);
     });
 

@@ -8,6 +8,82 @@ export class ImportDialog {
     this.onImport = onImport;
   }
 
+  /**
+   * Walk a collection tree and collect every request id (folders aren't
+   * selectable on their own — they appear in the import iff at least one
+   * descendant request is checked).
+   */
+  private collectRequestIds(node: Collection | undefined, into: Set<string>) {
+    if (!node) return;
+    if (node.type === 'request') {
+      into.add(node.id);
+      return;
+    }
+    node.children?.forEach((c) => this.collectRequestIds(c, into));
+  }
+
+  /**
+   * Return a deep-cloned tree containing only requests whose id is in
+   * `selected`. Folders are kept only when at least one descendant survives,
+   * so empty branches don't leak into the imported collection. The root
+   * (depth 0) is preserved even if empty so the commit still has a
+   * container; everything below is pruned aggressively.
+   */
+  private filterTreeBySelection(
+    node: Collection,
+    selected: Set<string>,
+    depth: number = 0
+  ): Collection | null {
+    if (node.type === 'request') {
+      return selected.has(node.id) ? { ...node } : null;
+    }
+    const children = (node.children ?? [])
+      .map((c) => this.filterTreeBySelection(c, selected, depth + 1))
+      .filter((c): c is Collection => c !== null);
+    if (children.length === 0 && depth > 0) return null;
+    return { ...node, children };
+  }
+
+  private countRequests(node: Collection | undefined): number {
+    if (!node) return 0;
+    if (node.type === 'request') return 1;
+    return (node.children ?? []).reduce((n, c) => n + this.countRequests(c), 0);
+  }
+
+  /**
+   * Count folders in a tree, excluding the root container itself so the
+   * summary number matches what the user sees in the import preview list.
+   */
+  private countFolders(node: Collection | undefined): number {
+    if (!node) return 0;
+    let n = 0;
+    const walk = (item: Collection, isRoot: boolean): void => {
+      if (item.type === 'folder' && !isRoot) n += 1;
+      item.children?.forEach((c) => walk(c, false));
+    };
+    walk(node, true);
+    return n;
+  }
+
+  /**
+   * Deep-clone a tree, dropping any folder whose subtree contains zero
+   * requests. The root folder itself (depth 0) is always preserved so the
+   * commit pipeline still has a container; the imported collection just
+   * won't include any noise from upstream exports that ship empty
+   * folders / categories.
+   */
+  private pruneEmptyFolders(
+    node: Collection,
+    depth: number = 0
+  ): Collection | null {
+    if (node.type === 'request') return { ...node };
+    const children = (node.children ?? [])
+      .map((c) => this.pruneEmptyFolders(c, depth + 1))
+      .filter((c): c is Collection => c !== null);
+    if (children.length === 0 && depth > 0) return null;
+    return { ...node, children };
+  }
+
   async show(preview: any): Promise<void> {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
@@ -162,14 +238,57 @@ export class ImportDialog {
           margin-bottom: 20px;
         `;
 
+        // Pre-collect every request id; everything is selected by default so
+        // single-request imports keep working with no extra clicks.
+        const allIds = new Set<string>();
+        this.collectRequestIds(preview.rootFolder, allIds);
+        const selected = new Set<string>(allIds);
+        const totalRequests = allIds.size;
+
+        const treeHeader = document.createElement('div');
+        treeHeader.style.cssText = `
+          display: flex; align-items: center; justify-content: space-between;
+          margin: 0 0 12px 0;
+        `;
         const treeTitle = document.createElement('h3');
         treeTitle.textContent = 'Collection Structure';
         treeTitle.style.cssText = `
-          margin: 0 0 12px 0;
+          margin: 0;
           color: var(--text-primary);
           font-size: 15px;
           font-weight: 600;
         `;
+
+        // "Select all" toggle + live count, only shown when there's more
+        // than one request to choose from.
+        const selectionInfo = document.createElement('div');
+        selectionInfo.style.cssText =
+          'display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-secondary);';
+
+        const countLabel = document.createElement('span');
+        const updateCount = () => {
+          countLabel.textContent = `${selected.size} of ${totalRequests} selected`;
+        };
+
+        const selectAllWrap = document.createElement('label');
+        selectAllWrap.style.cssText =
+          'display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;';
+        const selectAllCb = document.createElement('input');
+        selectAllCb.type = 'checkbox';
+        selectAllCb.checked = true;
+        selectAllCb.style.cssText = 'cursor: pointer;';
+        const selectAllText = document.createElement('span');
+        selectAllText.textContent = 'Select all';
+        selectAllWrap.appendChild(selectAllCb);
+        selectAllWrap.appendChild(selectAllText);
+
+        if (totalRequests > 1) {
+          selectionInfo.appendChild(countLabel);
+          selectionInfo.appendChild(selectAllWrap);
+        }
+
+        treeHeader.appendChild(treeTitle);
+        treeHeader.appendChild(selectionInfo);
 
         const treeContainer = document.createElement('div');
         treeContainer.style.cssText = `
@@ -177,9 +296,52 @@ export class ImportDialog {
           border-radius: 6px;
           padding: 12px;
           background: var(--bg-tertiary);
-          max-height: 200px;
+          max-height: 240px;
           overflow-y: auto;
         `;
+
+        // Track per-node checkbox + reverse parent pointers so toggling a
+        // folder cascades to descendants and updates ancestor tri-state.
+        const requestCheckboxes = new Map<string, HTMLInputElement>();
+        const folderCheckboxes: {
+          folderId: string;
+          el: HTMLInputElement;
+          descendants: string[];
+        }[] = [];
+
+        const collectDescendantIds = (item: Collection): string[] => {
+          if (item.type === 'request') return [item.id];
+          return (item.children ?? []).flatMap(collectDescendantIds);
+        };
+
+        const refreshFolderStates = (): void => {
+          folderCheckboxes.forEach(({ el, descendants }) => {
+            const present = descendants.filter((id) => selected.has(id)).length;
+            if (present === 0) {
+              el.checked = false;
+              el.indeterminate = false;
+            } else if (present === descendants.length) {
+              el.checked = true;
+              el.indeterminate = false;
+            } else {
+              el.checked = false;
+              el.indeterminate = true;
+            }
+          });
+          if (selectAllCb) {
+            if (selected.size === 0) {
+              selectAllCb.checked = false;
+              selectAllCb.indeterminate = false;
+            } else if (selected.size === totalRequests) {
+              selectAllCb.checked = true;
+              selectAllCb.indeterminate = false;
+            } else {
+              selectAllCb.checked = false;
+              selectAllCb.indeterminate = true;
+            }
+          }
+          updateCount();
+        };
 
         const renderTree = (item: Collection, level: number = 0) => {
           const itemEl = document.createElement('div');
@@ -193,6 +355,12 @@ export class ImportDialog {
             gap: 6px;
           `;
 
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = true;
+          checkbox.style.cssText = 'cursor: pointer; margin: 0 2px 0 0;';
+          itemEl.appendChild(checkbox);
+
           const icon = createIconElement(
             item.type === 'folder' ? 'folder' : 'file',
             {
@@ -204,6 +372,13 @@ export class ImportDialog {
           name.textContent = item.name;
 
           if (item.type === 'request') {
+            requestCheckboxes.set(item.id, checkbox);
+            checkbox.addEventListener('change', () => {
+              if (checkbox.checked) selected.add(item.id);
+              else selected.delete(item.id);
+              refreshFolderStates();
+            });
+
             const method = document.createElement('span');
             method.textContent = item.request?.method || 'GET';
             method.style.cssText = `
@@ -215,6 +390,23 @@ export class ImportDialog {
               margin-left: 6px;
             `;
             name.appendChild(method);
+          } else {
+            const descendantIds = collectDescendantIds(item);
+            folderCheckboxes.push({
+              folderId: item.id,
+              el: checkbox,
+              descendants: descendantIds,
+            });
+            checkbox.addEventListener('change', () => {
+              const turnOn = checkbox.checked;
+              descendantIds.forEach((id) => {
+                if (turnOn) selected.add(id);
+                else selected.delete(id);
+                const cb = requestCheckboxes.get(id);
+                if (cb) cb.checked = turnOn;
+              });
+              refreshFolderStates();
+            });
           }
 
           itemEl.appendChild(icon);
@@ -228,9 +420,27 @@ export class ImportDialog {
 
         renderTree(preview.rootFolder);
 
-        treeSection.appendChild(treeTitle);
+        selectAllCb.addEventListener('change', () => {
+          const turnOn = selectAllCb.checked;
+          allIds.forEach((id) => {
+            if (turnOn) selected.add(id);
+            else selected.delete(id);
+            const cb = requestCheckboxes.get(id);
+            if (cb) cb.checked = turnOn;
+          });
+          refreshFolderStates();
+        });
+
+        updateCount();
+        refreshFolderStates();
+
+        treeSection.appendChild(treeHeader);
         treeSection.appendChild(treeContainer);
         body.appendChild(treeSection);
+
+        // Expose the selection set so the Import button can apply it below.
+        (preview as any).__selectedRequestIds = selected;
+        (preview as any).__totalRequestIds = allIds;
       }
 
       // Environments section
@@ -349,10 +559,68 @@ export class ImportDialog {
       });
 
       importBtn.addEventListener('click', async () => {
+        // Apply per-request selection (if the tree was rendered).
+        const selectedIds = (preview as any).__selectedRequestIds as
+          | Set<string>
+          | undefined;
+        const totalIds = (preview as any).__totalRequestIds as
+          | Set<string>
+          | undefined;
+
+        let payload = preview;
+        if (selectedIds && totalIds && totalIds.size > 0) {
+          if (selectedIds.size === 0) {
+            // Nothing to import — surface a quick inline warning instead of
+            // committing an empty collection.
+            importBtn.style.outline = '2px solid var(--error-color, #d33)';
+            importBtn.textContent = 'Select at least one request';
+            window.setTimeout(() => {
+              importBtn.style.outline = '';
+              importBtn.textContent = 'Import';
+            }, 1800);
+            return;
+          }
+          if (selectedIds.size < totalIds.size && preview.rootFolder) {
+            const filteredRoot = this.filterTreeBySelection(
+              preview.rootFolder,
+              selectedIds
+            );
+            payload = {
+              ...preview,
+              rootFolder: filteredRoot ?? preview.rootFolder,
+              summary: {
+                ...preview.summary,
+                requests: this.countRequests(
+                  filteredRoot ?? preview.rootFolder
+                ),
+              },
+            };
+          }
+        }
+
+        // Always strip folders that contain zero requests (some exports
+        // — Postman categories, OpenAPI tag groups, Bruno empty subdirs —
+        // leave behind empty containers we shouldn't pollute the user's
+        // collection with).
+        if (payload.rootFolder) {
+          const pruned = this.pruneEmptyFolders(payload.rootFolder);
+          if (pruned) {
+            payload = {
+              ...payload,
+              rootFolder: pruned,
+              summary: {
+                ...payload.summary,
+                folders: this.countFolders(pruned),
+                requests: this.countRequests(pruned),
+              },
+            };
+          }
+        }
+
         importBtn.disabled = true;
         importBtn.textContent = 'Importing...';
 
-        const success = await this.onImport(preview);
+        const success = await this.onImport(payload);
 
         if (success) {
           cleanup();

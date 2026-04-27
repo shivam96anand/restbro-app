@@ -47,6 +47,7 @@ const IPC_CHANNELS = {
   // Backup channels
   BACKUP_LIST: 'backup:list',
   BACKUP_RESTORE: 'backup:restore',
+  BACKUP_DESCRIBE: 'backup:describe',
 
   // System helpers
   OPEN_EXTERNAL: 'system:open-external',
@@ -571,6 +572,13 @@ const restbroAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP_LIST),
     restore: (backupId: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP_RESTORE, backupId),
+    describe: (
+      backupId: string
+    ): Promise<{
+      collections: number;
+      requests: number;
+      sizeBytes: number;
+    } | null> => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_DESCRIBE, backupId),
   },
 
   system: {
