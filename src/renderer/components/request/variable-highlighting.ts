@@ -103,18 +103,14 @@ export function addVariableHighlighting(
     // Update position on window resize
     window.addEventListener('resize', updatePosition);
 
-    // When input gains focus: hide tooltip and drop overlay behind input
+    // When input gains focus: clear any stale tooltip from a previous hover.
+    // We deliberately do NOT drop the overlay behind the input here; the overlay
+    // stays on top so variable spans remain hoverable while the user is editing.
+    // (See _variable-highlighting.scss — container z-index is fixed at 3.)
     const focusHandler = () => {
       removeGlobalTooltip();
-      container.classList.add('input-focused');
     };
     inputElement.addEventListener('focus', focusHandler);
-
-    // When input loses focus: raise overlay back up for tooltip hover
-    const blurHandler = () => {
-      container.classList.remove('input-focused');
-    };
-    inputElement.addEventListener('blur', blurHandler);
 
     // Remove tooltip when clicking anywhere in the document
     const clickHandler = (e: MouseEvent) => {
@@ -128,7 +124,6 @@ export function addVariableHighlighting(
     // Store cleanup for these listeners too
     (container as any).__inputCleanup = () => {
       inputElement.removeEventListener('focus', focusHandler);
-      inputElement.removeEventListener('blur', blurHandler);
       document.removeEventListener('click', clickHandler);
     };
   } else {

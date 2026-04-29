@@ -177,8 +177,10 @@ textarea {
 }
 
 // Variable highlight overlay container
-// Default: on top of input so hover tooltips work on variable spans
-// When input is focused: behind input so cursor/typing works
+// Always sits on top of the input so hover tooltips work on variable spans,
+// even while the input is focused. The container itself has
+// `pointer-events: none`; only `.variable-highlight` spans intercept events,
+// so typing/clicking outside variables still falls through to the input.
 .variable-highlight-container {
   position: absolute;
   pointer-events: none;
@@ -192,12 +194,7 @@ textarea {
   padding: inherit;
   border: 1px solid transparent;
   color: transparent;
-  z-index: 3; // Above input by default for tooltip hover
-
-  // When input is focused, drop behind so typing works
-  &.input-focused {
-    z-index: 1;
-  }
+  z-index: 3; // Above input always so hover tooltips remain reachable
 
   span {
     color: var(--text-primary);
@@ -276,9 +273,11 @@ textarea {
   }
 }
 
-// Hide native text when overlay is active to prevent double-render, keep caret visible
-// Default: input below overlay (z-index: 2 < overlay's z-index: 3) so tooltips work on hover
-// When focused: input above overlay (z-index: 4 > overlay.input-focused's z-index: 1) so cursor visible
+// Hide native text when overlay is active to prevent double-render, keep caret visible.
+// Input always stays below the overlay (z-index: 2 < overlay's z-index: 3) so the
+// variable spans remain hoverable even while the input is focused. Typing still works
+// because the overlay container has `pointer-events: none`; only `.variable-highlight`
+// spans intercept events, so the caret/keystrokes pass through everywhere else.
 .has-variable-overlay {
   color: transparent !important;
   caret-color: #ffffff !important;
@@ -286,10 +285,6 @@ textarea {
   background: transparent !important;
   position: relative;
   z-index: 2;
-
-  &:focus {
-    z-index: 4; // Jump above overlay when focused for cursor visibility
-  }
 }
 
 // Indicator that field contains variables
