@@ -108,7 +108,9 @@ class IpcManager {
             method: 'GET',
             url: '',
             params: {},
-            headers: {},
+            headers: {
+              'User-Agent': 'Restbro',
+            },
           };
           newCollection.request = defaultRequest;
         } else if (collection.type === 'request' && collection.request) {
@@ -553,6 +555,31 @@ class IpcManager {
           const updatedCollections = [...state.collections];
           if (preview.rootFolder) {
             const flattened = flattenCollection(preview.rootFolder);
+            // Override User-Agent header to "Restbro" for all imported requests
+            for (const col of flattened) {
+              if (col.type === 'request' && col.request) {
+                const headers = col.request.headers;
+                if (headers) {
+                  if (Array.isArray(headers)) {
+                    const uaEntry = headers.find(
+                      (h: any) => h.key?.toLowerCase() === 'user-agent'
+                    );
+                    if (uaEntry) {
+                      uaEntry.value = 'Restbro';
+                    } else {
+                      headers.push({
+                        key: 'User-Agent',
+                        value: 'Restbro',
+                        enabled: true,
+                      });
+                    }
+                  } else {
+                    (headers as Record<string, string>)['User-Agent'] =
+                      'Restbro';
+                  }
+                }
+              }
+            }
             updatedCollections.push(...flattened);
           }
 

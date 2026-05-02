@@ -194,6 +194,10 @@ export class NotepadManager {
 
     // OS file-association: a path was opened via the OS shell.
     this.fileOpenedDispose = window.restbro.notepad.onFileOpened((filePath) => {
+      // Switch to the Notepad tab so the user sees the opened file
+      document.dispatchEvent(
+        new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
+      );
       void openFileByPath(this.getFileOpsContext(), filePath);
     });
 
@@ -689,6 +693,12 @@ export class NotepadManager {
   private async drainPendingFiles(): Promise<void> {
     try {
       const files = await window.restbro.notepad.getPendingFiles();
+      if (files.length > 0) {
+        // Switch to the Notepad tab so the user sees the opened file(s)
+        document.dispatchEvent(
+          new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
+        );
+      }
       for (const file of files) {
         await openFileByPath(this.getFileOpsContext(), file);
       }

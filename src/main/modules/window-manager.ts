@@ -31,6 +31,16 @@ class WindowManager {
 
     this.mainWindow.loadFile(join(__dirname, '../../../renderer/index.html'));
 
+    // Prevent Cmd+R / Ctrl+R / F5 from reloading the app
+    this.mainWindow.webContents.on('before-input-event', (_event, input) => {
+      const isReload =
+        (input.key === 'r' && (input.meta || input.control)) ||
+        input.key === 'F5';
+      if (isReload) {
+        _event.preventDefault();
+      }
+    });
+
     return this.mainWindow;
   }
 

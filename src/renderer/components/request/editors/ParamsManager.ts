@@ -67,7 +67,6 @@ export class ParamsManager {
       });
 
       paramsEditor.addEventListener('input', () => {
-        this.ensureTrailingEmptyRow();
         this.updateParamsFromDOM();
       });
 

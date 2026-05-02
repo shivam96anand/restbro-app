@@ -58,6 +58,7 @@ export class CollectionsCore {
     this.search.setupSearchFunctionality(() => this.treeState.expandedFolders);
     this.setupExportButton();
     this.setupKeyboardShortcuts();
+    this.setupInlineRenameListener();
     this.renderCollections();
   }
 
@@ -175,6 +176,78 @@ export class CollectionsCore {
         );
       }
     });
+  }
+
+  /**
+   * Listen for the custom event that triggers inline rename on a collection
+   * item in the sidebar tree. Finds the `.collection-name` span and replaces
+   * it with an input. Commits on Enter/blur, cancels on Escape.
+   */
+  private setupInlineRenameListener(): void {
+    document.addEventListener('collection-start-inline-rename', ((
+      e: CustomEvent
+    ) => {
+      const collectionId = e.detail?.collectionId as string | undefined;
+      if (!collectionId) return;
+      this.startInlineRename(collectionId);
+    }) as EventListener);
+  }
+
+  private startInlineRename(collectionId: string): void {
+    const collection = this.operations.findCollectionById(collectionId);
+    if (!collection) return;
+
+    const el = document.querySelector(
+      `.collection-item[data-collection-id="${CSS.escape(collectionId)}"]`
+    );
+    if (!el) return;
+
+    const nameSpan = el.querySelector('.collection-name') as HTMLElement | null;
+    if (!nameSpan) return;
+
+    // Prevent double-activation
+    if (nameSpan.querySelector('input')) return;
+
+    const original = collection.name;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = original;
+    input.className = 'collection-rename-input';
+    input.setAttribute('aria-label', 'Rename collection');
+
+    nameSpan.textContent = '';
+    nameSpan.appendChild(input);
+    input.focus();
+    input.select();
+
+    const commit = (next: string): void => {
+      const trimmed = next.trim();
+      if (trimmed && trimmed !== original) {
+        nameSpan.textContent = trimmed;
+        void this.operations.commitRename(collectionId, trimmed);
+      } else {
+        nameSpan.textContent = original;
+      }
+    };
+
+    let committed = false;
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        committed = true;
+        commit(input.value);
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        committed = true;
+        nameSpan.textContent = original;
+      }
+    });
+    input.addEventListener('blur', () => {
+      if (!committed) commit(input.value);
+    });
+    // Stop click from bubbling so the collection-item click handler
+    // doesn't also fire (which would re-select and re-render).
+    input.addEventListener('click', (ev) => ev.stopPropagation());
   }
 
   private showCreateMenu(event: MouseEvent): void {

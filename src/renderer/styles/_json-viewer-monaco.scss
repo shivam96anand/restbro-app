@@ -158,6 +158,21 @@
   }
 }
 
+// Global JSON error decorations (used by request body editor, JSON compare, etc.)
+.monaco-editor {
+  .json-error-decoration {
+    background-color: rgba(248, 81, 73, 0.15);
+    border: 1px solid rgba(248, 81, 73, 0.4);
+  }
+
+  .json-error-glyph {
+    background: var(--error-color);
+    width: 3px !important;
+    margin-left: 3px;
+    border-radius: 2px;
+  }
+}
+
 // Defensive: pin Monaco's bracket-pair colorization classes to the theme
 // primary color in case Monaco ever emits them despite our
 // `bracketPairColorization: { enabled: false }` option (this was the source

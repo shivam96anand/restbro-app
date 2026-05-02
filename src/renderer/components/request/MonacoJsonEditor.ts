@@ -19,6 +19,7 @@ export class MonacoJsonEditor {
   private onChange: (value: string) => void;
   private onValidityChange?: (valid: boolean, error?: string) => void;
   private readOnly: boolean;
+  private errorDecorations: string[] = [];
 
   constructor(options: MonacoJsonEditorOptions) {
     this.container = options.container;
@@ -132,7 +133,7 @@ export class MonacoJsonEditor {
       fontFamily:
         "'SF Mono', 'Cascadia Code', Monaco, Menlo, Consolas, 'Courier New', monospace",
       letterSpacing: -0.3,
-      glyphMargin: false,
+      glyphMargin: true,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 3,
       wordWrap: 'on',
@@ -178,16 +179,76 @@ export class MonacoJsonEditor {
 
   private validateJson(text: string): void {
     if (!text.trim()) {
+      this.clearErrorDecorations();
       this.onValidityChange?.(true);
       return;
     }
 
     try {
       JSON.parse(text);
+      this.clearErrorDecorations();
       this.onValidityChange?.(true);
     } catch (err) {
       const error = err as Error;
+      this.addErrorDecoration(text, error.message);
       this.onValidityChange?.(false, error.message);
+    }
+  }
+
+  private clearErrorDecorations(): void {
+    if (!this.editor) return;
+    this.errorDecorations = this.editor.deltaDecorations(
+      this.errorDecorations,
+      []
+    );
+  }
+
+  private addErrorDecoration(text: string, errorMessage: string): void {
+    if (!this.editor) return;
+    const model = this.editor.getModel();
+    if (!model) return;
+
+    const positionMatch = errorMessage.match(/position (\d+)/);
+    if (positionMatch) {
+      const pos = model.getPositionAt(parseInt(positionMatch[1], 10));
+      this.errorDecorations = this.editor.deltaDecorations(
+        this.errorDecorations,
+        [
+          {
+            range: new monaco.Range(
+              pos.lineNumber,
+              pos.column,
+              pos.lineNumber,
+              pos.column + 1
+            ),
+            options: {
+              className: 'json-error-decoration',
+              glyphMarginClassName: 'json-error-glyph',
+              isWholeLine: false,
+            },
+          },
+        ]
+      );
+    } else {
+      const lineCount = model.getLineCount();
+      this.errorDecorations = this.editor.deltaDecorations(
+        this.errorDecorations,
+        [
+          {
+            range: new monaco.Range(
+              1,
+              1,
+              lineCount,
+              model.getLineMaxColumn(lineCount)
+            ),
+            options: {
+              className: 'json-error-decoration',
+              glyphMarginClassName: 'json-error-glyph',
+              isWholeLine: false,
+            },
+          },
+        ]
+      );
     }
   }
 

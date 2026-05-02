@@ -118,10 +118,10 @@ const defaultState: AppState = {
   requestSettings: defaultRequestSettings,
 };
 
-// Backup retention. Higher than the previous "5" so the user has more
-// rollback room — auto-backups still only fire every 24h via
-// `startAutoBackup`, this just controls how many are kept on disk.
-const MAX_BACKUPS = 30;
+// Backup retention — keep only the 5 most recent snapshots on disk.
+// Auto-backups fire every 24h via `startAutoBackup`; older snapshots
+// are pruned automatically after each new backup.
+const MAX_BACKUPS = 5;
 
 // After a restore, ignore renderer-driven setState writes for this long
 // so any in-flight autosave (the renderer pushes its in-memory snapshot

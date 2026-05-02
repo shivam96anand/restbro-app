@@ -107,7 +107,8 @@ export class EnvironmentDialogUI {
     isActive: boolean,
     onNameChange: (newName: string) => void,
     onDelete: () => void,
-    onSetActive: () => void
+    onSetActive: () => void,
+    onDuplicate?: () => void
   ): HTMLDivElement {
     const envDetails = document.createElement('div');
     envDetails.style.cssText = EnvironmentDialogStyles.envDetails;
@@ -120,18 +121,32 @@ export class EnvironmentDialogUI {
     detailTitle.style.cssText = EnvironmentDialogStyles.detailTitle;
     detailHeader.appendChild(detailTitle);
 
+    const headerButtons = document.createElement('div');
+    headerButtons.style.cssText =
+      'display: flex; gap: 8px; align-items: center;';
+
     if (isActive) {
       const activeBadge = document.createElement('span');
       activeBadge.textContent = 'Active';
       activeBadge.style.cssText = EnvironmentDialogStyles.activeBadge;
-      detailHeader.appendChild(activeBadge);
+      headerButtons.appendChild(activeBadge);
     } else {
       const setActiveBtn = document.createElement('button');
       setActiveBtn.textContent = 'Set Active';
       setActiveBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
       setActiveBtn.addEventListener('click', onSetActive);
-      detailHeader.appendChild(setActiveBtn);
+      headerButtons.appendChild(setActiveBtn);
     }
+
+    if (onDuplicate) {
+      const duplicateBtn = document.createElement('button');
+      duplicateBtn.textContent = 'Duplicate';
+      duplicateBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
+      duplicateBtn.addEventListener('click', onDuplicate);
+      headerButtons.appendChild(duplicateBtn);
+    }
+
+    detailHeader.appendChild(headerButtons);
 
     // Name input
     const nameLabel = document.createElement('label');
@@ -202,7 +217,8 @@ export class EnvironmentDialogUI {
     onSelectEnv: (envId: string) => void,
     onSetActive: (envId: string) => void,
     onNameChange: (newName: string) => void,
-    onDelete: () => void
+    onDelete: () => void,
+    onDuplicate?: (envId: string) => void
   ): HTMLDivElement {
     const layout = document.createElement('div');
     layout.style.cssText = EnvironmentDialogStyles.layout;
@@ -219,7 +235,8 @@ export class EnvironmentDialogUI {
         state.workingActiveId === selectedEnv.id,
         onNameChange,
         onDelete,
-        () => onSetActive(selectedEnv.id)
+        () => onSetActive(selectedEnv.id),
+        onDuplicate ? () => onDuplicate(selectedEnv.id) : undefined
       );
       layout.appendChild(envDetails);
     }

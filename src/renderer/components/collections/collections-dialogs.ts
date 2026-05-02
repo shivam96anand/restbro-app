@@ -29,7 +29,7 @@ export class CollectionsDialogs {
           method: 'GET',
           url: '',
           headers: {
-            'User-Agent': 'Restbro/1.0',
+            'User-Agent': 'Restbro',
             'Accept-Encoding': 'gzip',
           },
           params: {},

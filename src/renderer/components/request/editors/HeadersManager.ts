@@ -67,7 +67,6 @@ export class HeadersManager {
       });
 
       headersEditor.addEventListener('input', () => {
-        this.ensureTrailingEmptyRow();
         this.updateHeadersFromDOM();
       });
 

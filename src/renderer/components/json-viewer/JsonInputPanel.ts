@@ -17,6 +17,7 @@ export class JsonInputPanel {
   private monacoEditor: MonacoInputEditor | null = null;
   private isValid: boolean = true;
   private errorMessage: string = '';
+  private autoParseTimer: number | null = null;
 
   constructor(container: HTMLElement, events: JsonInputPanelEvents) {
     this.container = container;
@@ -62,7 +63,6 @@ export class JsonInputPanel {
             <div class="input-actions-bottom">
               <button id="format-btn" class="btn btn-secondary">Format JSON</button>
               <button id="minify-btn" class="btn btn-secondary">Minify</button>
-              <button id="parse-btn" class="btn btn-primary">Parse & View</button>
             </div>
           </div>
           <div id="upload-section" class="input-section">
@@ -95,11 +95,16 @@ export class JsonInputPanel {
         value: '',
         onChange: (value: string) => {
           this.persistCurrentInput(value);
+          // Auto-parse when the input is valid JSON
+          this.scheduleAutoParse();
         },
         onValidityChange: (valid: boolean, error?: string) => {
           this.isValid = valid;
           this.errorMessage = error || '';
           this.updateValidationUI();
+          if (valid) {
+            this.scheduleAutoParse();
+          }
         },
       });
     }
@@ -135,9 +140,6 @@ export class JsonInputPanel {
     this.container
       .querySelector('#minify-btn')
       ?.addEventListener('click', () => this.minifyJson());
-    this.container
-      .querySelector('#parse-btn')
-      ?.addEventListener('click', () => this.parseAndView());
 
     // Toolbar buttons
     this.container
@@ -170,24 +172,22 @@ export class JsonInputPanel {
     const statusBadge = this.container.querySelector(
       '#input-status-badge'
     ) as HTMLElement;
-    const parseBtn = this.container.querySelector(
-      '#parse-btn'
-    ) as HTMLButtonElement;
 
     if (!statusBadge) return;
 
     if (this.isValid) {
       statusBadge.textContent = '';
       statusBadge.className = 'input-status-badge';
-      if (parseBtn) {
-        parseBtn.disabled = false;
-      }
+      statusBadge.style.cursor = '';
+      statusBadge.onclick = null;
     } else {
       statusBadge.textContent = 'Invalid JSON';
       statusBadge.className = 'input-status-badge invalid';
-      if (parseBtn) {
-        parseBtn.disabled = true;
-      }
+      statusBadge.style.cursor = 'pointer';
+      statusBadge.title = 'Click to go to error';
+      statusBadge.onclick = () => {
+        this.monacoEditor?.goToError();
+      };
     }
   }
 
@@ -335,6 +335,19 @@ export class JsonInputPanel {
         `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /** Debounced auto-parse: triggers parseAndView 500ms after the last edit. */
+  private scheduleAutoParse(): void {
+    if (this.autoParseTimer !== null) {
+      window.clearTimeout(this.autoParseTimer);
+    }
+    this.autoParseTimer = window.setTimeout(() => {
+      this.autoParseTimer = null;
+      if (this.isValid) {
+        this.parseAndView();
+      }
+    }, 500);
   }
 
   private parseAndView(): void {

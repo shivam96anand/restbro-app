@@ -49,6 +49,12 @@ export class RequestBodyEditor {
   private monacoXmlEditor: MonacoXmlEditor | null = null;
   private forcedContentType?: string;
   private formDataFields: FormDataField[] = [];
+  /**
+   * Depth counter for programmatic load operations (setBody / clear / clearEditors).
+   * While > 0, all onBodyChange / onContentTypeChange callbacks are suppressed so
+   * loading one request's body cannot overwrite another request in the collection.
+   */
+  private loadingDepth = 0;
   private readonly formatContentTypes: Record<BodyFormat, string> = {
     json: 'application/json',
     xml: 'application/xml',
@@ -62,6 +68,25 @@ export class RequestBodyEditor {
     this.container = container;
     this.events = events;
     this.initialize();
+  }
+
+  /**
+   * Signal the start of a programmatic load operation.
+   * Increments a depth counter so nested calls (e.g. clearEditors → clear)
+   * are handled correctly. All onBodyChange / onContentTypeChange events are
+   * suppressed until the matching endLoad() call.
+   */
+  public beginLoad(): void {
+    this.loadingDepth++;
+  }
+
+  /** Signal the end of a programmatic load operation. */
+  public endLoad(): void {
+    if (this.loadingDepth > 0) this.loadingDepth--;
+  }
+
+  private get isLoadingBody(): boolean {
+    return this.loadingDepth > 0;
   }
 
   public setVariableContext(
@@ -413,13 +438,15 @@ export class RequestBodyEditor {
       this.switchToTextareaEditor();
       this.currentBodyType = 'none';
       this.currentFormat = 'json';
-      this.events.onBodyChange({
-        type: this.currentBodyType,
-        content: '',
-        format: this.currentFormat,
-        contentType: undefined,
-      });
-      this.events.onContentTypeChange?.(null);
+      if (!this.isLoadingBody) {
+        this.events.onBodyChange({
+          type: this.currentBodyType,
+          content: '',
+          format: this.currentFormat,
+          contentType: undefined,
+        });
+        this.events.onContentTypeChange?.(null);
+      }
     } else if (selection === 'form-data') {
       bodyEditorContainer.style.display = 'none';
       formDataContainer.style.display = 'flex';
@@ -438,7 +465,9 @@ export class RequestBodyEditor {
       }
       this.renderFormDataFields();
       this.emitFormDataChange();
-      this.events.onContentTypeChange?.(this.getCurrentContentType());
+      if (!this.isLoadingBody) {
+        this.events.onContentTypeChange?.(this.getCurrentContentType());
+      }
     } else {
       bodyEditorContainer.style.display = 'flex';
       formDataContainer.style.display = 'none';
@@ -478,13 +507,15 @@ export class RequestBodyEditor {
       }
 
       this.updateStatus();
-      this.events.onBodyChange({
-        type: this.currentBodyType,
-        content: bodyEditor.value,
-        format: this.currentFormat,
-        contentType: this.getCurrentContentType(),
-      });
-      this.events.onContentTypeChange?.(this.getCurrentContentType());
+      if (!this.isLoadingBody) {
+        this.events.onBodyChange({
+          type: this.currentBodyType,
+          content: bodyEditor.value,
+          format: this.currentFormat,
+          contentType: this.getCurrentContentType(),
+        });
+        this.events.onContentTypeChange?.(this.getCurrentContentType());
+      }
     }
   }
 
@@ -493,12 +524,14 @@ export class RequestBodyEditor {
       '#request-body'
     ) as HTMLTextAreaElement;
     this.updateStatus();
-    this.events.onBodyChange({
-      type: this.currentBodyType,
-      content: bodyEditor.value,
-      format: this.currentFormat,
-      contentType: this.getCurrentContentType(),
-    });
+    if (!this.isLoadingBody) {
+      this.events.onBodyChange({
+        type: this.currentBodyType,
+        content: bodyEditor.value,
+        format: this.currentFormat,
+        contentType: this.getCurrentContentType(),
+      });
+    }
   }
 
   private handleKeydown(e: KeyboardEvent): void {
@@ -612,10 +645,11 @@ export class RequestBodyEditor {
   private updateStatus(): void {
     const bodyEditor = this.container.querySelector(
       '#request-body'
-    ) as HTMLTextAreaElement;
+    ) as HTMLTextAreaElement | null;
     const statusElement = this.container.querySelector(
       '#body-status'
     ) as HTMLElement;
+    if (!bodyEditor) return;
     const text = bodyEditor.value.trim();
 
     if (!statusElement) return;
@@ -637,6 +671,21 @@ export class RequestBodyEditor {
 
   // Public methods for external control
   public setBody(body: {
+    type: BodyType;
+    content: string;
+    format?: BodyFormat;
+    contentType?: string;
+    formDataFields?: FormDataField[];
+  }): void {
+    this.beginLoad();
+    try {
+      this._setBodyInternal(body);
+    } finally {
+      this.endLoad();
+    }
+  }
+
+  private _setBodyInternal(body: {
     type: BodyType;
     content: string;
     format?: BodyFormat;
@@ -724,6 +773,15 @@ export class RequestBodyEditor {
   }
 
   public clear(): void {
+    this.beginLoad();
+    try {
+      this._clearInternal();
+    } finally {
+      this.endLoad();
+    }
+  }
+
+  private _clearInternal(): void {
     // Dispose Monaco editors if active
     if (this.monacoEditor) {
       this.monacoEditor.dispose();
@@ -748,7 +806,9 @@ export class RequestBodyEditor {
 
   public setForcedContentType(contentType?: string): void {
     this.forcedContentType = contentType;
-    this.handleBodyContentChange();
+    if (!this.isLoadingBody) {
+      this.handleBodyContentChange();
+    }
   }
 
   public focusEditor(): void {
@@ -792,6 +852,7 @@ export class RequestBodyEditor {
   }
 
   private emitFormDataChange(): void {
+    if (this.isLoadingBody) return;
     this.events.onBodyChange({
       type: 'form-data',
       content: '',

@@ -16,7 +16,7 @@ function makeRequest(overrides: Partial<ApiRequest> = {}): ApiRequest {
     name: 'Test Request',
     method: 'GET',
     url: 'https://example.com',
-    headers: { 'User-Agent': 'Restbro/1.0' },
+    headers: { 'User-Agent': 'Restbro' },
     ...overrides,
   } as ApiRequest;
 }

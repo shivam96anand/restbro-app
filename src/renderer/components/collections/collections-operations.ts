@@ -246,6 +246,15 @@ export class CollectionsOperations {
         detail: { collections: this.collections },
       });
       document.dispatchEvent(event);
+
+      // Open the duplicated request in rename mode so user can change the name
+      requestAnimationFrame(() => {
+        document.dispatchEvent(
+          new CustomEvent('collection-start-inline-rename', {
+            detail: { collectionId: newCollection.id },
+          })
+        );
+      });
     } catch (error) {
       console.error('Failed to duplicate collection:', error);
       this.onShowError('Failed to duplicate collection');
@@ -701,8 +710,23 @@ export class CollectionsOperations {
     const collection = this.findCollectionById(collectionId);
     if (!collection) return;
 
-    const newName = await this.dialogs.showRenameDialog(collection);
-    if (!newName) return;
+    // Dispatch after the next frame so the DOM re-renders (from .then(renderCollections))
+    // before we try to insert the inline input — same pattern as duplicateCollection.
+    requestAnimationFrame(() => {
+      document.dispatchEvent(
+        new CustomEvent('collection-start-inline-rename', {
+          detail: { collectionId },
+        })
+      );
+    });
+  }
+
+  /**
+   * Commits an inline rename that was performed in the sidebar tree.
+   */
+  async commitRename(collectionId: string, newName: string): Promise<void> {
+    const collection = this.findCollectionById(collectionId);
+    if (!collection) return;
 
     try {
       await window.restbro.collection.update(collectionId, {

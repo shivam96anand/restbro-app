@@ -177,14 +177,16 @@
   display: flex;
   align-items: stretch;
 
-  // Variable highlight container gets appended here by JS
-  // Default: on top of input (z-index: 3) so hover tooltips work on variable spans
-  // When input is focused: behind input (z-index: 1) so cursor/typing works
+  // Variable highlight container gets appended here by JS.
+  // Always sits on top of the input (z-index: 3) so hover tooltips on variable
+  // spans work even while the input is focused. The container is
+  // `pointer-events: none`; only `.variable-highlight` spans intercept events,
+  // so typing/clicking outside variables still falls through to the input.
   .variable-highlight-container {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 3; // Above input by default for tooltip hover
+    z-index: 3; // Above input always so hover tooltips remain reachable
     display: flex;
     align-items: center;
     padding: 0 12px;
@@ -193,7 +195,7 @@
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1;
-    background-color: var(--bg-primary);
+    background-color: transparent;
     border: none;
     border-radius: 0;
     max-width: 100%; // Ensure overlay never exceeds parent width
@@ -202,11 +204,6 @@
     scrollbar-width: none;
     &::-webkit-scrollbar {
       display: none;
-    }
-
-    // When input is focused, drop behind so typing works
-    &.input-focused {
-      z-index: 1;
     }
   }
 }
@@ -221,7 +218,10 @@
   border-radius: 0;
   padding: 0 12px;
   position: relative;
-  z-index: 2; // Below overlay by default, above when focused
+  // Always below the variable-highlight overlay so variable spans can receive
+  // hover events. Typing still works because the overlay container is
+  // `pointer-events: none` outside variable spans.
+  z-index: 2;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1;
@@ -233,7 +233,6 @@
 
   &:focus {
     outline: none;
-    z-index: 4; // Jump above overlay when focused for cursor visibility
   }
 }
 

@@ -220,6 +220,21 @@
   }
 }
 
+// Inline rename input inside the sidebar tree
+.collection-rename-input {
+  width: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--primary-color);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: inherit;
+  font-family: inherit;
+  line-height: inherit;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+}
+
 .collection-actions {
   display: flex;
   gap: 2px;

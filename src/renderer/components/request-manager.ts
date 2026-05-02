@@ -252,6 +252,14 @@ export class RequestManager {
       mode
     );
 
+    // Body-change callbacks are suppressed during renderRequestUI to prevent
+    // loading from writing stale data to the collection. Explicitly persist the
+    // mode-switched request here so the collection stays in sync.
+    const finalRequest = this.dataManager.getCurrentRequest();
+    if (finalRequest) {
+      this.dataManager.updateCurrentRequest({});
+    }
+
     this.dispatchModeSwitchState(requestForMode, activeDetailsTab);
     this.cacheCurrentTabState(variableContext, activeDetailsTab);
 

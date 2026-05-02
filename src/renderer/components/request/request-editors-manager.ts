@@ -390,8 +390,16 @@ export class RequestEditorsManager {
 
   clearEditors(): void {
     if (this.bodyEditor) {
-      this.bodyEditor.setForcedContentType(undefined);
-      this.bodyEditor.clear();
+      // Suppress all onBodyChange / onContentTypeChange callbacks while clearing
+      // so that stale content from the previous request is never written to the
+      // newly-active request's collection entry.
+      this.bodyEditor.beginLoad();
+      try {
+        this.bodyEditor.setForcedContentType(undefined);
+        this.bodyEditor.clear();
+      } finally {
+        this.bodyEditor.endLoad();
+      }
     }
 
     this.paramsManager.clear();
@@ -474,9 +482,15 @@ export class RequestEditorsManager {
       bodySection.classList.toggle('soap-mode', enabled);
     }
     if (this.bodyEditor) {
-      this.bodyEditor.setForcedContentType(
-        enabled ? forcedContentType : undefined
-      );
+      // Suppress body events when applying a programmatic content-type lock.
+      this.bodyEditor.beginLoad();
+      try {
+        this.bodyEditor.setForcedContentType(
+          enabled ? forcedContentType : undefined
+        );
+      } finally {
+        this.bodyEditor.endLoad();
+      }
     }
   }
 

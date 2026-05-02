@@ -52,7 +52,7 @@ export class TabsStateManager {
       url: '',
       params: {},
       headers: {
-        'User-Agent': 'Restbro/1.0',
+        'User-Agent': 'Restbro',
         'Accept-Encoding': 'gzip',
       },
     };

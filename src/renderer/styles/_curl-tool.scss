@@ -104,6 +104,42 @@
   margin-bottom: 4px;
 }
 
+.curl-tool__pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  margin-left: auto;
+
+  &:hover {
+    color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &.pinned {
+    opacity: 1;
+    color: var(--primary-color);
+  }
+}
+
+.curl-tool__history-item:hover .curl-tool__pin-btn {
+  opacity: 1;
+}
+
+.curl-tool__history-item.pinned {
+  border-left: 3px solid var(--primary-color);
+  padding-left: 7px;
+}
+
 .curl-tool__history-url {
   font-size: 11px;
   color: var(--text-secondary);

@@ -124,6 +124,23 @@ export class EnvironmentDialogs {
             }
             state.selectedEnvId = state.workingEnvs[0]?.id || null;
             renderBody();
+          },
+          (envId) => {
+            const envToDuplicate = state.workingEnvs.find(
+              (e) => e.id === envId
+            );
+            if (!envToDuplicate) return;
+            const duplicated: Environment = {
+              id: crypto.randomUUID(),
+              name: `${envToDuplicate.name} Copy`,
+              variables: { ...envToDuplicate.variables },
+              variableDescriptions: {
+                ...(envToDuplicate.variableDescriptions || {}),
+              },
+            };
+            state.workingEnvs.push(duplicated);
+            state.selectedEnvId = duplicated.id;
+            renderBody();
           }
         );
 

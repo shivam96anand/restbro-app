@@ -27,6 +27,7 @@ interface CurlHistoryEntry {
   url: string;
   status?: number;
   response?: CurlResponseSnapshot;
+  pinned?: boolean;
 }
 
 export class CurlToolManager {
@@ -71,23 +72,17 @@ export class CurlToolManager {
                   </svg>
                   New
                 </button>
-                <button class="curl-tool__action-btn" id="curl-paste-btn" title="Paste from clipboard">
+                <button class="curl-tool__action-btn" id="curl-pin-btn" title="Pin current command to history">
                   <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                    <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M9 4h6v3H9zM7 6H5v14h14V6h-2"/>
+                    <path fill="currentColor" d="M16 3a1 1 0 0 1 .707 1.707L15.414 6l2.293 2.293a1 1 0 0 1-1.414 1.414L14 7.414l-4.293 4.293.707.707a1 1 0 0 1-1.414 1.414l-.707-.707-3 3a1 1 0 0 1-1.414-1.414l3-3-.707-.707a1 1 0 0 1 1.414-1.414l.707.707L12.586 8l-1.293-1.293A1 1 0 0 1 12.707 5.293L15 7.586l1.293-1.293A1 1 0 0 1 16 3z"/>
                   </svg>
-                  Paste
+                  Pin
                 </button>
                 <button class="curl-tool__action-btn" id="curl-clear-btn" title="Clear input">
                   <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
                     <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
                   </svg>
                   Clear
-                </button>
-                <button class="curl-tool__action-btn curl-tool__action-btn--examples" id="curl-examples-btn" title="Load example">
-                  <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
-                    <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.8.8 1 1.3 1 2.3h6c0-1 .2-1.5 1-2.3A7 7 0 0012 2z"/>
-                  </svg>
-                  Examples
                 </button>
               </div>
             </div>
@@ -191,10 +186,10 @@ export class CurlToolManager {
       .querySelector('#curl-new-btn')
       ?.addEventListener('click', () => this.startNewRequest());
 
-    // Paste button
+    // Pin button
     this.container
-      .querySelector('#curl-paste-btn')
-      ?.addEventListener('click', () => this.pasteFromClipboard());
+      .querySelector('#curl-pin-btn')
+      ?.addEventListener('click', () => this.pinCurrentCommand());
 
     // Clear button
     this.container
@@ -205,11 +200,6 @@ export class CurlToolManager {
     this.container
       .querySelector('#curl-clear-history')
       ?.addEventListener('click', () => this.clearHistory());
-
-    // Examples button
-    this.container
-      .querySelector('#curl-examples-btn')
-      ?.addEventListener('click', () => this.loadExample());
 
     // Toggle parsed section
     this.container
@@ -319,18 +309,6 @@ export class CurlToolManager {
     }
   }
 
-  private async pasteFromClipboard(): Promise<void> {
-    try {
-      const text = await navigator.clipboard.readText();
-      const input = this.container.querySelector(
-        '#curl-tool-input'
-      ) as HTMLTextAreaElement;
-      if (input) input.value = text;
-    } catch {
-      /* clipboard access denied */
-    }
-  }
-
   private clearInput(): void {
     const input = this.container.querySelector(
       '#curl-tool-input'
@@ -341,20 +319,57 @@ export class CurlToolManager {
     this.hideError();
   }
 
-  private loadExample(): void {
-    const examples = [
-      `curl -X GET https://jsonplaceholder.typicode.com/posts/1 \\\n  -H 'Accept: application/json'`,
-      `curl -X POST https://jsonplaceholder.typicode.com/posts \\\n  -H 'Content-Type: application/json' \\\n  -d '{"title":"foo","body":"bar","userId":1}'`,
-      `curl -X PUT https://jsonplaceholder.typicode.com/posts/1 \\\n  -H 'Content-Type: application/json' \\\n  -d '{"id":1,"title":"updated","body":"updated body","userId":1}'`,
-      `curl -X DELETE https://jsonplaceholder.typicode.com/posts/1`,
-      `curl -X GET https://jsonplaceholder.typicode.com/posts \\\n  -H 'Accept: application/json' \\\n  -H 'Cache-Control: no-cache'`,
-    ];
-    const idx = Math.floor(Math.random() * examples.length);
+  private pinCurrentCommand(): void {
     const input = this.container.querySelector(
       '#curl-tool-input'
     ) as HTMLTextAreaElement;
-    if (input) input.value = examples[idx];
+    const command = input?.value?.trim();
+
+    // If a history entry is selected, toggle its pin state
+    if (this.selectedHistoryId) {
+      const entry = this.history.find((h) => h.id === this.selectedHistoryId);
+      if (entry) {
+        entry.pinned = !entry.pinned;
+        this.renderHistory();
+        return;
+      }
+    }
+
+    // Otherwise pin the current command as a new history entry
+    if (!command) return;
+    const parsed = this.parseCommandForHistory(command);
+    const entry: CurlHistoryEntry = {
+      id: `curl-pin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      command,
+      timestamp: Date.now(),
+      method: parsed.method,
+      url: parsed.url,
+      pinned: true,
+    };
+    this.history.unshift(entry);
+    this.selectedHistoryId = entry.id;
+    this.renderHistory();
   }
+
+  private parseCommandForHistory(command: string): {
+    method: string;
+    url: string;
+  } {
+    const methodMatch = command.match(/-X\s+([A-Z]+)/i);
+    const method = methodMatch ? methodMatch[1].toUpperCase() : 'GET';
+    const urlMatch = command.match(
+      /curl\s+(?:-[^\s]+\s+)*['"]?(https?:\/\/[^\s'"]+)/i
+    );
+    const url = urlMatch
+      ? urlMatch[1]
+      : command
+          .replace(/^curl\s+/i, '')
+          .trim()
+          .slice(0, 60);
+    return { method, url };
+  }
+
+  private loadExample(): void {}
 
   private showParsed(parsed: any): void {
     if (!parsed) return;
@@ -876,7 +891,15 @@ export class CurlToolManager {
         '<div class="curl-tool__empty-history">No history yet</div>';
       return;
     }
-    list.innerHTML = this.history
+
+    // Sort: pinned first, then by timestamp descending
+    const sorted = [...this.history].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0; // preserve original order within groups
+    });
+
+    list.innerHTML = sorted
       .map((entry) => {
         const isDraft = entry.method === 'DRAFT';
         const subtitle = entry.url
@@ -888,11 +911,15 @@ export class CurlToolManager {
         const status = entry.status
           ? `<span class="curl-tool__history-status ${this.getStatusClass(entry.status)}">${entry.status}</span>`
           : '';
+        const pinIcon = entry.pinned
+          ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>'
+          : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>';
         return `
-      <div class="curl-tool__history-item${entry.id === this.selectedHistoryId ? ' active' : ''}" data-history-id="${entry.id}">
+      <div class="curl-tool__history-item${entry.id === this.selectedHistoryId ? ' active' : ''}${entry.pinned ? ' pinned' : ''}" data-history-id="${entry.id}">
         <div class="curl-tool__history-top">
           ${badge}
           ${status}
+          <button class="curl-tool__pin-btn${entry.pinned ? ' pinned' : ''}" data-pin-id="${entry.id}" title="${entry.pinned ? 'Unpin' : 'Pin to top'}">${pinIcon}</button>
         </div>
         <div class="curl-tool__history-url" title="${this.escapeHtml(entry.url || entry.command)}">${this.escapeHtml(subtitle)}</div>
         <div class="curl-tool__history-time">${this.formatTime(entry.timestamp)}</div>
@@ -900,6 +927,19 @@ export class CurlToolManager {
     `;
       })
       .join('');
+
+    // Pin button click
+    list.querySelectorAll('.curl-tool__pin-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pinId = (btn as HTMLElement).dataset.pinId;
+        const entry = this.history.find((h) => h.id === pinId);
+        if (entry) {
+          entry.pinned = !entry.pinned;
+          this.renderHistory();
+        }
+      });
+    });
 
     // Click to restore
     list.querySelectorAll('.curl-tool__history-item').forEach((item) => {

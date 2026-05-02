@@ -7,6 +7,7 @@ export class AppManager {
     this.setupNavTabs();
     this.setupFeedbackButton();
     this.setupKeyboardShortcuts();
+    this.setupExternalTabSwitch();
     this.showTab(this.activeTab);
   }
 
@@ -80,6 +81,16 @@ export class AppManager {
       e.preventDefault();
       this.switchToTab(targetTabName);
     });
+  }
+
+  /** Allow other components to programmatically switch the active main tab. */
+  private setupExternalTabSwitch(): void {
+    document.addEventListener('switch-to-tab', ((e: CustomEvent) => {
+      const tab = e.detail?.tab as string | undefined;
+      if (tab && tab !== this.activeTab) {
+        this.switchToTab(tab);
+      }
+    }) as EventListener);
   }
 
   private switchToTab(tabName: string): void {

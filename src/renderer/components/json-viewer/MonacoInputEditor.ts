@@ -236,6 +236,27 @@ export class MonacoInputEditor {
     this.editor.revealPositionInCenter(pos);
   }
 
+  /** Navigate to the first JSON error position, if any. */
+  public goToError(): void {
+    if (!this.editor) return;
+    const text = this.editor.getValue();
+    if (!text.trim()) return;
+    try {
+      JSON.parse(text);
+    } catch (err) {
+      const error = err as Error;
+      const posMatch = error.message.match(/position (\d+)/);
+      if (posMatch) {
+        const model = this.editor.getModel();
+        if (!model) return;
+        const pos = model.getPositionAt(parseInt(posMatch[1], 10));
+        this.editor.setPosition(pos);
+        this.editor.revealPositionInCenter(pos);
+        this.editor.focus();
+      }
+    }
+  }
+
   public getValue(): string {
     return this.editor?.getValue() || '';
   }
