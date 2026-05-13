@@ -65,6 +65,7 @@ const IPC_CHANNELS = {
   NOTEPAD_SAVE_FILE: 'notepad:save-file',
   NOTEPAD_OPEN_FILE: 'notepad:open-file',
   NOTEPAD_READ_FILE: 'notepad:read-file',
+  NOTEPAD_PREPARE_SWAGGER_PREVIEW: 'notepad:prepare-swagger-preview',
   NOTEPAD_REVEAL: 'notepad:reveal',
   NOTEPAD_OPEN_PATH: 'notepad:open-path',
   NOTEPAD_GET_PENDING_FILES: 'notepad:get-pending-files',
@@ -612,6 +613,17 @@ const restbroAPI = {
       error?: string;
       filePath?: string;
     }> => ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_READ_FILE, filePath),
+    prepareSwaggerPreview: (
+      content: string
+    ): Promise<{
+      ok?: boolean;
+      canceled?: boolean;
+      error?: string;
+      code?: string;
+      previewId?: string;
+      previewUrl?: string;
+    }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.NOTEPAD_PREPARE_SWAGGER_PREVIEW, content),
     openPath: (
       filePath: string
     ): Promise<{

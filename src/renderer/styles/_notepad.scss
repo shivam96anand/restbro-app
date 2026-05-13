@@ -365,6 +365,9 @@ body.notepad-resizing {
   &.hidden { display: none; }
 
   .notepad-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 6px 12px;
     font-size: 11px;
     text-transform: uppercase;
@@ -372,13 +375,39 @@ body.notepad-resizing {
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
     background: rgba(255, 255, 255, 0.02);
+    flex-shrink: 0;
   }
+
+  .notepad-preview-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
   .notepad-preview-body {
     flex: 1;
     overflow: auto;
     padding: 16px 22px;
     font-size: 14px;
     line-height: 1.6;
+
+    // Swagger iframe fills the body with no padding
+    &:has(.notepad-swagger-iframe) {
+      padding: 0;
+      overflow: hidden;
+    }
 
     .notepad-preview-iframe {
       width: 100%;
@@ -434,6 +463,24 @@ body.notepad-resizing {
       line-height: 1.5;
       color: var(--text-primary);
       code { background: transparent; padding: 0; }
+    }
+
+    // Swagger/OpenAPI preview — fills the body via an iframe
+    .notepad-swagger-iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    .swagger-error {
+      color: #ff8888;
+      padding: 12px 16px;
+      background: rgba(255, 136, 136, 0.1);
+      border-radius: 4px;
+      border-left: 3px solid #ff8888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
     }
   }
 }

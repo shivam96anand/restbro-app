@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; connect-src 'self' http://127.0.0.1:*; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:;"
+  />
+  <title>Swagger Preview</title>
+  <link rel="stylesheet" type="text/css" href="vendor/swagger-ui.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1a1d24;
+      height: 100%;
+    }
+
+    .swagger-ui .topbar { display: none !important; }
+
+    .swagger-ui,
+    .swagger-ui .wrapper,
+    .swagger-ui .info,
+    .swagger-ui section.models,
+    .swagger-ui .scheme-container {
+      background: transparent !important;
+    }
+
+    .swagger-ui .info .title { color: #e8eaf0 !important; }
+    .swagger-ui .info p, .swagger-ui .info li,
+    .swagger-ui .info table thead tr td,
+    .swagger-ui .info table thead tr th { color: #9ea5b8 !important; }
+    .swagger-ui .info a { color: #f06292 !important; }
+
+    .swagger-ui .opblock-tag { color: #e8eaf0 !important; border-color: #2d3140 !important; }
+    .swagger-ui .opblock-tag:hover { background: rgba(255,255,255,0.04) !important; }
+    .swagger-ui .opblock { border-radius: 6px !important; box-shadow: none !important; margin-bottom: 8px !important; }
+    .swagger-ui .opblock .opblock-summary { border-radius: 6px !important; }
+    .swagger-ui .opblock-description-wrapper p,
+    .swagger-ui .opblock-external-docs-wrapper p,
+    .swagger-ui .opblock-title_normal p { color: #9ea5b8 !important; }
+
+    .swagger-ui .opblock.opblock-get .opblock-summary {
+      background: rgba(97, 175, 254, 0.1) !important; border-color: rgba(97, 175, 254, 0.4) !important; }
+    .swagger-ui .opblock.opblock-post .opblock-summary {
+      background: rgba(73, 204, 144, 0.1) !important; border-color: rgba(73, 204, 144, 0.4) !important; }
+    .swagger-ui .opblock.opblock-put .opblock-summary {
+      background: rgba(252, 161, 48, 0.1) !important; border-color: rgba(252, 161, 48, 0.4) !important; }
+    .swagger-ui .opblock.opblock-delete .opblock-summary {
+      background: rgba(249, 62, 62, 0.1) !important; border-color: rgba(249, 62, 62, 0.4) !important; }
+    .swagger-ui .opblock.opblock-patch .opblock-summary {
+      background: rgba(80, 227, 194, 0.1) !important; border-color: rgba(80, 227, 194, 0.4) !important; }
+
+    .swagger-ui .opblock .opblock-summary-method {
+      border-radius: 4px !important; min-width: 70px !important; text-align: center !important; font-size: 12px !important; }
+    .swagger-ui .opblock .opblock-summary-path,
+    .swagger-ui .opblock .opblock-summary-description { color: #e8eaf0 !important; }
+
+    .swagger-ui table thead tr td, .swagger-ui table thead tr th {
+      color: #9ea5b8 !important; border-color: #2d3140 !important; }
+    .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #e8eaf0 !important; }
+    .swagger-ui .parameter__in { color: #9ea5b8 !important; }
+    .swagger-ui select, .swagger-ui input[type=text] {
+      background: #2a2d38 !important; color: #e8eaf0 !important; border-color: #3d4152 !important; }
+    .swagger-ui .btn { background: transparent !important; border-color: #3d4152 !important; color: #e8eaf0 !important; }
+    .swagger-ui .btn.execute { background: #f06292 !important; border-color: #f06292 !important; color: white !important; }
+
+    .swagger-ui .response-col_status,
+    .swagger-ui .responses-inner h4, .swagger-ui .responses-inner h5 { color: #e8eaf0 !important; }
+    .swagger-ui .model-title { color: #e8eaf0 !important; }
+    .swagger-ui section.models { border-color: #2d3140 !important; }
+    .swagger-ui section.models.is-open h4 { border-color: #2d3140 !important; color: #e8eaf0 !important; }
+    .swagger-ui .model-box { background: rgba(255,255,255,0.03) !important; }
+    .swagger-ui .prop-type { color: #f06292 !important; }
+    .swagger-ui .prop-format { color: #9ea5b8 !important; }
+    .swagger-ui .servers-title, .swagger-ui .servers > label { color: #9ea5b8 !important; }
+
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: #9ea5b8;
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      gap: 8px;
+    }
+    .loading-dot {
+      width: 6px; height: 6px;
+      background: #f06292; border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+      40% { transform: scale(1.2); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <span>Loading preview…</span>
+  </div>
+  <div id="swagger-ui"></div>
+
+  <script src="vendor/swagger-ui-bundle.js"></script>
+  <script>
+    // Do NOT initialize SwaggerUI until we receive the preview spec URL from
+    // the parent via postMessage.
+    window.addEventListener('message', function handleSpec(event) {
+      if (!event.data || event.data.type !== 'swagger-preview-url') return;
+      if (typeof event.data.url !== 'string' || !event.data.url) return;
+
+      // Only handle the first valid message.
+      window.removeEventListener('message', handleSpec);
+
+      document.getElementById('loading').style.display = 'none';
+
+      try {
+        SwaggerUIBundle({
+          url: event.data.url,
+          dom_id: '#swagger-ui',
+          deepLinking: false,
+          presets: [SwaggerUIBundle.presets.apis],
+          layout: 'BaseLayout',
+          defaultModelsExpandDepth: 1,
+          defaultModelExpandDepth: 1,
+          displayRequestDuration: true,
+          tryItOutEnabled: false,
+          validatorUrl: null,
+        });
+      } catch (e) {
+        document.getElementById('swagger-ui').innerHTML =
+          '<pre style="color:#ff8888;padding:20px;font-family:monospace">' +
+          'Failed to render: ' + (e.message || e) + '</pre>';
+      }
+    });
+  </script>
+</body>
+</html>

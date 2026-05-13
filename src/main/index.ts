@@ -4,6 +4,7 @@ import { storeManager } from './modules/store-manager';
 import { ipcManager } from './modules/ipc-manager';
 import { aiEngine } from './modules/ai-engine';
 import { mockServerManager } from './modules/mock-server-manager';
+import { disposeSwaggerPreviewServer } from './modules/notepad-swagger-preview';
 import { updateManager } from './modules/update-manager';
 import { notepadIpc } from './modules/notepad-ipc';
 import * as path from 'path';
@@ -134,6 +135,7 @@ class RestbroApp {
   private async gracefulShutdown(): Promise<void> {
     console.log('Graceful shutdown: flushing database...');
     await mockServerManager.stopAllServers();
+    await disposeSwaggerPreviewServer();
     await storeManager.flush();
     storeManager.stopAutoBackup();
     await aiEngine.flush();
@@ -147,6 +149,7 @@ class RestbroApp {
 
   private async quit(): Promise<void> {
     this.isQuitting = true;
+    await disposeSwaggerPreviewServer();
     await storeManager.flush();
     storeManager.stopAutoBackup();
     await aiEngine.flush();

@@ -62,6 +62,7 @@ export const IPC_CHANNELS = {
   NOTEPAD_SAVE_FILE: 'notepad:save-file',
   NOTEPAD_OPEN_FILE: 'notepad:open-file',
   NOTEPAD_READ_FILE: 'notepad:read-file',
+  NOTEPAD_PREPARE_SWAGGER_PREVIEW: 'notepad:prepare-swagger-preview',
   NOTEPAD_REVEAL: 'notepad:reveal',
   /** Open a specific path (used by OS file-association handler). */
   NOTEPAD_OPEN_PATH: 'notepad:open-path',

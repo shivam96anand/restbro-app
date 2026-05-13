@@ -9,6 +9,7 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('fs/promises', () => ({
+  mkdir: vi.fn().mockResolvedValue(undefined),
   readFile: vi.fn().mockResolvedValue('file-content'),
   writeFile: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn().mockResolvedValue({ size: 12 }),
@@ -108,6 +109,14 @@ vi.mock('../importers', () => ({
   parseJsonFile: vi.fn().mockReturnValue({}),
 }));
 
+vi.mock('../notepad-swagger-preview', () => ({
+  prepareSwaggerPreview: vi.fn().mockResolvedValue({
+    previewId: 'preview-1',
+    previewUrl: 'http://127.0.0.1:43123/swagger-preview/preview-1.json',
+  }),
+  disposeSwaggerPreviewServer: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { ipcMain, dialog, shell } from 'electron';
 import { storeManager } from '../store-manager';
 import { requestManager } from '../request-manager';
@@ -119,6 +128,7 @@ import { mockServerManager } from '../mock-server-manager';
 import { executeCurl, cancelCurl } from '../curl-executor';
 import { updateManager } from '../update-manager';
 import { ipcManager } from '../ipc-manager';
+import { prepareSwaggerPreview } from '../notepad-swagger-preview';
 import { IPC_CHANNELS } from '../../../shared/ipc';
 import { Collection, AppState } from '../../../shared/types';
 
@@ -958,6 +968,19 @@ describe('ipc-manager.ts', () => {
       const handler = getHandler(IPC_CHANNELS.NOTEPAD_READ_FILE)!;
       const result = await handler({}, '/tmp/test.txt');
       expect(result.content).toBe('file-content');
+    });
+
+    it('notepad:prepare-swagger-preview returns a loopback preview URL', async () => {
+      const handler = getHandler(IPC_CHANNELS.NOTEPAD_PREPARE_SWAGGER_PREVIEW)!;
+      const result = await handler({}, '{"openapi":"3.0.1"}');
+
+      expect(result).toEqual({
+        ok: true,
+        canceled: false,
+        previewId: 'preview-1',
+        previewUrl: 'http://127.0.0.1:43123/swagger-preview/preview-1.json',
+      });
+      expect(prepareSwaggerPreview).toHaveBeenCalledWith('{"openapi":"3.0.1"}');
     });
 
     it('notepad:reveal shows item in folder', async () => {

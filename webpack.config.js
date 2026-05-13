@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
@@ -50,6 +51,22 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/renderer/index.html',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, 'node_modules/swagger-ui-dist/swagger-ui-bundle.js'),
+          to: 'vendor/swagger-ui-bundle.js',
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/swagger-ui-dist/swagger-ui.css'),
+          to: 'vendor/swagger-ui.css',
+        },
+        {
+          from: path.resolve(__dirname, 'src/renderer/swagger-viewer.html'),
+          to: 'swagger-viewer.html',
+        },
+      ],
     }),
     new webpack.DefinePlugin({
       'global': 'window',

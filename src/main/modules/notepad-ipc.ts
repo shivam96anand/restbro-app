@@ -13,6 +13,7 @@ import { readFile, writeFile, stat } from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { IPC_CHANNELS } from '../../shared/ipc';
+import { prepareSwaggerPreview } from './notepad-swagger-preview';
 import { windowManager } from './window-manager';
 
 /** Hard cap on a single file payload (50 MB). */
@@ -215,6 +216,32 @@ export const notepadIpc = {
           const message =
             e instanceof Error ? e.message : 'Failed to read file';
           return { canceled: false, error: message };
+        }
+      }
+    );
+
+    ipcMain.handle(
+      IPC_CHANNELS.NOTEPAD_PREPARE_SWAGGER_PREVIEW,
+      async (_, content: string) => {
+        if (typeof content !== 'string') {
+          return err('INVALID_ARGS', 'Preview content must be a string');
+        }
+        if (Buffer.byteLength(content, 'utf-8') > MAX_CONTENT_BYTES) {
+          return err(
+            'TOO_LARGE',
+            `File exceeds ${Math.round(MAX_CONTENT_BYTES / (1024 * 1024))} MB limit`
+          );
+        }
+
+        try {
+          const preview = await prepareSwaggerPreview(content);
+          return { ok: true, canceled: false, ...preview } as const;
+        } catch (e) {
+          const message =
+            e instanceof Error
+              ? e.message
+              : 'Failed to prepare Swagger preview';
+          return err('PREVIEW_FAILED', message);
         }
       }
     );

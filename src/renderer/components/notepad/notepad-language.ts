@@ -52,13 +52,10 @@ const EXT_TO_LANGUAGE: Record<string, string> = {
   csv: 'plaintext',
 };
 
-/**
- * Languages exposed in the language picker. Keep this list short so users
- * can scan it; obscure languages are still detected automatically.
- */
 export const PICKABLE_LANGUAGES: Array<{ id: string; label: string }> = [
   { id: 'plaintext', label: 'Plain Text' },
   { id: 'markdown', label: 'Markdown' },
+  { id: 'swagger', label: 'Swagger/OpenAPI' },
   { id: 'json', label: 'JSON' },
   { id: 'yaml', label: 'YAML' },
   { id: 'xml', label: 'XML' },
@@ -139,6 +136,21 @@ export function detectLanguageFromContent(text: string): string | undefined {
       return 'html';
     }
     if (/^<[a-z][\w:-]*[\s>]/i.test(head)) return 'xml';
+  }
+
+  // Swagger/OpenAPI YAML or JSON
+  if (
+    /^\s*(openapi|swagger|info|paths|servers|components|definitions)\s*:/m.test(
+      head
+    )
+  ) {
+    // Check if it's an OpenAPI/Swagger spec by looking for common top-level keys
+    if (
+      /(openapi|swagger|info|paths)\s*:/m.test(head) ||
+      (first === '{' && /["\'](?:openapi|swagger|paths|info)["\']/.test(head))
+    ) {
+      return 'swagger';
+    }
   }
 
   // YAML document marker

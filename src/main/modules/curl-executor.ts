@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as zlib from 'zlib';
 import { URL } from 'url';
+import { spawn, ChildProcess } from 'child_process';
 import {
   CurlExecuteRequest,
   CurlExecuteResponse,
@@ -10,6 +11,9 @@ import {
 
 /** Active curl requests for cancellation support */
 const activeRequests = new Map<string, http.ClientRequest>();
+
+/** Active shell processes for cancellation support */
+const activeShellRequests = new Map<string, ChildProcess>();
 
 /**
  * Default User-Agent applied when the user hasn't provided one,
@@ -205,12 +209,105 @@ function tokenize(input: string): string[] {
   return tokens;
 }
 
+/**
+ * Returns true when the raw command string contains unquoted shell
+ * operators (pipes, semicolons, logical operators, etc.) that cannot
+ * be handled by the Node.js HTTP implementation and require a real shell.
+ */
+function hasShellFeatures(raw: string): boolean {
+  const normalized = raw
+    .replace(/\\\s*\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const stripped = stripShellPipeline(normalized);
+  return stripped.length < normalized.length;
+}
+
+/**
+ * Run the full raw command via the system shell so that pipes (| jq),
+ * logical operators (&&, ||), semicolons, and multiple commands all
+ * behave exactly as they do in the macOS/Linux terminal.
+ */
+async function executeViaShell(
+  request: CurlExecuteRequest,
+  parsed: CurlParsed,
+  startTime: number
+): Promise<CurlExecuteResponse> {
+  const { id, rawCommand } = request;
+
+  return new Promise((resolve) => {
+    const proc = spawn('/bin/sh', ['-c', rawCommand], {
+      env: { ...process.env },
+    });
+
+    activeShellRequests.set(id, proc);
+
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+
+    proc.stdout.on('data', (chunk: Buffer) =>
+      stdoutChunks.push(Buffer.from(chunk))
+    );
+    proc.stderr.on('data', (chunk: Buffer) =>
+      stderrChunks.push(Buffer.from(chunk))
+    );
+
+    proc.on('close', (code) => {
+      activeShellRequests.delete(id);
+      const endTime = Date.now();
+
+      const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
+      const stderr = Buffer.concat(stderrChunks).toString('utf-8');
+      // Prefer stdout; fall back to stderr so error messages are visible
+      const body = stdout || stderr;
+      const exitOk = code === 0;
+
+      resolve({
+        id,
+        status: exitOk ? 200 : 0,
+        statusText: exitOk ? 'Shell OK' : 'Shell Error',
+        headers: {},
+        body,
+        time: endTime - startTime,
+        size: Buffer.byteLength(body, 'utf-8'),
+        parsed,
+        error: exitOk
+          ? undefined
+          : stderr || `Process exited with code ${code}`,
+      });
+    });
+
+    proc.on('error', (err) => {
+      activeShellRequests.delete(id);
+      resolve({
+        id,
+        status: 0,
+        statusText: 'Shell Error',
+        headers: {},
+        body: err.message,
+        time: Date.now() - startTime,
+        size: 0,
+        parsed,
+        error: err.message,
+      });
+    });
+  });
+}
+
 /** Execute a parsed curl command using Node http/https */
 export async function executeCurl(
   request: CurlExecuteRequest
 ): Promise<CurlExecuteResponse> {
   const { id, rawCommand } = request;
   const parsed = parseCurlCommand(rawCommand);
+  const startTime = Date.now();
+
+  // Commands with shell operators (|, &&, ;, etc.) must run via a real
+  // shell so that jq, multiple commands, and piped tools work exactly
+  // as they do in the macOS/Linux terminal.
+  if (hasShellFeatures(rawCommand)) {
+    return executeViaShell(request, parsed, startTime);
+  }
 
   if (!parsed.url) {
     return {
@@ -225,8 +322,6 @@ export async function executeCurl(
       error: 'No URL found in curl command',
     };
   }
-
-  const startTime = Date.now();
 
   try {
     const parsedUrl = new URL(parsed.url);
@@ -384,6 +479,12 @@ export function cancelCurl(requestId: string): boolean {
   if (req) {
     req.destroy();
     activeRequests.delete(requestId);
+    return true;
+  }
+  const proc = activeShellRequests.get(requestId);
+  if (proc) {
+    proc.kill();
+    activeShellRequests.delete(requestId);
     return true;
   }
   return false;

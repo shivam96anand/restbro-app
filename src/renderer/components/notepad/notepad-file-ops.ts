@@ -50,12 +50,21 @@ export async function openFile(ctx: FileOperationsContext): Promise<void> {
     return;
   }
 
+  const language = detectLanguageFromPath(result.filePath);
   ctx.store.createTab({
     title: getFileName(result.filePath),
     content: result.content,
     filePath: result.filePath,
-    language: detectLanguageFromPath(result.filePath),
+    language,
   });
+
+  // Auto-enable preview for markdown and swagger files
+  if (language === 'markdown' || language === 'swagger') {
+    const newTab = ctx.store.getActiveTab();
+    if (newTab) {
+      ctx.store.updateTab(newTab.id, { previewMode: true });
+    }
+  }
 }
 
 /**
@@ -78,12 +87,21 @@ export async function openFileByPath(
     return;
   }
   if (!result?.filePath || result.content === undefined) return;
+  const language = detectLanguageFromPath(result.filePath);
   ctx.store.createTab({
     title: getFileName(result.filePath),
     content: result.content,
     filePath: result.filePath,
-    language: detectLanguageFromPath(result.filePath),
+    language,
   });
+
+  // Auto-enable preview for markdown and swagger files
+  if (language === 'markdown' || language === 'swagger') {
+    const newTab = ctx.store.getActiveTab();
+    if (newTab) {
+      ctx.store.updateTab(newTab.id, { previewMode: true });
+    }
+  }
 }
 
 export async function saveActiveTab(

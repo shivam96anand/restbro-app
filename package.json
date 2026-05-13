@@ -1,6 +1,6 @@
 {
   "name": "restbro",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "A modern API testing tool similar to Postman and Insomnia",
   "main": "dist/main/main/index.js",
   "scripts": {
@@ -41,6 +41,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitest/coverage-v8": "^1.6.1",
     "concurrently": "^8.0.0",
+    "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^6.8.0",
     "electron": "^26.0.0",
     "electron-builder": "^25.1.8",
@@ -75,12 +76,14 @@
     "@mui/material": "^5.15.0",
     "electron-updater": "^6.8.3",
     "jks-js": "^1.1.6",
+    "js-yaml": "^4.1.1",
     "jsondiffpatch": "^0.5.0",
     "marked": "^12.0.2",
     "monaco-editor": "^0.52.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-window": "^1.8.10"
+    "react-window": "^1.8.10",
+    "swagger-ui-dist": "^5.32.5"
   },
   "author": "Restbro",
   "license": "MIT",

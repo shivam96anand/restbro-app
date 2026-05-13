@@ -40,6 +40,7 @@ import {
   detectLanguageFromPath,
 } from './notepad/notepad-language';
 import { renderMarkdown } from './notepad/notepad-markdown';
+import { isSwaggerContent, renderSwagger } from './notepad/notepad-swagger';
 import { showNotepadToast } from './notepad/notepad-toast';
 
 export class NotepadManager {
@@ -121,6 +122,7 @@ export class NotepadManager {
       onOpenFile: () => void openFile(this.getFileOpsContext()),
       onSave: () => void saveActiveTab(this.getFileOpsContext()),
       onTogglePreview: () => this.togglePreview(),
+      onPreviewClose: () => this.closePreview(),
       onSettingsClick: (anchor) =>
         this.settingsMenu.toggle(anchor, this.store.getSettings()),
       onLanguageChange: (lang) => this.setActiveTabLanguage(lang),
@@ -158,6 +160,17 @@ export class NotepadManager {
       onGoToLine: () => this.editor && triggerGoToLine(this.editor),
     });
     document.addEventListener('keydown', this.keyHandler);
+
+    // ESC key closes the preview pane
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const active = this.store.getActiveTab();
+        if (active?.previewMode) {
+          e.preventDefault();
+          this.closePreview();
+        }
+      }
+    });
 
     window.addEventListener('beforeunload', () => {
       // Best-effort sync flush; the proper async path goes through the
@@ -616,6 +629,16 @@ export class NotepadManager {
     }
   }
 
+  private closePreview(): void {
+    const active = this.store.getActiveTab();
+    if (!active) return;
+    this.store.updateTab(active.id, { previewMode: false });
+    this.elements.resizeSplitter.classList.add('hidden');
+    this.elements.previewToggleBtn.classList.remove('active');
+    this.clearSplitSizing();
+    this.editor?.layout();
+  }
+
   /** Remove inline flex sizing applied by the resize splitter. */
   private clearSplitSizing(): void {
     this.elements.editorHost.style.flex = '';
@@ -660,6 +683,12 @@ export class NotepadManager {
       return;
     }
 
+    if (lang === 'swagger') {
+      if (headerEl) headerEl.textContent = 'Swagger/OpenAPI Preview';
+      void renderSwagger(source, this.elements.previewBody);
+      return;
+    }
+
     // All other languages — show as formatted code.
     if (headerEl) {
       headerEl.textContent = `${lang.charAt(0).toUpperCase() + lang.slice(1)} Preview`;
@@ -677,16 +706,50 @@ export class NotepadManager {
    * Detect the language from content and apply it when the tab is still
    * "unset" (no language, or stuck at plaintext from a fresh untitled tab).
    * Once a language has been applied (auto or manual), we never overwrite it.
+   * Also auto-enable preview for markdown and swagger files.
    */
   private maybeAutoDetectLanguage(tabId: string, value: string): void {
     const tab = this.store.getState().tabs.find((t) => t.id === tabId);
     if (!tab) return;
-    if (tab.language && tab.language !== 'plaintext') return;
+
+    // If content is empty, reset language so the next paste can be re-detected.
+    if (!value.trim()) {
+      if (tab.language && tab.language !== 'plaintext') {
+        this.store.updateTab(tabId, { language: 'plaintext' });
+        if (this.editor && tabId === this.store.getActiveTab()?.id) {
+          setEditorLanguage(this.editor, 'plaintext');
+        }
+      }
+      return;
+    }
+
+    // If the tab was auto-detected as swagger but the content no longer
+    // validates as swagger, reset to plaintext so the new type can be picked up.
+    let effectiveLang = tab.language;
+    if (effectiveLang === 'swagger' && !isSwaggerContent(value)) {
+      this.store.updateTab(tabId, { language: 'plaintext' });
+      if (this.editor && tabId === this.store.getActiveTab()?.id) {
+        setEditorLanguage(this.editor, 'plaintext');
+      }
+      effectiveLang = 'plaintext';
+    }
+
+    // Only auto-detect when no language has been locked in.
+    if (effectiveLang && effectiveLang !== 'plaintext') return;
+
     const detected = detectLanguageFromContent(value);
     if (!detected || detected === tab.language) return;
     this.store.updateTab(tabId, { language: detected });
     if (this.editor && tabId === this.store.getActiveTab()?.id) {
       setEditorLanguage(this.editor, detected);
+    }
+
+    // Auto-enable preview for markdown and swagger
+    if (
+      (detected === 'markdown' || detected === 'swagger') &&
+      !tab.previewMode
+    ) {
+      this.store.updateTab(tabId, { previewMode: true });
     }
   }
 

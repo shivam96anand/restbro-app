@@ -12,6 +12,7 @@ export interface NotepadElements {
   editorHost: HTMLElement;
   previewPane: HTMLElement;
   previewBody: HTMLElement;
+  previewCloseBtn: HTMLButtonElement;
   dropOverlay: HTMLElement;
   statusFile: HTMLElement;
   statusState: HTMLElement;
@@ -41,6 +42,7 @@ export interface NotepadLayoutCallbacks {
   onOpenFile: () => void;
   onSave: () => void;
   onTogglePreview: () => void;
+  onPreviewClose: () => void;
   onSettingsClick: (anchor: HTMLElement) => void;
   onLanguageChange: (language: string) => void;
   onFind: () => void;
@@ -79,6 +81,7 @@ export function buildNotepadLayout(
         <div class="notepad-preview hidden" id="notepad-preview" aria-label="Preview">
           <div class="notepad-preview-header">
             <span id="notepad-preview-header-text">Markdown Preview</span>
+            <button class="notepad-preview-close" id="notepad-preview-close" title="Close preview (Esc)">✕</button>
           </div>
           <div class="notepad-preview-body" id="notepad-preview-body"></div>
         </div>
@@ -174,6 +177,9 @@ export function buildNotepadLayout(
     previewToggleBtn: container.querySelector(
       '#np-toggle-preview'
     ) as HTMLButtonElement,
+    previewCloseBtn: container.querySelector(
+      '#notepad-preview-close'
+    ) as HTMLButtonElement,
     settingsBtn: container.querySelector('#np-settings') as HTMLButtonElement,
     languagePicker: container.querySelector(
       '#np-status-language-picker'
@@ -221,6 +227,7 @@ export function buildNotepadLayout(
     'click',
     callbacks.onTogglePreview
   );
+  elements.previewCloseBtn.addEventListener('click', callbacks.onPreviewClose);
   elements.settingsBtn.addEventListener('click', () =>
     callbacks.onSettingsClick(elements.settingsBtn)
   );
