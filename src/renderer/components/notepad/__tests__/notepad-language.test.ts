@@ -60,6 +60,18 @@ describe('detectLanguageFromContent', () => {
     expect(detectLanguageFromContent('---\nfoo: bar\n')).toBe('yaml');
   });
 
+  it('detects Markdown with YAML frontmatter as markdown', () => {
+    const withFrontmatter =
+      '---\ntitle: My Doc\nauthor: Jane\n---\n\n# Hello\n\nSome content here.';
+    expect(detectLanguageFromContent(withFrontmatter)).toBe('markdown');
+  });
+
+  it('keeps pure YAML (no markdown body after closing ---) as yaml', () => {
+    expect(detectLanguageFromContent('---\nfoo: bar\nbaz: qux\n---\n')).toBe(
+      'yaml'
+    );
+  });
+
   it('detects markdown headings and lists', () => {
     expect(detectLanguageFromContent('# Hello\n\nworld')).toBe('markdown');
     expect(detectLanguageFromContent('- item 1\n- item 2')).toBe('markdown');

@@ -153,8 +153,21 @@ export function detectLanguageFromContent(text: string): string | undefined {
     }
   }
 
-  // YAML document marker
-  if (/^---\s*$/m.test(head.split('\n').slice(0, 3).join('\n'))) return 'yaml';
+  // YAML document marker — but check first whether this is Markdown with YAML
+  // frontmatter (opening ---, then key-value pairs, then closing ---, then Markdown).
+  if (/^---\s*$/m.test(head.split('\n').slice(0, 3).join('\n'))) {
+    const afterOpen = text.trimStart().slice(3); // skip the opening ---
+    const closingMatch = afterOpen.match(/\n---\s*(\n|$)/);
+    if (closingMatch && closingMatch.index !== undefined) {
+      const afterFrontmatter = afterOpen
+        .slice(closingMatch.index + closingMatch[0].length)
+        .trimStart();
+      if (/^(#{1,6}\s|\*\s|-\s|\d+\.\s|```)/m.test(afterFrontmatter)) {
+        return 'markdown';
+      }
+    }
+    return 'yaml';
+  }
 
   // Markdown — headings, lists, fenced code blocks
   if (/^(#{1,6}\s|\*\s|-\s|\d+\.\s|```)/m.test(head)) return 'markdown';
