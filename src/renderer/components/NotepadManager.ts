@@ -345,7 +345,10 @@ export class NotepadManager {
           if (this.isApplyingState) return;
           const activeTab = this.store.getActiveTab();
           if (!activeTab) return;
-          this.maybeAutoDetectLanguage(activeTab.id, value);
+          // Reset language to plaintext when the buffer is cleared so the
+          // next paste can be re-detected. Full detection only runs on paste
+          // (see the onDidPaste handler below) — never on individual keystrokes.
+          if (!value.trim()) this.maybeAutoDetectLanguage(activeTab.id, value);
           this.doUpdateStatusBar(activeTab, value);
           this.schedulePreviewRender(value);
           if (this.contentTimer) clearTimeout(this.contentTimer);
@@ -367,6 +370,16 @@ export class NotepadManager {
         },
       }
     );
+
+    // Auto-detect language only when the user pastes — never on individual
+    // keystrokes. Monaco fires onDidPaste after the model has been updated,
+    // so editor.getValue() already contains the pasted content.
+    this.editor.onDidPaste(() => {
+      if (this.isApplyingState) return;
+      const activeTab = this.store.getActiveTab();
+      if (!activeTab) return;
+      this.maybeAutoDetectLanguage(activeTab.id, this.editor?.getValue() ?? '');
+    });
   }
 
   private renderState(state: NotepadState): void {
