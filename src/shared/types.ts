@@ -269,6 +269,7 @@ export interface AppState {
   hasCompletedThemeOnboarding?: boolean;
   requestSettings?: RequestSettings;
   hasSeededDefaults?: boolean;
+  layoutMode?: 'horizontal' | 'vertical';
 }
 
 // Load Testing Types

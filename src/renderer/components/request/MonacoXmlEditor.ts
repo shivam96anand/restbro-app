@@ -33,46 +33,10 @@ export class MonacoXmlEditor {
   }
 
   private applyTheme(): void {
-    const primaryColor = this.getCssHexVariable('--primary-color') || 'da70d6';
-    const textPrimary = this.getCssHexVariable('--text-primary') || 'ffffff';
-    const bg = this.getCssHexVariable('--bg-primary') || '1a1a1a';
-    const lineNumColor =
-      this.getCssHexVariable('--json-line-number') || '6e6e6e';
-
-    monaco.editor.defineTheme('restbro-xml', {
-      base: 'vs-dark',
-      inherit: true,
-      rules: [
-        // Tags
-        { token: 'tag', foreground: primaryColor, fontStyle: 'bold' },
-        { token: 'tag.id.xml', foreground: primaryColor, fontStyle: 'bold' },
-        { token: 'tag.id.html', foreground: primaryColor, fontStyle: 'bold' },
-        // Attribute names
-        { token: 'attribute.name', foreground: 'f8c771' },
-        { token: 'attribute.name.xml', foreground: 'f8c771' },
-        // Attribute values
-        { token: 'attribute.value', foreground: '98c379' },
-        { token: 'attribute.value.xml', foreground: '98c379' },
-        // Text content
-        { token: 'delimiter.xml', foreground: textPrimary },
-        // Comments
-        { token: 'comment', foreground: '6a737d', fontStyle: 'italic' },
-        // CDATA
-        { token: 'cdata', foreground: 'e6db74' },
-        // Processing instructions
-        { token: 'metatag', foreground: '56b6c2' },
-        { token: 'metatag.xml', foreground: '56b6c2' },
-      ],
-      colors: {
-        'editor.background': `#${bg}`,
-        'editor.foreground': `#${textPrimary}`,
-        'editorLineNumber.foreground': `#${lineNumColor}`,
-        'editor.selectionBackground': '#404040',
-        'editor.lineHighlightBackground': '#2d2d2d',
-      },
-    });
-
-    monaco.editor.setTheme('restbro-xml');
+    // Use the shared 'restbro-json' theme which includes XML token rules.
+    // Do NOT call monaco.editor.setTheme() here — it's global and would
+    // clobber the response viewer's Monaco JSON editor.
+    // The theme is already applied globally by MonacoJsonEditor.
   }
 
   private initialize(value: string): void {
@@ -81,7 +45,7 @@ export class MonacoXmlEditor {
     this.editor = monaco.editor.create(this.container, {
       value,
       language: 'xml',
-      theme: 'restbro-xml',
+      theme: 'restbro-json',
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,

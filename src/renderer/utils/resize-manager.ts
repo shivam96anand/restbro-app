@@ -2,7 +2,10 @@ export class ResizeManager {
   private isResizing = false;
   private currentHandle: HTMLElement | null = null;
   private startX = 0;
+  private startY = 0;
   private startWidth = 0;
+  private startHeight = 0;
+  private isVerticalResize = false;
 
   initialize(): void {
     this.setupResizeHandles();
@@ -32,16 +35,27 @@ export class ResizeManager {
     this.isResizing = true;
     this.currentHandle = handle;
     this.startX = e.clientX;
+    this.startY = e.clientY;
 
     const panel = handle.closest(
       '.collections-panel, .request-panel, .json-input-panel'
     ) as HTMLElement;
+
+    // Detect vertical layout mode for request panel
+    const workspaceArea = panel?.closest('.workspace-area');
+    this.isVerticalResize =
+      handle.dataset.panel === 'request' &&
+      !!workspaceArea?.classList.contains('layout-vertical');
+
     if (panel) {
       this.startWidth = panel.offsetWidth;
+      this.startHeight = panel.offsetHeight;
     }
 
     handle.classList.add('resizing');
-    document.body.style.cursor = 'col-resize';
+    document.body.style.cursor = this.isVerticalResize
+      ? 'row-resize'
+      : 'col-resize';
     document.body.style.userSelect = 'none';
   }
 
@@ -82,26 +96,45 @@ export class ResizeManager {
       panel.style.width = clampedWidth + 'px';
       panel.style.flex = 'none';
     } else if (panelType === 'request') {
-      const minWidth = this.getMinWidth(panel, 300);
-      const layout = panel.closest('.api-layout') as HTMLElement | null;
-      const collectionsPanel = layout?.querySelector(
-        '.collections-panel'
-      ) as HTMLElement | null;
-      const responsePanel = layout?.querySelector(
-        '.response-panel'
-      ) as HTMLElement | null;
-      const collectionsWidth = collectionsPanel?.offsetWidth ?? 200;
-      const responseMinWidth = this.getMinWidth(responsePanel, 300);
-      const maxWidth = layout
-        ? layout.clientWidth - collectionsWidth - responseMinWidth
-        : window.innerWidth - 200 - 300;
-      const clampedWidth = this.clamp(
-        newWidth,
-        minWidth,
-        Math.max(minWidth, maxWidth)
-      );
-      panel.style.width = clampedWidth + 'px';
-      panel.style.flex = 'none'; // Override flex when manually resized
+      if (this.isVerticalResize) {
+        const deltaY = e.clientY - this.startY;
+        const newHeight = this.startHeight + deltaY;
+        const workspaceArea = panel.closest(
+          '.workspace-area'
+        ) as HTMLElement | null;
+        const minHeight = 150;
+        const maxHeight = workspaceArea
+          ? workspaceArea.clientHeight - 150
+          : window.innerHeight - 300;
+        const clampedHeight = this.clamp(
+          newHeight,
+          minHeight,
+          Math.max(minHeight, maxHeight)
+        );
+        panel.style.height = clampedHeight + 'px';
+        panel.style.flex = 'none';
+      } else {
+        const minWidth = this.getMinWidth(panel, 300);
+        const layout = panel.closest('.api-layout') as HTMLElement | null;
+        const collectionsPanel = layout?.querySelector(
+          '.collections-panel'
+        ) as HTMLElement | null;
+        const responsePanel = layout?.querySelector(
+          '.response-panel'
+        ) as HTMLElement | null;
+        const collectionsWidth = collectionsPanel?.offsetWidth ?? 200;
+        const responseMinWidth = this.getMinWidth(responsePanel, 300);
+        const maxWidth = layout
+          ? layout.clientWidth - collectionsWidth - responseMinWidth
+          : window.innerWidth - 200 - 300;
+        const clampedWidth = this.clamp(
+          newWidth,
+          minWidth,
+          Math.max(minWidth, maxWidth)
+        );
+        panel.style.width = clampedWidth + 'px';
+        panel.style.flex = 'none';
+      }
     } else if (panelType === 'json-input') {
       const minWidth = this.getMinWidth(panel, 250);
       const layout = panel.parentElement as HTMLElement | null;

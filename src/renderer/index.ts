@@ -32,6 +32,7 @@ import { ImportManager } from './components/import/import-manager';
 import { setupEventListeners } from './event-listeners';
 import { BackupManager } from './components/backup-manager';
 import { ThemeOnboarding } from './components/theme-onboarding';
+import { LayoutToggleManager } from './components/layout-toggle-manager';
 import {
   sanitizeHistoryForPersistence,
   sanitizeTabsForPersistence,
@@ -62,6 +63,7 @@ class RestbroRenderer {
   private importManager: ImportManager;
   private backupManager: BackupManager;
   private themeOnboarding: ThemeOnboarding;
+  private layoutToggleManager: LayoutToggleManager;
   private updateNotificationManager: UpdateNotificationManager;
   private speedTestManager: SpeedTestManager;
   private toastManager: ToastManager;
@@ -83,6 +85,7 @@ class RestbroRenderer {
       onBeforeRestore: () => this.stopAutoSave(),
     });
     this.themeOnboarding = new ThemeOnboarding(this.themeManager);
+    this.layoutToggleManager = new LayoutToggleManager();
     this.updateNotificationManager = new UpdateNotificationManager();
     this.speedTestManager = new SpeedTestManager();
     this.toastManager = new ToastManager();
@@ -176,6 +179,9 @@ class RestbroRenderer {
       );
       this.environmentManager.setActiveEnvironment(
         (state as any).activeEnvironmentId
+      );
+      this.layoutToggleManager.initialize(
+        (state as any).layoutMode || 'horizontal'
       );
     } catch (error) {
       console.error('Failed to load initial state:', error);

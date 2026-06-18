@@ -67,6 +67,7 @@ export class MonacoJsonEditor {
       base: 'vs-dark',
       inherit: true,
       rules: [
+        // JSON tokens
         { token: 'string.key.json', foreground: themeColor, fontStyle: 'bold' },
         { token: 'string.value.json', foreground: valueColor },
         { token: 'string.json', foreground: valueColor },
@@ -84,6 +85,18 @@ export class MonacoJsonEditor {
         },
         { token: 'delimiter.colon.json', foreground: valueColor },
         { token: 'delimiter.comma.json', foreground: bracketColor },
+        // XML tokens (shared theme so switching editors doesn't clobber)
+        { token: 'tag', foreground: themeColor, fontStyle: 'bold' },
+        { token: 'tag.id.xml', foreground: themeColor, fontStyle: 'bold' },
+        { token: 'attribute.name', foreground: 'f8c771' },
+        { token: 'attribute.name.xml', foreground: 'f8c771' },
+        { token: 'attribute.value', foreground: '98c379' },
+        { token: 'attribute.value.xml', foreground: '98c379' },
+        { token: 'delimiter.xml', foreground: valueColor },
+        { token: 'comment', foreground: '6a737d', fontStyle: 'italic' },
+        { token: 'cdata', foreground: 'e6db74' },
+        { token: 'metatag', foreground: '56b6c2' },
+        { token: 'metatag.xml', foreground: '56b6c2' },
       ],
       colors: {
         'editor.background': `#${editorBackground}`,

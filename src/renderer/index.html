@@ -42,6 +42,17 @@
       <header class="app-header">
         <div class="header-left">
           <!-- Environment selector will be inserted here by EnvironmentManager -->
+          <button
+            id="layout-toggle-btn"
+            class="layout-toggle-btn"
+            title="Toggle layout: side-by-side / stacked"
+            aria-label="Toggle layout"
+          >
+            <svg class="layout-toggle-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <rect x="1" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="11" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
         </div>
         <div class="header-center">
           <div class="app-title">RestBro</div>
@@ -192,6 +203,7 @@
                 <div class="resize-handle" data-panel="collections"></div>
               </div>
 
+              <div class="workspace-area">
               <div class="request-panel">
                 <div class="request-form">
                   <div class="request-line">
@@ -468,6 +480,7 @@
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
