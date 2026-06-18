@@ -841,6 +841,7 @@ export class ResponseViewer {
 
     if (statusEl) {
       statusEl.textContent = `${response.status} ${response.statusText}`;
+      statusEl.title = '';
       statusEl.classList.remove(
         'meta-chip--success',
         'meta-chip--info',
@@ -1078,6 +1079,7 @@ export class ResponseViewer {
     const sizeEl = document.getElementById('meta-size');
     if (statusEl) {
       statusEl.textContent = '---';
+      statusEl.title = '';
       statusEl.classList.remove(
         'meta-chip--success',
         'meta-chip--warning',

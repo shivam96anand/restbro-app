@@ -38,8 +38,12 @@ function parseSwaggerContent(content: string): SwaggerSpec | null {
     if (doc && typeof doc === 'object' && !Array.isArray(doc)) {
       return doc as SwaggerSpec;
     }
-  } catch {
-    // Invalid YAML
+  } catch (err) {
+    // Surface YAML parse errors so users can diagnose failures with large specs.
+    console.warn(
+      '[Swagger Preview] YAML parse error:',
+      err instanceof Error ? err.message : err
+    );
   }
 
   return null;
@@ -76,7 +80,13 @@ export async function renderSwagger(
 
   const spec = parseSwaggerContent(source);
   if (!spec || (!spec.openapi && !spec.swagger)) {
-    renderSwaggerError(container, 'Not a valid Swagger/OpenAPI specification');
+    const hint = source.trim()
+      ? ' (YAML/JSON parse failed — check DevTools console for details)'
+      : '';
+    renderSwaggerError(
+      container,
+      `Not a valid Swagger/OpenAPI specification${hint}`
+    );
     return;
   }
 

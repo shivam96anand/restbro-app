@@ -410,35 +410,41 @@
               <div class="response-panel">
                 <div class="response-content">
                   <div class="response-toolbar">
-                    <div class="response-toolbar__tabs">
-                      <button
-                        class="response-toolbar__tab active"
-                        data-section="body"
-                      >
-                        Body
-                      </button>
-                      <button
-                        class="response-toolbar__tab"
-                        data-section="headers"
-                      >
-                        Headers
-                      </button>
+                    <div class="response-toolbar__meta-row">
+                      <div class="response-toolbar__meta" id="response-meta">
+                        <span class="meta-chip meta-chip--status" id="meta-status"
+                          >---</span
+                        >
+                        <span class="meta-chip meta-chip--time" id="meta-time"
+                          >---</span
+                        >
+                        <span class="meta-chip meta-chip--size" id="meta-size"
+                          >---</span
+                        >
+                      </div>
+                      <span class="response-toolbar__timestamp-wrap">
+                        <span
+                          class="response-toolbar__timestamp"
+                          id="response-timestamp"
+                        ></span>
+                      </span>
                     </div>
-                    <div class="response-toolbar__meta" id="response-meta">
-                      <span class="meta-chip meta-chip--status" id="meta-status"
-                        >---</span
-                      >
-                      <span class="meta-chip meta-chip--time" id="meta-time"
-                        >---</span
-                      >
-                      <span class="meta-chip meta-chip--size" id="meta-size"
-                        >---</span
-                      >
+                    <div class="response-toolbar__tab-row">
+                      <div class="response-toolbar__tabs">
+                        <button
+                          class="response-toolbar__tab active"
+                          data-section="body"
+                        >
+                          Body
+                        </button>
+                        <button
+                          class="response-toolbar__tab"
+                          data-section="headers"
+                        >
+                          Headers
+                        </button>
+                      </div>
                     </div>
-                    <span
-                      class="response-toolbar__timestamp"
-                      id="response-timestamp"
-                    ></span>
                   </div>
                   <div id="response-body" class="response-section active">
                     <div class="response-placeholder response-placeholder--hero">

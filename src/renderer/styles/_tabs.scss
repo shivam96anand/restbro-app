@@ -140,16 +140,32 @@
 }
 
 // ── Response toolbar ──
-// Matches the request panel tab style: dark bg-primary, underline tabs, mono meta
+// Two-row header: meta chips on top, tabs + timestamp below
 .response-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
-  min-height: 38px;
   padding: 0;
+}
+
+// ── Top row: meta chips + timestamp pinned right ──
+.response-toolbar__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+// ── Bottom row: tabs (left) + timestamp (right) ──
+.response-toolbar__tab-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
 }
 
 // ── Tab group (left) ──
@@ -166,7 +182,7 @@
   border-bottom: 2px solid transparent;
   color: var(--text-secondary);
   padding: 0 16px;
-  height: 38px;
+  height: 34px;
   cursor: pointer;
   font-size: 11px;
   font-weight: 600;
@@ -193,13 +209,21 @@
   }
 }
 
-// ── Meta row (right) ──
+// ── Meta chips group ──
 .response-toolbar__meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
-  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+// ── Timestamp wrap (pinned right in tab row) ──
+.response-toolbar__timestamp-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-right: 8px;
 }
 
 // ── Status badge ──
@@ -213,6 +237,8 @@
   border-radius: 4px;
   letter-spacing: 0.1px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1;
   color: var(--text-secondary);
   background: var(--bg-secondary);

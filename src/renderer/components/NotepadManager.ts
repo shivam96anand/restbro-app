@@ -762,6 +762,14 @@ export class NotepadManager {
       (detected === 'markdown' || detected === 'swagger') &&
       !tab.previewMode
     ) {
+      // Flush the editor content to the store immediately so the first
+      // renderState call (triggered by the previewMode change below) already
+      // sees the full content instead of stale/empty data from the debounce.
+      if (this.contentTimer) {
+        clearTimeout(this.contentTimer);
+        this.contentTimer = null;
+      }
+      this.store.updateContent(tabId, value, true);
       this.store.updateTab(tabId, { previewMode: true });
     }
   }

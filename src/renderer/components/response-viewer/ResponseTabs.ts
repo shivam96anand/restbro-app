@@ -31,7 +31,35 @@ export class ResponseTabs {
 
     this.tabsContainer.innerHTML = '';
 
-    // Left section: tabs
+    // ── Top row: meta chips (status, time, size) + timestamp pinned right ──
+    const metaRow = document.createElement('div');
+    metaRow.className = 'response-toolbar__meta-row';
+
+    const metaGroup = document.createElement('div');
+    metaGroup.className = 'response-toolbar__meta';
+    metaGroup.id = 'response-meta';
+    metaGroup.innerHTML = `
+      <span class="meta-chip meta-chip--status" id="meta-status">---</span>
+      <span class="meta-chip meta-chip--time" id="meta-time">---</span>
+      <span class="meta-chip meta-chip--size" id="meta-size">---</span>
+      <span class="meta-chip meta-chip--soap-fault" id="meta-soap-fault" style="display:none;">SOAP Fault</span>
+    `;
+
+    const timestampWrap = document.createElement('span');
+    timestampWrap.className = 'response-toolbar__timestamp-wrap';
+    const timestampEl = document.createElement('span');
+    timestampEl.className = 'response-toolbar__timestamp';
+    timestampEl.id = 'response-timestamp';
+    timestampWrap.appendChild(timestampEl);
+    this.prevResponsesDropdown.mount(timestampWrap);
+
+    metaRow.appendChild(metaGroup);
+    metaRow.appendChild(timestampWrap);
+
+    // ── Bottom row: tabs ──
+    const tabRow = document.createElement('div');
+    tabRow.className = 'response-toolbar__tab-row';
+
     const tabGroup = document.createElement('div');
     tabGroup.className = 'response-toolbar__tabs';
 
@@ -45,31 +73,10 @@ export class ResponseTabs {
       tabGroup.appendChild(tabEl);
     });
 
-    // Center section: meta chips
-    const metaGroup = document.createElement('div');
-    metaGroup.className = 'response-toolbar__meta';
-    metaGroup.id = 'response-meta';
-    metaGroup.innerHTML = `
-      <span class="meta-chip meta-chip--status" id="meta-status">---</span>
-      <span class="meta-divider">&middot;</span>
-      <span class="meta-chip meta-chip--time" id="meta-time">---</span>
-      <span class="meta-divider">&middot;</span>
-      <span class="meta-chip meta-chip--size" id="meta-size">---</span>
-      <span class="meta-chip meta-chip--soap-fault" id="meta-soap-fault" style="display:none;">SOAP Fault</span>
-    `;
+    tabRow.appendChild(tabGroup);
 
-    // Right section: timestamp + previous-responses dropdown
-    const timestampWrap = document.createElement('span');
-    timestampWrap.className = 'response-toolbar__timestamp-wrap';
-    const timestampEl = document.createElement('span');
-    timestampEl.className = 'response-toolbar__timestamp';
-    timestampEl.id = 'response-timestamp';
-    timestampWrap.appendChild(timestampEl);
-    this.prevResponsesDropdown.mount(timestampWrap);
-
-    this.tabsContainer.appendChild(tabGroup);
-    this.tabsContainer.appendChild(metaGroup);
-    this.tabsContainer.appendChild(timestampWrap);
+    this.tabsContainer.appendChild(metaRow);
+    this.tabsContainer.appendChild(tabRow);
   }
 
   /**
@@ -176,7 +183,10 @@ export class ResponseTabs {
     const timestampEl = document.getElementById('response-timestamp');
     const soapFaultEl = document.getElementById('meta-soap-fault');
 
-    if (statusEl) statusEl.textContent = '---';
+    if (statusEl) {
+      statusEl.textContent = '---';
+      statusEl.title = '';
+    }
     if (timeEl) timeEl.textContent = '---';
     if (sizeEl) sizeEl.textContent = '---';
     if (soapFaultEl) soapFaultEl.style.display = 'none';
