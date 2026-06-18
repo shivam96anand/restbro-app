@@ -134,6 +134,16 @@ export class RequestBodyEditor {
           <div class="title">Payload</div>
         </div>
         <div class="body-type-selector">
+          <button
+            id="body-format-btn"
+            class="body-format-btn"
+            type="button"
+            title="Format JSON"
+            aria-label="Format JSON"
+            style="display: none;"
+          >
+            Format
+          </button>
           <label for="body-type-select" class="sr-only">Body type</label>
           <select id="body-type-select" class="body-type-select" aria-label="Body type">
             <option value="none" selected>None</option>
@@ -217,6 +227,12 @@ export class RequestBodyEditor {
 
     // Watch for body section becoming visible to reset scroll position
     this.setupVisibilityWatcher();
+
+    // Format button
+    const formatBtn = this.container.querySelector('#body-format-btn');
+    if (formatBtn) {
+      formatBtn.addEventListener('click', () => this.formatJson());
+    }
 
     // Form data add button
     const addBtn = this.container.querySelector('#form-data-add-btn');
@@ -438,6 +454,7 @@ export class RequestBodyEditor {
       this.switchToTextareaEditor();
       this.currentBodyType = 'none';
       this.currentFormat = 'json';
+      this.setFormatButtonVisible(false);
       if (!this.isLoadingBody) {
         this.events.onBodyChange({
           type: this.currentBodyType,
@@ -453,6 +470,7 @@ export class RequestBodyEditor {
       this.switchToTextareaEditor();
       this.currentBodyType = 'form-data';
       this.currentFormat = 'form-data';
+      this.setFormatButtonVisible(false);
 
       // Add a default empty row if no fields exist
       if (this.formDataFields.length === 0) {
@@ -484,6 +502,7 @@ export class RequestBodyEditor {
       }
 
       // Show/hide JSON-specific actions
+      this.setFormatButtonVisible(this.currentFormat === 'json');
       // Switch editor based on format
       if (this.currentFormat === 'json') {
         // Use Monaco editor for JSON
@@ -605,12 +624,20 @@ export class RequestBodyEditor {
     }
   }
 
+  private setFormatButtonVisible(visible: boolean): void {
+    const formatBtn = this.container.querySelector(
+      '#body-format-btn'
+    ) as HTMLElement | null;
+    if (formatBtn) {
+      formatBtn.style.display = visible ? '' : 'none';
+    }
+  }
+
   private formatJson(): void {
     if (this.currentFormat !== 'json') {
       return;
     }
 
-    // Use Monaco's format if active
     if (this.monacoEditor) {
       this.monacoEditor.format();
       this.events.onStatusUpdate('success', 'JSON formatted successfully');

@@ -6,12 +6,16 @@
   position: fixed;
   z-index: 10000;
   min-width: 280px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.2),
-    0 10px 20px -3px rgba(0, 0, 0, 0.35);
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(var(--primary-color-rgb), 0.08);
   padding: 6px;
   display: flex;
   flex-direction: column;

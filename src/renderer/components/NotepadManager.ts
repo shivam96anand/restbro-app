@@ -158,6 +158,8 @@ export class NotepadManager {
       onFind: () => this.editor && triggerFind(this.editor),
       onReplace: () => this.editor && triggerReplace(this.editor),
       onGoToLine: () => this.editor && triggerGoToLine(this.editor),
+      onZoomIn: () => this.adjustZoom(1),
+      onZoomOut: () => this.adjustZoom(-1),
     });
     document.addEventListener('keydown', this.keyHandler);
 
@@ -214,41 +216,12 @@ export class NotepadManager {
       void openFileByPath(this.getFileOpsContext(), filePath);
     });
 
-    // App-wide before-quit IPC: confirm with the user when there are unsaved
-    // notepad tabs.
+    // App-wide before-quit IPC: flush notepad state and allow quit.
+    // The notepad content is auto-persisted to database.json, so the state
+    // will be fully restored on the next launch. Save/Don't-save prompts are
+    // only shown when the user explicitly closes individual notepad tabs.
     this.beforeQuitDispose = window.restbro.notepad.onBeforeQuit(
       async (requestId) => {
-        const settings = this.store.getSettings();
-        if (!settings.promptOnExit || !this.store.hasDirtyTabs()) {
-          window.restbro.notepad.sendQuitDecision(requestId, true);
-          return;
-        }
-        const dirtyCount = this.store
-          .getState()
-          .tabs.filter((t) => t.isDirty).length;
-        const decision = await this.modal.prompt({
-          title: 'Unsaved notepad changes',
-          body: `You have ${dirtyCount} unsaved notepad tab${dirtyCount === 1 ? '' : 's'}. Save before exiting?`,
-        });
-        if (decision === 'cancel') {
-          window.restbro.notepad.sendQuitDecision(requestId, false);
-          return;
-        }
-        if (decision === 'save') {
-          for (const tab of this.store
-            .getState()
-            .tabs.filter((t) => t.isDirty)) {
-            const ok = await saveTab(
-              this.getFileOpsContext(),
-              tab,
-              !tab.filePath
-            );
-            if (!ok) {
-              window.restbro.notepad.sendQuitDecision(requestId, false);
-              return;
-            }
-          }
-        }
         await this.store.flushPersist();
         window.restbro.notepad.sendQuitDecision(requestId, true);
       }

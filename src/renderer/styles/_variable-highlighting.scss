@@ -4,13 +4,18 @@
 // Variable highlighting and tooltips
 .variable-tooltip {
   position: fixed;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    0 10px 15px -3px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(var(--primary-color-rgb), 0.08);
   z-index: 10000;
   pointer-events: auto;
   max-width: 400px;

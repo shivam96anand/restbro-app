@@ -28,6 +28,41 @@ export function setupEventListeners(deps: EventListenersDeps): void {
     saveState,
   } = deps;
 
+  // Prevent Cmd/Ctrl +/-/0 from zooming the entire page.
+  // The notepad keyboard handler intercepts these when the notepad is active
+  // and adjusts editor font size instead.
+  document.addEventListener('keydown', (e) => {
+    const cmd = navigator.platform.includes('Mac') ? e.metaKey : e.ctrlKey;
+    if (
+      cmd &&
+      (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '0')
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Force plain-text copying everywhere. Syntax-highlighted views (response
+  // body, JSON tree, headers tables, etc.) put a styled `text/html` payload on
+  // the clipboard alongside the plain text, so pasting into other apps carries
+  // over colors/fonts. Strip the rich representation and copy only plain text.
+  document.addEventListener('copy', (e: ClipboardEvent) => {
+    // Respect specialized handlers that already populated the clipboard
+    // (e.g. JsonViewer's full-node JSON reconstruction calls preventDefault).
+    if (e.defaultPrevented || !e.clipboardData) return;
+
+    // Monaco/CodeMirror and <input>/<textarea> keep their selection in a hidden
+    // field, so window.getSelection() is empty there — let them copy natively.
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+
+    const text = selection.toString();
+    if (!text) return;
+
+    // Write only plain text; omit the styled text/html representation.
+    e.clipboardData.setData('text/plain', text);
+    e.preventDefault();
+  });
+
   // Save state on page unload
   window.addEventListener('beforeunload', () => {
     saveState();

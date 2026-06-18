@@ -8,8 +8,8 @@
 
 // OAuth Token Information Panel
 .oauth-token-info {
-  margin-top: 20px;
-  padding: 16px;
+  margin-top: 12px;
+  padding: 10px 14px;
   background-color: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 6px;
@@ -27,7 +27,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 
     h4 {
       font-size: 14px;
@@ -72,7 +72,7 @@
       color: var(--text-primary);
       font-family: var(--font-mono);
       background-color: var(--bg-secondary);
-      padding: 4px 8px;
+      padding: 3px 8px;
       border-radius: 3px;
       border: 1px solid var(--border-color);
       max-width: 300px;
@@ -102,8 +102,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 28px;
-      height: 28px;
+      min-width: 26px;
+      height: 26px;
       position: relative;
 
       &::before {
@@ -113,8 +113,8 @@
         height: 12px;
         border: 1.5px solid currentColor;
         border-radius: 2px;
-        top: 6px;
-        left: 7px;
+        top: 5px;
+        left: 6px;
         background: var(--bg-primary);
       }
 
@@ -125,8 +125,8 @@
         height: 12px;
         border: 1.5px solid currentColor;
         border-radius: 2px;
-        top: 8px;
-        left: 9px;
+        top: 7px;
+        left: 8px;
         background: var(--bg-primary);
         border-top: none;
         border-left: none;

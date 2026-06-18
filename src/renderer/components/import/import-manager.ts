@@ -137,17 +137,17 @@ export class ImportManager {
       overlay.style.cssText = `
         position: fixed; inset: 0; background: rgba(0,0,0,0.6);
         display: flex; align-items: center; justify-content: center;
-        z-index: 10000; backdrop-filter: blur(2px);
+        z-index: 10000; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
       `;
 
       const modal = document.createElement('div');
       modal.style.cssText = `
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
         width: 520px; max-width: calc(100vw - 32px);
         color: var(--text-primary);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(var(--primary-color-rgb),0.08);
         overflow: hidden;
       `;
 
@@ -204,20 +204,20 @@ export class ImportManager {
         card.style.cssText = `
           display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
           text-align: left; padding: 16px; cursor: pointer;
-          background: var(--bg-tertiary);
-          border: 1px solid ${primary ? 'var(--primary-color)' : 'var(--border-color)'};
-          border-radius: 8px; color: var(--text-primary);
+          background: rgba(var(--primary-color-rgb), 0.04);
+          border: 1px solid ${primary ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'};
+          border-radius: 10px; color: var(--text-primary);
           transition: border-color 0.15s, transform 0.05s, background 0.15s;
         `;
         card.addEventListener('mouseenter', () => {
           card.style.borderColor = 'var(--primary-color)';
-          card.style.background = 'var(--bg-primary)';
+          card.style.background = 'rgba(var(--primary-color-rgb), 0.08)';
         });
         card.addEventListener('mouseleave', () => {
           card.style.borderColor = primary
             ? 'var(--primary-color)'
-            : 'var(--border-color)';
-          card.style.background = 'var(--bg-tertiary)';
+            : 'rgba(255,255,255,0.1)';
+          card.style.background = 'rgba(var(--primary-color-rgb), 0.04)';
         });
         card.addEventListener('mousedown', () => {
           card.style.transform = 'translateY(1px)';

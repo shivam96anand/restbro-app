@@ -27,6 +27,8 @@ export interface KeyboardHandlerCallbacks {
   onFind: () => void;
   onReplace: () => void;
   onGoToLine: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 }
 
 export type KeyboardHandler = (event: KeyboardEvent) => void;
@@ -76,6 +78,12 @@ export function createKeyboardHandler(
     } else if (key === 'l' || key === 'g') {
       event.preventDefault();
       callbacks.onGoToLine();
+    } else if (key === '=' || key === '+') {
+      event.preventDefault();
+      callbacks.onZoomIn();
+    } else if (key === '-') {
+      event.preventDefault();
+      callbacks.onZoomOut();
     }
   };
 }

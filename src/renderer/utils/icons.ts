@@ -27,7 +27,8 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   | 'pin'
-  | 'check';
+  | 'check'
+  | 'sliders';
 
 const icons: Record<IconName, string> = {
   chat: `
@@ -146,6 +147,10 @@ const icons: Record<IconName, string> = {
   `,
   check: `
     <path d="M5 12l4 4 10-10"/>
+  `,
+  sliders: `
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/>
+    <path d="M1 14h6M9 8h6M17 16h6"/>
   `,
 };
 

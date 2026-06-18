@@ -154,11 +154,17 @@
   position: absolute;
   top: 50px;
   right: 16px;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 8px 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(var(--primary-color-rgb), 0.08);
   z-index: 100;
   display: flex;
   align-items: center;

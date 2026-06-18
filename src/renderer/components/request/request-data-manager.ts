@@ -197,6 +197,11 @@ export class RequestDataManager {
         this.toggleRequestButtons(false);
       }
     });
+
+    // Re-render cURL/code preview when environment or globals change
+    document.addEventListener('environment-changed', () => {
+      this.scheduleUnifiedPreviewUpdate();
+    });
   }
 
   setCurrentRequest(request: ApiRequest | null): void {
@@ -405,10 +410,8 @@ export class RequestDataManager {
       return;
     }
 
-    let curlCommand = this.getCurlOutputElement()?.value?.trim() || '';
-    if (!curlCommand) {
-      curlCommand = (await this.buildCurlForCurrentRequest()) || '';
-    }
+    // Always freshly resolve variables to ensure copied curl has current values
+    const curlCommand = (await this.buildCurlForCurrentRequest()) || '';
 
     if (!curlCommand) {
       this.uiHelpers.showToast('Request URL is empty');
@@ -432,10 +435,9 @@ export class RequestDataManager {
       return;
     }
 
-    let curlCommand = this.getCurlOutputElement()?.value?.trim() || '';
-    if (!curlCommand) {
-      curlCommand = (await this.buildCurlForCurrentRequest()) || '';
-    }
+    // Always freshly resolve variables to ensure the curl command is up-to-date
+    // with the current active environment and folder variables.
+    const curlCommand = (await this.buildCurlForCurrentRequest()) || '';
 
     if (!curlCommand) {
       this.uiHelpers.showToast('Request URL is empty');

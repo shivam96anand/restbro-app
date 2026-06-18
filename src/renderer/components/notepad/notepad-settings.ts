@@ -93,14 +93,6 @@ export class SettingsMenu {
             ${settings.formatOnSave ? 'checked' : ''}>
         </label>
       </div>
-      <div class="notepad-settings-section">
-        <div class="notepad-settings-title">App</div>
-        <label class="notepad-settings-row">
-          <span>Confirm exit when notes are unsaved</span>
-          <input type="checkbox" data-key="promptOnExit"
-            ${settings.promptOnExit ? 'checked' : ''}>
-        </label>
-      </div>
     `;
 
     this.menu.querySelectorAll('[data-key]').forEach((el) => {

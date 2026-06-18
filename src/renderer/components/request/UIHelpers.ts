@@ -5,6 +5,7 @@
 import { iconHtml } from '../../utils/icons';
 
 export class UIHelpers {
+  private tokenExpiryTimer: ReturnType<typeof setTimeout> | null = null;
   /**
    * Shows a toast notification message
    * @param message - Message to display in the toast
@@ -90,6 +91,12 @@ export class UIHelpers {
    * @param config - OAuth configuration containing token information
    */
   updateTokenInfo(config: Record<string, string>): void {
+    // Clear any pending expiry timer from a previous token
+    if (this.tokenExpiryTimer) {
+      clearTimeout(this.tokenExpiryTimer);
+      this.tokenExpiryTimer = null;
+    }
+
     const tokenInfo = document.getElementById('oauth-token-info');
     const tokenDisplay = document.getElementById('oauth-access-token-display');
     const tokenExpiry = document.getElementById('oauth-token-expiry');
@@ -127,14 +134,18 @@ export class UIHelpers {
           tokenInfo.className = 'oauth-token-info valid';
           tokenInfo.style.borderColor = '';
           tokenInfo.style.backgroundColor = '';
+
+          // Schedule automatic transition to "Expired" when the token expires
+          this.tokenExpiryTimer = setTimeout(() => {
+            this.markTokenExpired(
+              tokenExpiry,
+              tokenStatus,
+              tokenInfo,
+              expiresAt
+            );
+          }, timeUntilExpiry);
         } else {
-          tokenExpiry.textContent = expiresAt.toLocaleString();
-          tokenStatus.textContent = 'Expired';
-          tokenStatus.className = 'token-status expired';
-          tokenStatus.style.color = 'var(--error-color)';
-          tokenInfo.className = 'oauth-token-info expired';
-          tokenInfo.style.borderColor = '';
-          tokenInfo.style.backgroundColor = '';
+          this.markTokenExpired(tokenExpiry, tokenStatus, tokenInfo, expiresAt);
         }
       } else {
         tokenExpiry.textContent = 'No expiration';
@@ -149,6 +160,21 @@ export class UIHelpers {
       // Hide token panel
       tokenInfo.style.display = 'none';
     }
+  }
+
+  private markTokenExpired(
+    tokenExpiry: HTMLElement,
+    tokenStatus: HTMLElement,
+    tokenInfo: HTMLElement,
+    expiresAt: Date
+  ): void {
+    tokenExpiry.textContent = expiresAt.toLocaleString();
+    tokenStatus.textContent = 'Expired';
+    tokenStatus.className = 'token-status expired';
+    tokenStatus.style.color = 'var(--error-color)';
+    tokenInfo.className = 'oauth-token-info expired';
+    tokenInfo.style.borderColor = '';
+    tokenInfo.style.backgroundColor = '';
   }
 
   /**

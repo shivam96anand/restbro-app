@@ -164,7 +164,19 @@ export function addVariableHighlighting(
     varSpan.style.pointerEvents = 'auto';
     varSpan.style.cursor = 'help';
 
+    // Pending teardown timer shared by this span's hover handlers. Declared up
+    // front so the mouseenter handler can cancel a teardown queued by a very
+    // recent mouseleave (e.g. a quick down→up re-approach over the variable).
+    let keepTooltipTimer: number | null = null;
+
     varSpan.addEventListener('mouseenter', (e: MouseEvent) => {
+      // Cancel any queued teardown from a previous hover so a stale timer can't
+      // remove the tooltip we are about to (re)create.
+      if (keepTooltipTimer !== null) {
+        clearTimeout(keepTooltipTimer);
+        keepTooltipTimer = null;
+      }
+
       // Remove any existing tooltip
       removeGlobalTooltip();
 
@@ -215,33 +227,45 @@ export function addVariableHighlighting(
       };
     });
 
-    // Track if we should keep tooltip (for when mouse moves to tooltip)
-    let keepTooltipTimer: number | null = null;
-
     varSpan.addEventListener('mouseleave', () => {
-      // Delay to allow mouse to move to tooltip
+      // Delay teardown so the cursor has time to travel from the variable to
+      // the tooltip (which is rendered just below it).
       keepTooltipTimer = window.setTimeout(() => {
-        // Only remove if tooltip exists and mouse hasn't entered it
+        keepTooltipTimer = null;
+
+        // Only remove if a tooltip exists and the cursor has actually left the
+        // hover zone.
         const globalTooltip = getGlobalTooltip();
-        if (globalTooltip) {
-          const tooltipRect = globalTooltip.getBoundingClientRect();
-          const mouseX = (window as any).__mouseX || 0;
-          const mouseY = (window as any).__mouseY || 0;
-
-          const isOverTooltip =
-            mouseX >= tooltipRect.left &&
-            mouseX <= tooltipRect.right &&
-            mouseY >= tooltipRect.top &&
-            mouseY <= tooltipRect.bottom;
-
-          if (!isOverTooltip) {
-            if ((globalTooltip as any).__cleanup) {
-              (globalTooltip as any).__cleanup();
-            }
-            removeGlobalTooltip();
-          }
+        if (!globalTooltip) {
+          return;
         }
-      }, 50); // Reduced delay from 100ms to 50ms
+
+        const tooltipRect = globalTooltip.getBoundingClientRect();
+        const varRect = varSpan.getBoundingClientRect();
+        const mouseX = (window as any).__mouseX || 0;
+        const mouseY = (window as any).__mouseY || 0;
+
+        // The tooltip is positioned a few px BELOW the variable, leaving a thin
+        // gap between them. Approaching the variable from below leaves the
+        // cursor sitting in (or jittering into) that gap — neither over the
+        // variable nor over the tooltip — which previously tore the tooltip down
+        // ~half the time. Treat the variable span, the tooltip, and the gap
+        // between them as one contiguous hover zone (plus a small tolerance) so
+        // the hover is reliable from every direction.
+        const TOLERANCE = 6;
+        const withinHoverZone =
+          mouseX >= Math.min(varRect.left, tooltipRect.left) - TOLERANCE &&
+          mouseX <= Math.max(varRect.right, tooltipRect.right) + TOLERANCE &&
+          mouseY >= Math.min(varRect.top, tooltipRect.top) - TOLERANCE &&
+          mouseY <= Math.max(varRect.bottom, tooltipRect.bottom) + TOLERANCE;
+
+        if (!withinHoverZone) {
+          if ((globalTooltip as any).__cleanup) {
+            (globalTooltip as any).__cleanup();
+          }
+          removeGlobalTooltip();
+        }
+      }, 50);
     });
 
     container.appendChild(varSpan);

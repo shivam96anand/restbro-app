@@ -93,7 +93,9 @@ export class ImportDialog {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -102,13 +104,14 @@ export class ImportDialog {
 
       const dialog = document.createElement('div');
       dialog.style.cssText = `
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
         width: 650px;
         max-height: 80vh;
         display: flex;
         flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(var(--primary-color-rgb),0.08);
       `;
 
       // Header
@@ -148,9 +151,9 @@ export class ImportDialog {
       // Summary section
       const summarySection = document.createElement('div');
       summarySection.style.cssText = `
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
+        background: rgba(var(--primary-color-rgb), 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
         padding: 16px;
         margin-bottom: 20px;
       `;
@@ -292,10 +295,10 @@ export class ImportDialog {
 
         const treeContainer = document.createElement('div');
         treeContainer.style.cssText = `
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
           padding: 12px;
-          background: var(--bg-tertiary);
+          background: rgba(var(--primary-color-rgb), 0.04);
           max-height: 240px;
           overflow-y: auto;
         `;
@@ -461,10 +464,10 @@ export class ImportDialog {
 
         const envsContainer = document.createElement('div');
         envsContainer.style.cssText = `
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
           padding: 12px;
-          background: var(--bg-tertiary);
+          background: rgba(var(--primary-color-rgb), 0.04);
         `;
 
         preview.environments.forEach((env: any) => {
@@ -526,9 +529,9 @@ export class ImportDialog {
       cancelBtn.textContent = 'Cancel';
       cancelBtn.style.cssText = `
         padding: 8px 16px;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+        background: rgba(var(--primary-color-rgb), 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
         color: var(--text-primary);
         cursor: pointer;
         font-size: 14px;

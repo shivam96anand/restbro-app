@@ -128,7 +128,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 14px;
-    background: var(--bg-tertiary);
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.05) 0%,
+      rgba(var(--primary-color-rgb), 0.02) 100%
+    );
     border-bottom: 1px solid var(--border-color);
   }
 

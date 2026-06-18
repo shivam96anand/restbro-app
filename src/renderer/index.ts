@@ -33,6 +33,7 @@ import { setupEventListeners } from './event-listeners';
 import { BackupManager } from './components/backup-manager';
 import { ThemeOnboarding } from './components/theme-onboarding';
 import { LayoutToggleManager } from './components/layout-toggle-manager';
+import { SettingsModal } from './components/settings/settings-modal';
 import {
   sanitizeHistoryForPersistence,
   sanitizeTabsForPersistence,
@@ -64,6 +65,7 @@ class RestbroRenderer {
   private backupManager: BackupManager;
   private themeOnboarding: ThemeOnboarding;
   private layoutToggleManager: LayoutToggleManager;
+  private settingsModal: SettingsModal;
   private updateNotificationManager: UpdateNotificationManager;
   private speedTestManager: SpeedTestManager;
   private toastManager: ToastManager;
@@ -86,6 +88,10 @@ class RestbroRenderer {
     });
     this.themeOnboarding = new ThemeOnboarding(this.themeManager);
     this.layoutToggleManager = new LayoutToggleManager();
+    this.settingsModal = new SettingsModal({
+      onTimeoutChange: (ms) => this.handleTimeoutChange(ms),
+      onLayoutChange: (mode) => this.handleLayoutChange(mode),
+    });
     this.updateNotificationManager = new UpdateNotificationManager();
     this.speedTestManager = new SpeedTestManager();
     this.toastManager = new ToastManager();
@@ -161,6 +167,7 @@ class RestbroRenderer {
     await this.loadInitialState();
     await this.themeOnboarding.maybeShow();
     this.bindThemeButton();
+    this.bindSettingsButton();
 
     // Set up auto-save last
     this.setupAutoSave();
@@ -180,9 +187,10 @@ class RestbroRenderer {
       this.environmentManager.setActiveEnvironment(
         (state as any).activeEnvironmentId
       );
-      this.layoutToggleManager.initialize(
-        (state as any).layoutMode || 'horizontal'
-      );
+      const layoutMode = (state as any).layoutMode || 'horizontal';
+      this.layoutToggleManager.initialize(layoutMode);
+      const rs = (state as any).requestSettings;
+      this.settingsModal.setValues(rs?.defaultTimeoutMs ?? 60000, layoutMode);
     } catch (error) {
       console.error('Failed to load initial state:', error);
     }
@@ -268,6 +276,56 @@ class RestbroRenderer {
     button.addEventListener('click', () => {
       this.themeOnboarding.openPicker();
     });
+  }
+
+  private bindSettingsButton(): void {
+    const button = document.getElementById('settings-button');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      if (this.settingsModal.isOpen()) {
+        this.settingsModal.close();
+      } else {
+        this.settingsModal.open();
+      }
+    });
+  }
+
+  private async handleTimeoutChange(ms: number): Promise<void> {
+    try {
+      const state = await window.restbro.store.get();
+      const current = (state as any).requestSettings || {};
+      await window.restbro.store.set({
+        requestSettings: { ...current, defaultTimeoutMs: ms },
+      } as any);
+    } catch (error) {
+      console.error('Failed to save timeout setting:', error);
+    }
+  }
+
+  private async handleLayoutChange(
+    mode: 'horizontal' | 'vertical'
+  ): Promise<void> {
+    // Delegate to the existing LayoutToggleManager's public API
+    // by applying the layout and persisting
+    const workspaceArea = document.querySelector(
+      '.workspace-area'
+    ) as HTMLElement | null;
+    if (workspaceArea) {
+      const requestPanel = workspaceArea.querySelector(
+        '.request-panel'
+      ) as HTMLElement | null;
+      if (requestPanel) {
+        requestPanel.style.width = '';
+        requestPanel.style.height = '';
+        requestPanel.style.flex = '';
+      }
+      if (mode === 'vertical') {
+        workspaceArea.classList.add('layout-vertical');
+      } else {
+        workspaceArea.classList.remove('layout-vertical');
+      }
+    }
+    await window.restbro.store.set({ layoutMode: mode } as any);
   }
 }
 

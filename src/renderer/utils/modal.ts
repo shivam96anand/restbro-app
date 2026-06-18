@@ -29,7 +29,9 @@ export class Modal {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -40,12 +42,13 @@ export class Modal {
     const modalContent = document.createElement('div');
     modalContent.className = 'modal-content';
     modalContent.style.cssText = `
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
+      background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
       padding: 24px;
       min-width: 300px;
       max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(var(--primary-color-rgb),0.08);
     `;
 
     // Create title

@@ -77,7 +77,7 @@ export class EnvironmentManager {
 
     // Create manage button
     const manageBtn = document.createElement('button');
-    manageBtn.innerHTML = iconHtml('settings');
+    manageBtn.innerHTML = iconHtml('sliders');
     manageBtn.title = 'Manage Environments';
     manageBtn.style.cssText = `
       padding: 4px 8px;

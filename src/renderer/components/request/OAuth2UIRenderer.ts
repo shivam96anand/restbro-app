@@ -100,7 +100,7 @@ export class OAuth2UIRenderer {
             <span class="token-status" id="oauth-token-status">No token</span>
           </div>
           <div class="token-info-content">
-            <div class="token-row" style="margin-bottom: 10px;">
+            <div class="token-row" style="margin-bottom: 6px;">
               <span class="token-label">Access Token:</span>
               <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
                 <code id="oauth-access-token-display" class="token-value" style="flex: 1; font-size: 12px;">No token</code>

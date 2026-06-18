@@ -2,10 +2,16 @@
 // Styles for variable autocomplete suggestions dropdown
 
 .variable-autocomplete-box {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(var(--primary-color-rgb), 0.08);
   max-height: 250px;
   overflow-y: auto;
   overflow-x: hidden;

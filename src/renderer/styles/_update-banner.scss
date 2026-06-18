@@ -51,12 +51,18 @@
 
 /* Popup card */
 .update-popup {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    180deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
   padding: 32px 40px;
   text-align: center;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(var(--primary-color-rgb), 0.08);
   min-width: 280px;
 }
 

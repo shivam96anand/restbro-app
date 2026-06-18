@@ -139,8 +139,8 @@ const JsonCompareTab: React.FC = () => {
         typeof detail.rightLabel === 'string' ? detail.rightLabel : undefined;
       setState((s) => ({
         ...s,
-        leftJson: left,
-        rightJson: right,
+        leftJson: formatJson(left),
+        rightJson: formatJson(right),
         leftTruncated: false,
         rightTruncated: false,
         leftLabel: leftLabel || s.leftLabel,

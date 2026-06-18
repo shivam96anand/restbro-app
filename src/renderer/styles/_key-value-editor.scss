@@ -112,6 +112,12 @@
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   width: 100%;
+  // The editor container below uses `margin-top: -10px` + `position: relative`
+  // to seamlessly join its border with this row. Without a stacking lift here,
+  // that positioned, opaque container paints over the bottom edge of the
+  // toolbar controls (Format button / body-type dropdown), clipping them.
+  position: relative;
+  z-index: 1;
 }
 
 .body-type-info {
@@ -132,6 +138,37 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.body-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
+  }
+
+  &:focus-visible {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+    outline: none;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
 }
 
 .body-type-select {
