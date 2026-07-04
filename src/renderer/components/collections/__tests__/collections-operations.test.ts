@@ -287,6 +287,7 @@ describe('CollectionsOperations', () => {
         expect.objectContaining({
           name: 'My Request Copy',
           type: 'request',
+          request: expect.objectContaining({ name: 'My Request Copy' }),
         })
       );
       expect(document.dispatchEvent).toHaveBeenCalled();

@@ -1,15 +1,9 @@
 // Search Components
 
-.search-container {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  margin: 8px 12px 6px 12px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 6px;
-  position: relative;
-
+// Shared input styling — used both in the top action container and in the
+// collections bottom bar (search input pinned to the base of the panel).
+.search-container,
+.collections-bottom-bar {
   .search-input-wrapper {
     position: relative;
     width: 100%;
@@ -59,15 +53,28 @@
     height: 12px;
     display: inline-flex;
   }
+}
+
+.search-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin: 8px 12px 6px 12px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+  position: relative;
 
   .search-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 5px;
     align-items: stretch;
     width: 100%;
 
     .btn-toolbar {
-      flex: 1 1 0;
+      width: 100%;
+      min-width: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;

@@ -75,14 +75,25 @@ class RequestManager {
     { req: http.ClientRequest; reject: (err: Error) => void }
   >();
 
-  async sendRequest(request: ApiRequest): Promise<ApiResponse> {
+  async sendRequest(
+    request: ApiRequest,
+    options?: { environmentId?: string }
+  ): Promise<ApiResponse> {
     const startTime = Date.now();
     const requestId = request.id || `request-${Date.now()}`;
 
     // Resolve variables first
     const state = storeManager.getState();
-    const activeEnv = state.activeEnvironmentId
-      ? state.environments.find((e) => e.id === state.activeEnvironmentId)
+    // An explicit environmentId (including an empty string for "No
+    // Environment") overrides the globally-active environment. This lets
+    // callers such as the load tester resolve variables against a chosen
+    // environment instead of whatever happens to be active in the UI.
+    const effectiveEnvId =
+      options?.environmentId !== undefined
+        ? options.environmentId
+        : state.activeEnvironmentId;
+    const activeEnv = effectiveEnvId
+      ? state.environments.find((e) => e.id === effectiveEnvId)
       : undefined;
 
     // Fix collectionId if it points to a request-type collection

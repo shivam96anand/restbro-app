@@ -21,6 +21,22 @@ export class TargetAdHocPrefill {
       rows[i].remove();
     }
 
+    // Reset the retained first row so values from a previously selected
+    // request don't linger when the new request has fewer (or zero) pairs.
+    const firstRow = editor.querySelector('.kv-row');
+    if (firstRow) {
+      const firstKey = firstRow.querySelector('.key-input') as HTMLInputElement;
+      const firstValue = firstRow.querySelector(
+        '.value-input'
+      ) as HTMLInputElement;
+      const firstCheckbox = firstRow.querySelector(
+        '.kv-checkbox'
+      ) as HTMLInputElement;
+      if (firstKey) firstKey.value = '';
+      if (firstValue) firstValue.value = '';
+      if (firstCheckbox) firstCheckbox.checked = true;
+    }
+
     // Fill data
     const entries = Object.entries(data);
     entries.forEach((entry, index) => {
@@ -177,13 +193,15 @@ export class TargetAdHocPrefill {
       '#target-request-body'
     ) as HTMLTextAreaElement;
 
+    // Set the content BEFORE toggling so the JSON (Monaco) editor picks up the
+    // value when it initializes.
+    if (bodyContent) {
+      bodyContent.value = body.content || '';
+    }
+
     if (bodyTypeRadio) {
       bodyTypeRadio.checked = true;
       toggleBodyEditorFn(body.type);
-    }
-
-    if (bodyContent) {
-      bodyContent.value = body.content || '';
     }
   }
 }

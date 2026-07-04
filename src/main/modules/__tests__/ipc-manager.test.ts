@@ -421,6 +421,77 @@ describe('ipc-manager.ts', () => {
       const c2 = call.collections.find((c: Collection) => c.id === 'c2');
       expect(c2.name).toBe('Second');
     });
+
+    it('syncs request.name with the display name when a request collection is renamed', () => {
+      const state = createState({
+        collections: [
+          {
+            id: 'r1',
+            name: 'Old Name',
+            type: 'request',
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            request: {
+              id: 'req-1',
+              name: 'Old Name',
+              method: 'GET',
+              url: 'https://example.com',
+              headers: {},
+            },
+          },
+        ],
+      });
+      vi.mocked(storeManager.getState).mockReturnValue(state);
+
+      const handler = getHandler(IPC_CHANNELS.COLLECTION_UPDATE)!;
+      handler({}, 'r1', { name: 'New Name' });
+
+      const call = vi.mocked(storeManager.setState).mock.calls[0][0] as any;
+      const updated = call.collections.find((c: Collection) => c.id === 'r1');
+      expect(updated.name).toBe('New Name');
+      expect(updated.request.name).toBe('New Name');
+    });
+
+    it('does not override an explicit request update with the display name', () => {
+      const state = createState({
+        collections: [
+          {
+            id: 'r1',
+            name: 'Old Name',
+            type: 'request',
+            order: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            request: {
+              id: 'req-1',
+              name: 'Old Name',
+              method: 'GET',
+              url: 'https://example.com',
+              headers: {},
+            },
+          },
+        ],
+      });
+      vi.mocked(storeManager.getState).mockReturnValue(state);
+
+      const handler = getHandler(IPC_CHANNELS.COLLECTION_UPDATE)!;
+      handler({}, 'r1', {
+        name: 'New Name',
+        request: {
+          id: 'req-1',
+          name: 'Explicit Request Name',
+          method: 'POST',
+          url: 'https://example.com',
+          headers: {},
+        },
+      });
+
+      const call = vi.mocked(storeManager.setState).mock.calls[0][0] as any;
+      const updated = call.collections.find((c: Collection) => c.id === 'r1');
+      expect(updated.name).toBe('New Name');
+      expect(updated.request.name).toBe('Explicit Request Name');
+    });
   });
 
   describe('collection:delete', () => {

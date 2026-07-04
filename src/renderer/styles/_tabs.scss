@@ -6,6 +6,7 @@
   border-bottom: 2px solid var(--border-color);
   padding: 5px 8px;
   overflow-x: auto;
+  flex: 0 0 auto;
   --request-tab-width: 150px;
 }
 
@@ -201,6 +202,54 @@
   &.active {
     color: var(--primary-color);
     border-bottom-color: var(--primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+  }
+}
+
+// ── Quick actions (right) — copy / export icon buttons ──
+.response-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.response-toolbar__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+  }
+
+  &:hover {
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  &:active {
+    transform: translateY(0.5px);
   }
 
   &:focus-visible {

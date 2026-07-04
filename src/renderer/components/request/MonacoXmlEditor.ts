@@ -94,6 +94,21 @@ export class MonacoXmlEditor {
     this.editor?.setScrollPosition({ scrollTop: 0 });
   }
 
+  /** Get the underlying Monaco editor instance */
+  public getEditor(): monaco.editor.IStandaloneCodeEditor | null {
+    return this.editor;
+  }
+
+  /** Toggle soft word wrapping. */
+  public setWordWrap(on: boolean): void {
+    this.editor?.updateOptions({ wordWrap: on ? 'on' : 'off' });
+  }
+
+  /** Set the editor font size (px). */
+  public setFontSize(px: number): void {
+    this.editor?.updateOptions({ fontSize: px });
+  }
+
   public format(): void {
     this.editor?.getAction('editor.action.formatDocument')?.run();
   }

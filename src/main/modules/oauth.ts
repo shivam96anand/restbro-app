@@ -6,6 +6,22 @@ import {
   OAuthTokenResponse,
 } from '../../shared/types';
 
+/**
+ * Encode a value with the `application/x-www-form-urlencoded` algorithm so it
+ * can be embedded safely in an HTTP Basic `Authorization` header.
+ *
+ * RFC 6749 §2.3.1 requires `client_id` and `client_secret` to be
+ * form-urlencoded *before* they are colon-joined and Base64-encoded.
+ * Spec-compliant servers (e.g. the Spring Authorization Server) URL-decode the
+ * credentials again, so this is a no-op for plain alphanumeric secrets but is
+ * essential when a secret contains reserved characters such as `+`, `/`, `=`
+ * or a space. Skipping it yields credentials the server cannot match, which
+ * surfaces as `invalid_client` / "Bad client credentials".
+ */
+function formUrlEncode(value: string): string {
+  return encodeURIComponent(value).replace(/%20/g, '+');
+}
+
 export class OAuthManager {
   private authWindows: Map<string, BrowserWindow> = new Map();
   private pendingRequests: Map<
@@ -403,21 +419,21 @@ export class OAuthManager {
       requestBody = configOrParams.toString();
       headers['Content-Type'] = 'application/x-www-form-urlencoded';
     } else {
-      // New config-based approach
+      // New config-based approach — currently only exercised by the
+      // client_credentials flow.
       const config = configOrParams;
       const credentials = (config as any).credentials || 'headers';
 
       // Build parameters conditionally
       const params = new URLSearchParams();
 
-      // Always include grant_type and client_id
+      // Always include grant_type
       params.append(
         'grant_type',
         config.grantType === 'authorization_code'
           ? 'authorization_code'
           : 'client_credentials'
       );
-      params.append('client_id', config.clientId);
 
       // Add optional fields
       if (config.scope && config.scope.trim()) {
@@ -432,20 +448,35 @@ export class OAuthManager {
         params.append('audience', (config as any).audience.trim());
       }
 
+      // Trim credentials: a pasted trailing space/newline otherwise changes the
+      // Base64 output and makes the server reject the client.
+      const clientId = (config.clientId || '').trim();
+      const clientSecret = (config.clientSecret || '').trim();
+
       if (credentials === 'body') {
-        // Send client_secret in request body
-        if (config.clientSecret && config.clientSecret.trim()) {
-          params.append('client_secret', config.clientSecret);
+        // client_secret_post: identify + authenticate the client entirely in
+        // the request body, with no Authorization header.
+        params.append('client_id', clientId);
+        if (clientSecret) {
+          params.append('client_secret', clientSecret);
         }
+      } else if (clientSecret) {
+        // client_secret_basic: authenticate ONLY via the HTTP Basic header.
+        // Per RFC 6749 §2.3.1 the client MUST NOT use more than one
+        // authentication method, so client_id is intentionally left out of the
+        // body — sending it alongside Basic auth makes strict servers (e.g.
+        // Spring) attempt a second, secret-less client authentication and
+        // reject with invalid_client / "Bad client credentials". This mirrors
+        // Postman/Insomnia/curl.
+        const auth = Buffer.from(
+          `${formUrlEncode(clientId)}:${formUrlEncode(clientSecret)}`,
+          'utf-8'
+        ).toString('base64');
+        headers['Authorization'] = `Basic ${auth}`;
       } else {
-        // Send credentials in Authorization header
-        if (config.clientSecret && config.clientSecret.trim()) {
-          const auth = Buffer.from(
-            `${config.clientId}:${config.clientSecret}`,
-            'utf-8'
-          ).toString('base64');
-          headers['Authorization'] = `Basic ${auth}`;
-        }
+        // Public client (no secret) in header mode: nothing to put in a Basic
+        // header, so identify the client via the body instead.
+        params.append('client_id', clientId);
       }
 
       requestBody = params.toString();

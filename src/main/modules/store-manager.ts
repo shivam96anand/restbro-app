@@ -29,7 +29,6 @@ import {
 const defaultNavOrder = [
   'notepad',
   'api',
-  'json-viewer',
   'json-compare',
   'load-testing',
   'mock-server',
@@ -37,7 +36,6 @@ const defaultNavOrder = [
 ];
 const legacyNavOrder = [
   'api',
-  'json-viewer',
   'json-compare',
   'notepad',
   'load-testing',
@@ -116,6 +114,8 @@ const defaultState: AppState = {
   mockServers: defaultMockServersState,
   hasCompletedThemeOnboarding: false,
   requestSettings: defaultRequestSettings,
+  loadTestHistory: [],
+  speedTestHistory: [],
 };
 
 // Backup retention — keep only the 5 most recent snapshots on disk.
@@ -417,7 +417,11 @@ class StoreManager {
       return defaultNavOrder;
     }
 
-    const normalized = navOrder.filter(Boolean);
+    // Drop tab ids for removed features (e.g. the standalone 'json-viewer'
+    // tab, now folded into Notepad) so stale persisted orders stay valid.
+    const normalized = navOrder
+      .filter(Boolean)
+      .filter((tab) => tab !== 'json-viewer');
     if (this.arraysMatch(normalized, legacyNavOrder)) {
       return defaultNavOrder;
     }

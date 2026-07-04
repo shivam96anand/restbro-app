@@ -99,7 +99,11 @@ export class TabsEventHandler {
         | RequestMode
         | undefined;
       if (updatedRequest) {
-        const updates: Partial<RequestTab> = { request: updatedRequest };
+        // Clone into the tab so its stored request never shares nested
+        // references with the live editor working copy (currentRequest).
+        const updates: Partial<RequestTab> = {
+          request: this.cloneRequest(updatedRequest),
+        };
         if (requestMode === 'soap') {
           updates.requestMode = 'soap';
           updates.soapDraft = this.cloneRequest(updatedRequest);

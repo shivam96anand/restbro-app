@@ -15,7 +15,6 @@ import { ResponseManager } from './components/response-manager';
 import { HistoryManager } from './components/history-manager';
 import { LoadTestManager } from './components/loadtest-manager';
 import { MockServerTabManager } from './components/MockServerTabManager';
-import { JsonViewerTab } from './components/JsonViewerTab';
 import { JsonCompareTabManager } from './components/JsonCompareTab';
 import { AskAiTab } from './components/AskAiTab';
 import { NotepadManager } from './components/NotepadManager';
@@ -54,7 +53,6 @@ class RestbroRenderer {
   private historyManager: HistoryManager;
   private loadTestManager: LoadTestManager;
   private mockServerManager: MockServerTabManager;
-  private jsonViewerTab: JsonViewerTab;
   private jsonCompareTab: JsonCompareTabManager;
   private askAiTab: AskAiTab;
   private notepadManager: NotepadManager;
@@ -107,7 +105,6 @@ class RestbroRenderer {
     this.responseManager = new ResponseManager(responseContainer);
     this.loadTestManager = new LoadTestManager();
     this.mockServerManager = new MockServerTabManager();
-    this.jsonViewerTab = new JsonViewerTab();
     this.jsonCompareTab = new JsonCompareTabManager();
     this.askAiTab = new AskAiTab(askAiContainer);
     this.notepadManager = new NotepadManager(
@@ -130,6 +127,9 @@ class RestbroRenderer {
     // Initialize synchronous managers (fast, no I/O)
     this.themeManager.initialize();
     this.appManager.initialize();
+    // Register the OS file-open bridge early (before the async inits below) so
+    // an "Open with Restbro" on a .json/.md/etc. is never missed on cold start.
+    this.setupNotepadFileOpen();
     this.tabsManager.initialize();
     this.collectionsManager.initialize();
     this.requestManager.initialize();
@@ -159,6 +159,7 @@ class RestbroRenderer {
 
     // Wire up lazy init for heavy tabs (Monaco / React / MUI)
     this.setupLazyTabInit();
+    this.setupOpenJsonInNotepad();
 
     // Set up import button
     this.setupImportButton();
@@ -257,7 +258,6 @@ class RestbroRenderer {
    */
   private setupLazyTabInit(): void {
     const lazyMap: Record<string, () => void | Promise<void>> = {
-      'json-viewer': () => this.jsonViewerTab.ensureInitialized(),
       'json-compare': () => this.jsonCompareTab.ensureInitialized(),
       notepad: () => this.notepadManager.ensureInitialized(),
     };
@@ -268,6 +268,50 @@ class RestbroRenderer {
       const initFn = lazyMap[e.detail.tab];
       if (initFn) initFn();
     }) as EventListener);
+  }
+
+  /**
+   * Bridge for opening JSON in the Notepad tab (replaces the standalone JSON
+   * Viewer). Any component can dispatch `open-json-in-notepad` with the raw
+   * JSON text; we switch to Notepad and open a pretty-printed json tab.
+   */
+  private setupOpenJsonInNotepad(): void {
+    document.addEventListener('open-json-in-notepad', ((
+      e: CustomEvent<{ text: string; title?: string }>
+    ) => {
+      const text = e.detail?.text ?? '';
+      const title = e.detail?.title;
+      document.dispatchEvent(
+        new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
+      );
+      void this.notepadManager.openJson(text, title);
+    }) as EventListener);
+  }
+
+  /**
+   * Route OS "open file" events (double-click a file / "Open with Restbro")
+   * into the Notepad. Kept at the app level — not inside NotepadManager's lazy
+   * init — so a file opened before the Notepad tab is ever visited still lands
+   * there (the Notepad initializes on demand via openPath()).
+   */
+  private setupNotepadFileOpen(): void {
+    const open = (filePath: string): void => {
+      document.dispatchEvent(
+        new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
+      );
+      void this.notepadManager.openPath(filePath);
+    };
+    // Runtime: the OS hands us a file while the app is already running.
+    window.restbro.notepad.onFileOpened((filePath) => open(filePath));
+    // Cold start: drain files queued before the renderer was ready.
+    void (async () => {
+      try {
+        const files = await window.restbro.notepad.getPendingFiles();
+        files.forEach(open);
+      } catch {
+        // Best-effort; the pending-files API may be unavailable.
+      }
+    })();
   }
 
   private bindThemeButton(): void {

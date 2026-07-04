@@ -5,9 +5,6 @@
 import { Environment, Globals } from '../../../shared/types';
 import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 import { EnvironmentVariablesManager } from './EnvironmentVariablesManager';
-import { iconHtml } from '../../utils/icons';
-
-const DRAFT_PREFIX = '__restbro_draft__';
 
 export type DialogTab = 'environments' | 'globals';
 
@@ -106,52 +103,22 @@ export class EnvironmentDialogUI {
     selectedEnv: Environment,
     isActive: boolean,
     onNameChange: (newName: string) => void,
-    onDelete: () => void,
     onSetActive: () => void,
     onDuplicate?: () => void
   ): HTMLDivElement {
     const envDetails = document.createElement('div');
     envDetails.style.cssText = EnvironmentDialogStyles.envDetails;
 
-    const detailHeader = document.createElement('div');
-    detailHeader.style.cssText = EnvironmentDialogStyles.detailHeader;
+    // Name field: label on top, then [input | Set Active | Duplicate] on one row
+    const nameField = document.createElement('div');
+    nameField.style.cssText = EnvironmentDialogStyles.nameField;
 
-    const detailTitle = document.createElement('div');
-    detailTitle.textContent = 'Environment Details';
-    detailTitle.style.cssText = EnvironmentDialogStyles.detailTitle;
-    detailHeader.appendChild(detailTitle);
-
-    const headerButtons = document.createElement('div');
-    headerButtons.style.cssText =
-      'display: flex; gap: 8px; align-items: center;';
-
-    if (isActive) {
-      const activeBadge = document.createElement('span');
-      activeBadge.textContent = 'Active';
-      activeBadge.style.cssText = EnvironmentDialogStyles.activeBadge;
-      headerButtons.appendChild(activeBadge);
-    } else {
-      const setActiveBtn = document.createElement('button');
-      setActiveBtn.textContent = 'Set Active';
-      setActiveBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
-      setActiveBtn.addEventListener('click', onSetActive);
-      headerButtons.appendChild(setActiveBtn);
-    }
-
-    if (onDuplicate) {
-      const duplicateBtn = document.createElement('button');
-      duplicateBtn.textContent = 'Duplicate';
-      duplicateBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
-      duplicateBtn.addEventListener('click', onDuplicate);
-      headerButtons.appendChild(duplicateBtn);
-    }
-
-    detailHeader.appendChild(headerButtons);
-
-    // Name input
     const nameLabel = document.createElement('label');
     nameLabel.textContent = 'Name';
     nameLabel.style.cssText = EnvironmentDialogStyles.label;
+
+    const nameRow = document.createElement('div');
+    nameRow.style.cssText = EnvironmentDialogStyles.nameRow;
 
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
@@ -168,32 +135,42 @@ export class EnvironmentDialogUI {
       nameInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
       nameInput.style.boxShadow = 'none';
     });
-
     nameInput.addEventListener('input', () => {
       onNameChange(nameInput.value);
     });
 
-    // Variables section
+    nameRow.appendChild(nameInput);
+
+    if (isActive) {
+      const activeBadge = document.createElement('span');
+      activeBadge.textContent = 'Active';
+      activeBadge.style.cssText = EnvironmentDialogStyles.activeBadge;
+      nameRow.appendChild(activeBadge);
+    } else {
+      const setActiveBtn = document.createElement('button');
+      setActiveBtn.textContent = 'Set Active';
+      setActiveBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
+      setActiveBtn.addEventListener('click', onSetActive);
+      nameRow.appendChild(setActiveBtn);
+    }
+
+    if (onDuplicate) {
+      const duplicateBtn = document.createElement('button');
+      duplicateBtn.textContent = 'Duplicate';
+      duplicateBtn.style.cssText = EnvironmentDialogStyles.setActiveButton;
+      duplicateBtn.addEventListener('click', onDuplicate);
+      nameRow.appendChild(duplicateBtn);
+    }
+
+    nameField.appendChild(nameLabel);
+    nameField.appendChild(nameRow);
+
+    // Variables section (fills the remaining height)
     const varsSection =
       EnvironmentVariablesManager.renderVariablesSection(selectedEnv);
 
-    // Delete environment button
-    const deleteEnvBtn = document.createElement('button');
-    deleteEnvBtn.textContent = 'Delete Environment';
-    deleteEnvBtn.style.cssText = EnvironmentDialogStyles.deleteEnvButton;
-
-    deleteEnvBtn.addEventListener('click', async () => {
-      const confirmed = confirm(`Delete environment "${selectedEnv.name}"?`);
-      if (confirmed) {
-        onDelete();
-      }
-    });
-
-    envDetails.appendChild(detailHeader);
-    envDetails.appendChild(nameLabel);
-    envDetails.appendChild(nameInput);
+    envDetails.appendChild(nameField);
     envDetails.appendChild(varsSection);
-    envDetails.appendChild(deleteEnvBtn);
 
     return envDetails;
   }
@@ -217,7 +194,6 @@ export class EnvironmentDialogUI {
     onSelectEnv: (envId: string) => void,
     onSetActive: (envId: string) => void,
     onNameChange: (newName: string) => void,
-    onDelete: () => void,
     onDuplicate?: (envId: string) => void
   ): HTMLDivElement {
     const layout = document.createElement('div');
@@ -234,7 +210,6 @@ export class EnvironmentDialogUI {
         selectedEnv,
         state.workingActiveId === selectedEnv.id,
         onNameChange,
-        onDelete,
         () => onSetActive(selectedEnv.id),
         onDuplicate ? () => onDuplicate(selectedEnv.id) : undefined
       );
@@ -281,14 +256,37 @@ export class EnvironmentDialogUI {
   }
 
   /**
-   * Creates the dialog footer with action buttons
+   * Creates the tabs row: tab pills on the left, Cancel/Save actions on the
+   * right. This replaces the old bottom footer so no vertical space is wasted.
    */
-  static createFooter(
+  static createTabsRow(
+    activeTab: DialogTab,
+    onTabChange: (tab: DialogTab) => void,
     onCancel: () => void,
-    onSave: () => void
+    onSave: () => void,
+    onDeleteEnv?: () => void
   ): HTMLDivElement {
-    const footer = document.createElement('div');
-    footer.style.cssText = EnvironmentDialogStyles.footer;
+    const row = document.createElement('div');
+    row.style.cssText = EnvironmentDialogStyles.tabsRow;
+
+    row.appendChild(this.createTabs(activeTab, onTabChange));
+
+    const actions = document.createElement('div');
+    actions.style.cssText = EnvironmentDialogStyles.headerActions;
+
+    if (onDeleteEnv) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete Environment';
+      deleteBtn.style.cssText = EnvironmentDialogStyles.deleteAllButton;
+      deleteBtn.addEventListener('mouseenter', () => {
+        deleteBtn.style.background = 'rgba(var(--error-color-rgb), 0.2)';
+      });
+      deleteBtn.addEventListener('mouseleave', () => {
+        deleteBtn.style.background = 'rgba(var(--error-color-rgb), 0.1)';
+      });
+      deleteBtn.addEventListener('click', onDeleteEnv);
+      actions.appendChild(deleteBtn);
+    }
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel';
@@ -300,10 +298,11 @@ export class EnvironmentDialogUI {
     saveBtn.style.cssText = EnvironmentDialogStyles.saveButton;
     saveBtn.addEventListener('click', onSave);
 
-    footer.appendChild(cancelBtn);
-    footer.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    row.appendChild(actions);
 
-    return footer;
+    return row;
   }
 
   /**
@@ -350,215 +349,15 @@ export class EnvironmentDialogUI {
       'Global variables are available in all requests, regardless of the selected environment. They have the lowest priority and will be overridden by environment or folder variables with the same name.';
     panel.appendChild(description);
 
-    // Variables header
-    const varsHeader = document.createElement('div');
-    varsHeader.style.cssText = EnvironmentDialogStyles.varsHeader;
-
-    const varsTitle = document.createElement('div');
-    varsTitle.textContent = 'Global Variables';
-    varsTitle.style.cssText = EnvironmentDialogStyles.varsTitle;
-
-    const varsCount = document.createElement('div');
-    varsCount.style.cssText = EnvironmentDialogStyles.varsCount;
-
-    varsHeader.appendChild(varsTitle);
-    varsHeader.appendChild(varsCount);
-    panel.appendChild(varsHeader);
-
-    // Variables container
-    const varsContainer = document.createElement('div');
-    varsContainer.style.cssText = EnvironmentDialogStyles.varsContainer;
-
-    if (!globals.variableDescriptions) {
-      globals.variableDescriptions = {};
-    }
-
-    const renderVars = () => {
-      varsContainer.innerHTML = '';
-      varsCount.textContent = `${Object.keys(globals.variables).length}`;
-
-      const headerRow = document.createElement('div');
-      headerRow.style.cssText = EnvironmentDialogStyles.varHeaderRow;
-
-      const keyHeader = document.createElement('div');
-      keyHeader.textContent = 'Key';
-      keyHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const valueHeader = document.createElement('div');
-      valueHeader.textContent = 'Value';
-      valueHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const descHeader = document.createElement('div');
-      descHeader.textContent = 'Description';
-      descHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const actionHeader = document.createElement('div');
-      actionHeader.textContent = '';
-      actionHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      headerRow.appendChild(keyHeader);
-      headerRow.appendChild(valueHeader);
-      headerRow.appendChild(descHeader);
-      headerRow.appendChild(actionHeader);
-      varsContainer.appendChild(headerRow);
-
-      Object.entries(globals.variables).forEach(([key, value]) => {
-        const varRow = this.createGlobalVariableRow(
-          key,
-          value,
-          globals,
-          renderVars
-        );
-        varsContainer.appendChild(varRow);
-      });
-
-      // Add variable button
-      const addVarBtn = document.createElement('button');
-      addVarBtn.textContent = '+ Add Variable';
-      addVarBtn.style.cssText = EnvironmentDialogStyles.addVarButton;
-      addVarBtn.addEventListener('click', () => {
-        const newKey = this.createDraftKey(globals.variables);
-        globals.variables[newKey] = '';
-        if (!globals.variableDescriptions) {
-          globals.variableDescriptions = {};
-        }
-        globals.variableDescriptions[newKey] = '';
-        renderVars();
-      });
-      varsContainer.appendChild(addVarBtn);
-    };
-
-    renderVars();
-    panel.appendChild(varsContainer);
+    // Shared variables table (sticky header, pinned add button)
+    globals.variableDescriptions ??= {};
+    const table = EnvironmentVariablesManager.renderVariableTable({
+      title: 'Global Variables',
+      variables: globals.variables,
+      descriptions: globals.variableDescriptions,
+    });
+    panel.appendChild(table);
 
     return panel;
-  }
-
-  /**
-   * Creates a single global variable row
-   */
-  private static createGlobalVariableRow(
-    key: string,
-    value: string,
-    globals: Globals,
-    renderVars: () => void
-  ): HTMLDivElement {
-    const varRow = document.createElement('div');
-    varRow.style.cssText = EnvironmentDialogStyles.varRow;
-
-    if (!globals.variableDescriptions) {
-      globals.variableDescriptions = {};
-    }
-    const descriptions = globals.variableDescriptions;
-    const currentKey = key;
-    const isDraft = currentKey.startsWith(DRAFT_PREFIX);
-
-    const keyInput = document.createElement('input');
-    keyInput.type = 'text';
-    keyInput.value = isDraft ? '' : currentKey;
-    keyInput.placeholder = 'Key';
-    keyInput.style.cssText = EnvironmentDialogStyles.varInput;
-    keyInput.spellcheck = false;
-    keyInput.addEventListener('focus', () => {
-      keyInput.style.borderColor = 'var(--primary-color)';
-      keyInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    keyInput.addEventListener('blur', () => {
-      keyInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      keyInput.style.boxShadow = 'none';
-    });
-
-    const valueInput = document.createElement('input');
-    valueInput.type = 'text';
-    valueInput.value = value;
-    valueInput.placeholder = 'Value';
-    valueInput.style.cssText = EnvironmentDialogStyles.varInput;
-    valueInput.spellcheck = false;
-    valueInput.addEventListener('focus', () => {
-      valueInput.style.borderColor = 'var(--primary-color)';
-      valueInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    valueInput.addEventListener('blur', () => {
-      valueInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      valueInput.style.boxShadow = 'none';
-    });
-
-    const descriptionInput = document.createElement('input');
-    descriptionInput.type = 'text';
-    descriptionInput.value = descriptions[currentKey] || '';
-    descriptionInput.placeholder = 'Description';
-    descriptionInput.style.cssText =
-      EnvironmentDialogStyles.varInputDescription;
-    descriptionInput.spellcheck = false;
-    descriptionInput.addEventListener('focus', () => {
-      descriptionInput.style.borderColor = 'var(--primary-color)';
-      descriptionInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    descriptionInput.addEventListener('blur', () => {
-      descriptionInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      descriptionInput.style.boxShadow = 'none';
-    });
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = iconHtml('close');
-    deleteBtn.style.cssText = EnvironmentDialogStyles.deleteVarButton;
-    deleteBtn.title = 'Delete variable';
-
-    deleteBtn.addEventListener('click', () => {
-      delete globals.variables[currentKey];
-      delete descriptions[currentKey];
-      renderVars();
-    });
-
-    // Update on key change
-    keyInput.addEventListener('blur', () => {
-      const nextKey = keyInput.value.trim();
-      if (!nextKey) {
-        delete globals.variables[currentKey];
-        delete descriptions[currentKey];
-        renderVars();
-        return;
-      }
-
-      if (nextKey !== currentKey) {
-        const nextValue = valueInput.value;
-        const nextDescription = descriptions[currentKey] || '';
-        delete globals.variables[currentKey];
-        delete descriptions[currentKey];
-        globals.variables[nextKey] = nextValue;
-        if (nextDescription) {
-          descriptions[nextKey] = nextDescription;
-        }
-        renderVars();
-      }
-    });
-
-    // Update on value change
-    valueInput.addEventListener('input', () => {
-      globals.variables[currentKey] = valueInput.value;
-    });
-
-    // Update on description change
-    descriptionInput.addEventListener('input', () => {
-      descriptions[currentKey] = descriptionInput.value;
-    });
-
-    varRow.appendChild(keyInput);
-    varRow.appendChild(valueInput);
-    varRow.appendChild(descriptionInput);
-    varRow.appendChild(deleteBtn);
-
-    return varRow;
-  }
-
-  private static createDraftKey(existing: Record<string, string>): string {
-    let draftKey = `${DRAFT_PREFIX}${crypto.randomUUID()}`;
-    while (draftKey in existing) {
-      draftKey = `${DRAFT_PREFIX}${crypto.randomUUID()}`;
-    }
-    return draftKey;
   }
 }

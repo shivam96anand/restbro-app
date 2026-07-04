@@ -3,6 +3,7 @@ import { ThemeManager } from '../utils/theme-manager';
 export class ThemeOnboarding {
   private overlay: HTMLDivElement | null = null;
   private themeManager: ThemeManager;
+  private keydownHandler: ((event: KeyboardEvent) => void) | null = null;
 
   constructor(themeManager: ThemeManager) {
     this.themeManager = themeManager;
@@ -90,9 +91,31 @@ export class ThemeOnboarding {
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     this.overlay = overlay;
+
+    // Dismiss by clicking outside the modal (on the overlay backdrop)
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        this.themeManager.restoreTheme();
+        this.close();
+      }
+    });
+
+    // Dismiss with the Escape key
+    this.keydownHandler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.themeManager.restoreTheme();
+        this.close();
+      }
+    };
+    document.addEventListener('keydown', this.keydownHandler);
   }
 
   private close(): void {
+    if (this.keydownHandler) {
+      document.removeEventListener('keydown', this.keydownHandler);
+      this.keydownHandler = null;
+    }
     if (this.overlay && document.body.contains(this.overlay)) {
       document.body.removeChild(this.overlay);
     }

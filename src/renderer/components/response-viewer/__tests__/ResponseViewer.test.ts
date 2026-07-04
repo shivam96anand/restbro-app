@@ -10,12 +10,19 @@ vi.mock('../../request/MonacoJsonEditor', () => ({
     dispose: vi.fn(),
     saveViewState: vi.fn(),
     restoreViewState: vi.fn(),
+    setWordWrap: vi.fn(),
+    setFontSize: vi.fn(),
+    getFontSize: vi.fn(() => 12),
+    getEditor: vi.fn(() => null),
   })),
 }));
 
 vi.mock('../../request/MonacoXmlEditor', () => ({
   MonacoXmlEditor: vi.fn().mockImplementation(() => ({
     dispose: vi.fn(),
+    setWordWrap: vi.fn(),
+    setFontSize: vi.fn(),
+    getEditor: vi.fn(() => null),
   })),
 }));
 

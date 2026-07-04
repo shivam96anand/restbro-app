@@ -221,6 +221,64 @@ describe('TabsStateManager', () => {
       expect(tsm.getActiveTabId()).toBe(firstTabId);
       expect(tsm.getTabs()).toHaveLength(2); // no extra tab created
     });
+
+    // Regression: opening a collection request into a tab must NOT share
+    // nested references (params/headers) with the source request object.
+    // The source object is the live collection-tree request; if the tab shares
+    // its arrays, later edits bleed back into the collection and across
+    // requests ("two requests merged" bug).
+    it('does not share params/headers references with the source request', () => {
+      const source = makeRequest({
+        id: 'col-req',
+        url: 'https://a.example.com',
+        params: [{ key: 'a', value: '1', enabled: true }],
+        headers: [{ key: 'X-A', value: '1', enabled: true }],
+      });
+
+      tsm.openRequestInTab(source, 'col-1');
+      const tabRequest = tsm.getActiveTab()!.request;
+
+      expect(tabRequest.params).not.toBe(source.params);
+      expect(tabRequest.headers).not.toBe(source.headers);
+
+      // Mutating the tab's request must not touch the source (collection) object.
+      (tabRequest.params as Array<{ key: string }>).push({
+        key: 'b',
+        value: '2',
+        enabled: true,
+      } as never);
+      tabRequest.url = 'https://changed.example.com';
+
+      expect((source.params as unknown[]).length).toBe(1);
+      expect(source.url).toBe('https://a.example.com');
+    });
+
+    it('openRequestInTabWithResponse does not share references with the source request', () => {
+      const source = makeRequest({
+        id: 'col-req-2',
+        params: [{ key: 'a', value: '1', enabled: true }],
+      });
+      const res = {
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        body: 'hello',
+        time: 50,
+        size: 5,
+        timestamp: Date.now(),
+      };
+
+      tsm.openRequestInTabWithResponse(source, res, 'col-1');
+      const tabRequest = tsm.getActiveTab()!.request;
+
+      expect(tabRequest.params).not.toBe(source.params);
+      (tabRequest.params as Array<{ key: string }>).push({
+        key: 'b',
+        value: '2',
+        enabled: true,
+      } as never);
+      expect((source.params as unknown[]).length).toBe(1);
+    });
   });
 
   describe('openRequestInTabWithResponse', () => {

@@ -21,6 +21,7 @@ export type IconName =
   | 'layers'
   | 'arrow-up'
   | 'arrow-down'
+  | 'arrow-left'
   | 'collapse'
   | 'expand'
   | 'maximize'
@@ -120,6 +121,10 @@ const icons: Record<IconName, string> = {
   'arrow-down': `
     <path d="M12 19l-6-6M12 19l6-6"/>
     <path d="M12 5v14"/>
+  `,
+  'arrow-left': `
+    <path d="M19 12H5"/>
+    <path d="M12 19l-7-7 7-7"/>
   `,
   collapse: `
     <path d="M6 14l6-6 6 6"/>

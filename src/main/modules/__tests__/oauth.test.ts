@@ -165,6 +165,105 @@ describe('oauth.ts', () => {
       expect(bodyStr).toContain('grant_type=client_credentials');
     });
 
+    it('uses a Basic auth header and omits client_id/secret from the body (header mode)', async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          access_token: 'cc-access-token',
+          expires_in: 7200,
+          token_type: 'Bearer',
+        }),
+        text: vi.fn(),
+      };
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
+
+      const config = createConfig({
+        grantType: 'client_credentials',
+        scope: 'ROLE_PARTNER_READ',
+      });
+
+      const result = await oauthManager.startFlow(config);
+      expect(result.success).toBe(true);
+
+      const fetchCall = vi.mocked(net.fetch).mock.calls[0];
+      const headers = (fetchCall[1]?.headers ?? {}) as Record<string, string>;
+      const expectedAuth = Buffer.from(
+        'test-client-id:test-client-secret',
+        'utf-8'
+      ).toString('base64');
+      expect(headers['Authorization']).toBe(`Basic ${expectedAuth}`);
+
+      const bodyStr = fetchCall[1]?.body as string;
+      expect(bodyStr).toContain('grant_type=client_credentials');
+      expect(bodyStr).toContain('scope=ROLE_PARTNER_READ');
+      // Regression: with Basic auth the client_id/secret must NOT also appear in
+      // the body, otherwise strict servers (e.g. Spring) reject the request with
+      // invalid_client / "Bad client credentials".
+      expect(bodyStr).not.toContain('client_id');
+      expect(bodyStr).not.toContain('client_secret');
+    });
+
+    it('form-url-encodes credentials in the Basic header (RFC 6749 §2.3.1)', async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          access_token: 'cc-access-token',
+          expires_in: 7200,
+          token_type: 'Bearer',
+        }),
+        text: vi.fn(),
+      };
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
+
+      const config = createConfig({
+        grantType: 'client_credentials',
+        clientId: 'client id+1',
+        clientSecret: 'p@ss/word+=',
+      });
+
+      const result = await oauthManager.startFlow(config);
+      expect(result.success).toBe(true);
+
+      const fetchCall = vi.mocked(net.fetch).mock.calls[0];
+      const headers = (fetchCall[1]?.headers ?? {}) as Record<string, string>;
+      const enc = (v: string) => encodeURIComponent(v).replace(/%20/g, '+');
+      const expectedAuth = Buffer.from(
+        `${enc('client id+1')}:${enc('p@ss/word+=')}`,
+        'utf-8'
+      ).toString('base64');
+      expect(headers['Authorization']).toBe(`Basic ${expectedAuth}`);
+    });
+
+    it('trims surrounding whitespace from credentials before encoding', async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          access_token: 'cc-access-token',
+          expires_in: 7200,
+          token_type: 'Bearer',
+        }),
+        text: vi.fn(),
+      };
+      vi.mocked(net.fetch).mockResolvedValue(mockResponse as any);
+
+      const config = createConfig({
+        grantType: 'client_credentials',
+        clientId: '  test-client-id  ',
+        clientSecret: 'test-client-secret\n',
+      });
+
+      const result = await oauthManager.startFlow(config);
+      expect(result.success).toBe(true);
+
+      const fetchCall = vi.mocked(net.fetch).mock.calls[0];
+      const headers = (fetchCall[1]?.headers ?? {}) as Record<string, string>;
+      const expectedAuth = Buffer.from(
+        'test-client-id:test-client-secret',
+        'utf-8'
+      ).toString('base64');
+      expect(headers['Authorization']).toBe(`Basic ${expectedAuth}`);
+    });
+
     it('returns error on failure', async () => {
       const mockResponse = {
         ok: false,

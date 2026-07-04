@@ -2,15 +2,15 @@ import { ApiResponse } from '../../../shared/types';
 
 export class ResponseActions {
   private actionsContainer: HTMLElement | null = null;
-  private onCopyCallback: (() => void) | null = null;
   private onFullscreenCallback: (() => void) | null = null;
   private onSearchCallback: (() => void) | null = null;
   private onCollapseCallback: (() => void) | null = null;
   private onExpandCallback: (() => void) | null = null;
   private onScrollTopCallback: (() => void) | null = null;
   private onScrollBottomCallback: (() => void) | null = null;
-  private onExportCallback: (() => void) | null = null;
+  private onClearCallback: (() => void) | null = null;
   private onAskAiCallback: (() => void) | null = null;
+  private onOpenInNotepadCallback: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.setupActionsContainer(container);
@@ -29,13 +29,12 @@ export class ResponseActions {
       this.actionsContainer.innerHTML = `
         <button id="enlarge-btn" class="response-action-btn" title="Fullscreen" aria-label="Fullscreen">Enlarge</button>
         <button id="search-btn" class="response-action-btn" title="Search (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+F)" aria-label="Search response">Search</button>
-        <button id="copy-btn" class="response-action-btn" title="Copy response" aria-label="Copy response">Copy</button>
-        <button id="export-btn" class="response-action-btn" title="Export JSON" aria-label="Export JSON">Export</button>
+        <button id="open-notepad-btn" class="response-action-btn" title="Open in Notepad" aria-label="Open response in Notepad">Notepad</button>
         <button id="collapse-btn" class="response-action-btn" title="Collapse all" aria-label="Collapse all">Collapse</button>
         <button id="expand-btn" class="response-action-btn" title="Expand all" aria-label="Expand all">Expand</button>
         <button id="top-btn" class="response-action-btn" title="Scroll to top" aria-label="Scroll to top">Top</button>
         <button id="bottom-btn" class="response-action-btn" title="Scroll to bottom" aria-label="Scroll to bottom">Bottom</button>
-        <button id="ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI" aria-label="Ask AI about this response">Ask AI</button>
+        <button id="clear-btn" class="response-action-btn response-action-btn--clear" title="Clear response" aria-label="Clear response">Clear</button>
       `;
 
       // Insert after toolbar but before body/header sections
@@ -55,24 +54,25 @@ export class ResponseActions {
     if (!this.actionsContainer) return;
 
     const enlargeBtn = this.actionsContainer.querySelector('#enlarge-btn');
-    const copyBtn = this.actionsContainer.querySelector('#copy-btn');
-    const exportBtn = this.actionsContainer.querySelector('#export-btn');
+    const openNotepadBtn =
+      this.actionsContainer.querySelector('#open-notepad-btn');
     const searchBtn = this.actionsContainer.querySelector('#search-btn');
     const collapseBtn = this.actionsContainer.querySelector('#collapse-btn');
     const expandBtn = this.actionsContainer.querySelector('#expand-btn');
     const topBtn = this.actionsContainer.querySelector('#top-btn');
     const bottomBtn = this.actionsContainer.querySelector('#bottom-btn');
-    const askAiBtn = this.actionsContainer.querySelector('#ask-ai-btn');
+    const clearBtn = this.actionsContainer.querySelector('#clear-btn');
 
     enlargeBtn?.addEventListener('click', () => this.onFullscreenCallback?.());
-    copyBtn?.addEventListener('click', () => this.onCopyCallback?.());
-    exportBtn?.addEventListener('click', () => this.onExportCallback?.());
+    openNotepadBtn?.addEventListener('click', () =>
+      this.onOpenInNotepadCallback?.()
+    );
     searchBtn?.addEventListener('click', () => this.onSearchCallback?.());
     collapseBtn?.addEventListener('click', () => this.onCollapseCallback?.());
     expandBtn?.addEventListener('click', () => this.onExpandCallback?.());
     topBtn?.addEventListener('click', () => this.onScrollTopCallback?.());
     bottomBtn?.addEventListener('click', () => this.onScrollBottomCallback?.());
-    askAiBtn?.addEventListener('click', () => this.onAskAiCallback?.());
+    clearBtn?.addEventListener('click', () => this.onClearCallback?.());
   }
 
   public showForJsonResponse(): void {
@@ -97,14 +97,14 @@ export class ResponseActions {
       activeTab === 'body' && response && (isJsonResponse || isXmlResponse);
     if (shouldShow) {
       this.showForJsonResponse();
-      const exportBtn =
-        this.actionsContainer?.querySelector<HTMLElement>('#export-btn');
+      const openNotepadBtn =
+        this.actionsContainer?.querySelector<HTMLElement>('#open-notepad-btn');
       const collapseBtn =
         this.actionsContainer?.querySelector<HTMLElement>('#collapse-btn');
       const expandBtn =
         this.actionsContainer?.querySelector<HTMLElement>('#expand-btn');
       const display = isJsonResponse ? '' : 'none';
-      if (exportBtn) exportBtn.style.display = display;
+      if (openNotepadBtn) openNotepadBtn.style.display = display;
       if (collapseBtn) collapseBtn.style.display = display;
       if (expandBtn) expandBtn.style.display = display;
     } else {
@@ -112,12 +112,6 @@ export class ResponseActions {
     }
   }
 
-  public onCopy(callback: () => void): void {
-    this.onCopyCallback = callback;
-  }
-  public onExport(callback: () => void): void {
-    this.onExportCallback = callback;
-  }
   public onFullscreen(callback: () => void): void {
     this.onFullscreenCallback = callback;
   }
@@ -136,20 +130,26 @@ export class ResponseActions {
   public onScrollBottom(callback: () => void): void {
     this.onScrollBottomCallback = callback;
   }
+  public onClear(callback: () => void): void {
+    this.onClearCallback = callback;
+  }
   public onAskAi(callback: () => void): void {
     this.onAskAiCallback = callback;
+  }
+  public onOpenInNotepad(callback: () => void): void {
+    this.onOpenInNotepadCallback = callback;
   }
 
   public destroy(): void {
     this.actionsContainer?.remove();
-    this.onCopyCallback = null;
     this.onFullscreenCallback = null;
     this.onSearchCallback = null;
     this.onCollapseCallback = null;
     this.onExpandCallback = null;
     this.onScrollTopCallback = null;
     this.onScrollBottomCallback = null;
-    this.onExportCallback = null;
+    this.onClearCallback = null;
     this.onAskAiCallback = null;
+    this.onOpenInNotepadCallback = null;
   }
 }

@@ -347,6 +347,25 @@ export class MonacoJsonEditor {
     return this.editor;
   }
 
+  /** Toggle soft word wrapping. */
+  public setWordWrap(on: boolean): void {
+    this.editor?.updateOptions({ wordWrap: on ? 'on' : 'off' });
+  }
+
+  /** Set the editor font size (px). */
+  public setFontSize(px: number): void {
+    this.editor?.updateOptions({ fontSize: px });
+  }
+
+  /** Current editor font size (px). */
+  public getFontSize(): number {
+    if (!this.editor) return 12;
+    return (
+      (this.editor.getOption(monaco.editor.EditorOption.fontSize) as number) ??
+      12
+    );
+  }
+
   /** Capture the editor view state (cursor/scroll/contributions). */
   public saveViewState(): monaco.editor.ICodeEditorViewState | null {
     return this.editor?.saveViewState() ?? null;

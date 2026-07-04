@@ -1,6 +1,9 @@
 import { TargetAdHocTemplates } from './TargetAdHocTemplates';
 import { TargetAdHocDataExtractor } from './TargetAdHocDataExtractor';
 import { TargetAdHocPrefill } from './TargetAdHocPrefill';
+import { addVariableHighlighting } from '../request/variable-helper';
+import { MonacoJsonEditor } from '../request/MonacoJsonEditor';
+import { Environment } from '../../../shared/types';
 
 type HttpMethod =
   | 'GET'
@@ -32,11 +35,73 @@ export class TargetAdHocEditor {
   private container: HTMLElement | null = null;
   private activeTab = 'params';
 
+  // Variable highlighting context (mirrors the API tab). The active environment
+  // is the one chosen in the load test form's Environment dropdown so colors and
+  // hover tooltips reflect the values the run will actually use.
+  private varEnv: Environment | undefined;
+  private varGlobals: { variables: Record<string, string> } = {
+    variables: {},
+  };
+  private varFolderVars: Record<string, string> = {};
+  private bodyJsonEditor: MonacoJsonEditor | null = null;
+
   render(container: HTMLElement): void {
+    this.disposeBodyJsonEditor();
     this.container = container;
     container.innerHTML = TargetAdHocTemplates.getMainTemplate();
     this.setupEventListeners();
     this.setupAuthConfig();
+    this.refreshHighlighting();
+  }
+
+  /**
+   * Sets the variable-resolution context used for coloring {{variables}} and
+   * their hover tooltips, then re-applies highlighting to every input.
+   */
+  setVariableContext(
+    env: Environment | undefined,
+    globals: { variables: Record<string, string> },
+    folderVars: Record<string, string>
+  ): void {
+    this.varEnv = env;
+    this.varGlobals = globals || { variables: {} };
+    this.varFolderVars = folderVars || {};
+    this.refreshHighlighting();
+  }
+
+  /**
+   * Applies variable highlighting + hover tooltips to all text inputs in the
+   * editor (URL, params, headers, basic/bearer/api-key auth, and OAuth fields).
+   * Safe to call repeatedly — listeners are attached once per input.
+   */
+  refreshHighlighting(): void {
+    if (!this.container) return;
+
+    const inputs = this.container.querySelectorAll<HTMLInputElement>(
+      '#target-url, input.key-input, input.value-input, input.auth-input, .oauth-config input[type="text"], .oauth-config input[type="password"]'
+    );
+    inputs.forEach((input) => this.enhanceInput(input));
+  }
+
+  private enhanceInput(input: HTMLInputElement): void {
+    const marker = '__ltVariableSupport';
+    if (!(input as unknown as Record<string, boolean>)[marker]) {
+      (input as unknown as Record<string, boolean>)[marker] = true;
+      input.addEventListener('input', () => {
+        addVariableHighlighting(
+          input,
+          this.varEnv,
+          this.varGlobals,
+          this.varFolderVars
+        );
+      });
+    }
+    addVariableHighlighting(
+      input,
+      this.varEnv,
+      this.varGlobals,
+      this.varFolderVars
+    );
   }
 
   private setupEventListeners(): void {
@@ -115,6 +180,16 @@ export class TargetAdHocEditor {
     this.container
       .querySelector(`#target-${section}-section`)
       ?.classList.add('active');
+
+    // Re-align overlays now that the section is visible (hidden inputs report a
+    // zero rect, so their highlight would otherwise be mispositioned).
+    this.refreshHighlighting();
+
+    // Monaco renders at zero size while its section is hidden; force a relayout
+    // once the Body tab becomes visible.
+    if (section === 'body') {
+      this.bodyJsonEditor?.getEditor()?.layout();
+    }
   }
 
   private addKeyValueRow(editorId: string): void {
@@ -126,6 +201,7 @@ export class TargetAdHocEditor {
       'beforeend',
       TargetAdHocTemplates.getKeyValueRow()
     );
+    this.refreshHighlighting();
   }
 
   private setupAuthConfig(): void {
@@ -155,6 +231,8 @@ export class TargetAdHocEditor {
         this.setupOAuth2Listeners();
         break;
     }
+
+    this.refreshHighlighting();
   }
 
   private setupOAuth2Listeners(): void {
@@ -170,6 +248,7 @@ export class TargetAdHocEditor {
     const updateVisibility = () => {
       authCodeFields.style.display =
         grantType.value === 'authorization_code' ? 'block' : 'none';
+      this.refreshHighlighting();
     };
 
     grantType.addEventListener('change', updateVisibility);
@@ -179,18 +258,50 @@ export class TargetAdHocEditor {
   private toggleBodyEditor(type: string): void {
     if (!this.container) return;
 
-    const bodyEditor = this.container.querySelector(
+    const textarea = this.container.querySelector(
       '#target-request-body'
     ) as HTMLTextAreaElement;
+    const monacoContainer = this.container.querySelector(
+      '#target-body-monaco'
+    ) as HTMLElement;
+    if (!textarea || !monacoContainer) return;
 
-    if (type === 'none') {
-      bodyEditor.style.display = 'none';
-      bodyEditor.value = '';
-    } else {
-      bodyEditor.style.display = 'block';
-      if (type === 'json' && !bodyEditor.value) {
-        bodyEditor.value = '{\n  \n}';
+    if (type === 'json') {
+      // Show the Monaco JSON editor (syntax highlighting + validation) like the
+      // API tab. The textarea stays in the DOM as the source of truth and is
+      // kept in sync from Monaco's onChange, so data extraction is unchanged.
+      const content =
+        textarea.value && textarea.value.trim() ? textarea.value : '{\n  \n}';
+      textarea.value = content;
+      textarea.style.display = 'none';
+      monacoContainer.style.display = 'block';
+
+      if (!this.bodyJsonEditor) {
+        this.bodyJsonEditor = new MonacoJsonEditor({
+          container: monacoContainer,
+          value: content,
+          onChange: (value) => {
+            textarea.value = value;
+          },
+        });
+      } else {
+        this.bodyJsonEditor.setValue(content);
       }
+    } else if (type === 'none') {
+      monacoContainer.style.display = 'none';
+      textarea.style.display = 'none';
+      textarea.value = '';
+    } else {
+      // raw / form-urlencoded → plain textarea (Monaco kept hidden for reuse)
+      monacoContainer.style.display = 'none';
+      textarea.style.display = 'block';
+    }
+  }
+
+  private disposeBodyJsonEditor(): void {
+    if (this.bodyJsonEditor) {
+      this.bodyJsonEditor.dispose();
+      this.bodyJsonEditor = null;
     }
   }
 
@@ -250,5 +361,7 @@ export class TargetAdHocEditor {
         this.toggleBodyEditor(type)
       );
     }
+
+    this.refreshHighlighting();
   }
 }

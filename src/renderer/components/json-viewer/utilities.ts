@@ -27,7 +27,6 @@ export class JsonViewerUtilities {
             <button id="fs-expand-btn" class="response-action-btn" title="Expand all JSON nodes">Expand</button>
             <button id="fs-top-btn" class="response-action-btn" title="Scroll to top">Top</button>
             <button id="fs-bottom-btn" class="response-action-btn" title="Scroll to bottom">Bottom</button>
-            <button id="fs-ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI about this JSON">Ask AI</button>
             <button class="close-btn">×</button>
           </div>
         </div>
@@ -204,7 +203,6 @@ export class JsonViewerUtilities {
             <button id="fs-expand-btn" class="response-action-btn" title="Expand all JSON nodes">Expand</button>
             <button id="fs-top-btn" class="response-action-btn" title="Scroll to top">Top</button>
             <button id="fs-bottom-btn" class="response-action-btn" title="Scroll to bottom">Bottom</button>
-            <button id="fs-ask-ai-btn" class="response-action-btn ask-ai-btn" title="Ask AI about this JSON">Ask AI</button>
             <button class="close-btn">×</button>
           </div>
         </div>
@@ -274,27 +272,6 @@ export class JsonViewerUtilities {
     ) as HTMLButtonElement;
     bottomBtn?.addEventListener('click', () => {
       fullscreenEditor.scrollToBottom();
-    });
-
-    const askAiBtn = modal.querySelector('#fs-ask-ai-btn') as HTMLButtonElement;
-    askAiBtn?.addEventListener('click', () => {
-      const response = {
-        body: jsonString,
-        headers: {},
-        status: 200,
-        statusText: 'OK',
-        size: jsonString.length,
-        time: 0,
-        contentType: 'application/json',
-        timestamp: Date.now(),
-      };
-
-      const askAIEvent = new CustomEvent('open-ask-ai', {
-        detail: { response },
-      });
-      document.dispatchEvent(askAIEvent);
-
-      cleanup();
     });
 
     const cleanup = () => {

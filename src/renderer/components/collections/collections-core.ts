@@ -1,4 +1,5 @@
 import { Collection, ApiRequest } from '../../../shared/types';
+import { cloneApiRequest } from '../../../shared/clone-request';
 import { CollectionsSearch, CollectionTreeState } from './collections-search';
 import { CollectionsUIHandler } from './collections-ui-handler';
 import { CollectionsRenderer } from './collections-renderer';
@@ -495,10 +496,14 @@ export class CollectionsCore {
       requestCollection.type === 'request' &&
       requestCollection.request
     ) {
-      requestCollection.request = {
+      // Deep-clone the merged result so the persisted collection tree never
+      // shares nested references (params/headers/body/auth) with the live
+      // request editor. Without this, later edits — or another request's
+      // edits — bleed into the stored request ("two requests merged" bug).
+      requestCollection.request = cloneApiRequest({
         ...requestCollection.request,
         ...updatedRequest,
-      };
+      });
       requestCollection.updatedAt = new Date();
 
       const event = new CustomEvent('collections-changed', {

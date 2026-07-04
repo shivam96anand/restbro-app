@@ -3,11 +3,13 @@ import { ResponseState, ResponseManagerConfig } from '../types/response-types';
 import { ResponseViewer } from './response-viewer/ResponseViewer';
 import { ResponseTabs } from './response-viewer/ResponseTabs';
 import { ResponseActions } from './response-viewer/ResponseActions';
+import { ResponseControlsBar } from './response-viewer/ResponseControlsBar';
 
 export class ResponseManager {
   private viewer!: ResponseViewer;
   private tabs!: ResponseTabs;
   private actions!: ResponseActions;
+  private controlsBar!: ResponseControlsBar;
   private state: ResponseState;
   private container: HTMLElement;
   private loadingElement: HTMLElement | null = null;
@@ -57,22 +59,25 @@ export class ResponseManager {
     this.viewer = new ResponseViewer(this.container, config.viewerConfig);
     this.tabs = new ResponseTabs(this.container, config.tabsConfig);
     this.actions = new ResponseActions(this.container);
+    this.controlsBar = new ResponseControlsBar(this.viewer);
 
     this.setupEventListeners();
   }
 
   private setupEventListeners(): void {
     this.tabs.onTabChange((tab) => this.handleTabChange(tab));
+    this.tabs.onCopy(() => this.copyJsonResponse());
+    this.tabs.onExport(() => this.exportJsonResponse());
 
-    this.actions.onCopy(() => this.copyJsonResponse());
-    this.actions.onExport(() => this.exportJsonResponse());
     this.actions.onFullscreen(() => this.toggleFullscreen());
     this.actions.onSearch(() => this.triggerMonacoSearch());
     this.actions.onCollapse(() => this.collapseAll());
     this.actions.onExpand(() => this.expandAll());
     this.actions.onScrollTop(() => this.scrollToTop());
     this.actions.onScrollBottom(() => this.scrollToBottom());
+    this.actions.onClear(() => this.clearResponse());
     this.actions.onAskAi(() => this.handleAskAI());
+    this.actions.onOpenInNotepad(() => this.openJsonInNotepad());
 
     this.listenToResponses();
     this.listenToTabChanges();
@@ -88,6 +93,7 @@ export class ResponseManager {
   private handleTabChange(tab: string): void {
     this.state.activeTab = tab;
     this.viewer.switchTab(tab);
+    this.controlsBar.setActiveTab(tab);
     this.actions.updateVisibility(
       this.state.currentResponse,
       tab,
@@ -248,6 +254,10 @@ export class ResponseManager {
         this.viewer.isJsonBody(),
         this.viewer.isXmlBody()
       );
+      this.tabs.updateActionButtons(
+        !!this.state.currentResponse,
+        this.viewer.isJsonBody()
+      );
     });
   }
 
@@ -308,6 +318,7 @@ export class ResponseManager {
     await this.viewer.displayResponse(response, requestMode);
     this.tabs.updateTabs(response);
     this.tabs.setPrevResponsesContext(this.activeTabRequestId, response);
+    this.tabs.updateActionButtons(true, this.viewer.isJsonBody());
     this.actions.updateVisibility(
       response,
       this.state.activeTab,
@@ -324,6 +335,7 @@ export class ResponseManager {
     this.state.currentResponse = null;
     this.viewer.clear();
     this.actions.hide();
+    this.tabs.updateActionButtons(false, false);
     this.tabs.setPrevResponsesContext(null, null);
     this.hideLoadingState();
   }
@@ -335,6 +347,7 @@ export class ResponseManager {
     // Hide any existing response
     this.viewer.clear();
     this.actions.hide();
+    this.tabs.updateActionButtons(false, false);
 
     ['response-body', 'response-headers'].forEach((sectionId) => {
       const section = this.container.querySelector(`#${sectionId}`);
@@ -465,6 +478,7 @@ export class ResponseManager {
     this.state.currentResponse = null;
     this.viewer.clear();
     this.actions.hide();
+    this.tabs.updateActionButtons(false, false);
   }
 
   // Action button implementations
@@ -504,6 +518,24 @@ export class ResponseManager {
     }
 
     this.viewer.exportJson();
+  }
+
+  /**
+   * Open the current JSON response as a pretty-printed tab in the Notepad.
+   * Replaces the old "send to JSON Viewer" affordance now that the standalone
+   * viewer is gone. Reuses the already-parsed JSON to avoid re-parsing.
+   */
+  private openJsonInNotepad(): void {
+    const parsed = this.viewer.getParsedJson();
+    if (parsed === null || parsed === undefined) {
+      this.showToast('No JSON response to open');
+      return;
+    }
+    document.dispatchEvent(
+      new CustomEvent('open-json-in-notepad', {
+        detail: { text: JSON.stringify(parsed), title: 'response.json' },
+      })
+    );
   }
 
   private triggerMonacoSearch(): void {

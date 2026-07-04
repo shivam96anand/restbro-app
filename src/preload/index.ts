@@ -235,6 +235,7 @@ interface LoadTestConfig {
   rpm: number;
   durationSec: number;
   target: LoadTestTarget;
+  environmentId?: string;
   followRedirects?: boolean;
   insecureTLS?: boolean;
   requestTimeoutMs?: number;

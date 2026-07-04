@@ -143,11 +143,15 @@ export interface Environment {
   name: string;
   variables: Record<string, string>;
   variableDescriptions?: Record<string, string>;
+  /** Per-variable secret flag. When true, the value is masked in the UI. */
+  variableSecrets?: Record<string, boolean>;
 }
 
 export interface Globals {
   variables: Record<string, string>;
   variableDescriptions?: Record<string, string>;
+  /** Per-variable secret flag. When true, the value is masked in the UI. */
+  variableSecrets?: Record<string, boolean>;
 }
 
 export interface CollectionsUIState {
@@ -270,6 +274,20 @@ export interface AppState {
   requestSettings?: RequestSettings;
   hasSeededDefaults?: boolean;
   layoutMode?: 'horizontal' | 'vertical';
+  loadTestHistory?: LoadTestHistoryEntry[];
+  speedTestHistory?: SpeedTestHistoryEntry[];
+}
+
+/**
+ * One persisted network speed-test run, shown in the Speed Test popup's
+ * "Recent runs" list. Capped at the 5 most recent entries.
+ */
+export interface SpeedTestHistoryEntry {
+  id: string;
+  timestamp: number; // epoch ms when the run finished
+  downloadMbps: number;
+  uploadMbps: number;
+  pingMs: number;
 }
 
 // Load Testing Types
@@ -314,6 +332,12 @@ export interface LoadTestConfig {
   rpm: number; // requests per minute
   durationSec: number; // total duration in seconds
   target: LoadTestTarget;
+  /**
+   * Environment used to resolve {{variables}} and OAuth credentials for the
+   * target request. `undefined` falls back to the globally-active environment;
+   * an empty string means "No Environment" (resolve without one).
+   */
+  environmentId?: string;
   followRedirects?: boolean;
   insecureTLS?: boolean;
   requestTimeoutMs?: number; // default to same as app default
@@ -354,6 +378,22 @@ export interface LoadTestSummary {
   wallTimeMs: number;
   startedAt: number;
   finishedAt: number;
+}
+
+/**
+ * A persisted record of a completed load test run, shown in the History table.
+ * Stores the full summary plus enough metadata to re-display and label it.
+ */
+export interface LoadTestHistoryEntry {
+  id: string; // runId
+  startedAt: number;
+  finishedAt: number;
+  rpm: number;
+  durationSec: number;
+  targetKind: 'collection' | 'adhoc';
+  targetLabel: string; // request name or "METHOD url"
+  environmentName?: string;
+  summary: LoadTestSummary;
 }
 
 // OAuth 2.0 Types

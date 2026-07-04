@@ -4,8 +4,12 @@ import { PreviousResponsesDropdown } from './PreviousResponsesDropdown';
 
 export class ResponseTabs {
   private tabsContainer: HTMLElement | null = null;
+  private actionsGroup: HTMLElement | null = null;
+  private exportButton: HTMLElement | null = null;
   private activeTab: string = 'body';
   private onTabChangeCallback: ((tab: string) => void) | null = null;
+  private onCopyCallback: (() => void) | null = null;
+  private onExportCallback: (() => void) | null = null;
   private prevResponsesDropdown: PreviousResponsesDropdown =
     new PreviousResponsesDropdown();
 
@@ -75,8 +79,50 @@ export class ResponseTabs {
 
     tabRow.appendChild(tabGroup);
 
+    // ── Right side: quick copy / export icon actions ──
+    // Copy is available for any response body; Export only for JSON bodies.
+    // Hidden until a response is displayed (toggled via updateActionButtons).
+    const actionsGroup = document.createElement('div');
+    actionsGroup.className = 'response-toolbar__actions';
+    actionsGroup.style.display = 'none';
+
+    const copyBtn = this.createActionIcon(
+      'response-copy-icon',
+      'Copy response',
+      '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
+    );
+    copyBtn.addEventListener('click', () => this.onCopyCallback?.());
+
+    const exportBtn = this.createActionIcon(
+      'response-export-icon',
+      'Export JSON',
+      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'
+    );
+    exportBtn.addEventListener('click', () => this.onExportCallback?.());
+
+    actionsGroup.appendChild(copyBtn);
+    actionsGroup.appendChild(exportBtn);
+    tabRow.appendChild(actionsGroup);
+    this.actionsGroup = actionsGroup;
+    this.exportButton = exportBtn;
+
     this.tabsContainer.appendChild(metaRow);
     this.tabsContainer.appendChild(tabRow);
+  }
+
+  private createActionIcon(
+    id: string,
+    label: string,
+    paths: string
+  ): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = id;
+    btn.className = 'response-toolbar__action';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    return btn;
   }
 
   /**
@@ -166,6 +212,27 @@ export class ResponseTabs {
     this.onTabChangeCallback = callback;
   }
 
+  public onCopy(callback: () => void): void {
+    this.onCopyCallback = callback;
+  }
+
+  public onExport(callback: () => void): void {
+    this.onExportCallback = callback;
+  }
+
+  /**
+   * Show / hide the quick copy & export icon actions in the tab row. Copy is
+   * shown whenever a response exists; Export only for JSON bodies.
+   */
+  public updateActionButtons(hasResponse: boolean, isJson: boolean): void {
+    if (this.actionsGroup) {
+      this.actionsGroup.style.display = hasResponse ? 'flex' : 'none';
+    }
+    if (this.exportButton) {
+      this.exportButton.style.display = hasResponse && isJson ? '' : 'none';
+    }
+  }
+
   public getActiveTab(): string {
     return this.activeTab;
   }
@@ -176,6 +243,7 @@ export class ResponseTabs {
 
   public clear(): void {
     this.selectTab('body');
+    this.updateActionButtons(false, false);
 
     const statusEl = document.getElementById('meta-status');
     const timeEl = document.getElementById('meta-time');
@@ -212,5 +280,7 @@ export class ResponseTabs {
   public destroy(): void {
     this.tabsContainer?.remove();
     this.onTabChangeCallback = null;
+    this.onCopyCallback = null;
+    this.onExportCallback = null;
   }
 }

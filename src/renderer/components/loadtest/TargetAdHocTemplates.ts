@@ -59,6 +59,7 @@ export class TargetAdHocTemplates {
               <label><input type="radio" name="target-body-type" value="raw"> Raw</label>
               <label><input type="radio" name="target-body-type" value="form-urlencoded"> Form URL Encoded</label>
             </div>
+            <div id="target-body-monaco" class="loadtest-body-monaco" style="display: none;"></div>
             <textarea id="target-request-body" class="body-editor" placeholder="Request body"></textarea>
           </div>
         </div>

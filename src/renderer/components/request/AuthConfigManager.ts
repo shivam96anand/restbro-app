@@ -32,23 +32,29 @@ export class AuthConfigManager {
    * Initializes the auth editor with event listeners
    */
   setup(): void {
-    const authTypeSelect = document.getElementById(
-      'auth-type'
-    ) as HTMLSelectElement;
+    // Delegate the change handler to the stable #auth-section container instead
+    // of binding directly to #auth-type. The auth-type/auth-config elements are
+    // destroyed and rebuilt whenever SOAP certs replace the auth UI and it is
+    // later restored (SoapCertsManager rewrites #auth-section innerHTML), which
+    // would otherwise silently drop a listener bound to the original select and
+    // leave selecting an auth type (e.g. OAuth 2.0) doing nothing.
+    const authSection = document.getElementById('auth-section');
+    if (!authSection) return;
 
-    if (authTypeSelect) {
-      authTypeSelect.addEventListener('change', () => {
-        const newAuthType = authTypeSelect.value;
-        this.renderConfig(newAuthType);
-        this.uiHelpers.toggleOAuthStatus(newAuthType === 'oauth2');
+    authSection.addEventListener('change', (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.id !== 'auth-type') return;
 
-        // Update the request with the new auth type and empty config
-        this.onAuthUpdate({
-          type: newAuthType,
-          config: {},
-        });
+      const newAuthType = (target as HTMLSelectElement).value;
+      this.renderConfig(newAuthType);
+      this.uiHelpers.toggleOAuthStatus(newAuthType === 'oauth2');
+
+      // Update the request with the new auth type and empty config
+      this.onAuthUpdate({
+        type: newAuthType,
+        config: {},
       });
-    }
+    });
   }
 
   /**

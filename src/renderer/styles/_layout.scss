@@ -493,3 +493,13 @@
     display: block;
   }
 }
+
+// The API tab hosts a fixed request-tab strip plus the flexible workspace
+// (collections + request/response). Flex-column so the workspace fills all
+// remaining height down to the very bottom — no fragile viewport calc.
+#api-tab {
+  &.active {
+    display: flex;
+    flex-direction: column;
+  }
+}

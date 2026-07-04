@@ -199,7 +199,9 @@ export class TabsStateManager {
       const newTab: RequestTab = {
         id: this.generateId(),
         name: request.name,
-        request: requestWithCollection, // Add collectionId to request
+        // Deep-clone so the tab never shares nested references (params/
+        // headers/body/auth) with the source collection-tree request.
+        request: this.cloneRequest(requestWithCollection),
         requestMode: request.soap ? 'soap' : 'rest',
         restDraft: this.cloneRequest(requestWithCollection),
         soapDraft: request.soap
@@ -233,7 +235,9 @@ export class TabsStateManager {
       const newTab: RequestTab = {
         id: this.generateId(),
         name: request.name,
-        request: requestWithCollection, // Add collectionId to request
+        // Deep-clone so the tab never shares nested references (params/
+        // headers/body/auth) with the source collection-tree request.
+        request: this.cloneRequest(requestWithCollection),
         requestMode: request.soap ? 'soap' : 'rest',
         restDraft: this.cloneRequest(requestWithCollection),
         soapDraft: request.soap

@@ -16,6 +16,7 @@ import {
   trimTrailingWhitespace,
 } from './notepad-editor';
 import { detectLanguageFromPath } from './notepad-language';
+import { formatJson } from './notepad-json';
 import { showNotepadToast } from './notepad-toast';
 import { getFileName } from './notepad-utils';
 
@@ -31,6 +32,20 @@ export interface FileOperationsContext {
   getToastHost: () => HTMLElement;
   /** Flush any in-flight content debounce so the store has the latest text. */
   flushPendingContent: () => void;
+}
+
+/**
+ * JSON files are pretty-printed on open (the JSON Viewer replacement). Very
+ * large files skip auto-formatting to avoid a costly parse/stringify on open.
+ */
+const JSON_FORMAT_ON_OPEN_MAX = 2_000_000;
+
+function contentForOpen(content: string, language: string | undefined): string {
+  if (language !== 'json' || content.length > JSON_FORMAT_ON_OPEN_MAX) {
+    return content;
+  }
+  const result = formatJson(content);
+  return result.ok ? result.text : content;
 }
 
 export async function openFile(ctx: FileOperationsContext): Promise<void> {
@@ -53,7 +68,7 @@ export async function openFile(ctx: FileOperationsContext): Promise<void> {
   const language = detectLanguageFromPath(result.filePath);
   ctx.store.createTab({
     title: getFileName(result.filePath),
-    content: result.content,
+    content: contentForOpen(result.content, language),
     filePath: result.filePath,
     language,
   });
@@ -90,7 +105,7 @@ export async function openFileByPath(
   const language = detectLanguageFromPath(result.filePath);
   ctx.store.createTab({
     title: getFileName(result.filePath),
-    content: result.content,
+    content: contentForOpen(result.content, language),
     filePath: result.filePath,
     language,
   });

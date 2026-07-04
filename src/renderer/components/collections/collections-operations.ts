@@ -224,7 +224,11 @@ export class CollectionsOperations {
         type: collection.type,
         parentId: collection.parentId,
         order: newOrder,
-        request: collection.request ? { ...collection.request } : undefined,
+        // Keep the copied request's name aligned with the "… Copy" label so an
+        // opened tab shows the duplicate's name, not the original's.
+        request: collection.request
+          ? { ...collection.request, name: duplicatedName }
+          : undefined,
       });
 
       // Insert the duplicate right after the original in the array
@@ -733,6 +737,11 @@ export class CollectionsOperations {
         name: newName,
       });
       collection.name = newName;
+      // Keep the request payload's name aligned with the display name so opening
+      // the request in a tab (which uses request.name) reflects the new name.
+      if (collection.type === 'request' && collection.request) {
+        collection.request.name = newName;
+      }
       collection.updatedAt = new Date();
 
       const event = new CustomEvent('collection-renamed', {

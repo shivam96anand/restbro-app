@@ -42,17 +42,6 @@
       <header class="app-header">
         <div class="header-left">
           <!-- Environment selector will be inserted here by EnvironmentManager -->
-          <button
-            id="layout-toggle-btn"
-            class="layout-toggle-btn"
-            title="Toggle layout: side-by-side / stacked"
-            aria-label="Toggle layout"
-          >
-            <svg class="layout-toggle-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-              <rect x="1" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <rect x="11" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-          </button>
         </div>
         <div class="header-center">
           <div class="app-title">RestBro</div>
@@ -118,14 +107,6 @@
                 <path d="M9 10h6M12 7v6" />
               </svg>
               <span class="nav-label">API</span>
-            </button>
-            <button class="nav-tab" data-tab="json-viewer">
-              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 3h6l5 5v13H8z" />
-                <path d="M14 3v5h5" />
-                <path d="M10 13h7M10 17h7M10 9h2" />
-              </svg>
-              <span class="nav-label">JSON Viewer</span>
             </button>
             <button class="nav-tab" data-tab="json-compare">
               <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -491,13 +472,22 @@
                     </div>
                   </div>
                 </div>
+                <div class="panel-bottom-bar response-bottom-bar">
+                  <button
+                    id="layout-toggle-btn"
+                    class="layout-toggle-btn"
+                    title="Toggle layout: side-by-side / stacked"
+                    aria-label="Toggle layout"
+                  >
+                    <svg class="layout-toggle-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                      <rect x="1" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      <rect x="11" y="2" width="8" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
               </div>
             </div>
-          </div>
-
-          <div id="json-viewer-tab" class="tab-content">
-            <!-- JSON Viewer content will be rendered here by JsonViewerTab -->
           </div>
 
           <div id="json-compare-tab" class="tab-content">

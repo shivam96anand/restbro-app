@@ -132,9 +132,30 @@ class IpcManager {
       IPC_CHANNELS.COLLECTION_UPDATE,
       (_, id: string, updates: Partial<Collection>): void => {
         const state = storeManager.getState();
-        const updatedCollections = state.collections.map((col) =>
-          col.id === id ? { ...col, ...updates, updatedAt: new Date() } : col
-        );
+        const updatedCollections = state.collections.map((col) => {
+          if (col.id !== id) return col;
+
+          const merged: Collection = {
+            ...col,
+            ...updates,
+            updatedAt: new Date(),
+          };
+
+          // For request-type collections, keep request.name in sync with the
+          // display name on rename. This stops the request's name (used for tab
+          // titles and exports) from drifting away from the sidebar label after
+          // a rename or duplicate.
+          if (
+            merged.type === 'request' &&
+            typeof updates.name === 'string' &&
+            updates.request === undefined &&
+            merged.request
+          ) {
+            merged.request = { ...merged.request, name: updates.name };
+          }
+
+          return merged;
+        });
         storeManager.setState({ collections: updatedCollections });
       }
     );

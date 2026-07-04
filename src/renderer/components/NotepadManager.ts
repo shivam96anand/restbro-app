@@ -42,6 +42,7 @@ import {
 import { renderMarkdown } from './notepad/notepad-markdown';
 import { isSwaggerContent, renderSwagger } from './notepad/notepad-swagger';
 import { showNotepadToast } from './notepad/notepad-toast';
+import { formatJson } from './notepad/notepad-json';
 
 export class NotepadManager {
   private container: HTMLElement;
@@ -59,7 +60,6 @@ export class NotepadManager {
   private modal!: DirtyModal;
   private settingsMenu!: SettingsMenu;
   private keyHandler: KeyboardHandler | null = null;
-  private fileOpenedDispose: (() => void) | null = null;
   private beforeQuitDispose: (() => void) | null = null;
   private initialized = false;
   /** Last activeTabId we rendered the editor for. Drives editor reload on switch. */
@@ -109,9 +109,6 @@ export class NotepadManager {
         this.loadActiveTabIntoEditor();
       }
     });
-
-    // Drain any files queued by the OS before the renderer was ready.
-    this.drainPendingFiles();
   }
 
   private buildLayout(): void {
@@ -123,6 +120,7 @@ export class NotepadManager {
       onSave: () => void saveActiveTab(this.getFileOpsContext()),
       onTogglePreview: () => this.togglePreview(),
       onPreviewClose: () => this.closePreview(),
+      onFormatJson: () => this.formatActiveTabJson(),
       onSettingsClick: (anchor) =>
         this.settingsMenu.toggle(anchor, this.store.getSettings()),
       onLanguageChange: (lang) => this.setActiveTabLanguage(lang),
@@ -206,15 +204,6 @@ export class NotepadManager {
     });
 
     this.attachDragDropListeners();
-
-    // OS file-association: a path was opened via the OS shell.
-    this.fileOpenedDispose = window.restbro.notepad.onFileOpened((filePath) => {
-      // Switch to the Notepad tab so the user sees the opened file
-      document.dispatchEvent(
-        new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
-      );
-      void openFileByPath(this.getFileOpsContext(), filePath);
-    });
 
     // App-wide before-quit IPC: flush notepad state and allow quit.
     // The notepad content is auto-persisted to database.json, so the state
@@ -371,6 +360,11 @@ export class NotepadManager {
     );
 
     const activeTab = state.tabs.find((t) => t.id === state.activeTabId);
+    // JSON-only actions: only meaningful when the active tab is JSON.
+    const isJsonTab = activeTab?.language === 'json';
+    this.elements.formatJsonBtn.classList.toggle('hidden', !isJsonTab);
+    // Preview is redundant for JSON (Format handles pretty-printing) — disable.
+    this.elements.previewToggleBtn.disabled = isJsonTab;
     if (activeTab) {
       this.doUpdateStatusBar(activeTab);
       this.elements.languagePicker.value = activeTab.language ?? 'plaintext';
@@ -455,6 +449,40 @@ export class NotepadManager {
     this.store.createTab();
   }
 
+  /**
+   * Open a new Notepad tab containing pretty-printed JSON. This is the
+   * replacement entry point for the removed standalone JSON Viewer: callers
+   * (e.g. the response viewer's "Open in Notepad" action) hand over raw JSON
+   * text and the user lands on a formatted, syntax-highlighted json tab.
+   *
+   * Invalid JSON is opened as-is with a non-blocking notice so the payload is
+   * never lost.
+   */
+  async openJson(text: string, title = 'response.json'): Promise<void> {
+    await this.ensureInitialized();
+
+    // Preserve the outgoing tab's view state / pending edits before switching.
+    if (this.editor) {
+      const current = this.store.getActiveTab();
+      if (current) {
+        const viewState = this.editor.saveViewState();
+        if (viewState) this.store.setViewState(current.id, viewState);
+        this.flushPendingContent();
+      }
+    }
+
+    const formatted = formatJson(text);
+    this.store.createTab({ title, content: formatted.text, language: 'json' });
+
+    if (!formatted.ok) {
+      showNotepadToast(
+        this.elements.root,
+        'Opened as-is — the content is not valid JSON.',
+        'info'
+      );
+    }
+  }
+
   private loadActiveTabIntoEditor(): void {
     const activeTab = this.store.getActiveTab();
     if (!activeTab) return;
@@ -478,6 +506,34 @@ export class NotepadManager {
       wordWrap: s.wordWrap,
       tabSize: s.tabSize,
     });
+  }
+
+  /**
+   * Format the active JSON tab in place. Preserves Monaco's undo stack via
+   * executeEdits. No-op (with a toast) when the buffer isn't valid JSON. Only
+   * reachable when the active tab's language is `json`.
+   */
+  private formatActiveTabJson(): void {
+    if (!this.editor) return;
+    const activeTab = this.store.getActiveTab();
+    if (!activeTab) return;
+    const current = this.editor.getValue();
+    const result = formatJson(current);
+    if (!result.ok) {
+      showNotepadToast(
+        this.elements.root,
+        'Invalid JSON — nothing changed.',
+        'error'
+      );
+      return;
+    }
+    if (result.text === current) return;
+    const model = this.editor.getModel();
+    if (!model) return;
+    this.editor.executeEdits('notepad-json', [
+      { range: model.getFullModelRange(), text: result.text },
+    ]);
+    this.editor.pushUndoStop();
   }
 
   private switchTab(direction: 1 | -1): void {
@@ -675,14 +731,19 @@ export class NotepadManager {
       return;
     }
 
-    // All other languages — show as formatted code.
+    // All other languages — show as formatted code. JSON is pretty-printed so
+    // the Preview pane gives a readable view of a minified payload (invalid
+    // JSON falls back to the raw text).
+    const isJson = lang === 'json';
     if (headerEl) {
-      headerEl.textContent = `${lang.charAt(0).toUpperCase() + lang.slice(1)} Preview`;
+      headerEl.textContent = isJson
+        ? 'JSON Preview'
+        : `${lang.charAt(0).toUpperCase() + lang.slice(1)} Preview`;
     }
     const pre = document.createElement('pre');
     pre.className = 'notepad-code-preview';
     const code = document.createElement('code');
-    code.textContent = source;
+    code.textContent = isJson ? formatJson(source).text : source;
     pre.appendChild(code);
     this.elements.previewBody.innerHTML = '';
     this.elements.previewBody.appendChild(pre);
@@ -747,21 +808,14 @@ export class NotepadManager {
     }
   }
 
-  private async drainPendingFiles(): Promise<void> {
-    try {
-      const files = await window.restbro.notepad.getPendingFiles();
-      if (files.length > 0) {
-        // Switch to the Notepad tab so the user sees the opened file(s)
-        document.dispatchEvent(
-          new CustomEvent('switch-to-tab', { detail: { tab: 'notepad' } })
-        );
-      }
-      for (const file of files) {
-        await openFileByPath(this.getFileOpsContext(), file);
-      }
-    } catch {
-      // pending-files API is best-effort; ignore failures.
-    }
+  /**
+   * Open a file by absolute path in the Notepad, initializing it on demand.
+   * Used by the app-level OS file-open bridge (see renderer `index.ts`).
+   * De-dupes: `openFileByPath` re-activates an existing tab for the same path.
+   */
+  async openPath(filePath: string): Promise<void> {
+    await this.ensureInitialized();
+    await openFileByPath(this.getFileOpsContext(), filePath);
   }
 
   private doUpdateStatusBar(tab?: NotepadTab, valueOverride?: string): void {

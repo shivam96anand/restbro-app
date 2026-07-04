@@ -1,5 +1,9 @@
 /**
- * Manager for environment variables rendering and editing
+ * Manager for variable tables (environments + globals).
+ *
+ * Renders a full-height table with a sticky column header, scrollable rows,
+ * and a pinned "Add Variable" button. The VALUE column is the widest so long
+ * URLs and tokens stay readable.
  */
 
 import { Environment } from '../../../shared/types';
@@ -8,227 +12,344 @@ import { EnvironmentDialogStyles } from './EnvironmentDialogStyles';
 
 const DRAFT_PREFIX = '__restbro_draft__';
 
+interface VariableTableOptions {
+  title: string;
+  variables: Record<string, string>;
+  descriptions: Record<string, string>;
+  /** Per-variable secret flag (true = masked). Mutated in place. */
+  secrets: Record<string, boolean>;
+  emptyText?: string;
+}
+
 export class EnvironmentVariablesManager {
   /**
-   * Renders the variables section for an environment
+   * Renders the variables section for an environment.
    */
   static renderVariablesSection(selectedEnv: Environment): HTMLDivElement {
-    const varsHeader = document.createElement('div');
-    varsHeader.style.cssText = EnvironmentDialogStyles.varsHeader;
-
-    const varsTitle = document.createElement('div');
-    varsTitle.textContent = 'Variables';
-    varsTitle.style.cssText = EnvironmentDialogStyles.varsTitle;
-
-    const varsCount = document.createElement('div');
-    varsCount.style.cssText = EnvironmentDialogStyles.varsCount;
-
-    varsHeader.appendChild(varsTitle);
-    varsHeader.appendChild(varsCount);
-
-    const varsContainer = document.createElement('div');
-    varsContainer.style.cssText = EnvironmentDialogStyles.varsContainer;
-
-    if (!selectedEnv.variableDescriptions) {
-      selectedEnv.variableDescriptions = {};
-    }
-    const descriptions = selectedEnv.variableDescriptions;
-
-    const renderVars = () => {
-      varsContainer.innerHTML = '';
-      varsCount.textContent = `${Object.keys(selectedEnv.variables).length}`;
-
-      const headerRow = document.createElement('div');
-      headerRow.style.cssText = EnvironmentDialogStyles.varHeaderRow;
-
-      const keyHeader = document.createElement('div');
-      keyHeader.textContent = 'Key';
-      keyHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const valueHeader = document.createElement('div');
-      valueHeader.textContent = 'Value';
-      valueHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const descHeader = document.createElement('div');
-      descHeader.textContent = 'Description';
-      descHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      const actionHeader = document.createElement('div');
-      actionHeader.textContent = '';
-      actionHeader.style.cssText = EnvironmentDialogStyles.varHeaderCell;
-
-      headerRow.appendChild(keyHeader);
-      headerRow.appendChild(valueHeader);
-      headerRow.appendChild(descHeader);
-      headerRow.appendChild(actionHeader);
-      varsContainer.appendChild(headerRow);
-
-      Object.entries(selectedEnv.variables).forEach(([key, value]) => {
-        const varRow = this.createVariableRow(
-          key,
-          value,
-          descriptions[key] || '',
-          selectedEnv,
-          descriptions,
-          renderVars
-        );
-        varsContainer.appendChild(varRow);
-      });
-
-      // Add variable button
-      const addVarBtn = this.createAddVariableButton(selectedEnv, renderVars);
-      varsContainer.appendChild(addVarBtn);
-    };
-
-    renderVars();
-
-    const container = document.createElement('div');
-    container.appendChild(varsHeader);
-    container.appendChild(varsContainer);
-
-    return container;
+    selectedEnv.variableDescriptions ??= {};
+    selectedEnv.variableSecrets ??= {};
+    return this.renderVariableTable({
+      title: 'Variables',
+      variables: selectedEnv.variables,
+      descriptions: selectedEnv.variableDescriptions,
+      secrets: selectedEnv.variableSecrets,
+    });
   }
 
   /**
-   * Creates a single variable row with key, value, and delete button
+   * Generic variable table shared by environments and globals.
+   * Mutates the provided `variables` / `descriptions` records in place.
+   */
+  static renderVariableTable(options: VariableTableOptions): HTMLDivElement {
+    const { title, variables, descriptions, secrets } = options;
+    const emptyText =
+      options.emptyText ??
+      'No variables yet. Click "Add Variable" to create one.';
+
+    const section = document.createElement('div');
+    section.style.cssText = EnvironmentDialogStyles.varsSection;
+
+    // Section header: title + live count
+    const header = document.createElement('div');
+    header.style.cssText = EnvironmentDialogStyles.varsHeader;
+
+    const titleEl = document.createElement('div');
+    titleEl.textContent = title;
+    titleEl.style.cssText = EnvironmentDialogStyles.varsTitle;
+
+    const countEl = document.createElement('div');
+    countEl.style.cssText = EnvironmentDialogStyles.varsCount;
+
+    header.appendChild(titleEl);
+    header.appendChild(countEl);
+
+    // Scroll container with a sticky header row and a rebuildable rows body
+    const container = document.createElement('div');
+    container.style.cssText = EnvironmentDialogStyles.varsContainer;
+
+    container.appendChild(this.createHeaderRow());
+
+    const rowsBody = document.createElement('div');
+    rowsBody.style.cssText = EnvironmentDialogStyles.varsBody;
+    container.appendChild(rowsBody);
+
+    const render = () => {
+      rowsBody.innerHTML = '';
+      const keys = Object.keys(variables);
+      countEl.textContent = `${keys.length}`;
+
+      if (keys.length === 0) {
+        const empty = document.createElement('div');
+        empty.textContent = emptyText;
+        empty.style.cssText = EnvironmentDialogStyles.varsEmpty;
+        rowsBody.appendChild(empty);
+        return;
+      }
+
+      keys.forEach((key) => {
+        const row = this.createVariableRow(
+          key,
+          variables[key],
+          variables,
+          descriptions,
+          secrets,
+          render
+        );
+        rowsBody.appendChild(row);
+      });
+    };
+
+    render();
+
+    // Pinned "Add Variable" button below the scroll area
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '+ Add Variable';
+    addBtn.style.cssText = EnvironmentDialogStyles.addVarButton;
+    addBtn.addEventListener('mouseenter', () => {
+      addBtn.style.background = 'rgba(var(--primary-color-rgb), 0.18)';
+    });
+    addBtn.addEventListener('mouseleave', () => {
+      addBtn.style.background = 'rgba(var(--primary-color-rgb), 0.1)';
+    });
+    addBtn.addEventListener('click', () => {
+      const newKey = this.createDraftKey(variables);
+      variables[newKey] = '';
+      descriptions[newKey] = '';
+      render();
+      container.scrollTop = container.scrollHeight;
+      const lastRow = rowsBody.lastElementChild as HTMLElement | null;
+      (lastRow?.querySelector('input') as HTMLInputElement | null)?.focus();
+    });
+
+    section.appendChild(header);
+    section.appendChild(container);
+    section.appendChild(addBtn);
+
+    return section;
+  }
+
+  private static createHeaderRow(): HTMLDivElement {
+    const headerRow = document.createElement('div');
+    headerRow.style.cssText = EnvironmentDialogStyles.varHeaderRow;
+    ['Key', 'Value', 'Description', 'Type', ''].forEach((labelText) => {
+      const cell = document.createElement('div');
+      cell.textContent = labelText;
+      cell.style.cssText = EnvironmentDialogStyles.varHeaderCell;
+      headerRow.appendChild(cell);
+    });
+    return headerRow;
+  }
+
+  /**
+   * Creates a single variable row (key, value, description, type, delete).
+   * The "Type" dropdown controls whether the value is treated as a secret.
    */
   private static createVariableRow(
     key: string,
     value: string,
-    description: string,
-    selectedEnv: Environment,
+    variables: Record<string, string>,
     descriptions: Record<string, string>,
-    renderVars: () => void
+    secrets: Record<string, boolean>,
+    render: () => void
   ): HTMLDivElement {
-    const varRow = document.createElement('div');
-    varRow.style.cssText = EnvironmentDialogStyles.varRow;
+    const row = document.createElement('div');
+    row.style.cssText = EnvironmentDialogStyles.varRow;
+    row.addEventListener('mouseenter', () => {
+      row.style.background = 'rgba(255, 255, 255, 0.02)';
+    });
+    row.addEventListener('mouseleave', () => {
+      row.style.background = 'transparent';
+    });
 
     const currentKey = key;
     const isDraft = currentKey.startsWith(DRAFT_PREFIX);
 
-    const keyInput = document.createElement('input');
-    keyInput.type = 'text';
-    keyInput.value = isDraft ? '' : currentKey;
-    keyInput.placeholder = 'Key';
-    keyInput.style.cssText = EnvironmentDialogStyles.varInput;
-    keyInput.spellcheck = false;
-    keyInput.addEventListener('focus', () => {
-      keyInput.style.borderColor = 'var(--primary-color)';
-      keyInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    keyInput.addEventListener('blur', () => {
-      keyInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      keyInput.style.boxShadow = 'none';
-    });
+    const keyInput = this.createInput(
+      isDraft ? '' : currentKey,
+      'Key',
+      EnvironmentDialogStyles.varInput
+    );
+    const isSecret = secrets[currentKey] === true;
+    const valueInput = this.createInput(
+      value,
+      'Value',
+      isSecret
+        ? EnvironmentDialogStyles.varInputSecret
+        : EnvironmentDialogStyles.varInput
+    );
+    const valueCell = isSecret ? this.wrapSecretValue(valueInput) : valueInput;
+    const descriptionInput = this.createInput(
+      descriptions[currentKey] || '',
+      'Description',
+      EnvironmentDialogStyles.varInputDescription
+    );
 
-    const valueInput = document.createElement('input');
-    valueInput.type = 'text';
-    valueInput.value = value;
-    valueInput.placeholder = 'Value';
-    valueInput.style.cssText = EnvironmentDialogStyles.varInput;
-    valueInput.spellcheck = false;
-    valueInput.addEventListener('focus', () => {
-      valueInput.style.borderColor = 'var(--primary-color)';
-      valueInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    valueInput.addEventListener('blur', () => {
-      valueInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      valueInput.style.boxShadow = 'none';
-    });
-
-    const descriptionInput = document.createElement('input');
-    descriptionInput.type = 'text';
-    descriptionInput.value = description;
-    descriptionInput.placeholder = 'Description';
-    descriptionInput.style.cssText =
-      EnvironmentDialogStyles.varInputDescription;
-    descriptionInput.spellcheck = false;
-    descriptionInput.addEventListener('focus', () => {
-      descriptionInput.style.borderColor = 'var(--primary-color)';
-      descriptionInput.style.boxShadow =
-        '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
-    });
-    descriptionInput.addEventListener('blur', () => {
-      descriptionInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-      descriptionInput.style.boxShadow = 'none';
+    const typeSelect = this.createTypeSelect(isSecret, (nextSecret) => {
+      if (nextSecret) {
+        secrets[currentKey] = true;
+      } else {
+        delete secrets[currentKey];
+      }
+      render();
     });
 
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = iconHtml('close');
     deleteBtn.style.cssText = EnvironmentDialogStyles.deleteVarButton;
     deleteBtn.title = 'Delete variable';
-
+    deleteBtn.addEventListener('mouseenter', () => {
+      deleteBtn.style.background = 'rgba(var(--error-color-rgb), 0.18)';
+    });
+    deleteBtn.addEventListener('mouseleave', () => {
+      deleteBtn.style.background = 'rgba(var(--error-color-rgb), 0.08)';
+    });
     deleteBtn.addEventListener('click', () => {
-      delete selectedEnv.variables[currentKey];
+      delete variables[currentKey];
       delete descriptions[currentKey];
-      renderVars();
+      delete secrets[currentKey];
+      render();
     });
 
-    // Update on key change
+    // Rename key on blur
     keyInput.addEventListener('blur', () => {
       const nextKey = keyInput.value.trim();
       if (!nextKey) {
-        delete selectedEnv.variables[currentKey];
+        delete variables[currentKey];
         delete descriptions[currentKey];
-        renderVars();
+        delete secrets[currentKey];
+        render();
         return;
       }
-
       if (nextKey !== currentKey) {
         const nextValue = valueInput.value;
         const nextDescription = descriptions[currentKey] || '';
-        delete selectedEnv.variables[currentKey];
+        const wasSecret = secrets[currentKey] === true;
+        delete variables[currentKey];
         delete descriptions[currentKey];
-        selectedEnv.variables[nextKey] = nextValue;
+        delete secrets[currentKey];
+        variables[nextKey] = nextValue;
         if (nextDescription) {
           descriptions[nextKey] = nextDescription;
         }
-        renderVars();
+        if (wasSecret) {
+          secrets[nextKey] = true;
+        }
+        render();
       }
     });
 
-    // Update on value change
     valueInput.addEventListener('input', () => {
-      selectedEnv.variables[currentKey] = valueInput.value;
+      variables[currentKey] = valueInput.value;
     });
-
-    // Update on description change
     descriptionInput.addEventListener('input', () => {
       descriptions[currentKey] = descriptionInput.value;
     });
 
-    varRow.appendChild(keyInput);
-    varRow.appendChild(valueInput);
-    varRow.appendChild(descriptionInput);
-    varRow.appendChild(deleteBtn);
+    row.appendChild(keyInput);
+    row.appendChild(valueCell);
+    row.appendChild(descriptionInput);
+    row.appendChild(typeSelect);
+    row.appendChild(deleteBtn);
 
-    return varRow;
+    return row;
   }
 
   /**
-   * Creates the "Add Variable" button
+   * Builds the per-row "Type" dropdown (Default / Secret). Choosing "Secret"
+   * masks the value input; choosing "Default" reveals it.
    */
-  private static createAddVariableButton(
-    selectedEnv: Environment,
-    renderVars: () => void
-  ): HTMLButtonElement {
-    const addVarBtn = document.createElement('button');
-    addVarBtn.textContent = '+ Add Variable';
-    addVarBtn.style.cssText = EnvironmentDialogStyles.addVarButton;
+  private static createTypeSelect(
+    isSecret: boolean,
+    onChange: (nextSecret: boolean) => void
+  ): HTMLSelectElement {
+    const select = document.createElement('select');
+    select.title = 'Variable type';
+    select.style.cssText = EnvironmentDialogStyles.typeSelect;
 
-    addVarBtn.addEventListener('click', () => {
-      const newKey = this.createDraftKey(selectedEnv.variables);
-      selectedEnv.variables[newKey] = '';
-      if (!selectedEnv.variableDescriptions) {
-        selectedEnv.variableDescriptions = {};
-      }
-      selectedEnv.variableDescriptions[newKey] = '';
-      renderVars();
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'default';
+    defaultOption.textContent = 'Default';
+
+    const secretOption = document.createElement('option');
+    secretOption.value = 'secret';
+    secretOption.textContent = 'Secret';
+
+    select.appendChild(defaultOption);
+    select.appendChild(secretOption);
+    select.value = isSecret ? 'secret' : 'default';
+
+    select.addEventListener('change', () => {
+      onChange(select.value === 'secret');
+    });
+    select.addEventListener('focus', () => {
+      select.style.borderColor = 'var(--primary-color)';
+    });
+    select.addEventListener('blur', () => {
+      select.style.borderColor = 'rgba(255, 255, 255, 0.08)';
     });
 
-    return addVarBtn;
+    return select;
+  }
+
+  /**
+   * Creates a text input with the shared focus/blur highlight behaviour.
+   */
+  private static createInput(
+    value: string,
+    placeholder: string,
+    cssText: string
+  ): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = value;
+    input.placeholder = placeholder;
+    input.spellcheck = false;
+    input.style.cssText = cssText;
+    input.addEventListener('focus', () => {
+      input.style.borderColor = 'var(--primary-color)';
+      input.style.boxShadow = '0 0 0 2px rgba(var(--primary-color-rgb), 0.12)';
+    });
+    input.addEventListener('blur', () => {
+      input.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+      input.style.boxShadow = 'none';
+    });
+    return input;
+  }
+
+  /**
+   * Masks a secret value input and adds a reveal (eye) toggle. The reveal state
+   * is per-row and resets whenever the table re-renders (it is never persisted).
+   */
+  private static wrapSecretValue(valueInput: HTMLInputElement): HTMLDivElement {
+    valueInput.type = 'password';
+    valueInput.autocomplete = 'off';
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = EnvironmentDialogStyles.valueWrap;
+    wrap.appendChild(valueInput);
+
+    const eyeBtn = document.createElement('button');
+    eyeBtn.type = 'button';
+    eyeBtn.innerHTML = iconHtml('eye');
+    eyeBtn.title = 'Show value';
+    eyeBtn.style.cssText = EnvironmentDialogStyles.eyeButton;
+    eyeBtn.addEventListener('mouseenter', () => {
+      eyeBtn.style.color = 'var(--text-primary)';
+      eyeBtn.style.background = 'rgba(255, 255, 255, 0.06)';
+    });
+    eyeBtn.addEventListener('mouseleave', () => {
+      eyeBtn.style.color = 'var(--text-secondary)';
+      eyeBtn.style.background = 'transparent';
+    });
+    eyeBtn.addEventListener('click', () => {
+      const revealed = valueInput.type === 'text';
+      valueInput.type = revealed ? 'password' : 'text';
+      eyeBtn.innerHTML = iconHtml(revealed ? 'eye' : 'eye-off');
+      eyeBtn.title = revealed ? 'Show value' : 'Hide value';
+    });
+    wrap.appendChild(eyeBtn);
+
+    return wrap;
   }
 
   private static createDraftKey(existing: Record<string, string>): string {

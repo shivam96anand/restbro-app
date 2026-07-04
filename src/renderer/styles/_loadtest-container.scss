@@ -45,3 +45,47 @@
     margin: 0;
   }
 }
+
+// Header variant shown on the results view: a Back button pinned top-left with
+// the title block kept centered.
+.load-test-header--with-back {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+
+  .load-test-header-text {
+    flex: 1;
+    text-align: center;
+  }
+
+  .loadtest-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.18) 0%,
+      rgba(var(--primary-color-rgb), 0.08) 100%
+    );
+    border: 1px solid rgba(var(--primary-color-rgb), 0.35);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+
+    .ui-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      border-color: var(--primary-color);
+      background: rgba(var(--primary-color-rgb), 0.22);
+    }
+  }
+}
+

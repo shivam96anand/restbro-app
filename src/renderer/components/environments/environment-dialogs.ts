@@ -55,6 +55,7 @@ export class EnvironmentDialogs {
             ...e,
             variables: { ...e.variables },
             variableDescriptions: { ...(e.variableDescriptions || {}) },
+            variableSecrets: { ...(e.variableSecrets || {}) },
           })),
         ],
         workingActiveId: activeEnvironmentId,
@@ -64,23 +65,98 @@ export class EnvironmentDialogs {
           variableDescriptions: {
             ...(loadedGlobals.variableDescriptions || {}),
           },
+          variableSecrets: { ...(loadedGlobals.variableSecrets || {}) },
         },
         activeTab: 'environments',
+      };
+
+      const cleanup = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      const handleSave = () => {
+        const DRAFT_PREFIX = '__restbro_draft__';
+        state.workingEnvs.forEach((env) => {
+          const descriptions = env.variableDescriptions || {};
+          const envSecrets = env.variableSecrets || {};
+          Object.keys(env.variables).forEach((key) => {
+            if (!key || key.startsWith(DRAFT_PREFIX)) {
+              delete env.variables[key];
+              delete descriptions[key];
+              delete envSecrets[key];
+            }
+          });
+          env.variableDescriptions = descriptions;
+          env.variableSecrets = envSecrets;
+        });
+
+        const globalDescriptions =
+          state.workingGlobals.variableDescriptions || {};
+        const globalSecrets = state.workingGlobals.variableSecrets || {};
+        Object.keys(state.workingGlobals.variables).forEach((key) => {
+          if (!key || key.startsWith(DRAFT_PREFIX)) {
+            delete state.workingGlobals.variables[key];
+            delete globalDescriptions[key];
+            delete globalSecrets[key];
+          }
+        });
+        state.workingGlobals.variableDescriptions = globalDescriptions;
+        state.workingGlobals.variableSecrets = globalSecrets;
+
+        cleanup();
+        resolve({
+          environments: state.workingEnvs,
+          activeEnvironmentId: state.workingActiveId,
+          globals: state.workingGlobals,
+        });
       };
 
       // Render function
       const renderBody = () => {
         body.innerHTML = '';
 
-        // Create tabs
-        const tabs = EnvironmentDialogUI.createTabs(
+        // Delete handler for the selected environment. It is rendered in the
+        // tabs row before Cancel/Save, and only when an environment is selected.
+        const selectedForDelete = state.workingEnvs.find(
+          (e) => e.id === state.selectedEnvId
+        );
+        const onDeleteEnv =
+          state.activeTab === 'environments' && selectedForDelete
+            ? () => {
+                const confirmed = confirm(
+                  `Delete environment "${selectedForDelete.name}"?`
+                );
+                if (!confirmed) return;
+                state.workingEnvs = state.workingEnvs.filter(
+                  (e) => e.id !== state.selectedEnvId
+                );
+                if (state.workingActiveId === state.selectedEnvId) {
+                  state.workingActiveId = undefined;
+                }
+                state.selectedEnvId = state.workingEnvs[0]?.id || null;
+                renderBody();
+              }
+            : undefined;
+
+        // Tabs row (pills on the left, Delete/Cancel/Save on the right)
+        const tabsRow = EnvironmentDialogUI.createTabsRow(
           state.activeTab,
           (tab: DialogTab) => {
             state.activeTab = tab;
             renderBody();
-          }
+          },
+          handleCancel,
+          handleSave,
+          onDeleteEnv
         );
-        body.appendChild(tabs);
+        body.appendChild(tabsRow);
 
         if (state.activeTab === 'globals') {
           // Render globals panel
@@ -115,16 +191,6 @@ export class EnvironmentDialogs {
               selectedEnv.name = newName;
             }
           },
-          () => {
-            state.workingEnvs = state.workingEnvs.filter(
-              (e) => e.id !== state.selectedEnvId
-            );
-            if (state.workingActiveId === state.selectedEnvId) {
-              state.workingActiveId = undefined;
-            }
-            state.selectedEnvId = state.workingEnvs[0]?.id || null;
-            renderBody();
-          },
           (envId) => {
             const envToDuplicate = state.workingEnvs.find(
               (e) => e.id === envId
@@ -136,6 +202,9 @@ export class EnvironmentDialogs {
               variables: { ...envToDuplicate.variables },
               variableDescriptions: {
                 ...(envToDuplicate.variableDescriptions || {}),
+              },
+              variableSecrets: {
+                ...(envToDuplicate.variableSecrets || {}),
               },
             };
             state.workingEnvs.push(duplicated);
@@ -177,50 +246,6 @@ export class EnvironmentDialogs {
         }
       );
 
-      // Create footer with handlers
-      const cleanup = () => {
-        if (document.body.contains(overlay)) {
-          document.body.removeChild(overlay);
-        }
-      };
-
-      const footer = EnvironmentDialogUI.createFooter(
-        () => {
-          cleanup();
-          resolve(null);
-        },
-        () => {
-          const DRAFT_PREFIX = '__restbro_draft__';
-          state.workingEnvs.forEach((env) => {
-            const descriptions = env.variableDescriptions || {};
-            Object.keys(env.variables).forEach((key) => {
-              if (!key || key.startsWith(DRAFT_PREFIX)) {
-                delete env.variables[key];
-                delete descriptions[key];
-              }
-            });
-            env.variableDescriptions = descriptions;
-          });
-
-          const globalDescriptions =
-            state.workingGlobals.variableDescriptions || {};
-          Object.keys(state.workingGlobals.variables).forEach((key) => {
-            if (!key || key.startsWith(DRAFT_PREFIX)) {
-              delete state.workingGlobals.variables[key];
-              delete globalDescriptions[key];
-            }
-          });
-          state.workingGlobals.variableDescriptions = globalDescriptions;
-
-          cleanup();
-          resolve({
-            environments: state.workingEnvs,
-            activeEnvironmentId: state.workingActiveId,
-            globals: state.workingGlobals,
-          });
-        }
-      );
-
       // Handle overlay click to close
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -232,7 +257,6 @@ export class EnvironmentDialogs {
       // Assemble dialog
       dialog.appendChild(header);
       dialog.appendChild(body);
-      dialog.appendChild(footer);
       overlay.appendChild(dialog);
       document.body.appendChild(overlay);
 
@@ -249,6 +273,8 @@ export class EnvironmentDialogs {
     dialog: HTMLDivElement;
     body: HTMLDivElement;
   } {
+    EnvironmentDialogStyles.ensureAnimations();
+
     const overlay = document.createElement('div');
     overlay.style.cssText = EnvironmentDialogStyles.overlay;
 

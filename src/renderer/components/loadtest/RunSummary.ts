@@ -22,15 +22,19 @@ export class RunSummary {
   private container: HTMLElement | null = null;
   private summary: LoadTestSummary | null = null;
 
-  public onRunAgain: ((config: any) => void) | null = null;
   public onExportCsv: ((runId: string) => void) | null = null;
   public onExportPdf:
     | ((runId: string, summary: LoadTestSummary) => void)
     | null = null;
 
-  render(container: HTMLElement, summary: LoadTestSummary): void {
+  render(
+    container: HTMLElement,
+    summary: LoadTestSummary,
+    options: { showExports?: boolean } = {}
+  ): void {
     this.container = container;
     this.summary = summary;
+    const showExports = options.showExports !== false;
 
     const successRate =
       summary.completed > 0
@@ -57,11 +61,14 @@ export class RunSummary {
               <span class="info-value">${duration}</span>
             </div>
           </div>
-          <div class="summary-actions">
-            <button id="run-again-btn" class="btn btn-primary">Back</button>
+          ${
+            showExports
+              ? `<div class="summary-actions">
             <button id="export-csv-btn" class="btn btn-secondary">Export CSV</button>
             <button id="export-pdf-btn" class="btn btn-secondary">Export PDF</button>
-          </div>
+          </div>`
+              : ''
+          }
         </div>
 
         <div class="metrics-section">
@@ -170,15 +177,6 @@ export class RunSummary {
 
   private setupEventListeners(): void {
     if (!this.container) return;
-
-    const runAgainBtn = this.container.querySelector('#run-again-btn');
-    runAgainBtn?.addEventListener('click', () => {
-      if (this.onRunAgain) {
-        // We'll need to reconstruct the config from the summary
-        // For now, we'll pass null and let the parent handle it
-        this.onRunAgain(null);
-      }
-    });
 
     const exportCsvBtn = this.container.querySelector('#export-csv-btn');
     exportCsvBtn?.addEventListener('click', () => {

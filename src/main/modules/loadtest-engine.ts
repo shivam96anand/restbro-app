@@ -11,6 +11,7 @@ import {
 import { requestManager } from './request-manager';
 import { storeManager } from './store-manager';
 import { oauthManager } from './oauth';
+import { buildFolderVars, composeFinalRequest } from './variables';
 
 interface ActiveRun {
   id: string;
@@ -38,7 +39,9 @@ class LoadTestEngine extends EventEmitter {
     const totalPlanned = Math.floor((config.rpm * config.durationSec) / 60);
 
     if (totalPlanned === 0) {
-      throw new Error('Test duration too short or RPM too low');
+      throw new Error(
+        `Test would send 0 requests: ${config.rpm} RPM over ${config.durationSec}s rounds down to none. Increase RPM or duration.`
+      );
     }
 
     const run: ActiveRun = {
@@ -173,7 +176,9 @@ class LoadTestEngine extends EventEmitter {
     const startTime = Date.now();
 
     try {
-      const response = await requestManager.sendRequest(requestData);
+      const response = await requestManager.sendRequest(requestData, {
+        environmentId: run.config.environmentId,
+      });
       const endTime = Date.now();
 
       this.recordSample(run, {
@@ -263,7 +268,56 @@ class LoadTestEngine extends EventEmitter {
     if (!request) {
       throw new Error('Failed to resolve target request');
     }
-    run.resolvedRequest = await this.ensureOAuthToken(request);
+    // Resolve {{variables}} in the auth config against the chosen environment
+    // (e.g. tokenUrl/clientId/clientSecret) before acquiring an OAuth token,
+    // otherwise the credentials would be sent with unresolved placeholders.
+    const resolvedAuthRequest = this.resolveAuthForEnv(
+      request,
+      run.config.environmentId
+    );
+    run.resolvedRequest = await this.ensureOAuthToken(resolvedAuthRequest);
+  }
+
+  /**
+   * Resolves {{variable}} placeholders inside a request's auth config using the
+   * selected environment (falling back to the active one when undefined),
+   * folder chain, and globals. Only the auth config is resolved here — the rest
+   * of the request is resolved later by requestManager.sendRequest().
+   */
+  private resolveAuthForEnv(
+    request: ApiRequest,
+    environmentId?: string
+  ): ApiRequest {
+    if (!request.auth?.config) return request;
+
+    const state = storeManager.getState();
+    const effectiveEnvId =
+      environmentId !== undefined ? environmentId : state.activeEnvironmentId;
+    const activeEnv = effectiveEnvId
+      ? state.environments.find((e) => e.id === effectiveEnvId)
+      : undefined;
+
+    // buildFolderVars only walks folder-type collections, so map a request-type
+    // collectionId up to its parent folder first.
+    let collectionIdForVars = request.collectionId;
+    if (collectionIdForVars) {
+      const collection = state.collections.find(
+        (c) => c.id === collectionIdForVars
+      );
+      if (collection?.type === 'request' && collection.parentId) {
+        collectionIdForVars = collection.parentId;
+      }
+    }
+
+    const folderVars = buildFolderVars(collectionIdForVars, state.collections);
+    const resolved = composeFinalRequest(
+      request,
+      activeEnv,
+      state.globals,
+      folderVars
+    );
+
+    return { ...request, auth: resolved.auth };
   }
 
   private async getRequestForRun(run: ActiveRun): Promise<ApiRequest | null> {

@@ -19,3 +19,12 @@ body {
   flex-direction: column;
   height: 100vh;
 }
+
+// Native radio buttons & checkboxes follow the active theme color instead of
+// the browser default (blue). `accent-color` only affects natively-rendered
+// controls, so components that opt into custom `appearance: none` styling are
+// unaffected. This is the app-wide default; components may still override it.
+input[type='radio'],
+input[type='checkbox'] {
+  accent-color: var(--primary-color);
+}

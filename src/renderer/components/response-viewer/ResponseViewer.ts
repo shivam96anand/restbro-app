@@ -3,6 +3,9 @@ import { ResponseViewerConfig } from '../../types/response-types';
 import { MonacoJsonEditor } from '../request/MonacoJsonEditor';
 import { MonacoXmlEditor } from '../request/MonacoXmlEditor';
 import { JsonViewerUtilities } from '../json-viewer/utilities';
+import { jsonPathAtOffset } from './response-json-path';
+
+export type ResponseViewMode = 'pretty' | 'raw';
 
 export class ResponseViewer {
   private static readonly LARGE_JSON_RAW_THRESHOLD_BYTES = 2 * 1024 * 1024;
@@ -25,6 +28,13 @@ export class ResponseViewer {
     string,
     { responseTimestamp: number; viewState: Record<string, unknown> }
   > = new Map();
+
+  // ── Bottom-bar view preferences (persist across responses) ──
+  private wordWrap = true;
+  private fontSize = 12;
+  private viewMode: ResponseViewMode = 'pretty';
+  private rawPreElement: HTMLPreElement | null = null;
+  private jsonPathDisposable: (() => void) | null = null;
 
   constructor(
     container: HTMLElement,
@@ -156,11 +166,18 @@ export class ResponseViewer {
       );
     }
 
+    // Cache the untouched body and reset to the formatted view for each new
+    // response (word-wrap / font-size preferences intentionally persist).
+    this.currentRawBody = response.body ?? '';
+    this.viewMode = 'pretty';
+    this.rawPreElement = null;
+
     await this.updateResponseBody(response, requestMode);
     this.updateResponseHeaders(response);
     this.updateResponseCookies(response);
     this.updateResponseMeta(response);
     this.updateTruncationBanner(response);
+    this.afterBodyRendered();
   }
 
   /**
@@ -1109,8 +1126,14 @@ export class ResponseViewer {
     this.parsedJsonData = null;
     this.detectedJsonBody = false;
     this.currentSoapFault = false;
+    this.currentRawBody = null;
+    this.viewMode = 'pretty';
+    this.rawPreElement = null;
+    this.clearJsonPathTracking();
+    this.emitJsonPath(null);
     this.updateSoapFaultBadge(false);
     this.emitModeChanged();
+    this.emitControlsState();
   }
 
   private tryRestoreMonacoViewState(): void {
@@ -1335,6 +1358,177 @@ export class ResponseViewer {
         detail: {
           isJson: this.detectedJsonBody,
           formatter: this.currentFormatter,
+        },
+      })
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Bottom-bar controls: view mode, word wrap, font size, stats, JSON path
+  // ─────────────────────────────────────────────────────────────────────
+
+  /** Whether word-wrap / font-size controls apply to the current body. */
+  private isEditorBody(): boolean {
+    return this.currentFormatter === 'json' || this.currentFormatter === 'xml';
+  }
+
+  /** View modes available for the current body ([] when not switchable). */
+  public getAvailableViewModes(): ResponseViewMode[] {
+    return this.isEditorBody() ? ['pretty', 'raw'] : [];
+  }
+
+  public getViewMode(): ResponseViewMode {
+    return this.viewMode;
+  }
+
+  public getWordWrap(): boolean {
+    return this.wordWrap;
+  }
+
+  public getFontSize(): number {
+    return this.fontSize;
+  }
+
+  public setWordWrap(on: boolean): void {
+    this.wordWrap = on;
+    this.applyViewPrefs();
+    this.emitControlsState();
+  }
+
+  public adjustFontSize(delta: number): void {
+    const next = Math.min(28, Math.max(8, this.fontSize + delta));
+    if (next === this.fontSize) return;
+    this.fontSize = next;
+    this.applyViewPrefs();
+    this.emitControlsState();
+  }
+
+  /** Byte / char / line counts for the raw response body. */
+  public getBodyStats(): {
+    chars: number;
+    bytes: number;
+    lines: number;
+  } | null {
+    if (this.currentRawBody == null) return null;
+    const body = this.currentRawBody;
+    return {
+      chars: body.length,
+      bytes: new TextEncoder().encode(body).length,
+      lines: body.length ? body.split('\n').length : 0,
+    };
+  }
+
+  /** Switch between the formatted (pretty) and raw text view. */
+  public async setViewMode(mode: ResponseViewMode): Promise<void> {
+    if (mode === this.viewMode) return;
+    if (!this.getAvailableViewModes().includes(mode)) return;
+    const body = document.getElementById('response-body');
+    if (!body) return;
+
+    this.viewMode = mode;
+
+    if (mode === 'raw') {
+      this.disposeMonaco();
+      this.clearJsonPathTracking();
+      const pre = this.buildPlainTextElement(this.currentRawBody ?? '');
+      this.rawPreElement = pre;
+      body.innerHTML = '';
+      body.appendChild(pre);
+    } else {
+      this.rawPreElement = null;
+      if (this.currentFormatter === 'json' && this.parsedJsonData !== null) {
+        await this.setupJsonViewer(body, this.parsedJsonData);
+      } else if (
+        this.currentFormatter === 'xml' &&
+        this.currentRawBody != null
+      ) {
+        const parsed = this.tryParseXml(this.currentRawBody);
+        if (parsed.ok && parsed.document) {
+          this.setupXmlView(
+            body,
+            this.prettyPrintXml(parsed.document),
+            this.currentSoapFault
+          );
+        }
+      }
+    }
+
+    this.afterBodyRendered();
+  }
+
+  /** Apply the current word-wrap / font-size preferences to the live view. */
+  private applyViewPrefs(): void {
+    this.monacoEditor?.setWordWrap(this.wordWrap);
+    this.monacoEditor?.setFontSize(this.fontSize);
+    this.monacoXmlEditor?.setWordWrap(this.wordWrap);
+    this.monacoXmlEditor?.setFontSize(this.fontSize);
+    if (this.rawPreElement) {
+      this.rawPreElement.style.whiteSpace = this.wordWrap ? 'pre-wrap' : 'pre';
+      this.rawPreElement.style.fontSize = `${this.fontSize}px`;
+    }
+  }
+
+  /** Runs after any body (re)render to sync prefs, path tracking and state. */
+  private afterBodyRendered(): void {
+    this.applyViewPrefs();
+    this.attachJsonPathTracking();
+    this.emitControlsState();
+  }
+
+  private clearJsonPathTracking(): void {
+    this.jsonPathDisposable?.();
+    this.jsonPathDisposable = null;
+  }
+
+  private emitJsonPath(path: string | null): void {
+    document.dispatchEvent(
+      new CustomEvent('response-json-path-changed', { detail: { path } })
+    );
+  }
+
+  private attachJsonPathTracking(): void {
+    this.clearJsonPathTracking();
+
+    if (
+      this.currentFormatter !== 'json' ||
+      this.viewMode !== 'pretty' ||
+      !this.monacoEditor
+    ) {
+      this.emitJsonPath(null);
+      return;
+    }
+
+    const editor = this.monacoEditor.getEditor();
+    const model = editor?.getModel();
+    if (!editor || !model) {
+      this.emitJsonPath(null);
+      return;
+    }
+
+    const text = model.getValue();
+    const listener = editor.onDidChangeCursorPosition((e) => {
+      const offset = model.getOffsetAt(e.position);
+      this.emitJsonPath(jsonPathAtOffset(text, offset));
+    });
+    this.jsonPathDisposable = () => listener.dispose();
+
+    const pos = editor.getPosition();
+    this.emitJsonPath(
+      pos ? jsonPathAtOffset(text, model.getOffsetAt(pos)) : 'root'
+    );
+  }
+
+  private emitControlsState(): void {
+    document.dispatchEvent(
+      new CustomEvent('response-controls-state', {
+        detail: {
+          hasBody: this.currentRawBody != null && this.currentFormatter != null,
+          availableModes: this.getAvailableViewModes(),
+          viewMode: this.viewMode,
+          editorApplicable: this.isEditorBody(),
+          wordWrap: this.wordWrap,
+          fontSize: this.fontSize,
+          stats: this.getBodyStats(),
         },
       })
     );

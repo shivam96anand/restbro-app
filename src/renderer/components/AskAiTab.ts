@@ -172,7 +172,6 @@ export class AskAiTab {
         </div>
         <h2 class="coming-soon__title">AI Assistant</h2>
         <p class="coming-soon__subtitle">Coming soon</p>
-        <p class="coming-soon__desc">Analyse requests, debug responses, and get context-aware suggestions — all without leaving the app.</p>
       </div>
     `;
   }

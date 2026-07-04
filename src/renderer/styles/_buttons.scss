@@ -412,5 +412,20 @@
         box-shadow: 0 1px 4px rgba(var(--primary-color-rgb), 0.3);
       }
     }
+
+    // Clear resets the whole response — give it a danger tint on hover so it
+    // reads as destructive and isn't confused with the navigation buttons.
+    &.response-action-btn--clear {
+      &:hover {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        border-color: #f87171;
+        color: white;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+      }
+
+      &:active {
+        box-shadow: 0 1px 4px rgba(239, 68, 68, 0.2);
+      }
+    }
   }
 }

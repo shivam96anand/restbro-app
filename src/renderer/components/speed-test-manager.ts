@@ -120,6 +120,10 @@ export class SpeedTestManager {
         <div class="speed-test-popup__actions">
           <button class="speed-test-popup__retry" data-retry hidden>Run again</button>
         </div>
+        <div class="speed-test-history" data-history hidden>
+          <div class="speed-test-history__title">Recent runs</div>
+          <div class="speed-test-history__list" data-history-list></div>
+        </div>
       </div>
     `;
 
@@ -142,6 +146,8 @@ export class SpeedTestManager {
     document.addEventListener('mousedown', this.outsideHandler, true);
     document.addEventListener('keydown', this.keyHandler);
     window.addEventListener('resize', this.positionHandler);
+
+    void this.loadHistory();
   }
 
   private dismissPopup(): void {
@@ -241,6 +247,11 @@ export class SpeedTestManager {
           ?.querySelector('[data-stat="upload"]')
           ?.classList.add('is-done');
         this.setStatus('', 'ok');
+        void this.persistRun({
+          downloadMbps: result.downloadMbps,
+          uploadMbps: result.uploadMbps,
+          pingMs: result.pingMs,
+        });
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'unknown error';
@@ -302,6 +313,95 @@ export class SpeedTestManager {
     el.textContent = text;
     el.dataset.kind = kind;
   }
+
+  private async loadHistory(): Promise<void> {
+    try {
+      const store = (window as any).restbro?.store;
+      if (!store) return;
+      const state = await store.get();
+      const entries: SpeedTestHistoryEntry[] = Array.isArray(
+        state?.speedTestHistory
+      )
+        ? state.speedTestHistory
+        : [];
+      this.renderHistory(entries);
+    } catch {
+      /* history is best-effort */
+    }
+  }
+
+  private async persistRun(result: {
+    downloadMbps: number;
+    uploadMbps: number;
+    pingMs: number;
+  }): Promise<void> {
+    try {
+      const store = (window as any).restbro?.store;
+      if (!store) return;
+      const state = await store.get();
+      const prev: SpeedTestHistoryEntry[] = Array.isArray(
+        state?.speedTestHistory
+      )
+        ? state.speedTestHistory
+        : [];
+      const entry: SpeedTestHistoryEntry = {
+        id: `st-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        timestamp: Date.now(),
+        downloadMbps: result.downloadMbps,
+        uploadMbps: result.uploadMbps,
+        pingMs: result.pingMs,
+      };
+      const next = [entry, ...prev].slice(0, 5);
+      await store.set({ speedTestHistory: next });
+      this.renderHistory(next);
+    } catch {
+      /* history is best-effort */
+    }
+  }
+
+  private renderHistory(entries: SpeedTestHistoryEntry[]): void {
+    if (!this.popup) return;
+    const section = this.popup.querySelector<HTMLElement>('[data-history]');
+    const list = this.popup.querySelector<HTMLElement>('[data-history-list]');
+    if (!section || !list) return;
+    if (!entries.length) {
+      section.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    section.hidden = false;
+    list.innerHTML = entries
+      .map(
+        (e) => `
+        <div class="speed-test-history__row">
+          <span class="speed-test-history__time">${formatRelativeTime(
+            e.timestamp
+          )}</span>
+          <span class="speed-test-history__metric speed-test-history__metric--dl">
+            <span class="speed-test-history__arrow">\u2193</span>${formatMbps(
+              e.downloadMbps
+            )}
+          </span>
+          <span class="speed-test-history__metric speed-test-history__metric--ul">
+            <span class="speed-test-history__arrow">\u2191</span>${formatMbps(
+              e.uploadMbps
+            )}
+          </span>
+          <span class="speed-test-history__metric speed-test-history__metric--ping">${Math.round(
+            e.pingMs
+          )}<span class="speed-test-history__unit">ms</span></span>
+        </div>`
+      )
+      .join('');
+  }
+}
+
+interface SpeedTestHistoryEntry {
+  id: string;
+  timestamp: number;
+  downloadMbps: number;
+  uploadMbps: number;
+  pingMs: number;
 }
 
 function formatMbps(mbps: number): string {
@@ -309,4 +409,17 @@ function formatMbps(mbps: number): string {
   if (mbps < 10) return mbps.toFixed(2);
   if (mbps < 100) return mbps.toFixed(1);
   return Math.round(mbps).toString();
+}
+
+function formatRelativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const sec = Math.floor(diff / 1000);
+  if (sec < 45) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  return new Date(ts).toLocaleDateString();
 }

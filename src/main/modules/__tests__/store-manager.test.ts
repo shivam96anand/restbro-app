@@ -350,6 +350,37 @@ describe('store-manager.ts', () => {
       const state = storeManager.getState();
       expect(state.navOrder[0]).toBe('notepad');
     });
+
+    it('strips the removed json-viewer tab from a persisted navOrder', async () => {
+      const persisted = [
+        'api',
+        'json-viewer',
+        'notepad',
+        'json-compare',
+        'load-testing',
+        'mock-server',
+        'ask-ai',
+      ];
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFile).mockResolvedValue(
+        JSON.stringify({ navOrder: persisted })
+      );
+      vi.mocked(writeFile).mockResolvedValue(undefined);
+
+      await storeManager.initialize();
+
+      const state = storeManager.getState();
+      expect(state.navOrder).not.toContain('json-viewer');
+      // A custom (non-legacy) order is otherwise preserved.
+      expect(state.navOrder).toEqual([
+        'api',
+        'notepad',
+        'json-compare',
+        'load-testing',
+        'mock-server',
+        'ask-ai',
+      ]);
+    });
   });
 
   describe('backup operations', () => {

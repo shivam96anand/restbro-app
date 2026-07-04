@@ -29,6 +29,7 @@ export interface NotepadElements {
   dirtyModalBody: HTMLElement;
   settingsHost: HTMLElement;
   previewToggleBtn: HTMLButtonElement;
+  formatJsonBtn: HTMLButtonElement;
   settingsBtn: HTMLButtonElement;
   languagePicker: HTMLSelectElement;
   previewHeaderText: HTMLElement;
@@ -43,6 +44,7 @@ export interface NotepadLayoutCallbacks {
   onSave: () => void;
   onTogglePreview: () => void;
   onPreviewClose: () => void;
+  onFormatJson: () => void;
   onSettingsClick: (anchor: HTMLElement) => void;
   onLanguageChange: (language: string) => void;
   onFind: () => void;
@@ -65,14 +67,10 @@ export function buildNotepadLayout(
           <button class="notepad-tab add" id="np-add-tab" title="New Tab">+</button>
         </div>
         <div class="notepad-actions">
-          <button class="np-btn icon" id="np-zoom-out" title="Zoom Out">A-</button>
-          <button class="np-btn icon" id="np-zoom-in" title="Zoom In">A+</button>
-          <button class="np-btn ghost" id="np-find" title="Find (Ctrl/Cmd+F)">Find</button>
-          <button class="np-btn ghost" id="np-replace" title="Replace (Ctrl/Cmd+H)">Replace</button>
-          <button class="np-btn ghost" id="np-toggle-preview" title="Toggle Preview">Preview</button>
+          <button class="np-btn primary" id="np-toggle-preview" title="Toggle Preview">Preview</button>
           <button class="np-btn ghost" id="np-open-file" title="Open File (Ctrl/Cmd+O)">Open</button>
-          <button class="np-btn primary" id="np-save" title="Save (Ctrl/Cmd+S)">Save</button>
-          <button class="np-btn settings" id="np-settings" title="Notepad Settings" aria-haspopup="menu" aria-label="Notepad Settings">⚙</button>
+          <button class="np-btn ghost" id="np-save" title="Save (Ctrl/Cmd+S)">Save</button>
+          <button class="np-btn settings" id="np-settings" title="Notepad Settings" aria-haspopup="menu" aria-label="Notepad Settings">▾</button>
         </div>
       </div>
       <div class="notepad-editor-area" id="notepad-editor-area">
@@ -95,6 +93,9 @@ export function buildNotepadLayout(
           <span class="status-state" id="np-status-state">Unsaved</span>
         </div>
         <div class="status-right">
+          <button class="np-status-btn" id="np-find" title="Find (Ctrl/Cmd+F)">Find</button>
+          <button class="np-status-btn" id="np-replace" title="Replace (Ctrl/Cmd+H)">Replace</button>
+          <button class="np-status-btn hidden" id="np-format-json" title="Format JSON">Format</button>
           <select class="status-language-picker" id="np-status-language-picker"
             title="Change syntax language">
             ${languageOptions}
@@ -106,6 +107,10 @@ export function buildNotepadLayout(
           <span class="status-metric" id="np-status-chars">0 chars</span>
           <span class="status-metric status-metric--muted" id="np-status-eol">LF</span>
           <span class="status-metric status-metric--muted" id="np-status-indent">Spaces: 2</span>
+          <div class="np-zoom-group">
+            <button class="np-status-btn zoom" id="np-zoom-out" title="Zoom Out (Ctrl/Cmd+-)">A-</button>
+            <button class="np-status-btn zoom" id="np-zoom-in" title="Zoom In (Ctrl/Cmd++)">A+</button>
+          </div>
         </div>
       </div>
       <div class="notepad-context-menu hidden" id="notepad-context-menu" role="menu">
@@ -177,6 +182,9 @@ export function buildNotepadLayout(
     previewToggleBtn: container.querySelector(
       '#np-toggle-preview'
     ) as HTMLButtonElement,
+    formatJsonBtn: container.querySelector(
+      '#np-format-json'
+    ) as HTMLButtonElement,
     previewCloseBtn: container.querySelector(
       '#notepad-preview-close'
     ) as HTMLButtonElement,
@@ -192,9 +200,9 @@ export function buildNotepadLayout(
     ) as HTMLElement,
   };
 
-  // Click on empty space in tab area opens a new tab.
+  // Double-click empty space in the tab area to open a new tab.
   const tabsArea = container.querySelector('.notepad-tabs-area') as HTMLElement;
-  tabsArea?.addEventListener('click', (e) => {
+  tabsArea?.addEventListener('dblclick', (e) => {
     const target = e.target as HTMLElement;
     if (target === tabsArea || target.id === 'notepad-tab-strip') {
       callbacks.onAddTab();
@@ -227,6 +235,7 @@ export function buildNotepadLayout(
     'click',
     callbacks.onTogglePreview
   );
+  elements.formatJsonBtn.addEventListener('click', callbacks.onFormatJson);
   elements.previewCloseBtn.addEventListener('click', callbacks.onPreviewClose);
   elements.settingsBtn.addEventListener('click', () =>
     callbacks.onSettingsClick(elements.settingsBtn)

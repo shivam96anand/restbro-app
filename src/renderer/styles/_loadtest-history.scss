@@ -1,0 +1,120 @@
+// Load Testing - History table (previous runs) shown at the bottom of the form.
+
+.loadtest-history {
+  margin-top: 24px;
+  background: linear-gradient(
+    145deg,
+    rgba(20, 20, 20, 0.9),
+    rgba(12, 12, 12, 0.8)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  padding: 20px 24px;
+
+  .loadtest-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: 0.02em;
+
+      .ui-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  .loadtest-history-empty {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 12px 4px;
+  }
+
+  .loadtest-history-table-wrap {
+    overflow-x: auto;
+  }
+
+  .loadtest-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th,
+    td {
+      padding: 10px 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+      &.num {
+        text-align: right;
+      }
+    }
+
+    td {
+      color: var(--text-primary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+
+      &.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      &.is-error {
+        color: #ff6b6b;
+        font-weight: 600;
+      }
+    }
+
+    tbody tr {
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: rgba(var(--primary-color-rgb), 0.06);
+      }
+    }
+
+    .ht-when {
+      color: var(--text-secondary);
+    }
+
+    .ht-target {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ht-env {
+      color: var(--text-secondary);
+    }
+
+    .ht-actions {
+      text-align: right;
+    }
+
+    .loadtest-history-view {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+  }
+}

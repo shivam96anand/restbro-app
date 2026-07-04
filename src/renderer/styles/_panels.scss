@@ -2,7 +2,8 @@
 
 .api-layout {
   display: flex;
-  height: calc(100vh - 120px);
+  flex: 1;
+  min-height: 0;
   position: relative;
   min-width: 0;
 }
@@ -76,6 +77,165 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+// Sleek footer strip for the response panel — a single thin row that reads
+// like a status bar and steals almost no vertical space. Background matches
+// the collections search area (the panel base) for a consistent look.
+.panel-bottom-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+  padding: 0 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+// Collections search — no strip/pane behind it, just the input resting in the
+// panel's empty base, flush toward the bottom.
+.collections-bottom-bar {
+  flex: 0 0 auto;
+  padding: 6px 12px 8px 12px;
+
+  .search-input-wrapper {
+    width: 100%;
+  }
+}
+
+.response-bottom-bar {
+  justify-content: space-between;
+
+  .layout-toggle-btn {
+    width: 26px;
+    height: 20px;
+    border-color: transparent;
+    background: transparent;
+    flex: 0 0 auto;
+  }
+}
+
+// ── Response bottom-bar controls (view mode, wrap, font, stats, path) ──
+.response-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 10px;
+  color: var(--text-secondary);
+
+  &[hidden] {
+    display: none;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  .rc-modes {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  .rc-mode-btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    height: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    & + .rc-mode-btn {
+      border-left: 1px solid var(--border-color);
+    }
+
+    &:hover {
+      color: var(--text-primary);
+      background: rgba(var(--primary-color-rgb), 0.1);
+    }
+
+    &.active {
+      color: #fff;
+      background: var(--primary-color);
+    }
+  }
+
+  .rc-btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    height: 18px;
+    min-width: 20px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      color: var(--text-primary);
+      border-color: var(--border-color);
+      background: rgba(var(--primary-color-rgb), 0.08);
+    }
+
+    &.active {
+      color: var(--primary-color);
+      border-color: rgba(var(--primary-color-rgb), 0.4);
+      background: rgba(var(--primary-color-rgb), 0.12);
+    }
+  }
+
+  .rc-font {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+  }
+
+  .rc-stats {
+    white-space: nowrap;
+    opacity: 0.85;
+    flex: 0 0 auto;
+  }
+
+  .rc-path {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--primary-color);
+    font-family: var(--font-mono, monospace);
+    font-size: 10px;
+    padding: 0 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1 1 auto;
+    text-align: left;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &.copied {
+      color: var(--success-color, #22c55e);
+    }
+  }
 }
 
 .resize-handle {

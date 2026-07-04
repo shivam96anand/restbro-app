@@ -1,11 +1,13 @@
 import { TargetAdHocEditor } from './TargetAdHocEditor';
-import { ApiRequest, Collection } from '../../../shared/types';
+import { ApiRequest, Collection, Environment } from '../../../shared/types';
+import { buildFolderVars } from '../request/variable-detection';
 import { iconHtml } from '../../utils/icons';
 
 interface LoadTestConfig {
   rpm: number;
   durationSec: number;
   target: any;
+  environmentId?: string;
   followRedirects?: boolean;
   insecureTLS?: boolean;
   requestTimeoutMs?: number;
@@ -15,6 +17,9 @@ export class LoadTestForm {
   private container: HTMLElement | null = null;
   private targetEditor: TargetAdHocEditor;
   private collections: Collection[] = [];
+  private environments: Environment[] = [];
+  private globals: { variables: Record<string, string> } = { variables: {} };
+  private selectedEnvironmentId: string | undefined;
   private expandedFolders = new Set<string>();
   private selectedRequestId: string | null = null;
   private selectedCollectionId: string | null = null;
@@ -29,10 +34,61 @@ export class LoadTestForm {
     try {
       const state = await window.restbro.store.get();
       this.collections = state.collections || [];
+      this.environments = state.environments || [];
+      this.globals = state.globals || { variables: {} };
+      // Default the load-test environment to whatever is active in the UI so
+      // variables/OAuth resolve the same way a normal "Send" would, unless the
+      // user already picked one (e.g. when restoring a previous run).
+      if (this.selectedEnvironmentId === undefined) {
+        this.selectedEnvironmentId = state.activeEnvironmentId ?? '';
+      }
+      this.renderEnvironmentOptions();
       this.renderCollectionTree();
+      this.updateEditorVariableContext();
     } catch (error) {
       console.error('Failed to load collections:', error);
     }
+  }
+
+  /**
+   * Pushes the current variable-resolution context (selected environment,
+   * globals, and the selected request's folder chain) into the ad-hoc editor so
+   * {{variables}} are colored and their hover tooltips show the right values.
+   */
+  private updateEditorVariableContext(): void {
+    const env = this.selectedEnvironmentId
+      ? this.environments.find((e) => e.id === this.selectedEnvironmentId)
+      : undefined;
+    const folderVars = buildFolderVars(
+      this.selectedCollectionId || undefined,
+      this.collections
+    );
+    this.targetEditor.setVariableContext(env, this.globals, folderVars);
+  }
+
+  private renderEnvironmentOptions(): void {
+    if (!this.container) return;
+
+    const select = this.container.querySelector(
+      '#loadtest-environment'
+    ) as HTMLSelectElement | null;
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    const noneOption = document.createElement('option');
+    noneOption.value = '';
+    noneOption.textContent = 'No Environment';
+    select.appendChild(noneOption);
+
+    this.environments.forEach((env) => {
+      const option = document.createElement('option');
+      option.value = env.id;
+      option.textContent = env.name;
+      select.appendChild(option);
+    });
+
+    select.value = this.selectedEnvironmentId ?? '';
   }
 
   private renderCollectionTree(): void {
@@ -223,6 +279,13 @@ export class LoadTestForm {
                 </div>
 
                 <div id="collection-selector" class="target-option" style="display: none;">
+                  <div class="form-field loadtest-env-field">
+                    <label for="loadtest-environment">Environment</label>
+                    <select id="loadtest-environment" class="form-input">
+                      <option value="">No Environment</option>
+                    </select>
+                    <small class="form-help">Resolves {{variables}} and OAuth credentials for the selected request.</small>
+                  </div>
                   <div class="loadtest-collection-picker">
                     <div class="loadtest-collection-header">
                       <div class="loadtest-collection-title">Select a request</div>
@@ -271,6 +334,15 @@ export class LoadTestForm {
     const startBtn = this.container.querySelector('#start-test-btn');
     startBtn?.addEventListener('click', () => {
       this.handleStart();
+    });
+
+    // Environment selector (used when running a saved request from collections)
+    const environmentSelect = this.container.querySelector(
+      '#loadtest-environment'
+    );
+    environmentSelect?.addEventListener('change', (e) => {
+      this.selectedEnvironmentId = (e.target as HTMLSelectElement).value;
+      this.updateEditorVariableContext();
     });
 
     const collectionTree = this.container.querySelector('#collection-tree');
@@ -371,6 +443,7 @@ export class LoadTestForm {
       collection.request,
       this.selectedCollectionId
     );
+    this.updateEditorVariableContext();
     this.targetEditor.prefillTarget(target);
     this.setCollectionPickerCollapsed(true);
     this.renderCollectionTree();
@@ -427,6 +500,8 @@ export class LoadTestForm {
         this.requestToTarget(request, collectionId)
       );
     }
+
+    this.updateEditorVariableContext();
 
     // Focus the RPM input so the user's next keystroke tweaks the number
     // they actually need to set.
@@ -525,12 +600,16 @@ export class LoadTestForm {
       durationUnit.value === 'minutes' ? duration * 60 : duration;
 
     let target: any;
+    let environmentId: string | undefined;
     if (targetType.value === 'collection' && this.selectedRequestId) {
       // Use proper collection target that will be resolved from saved request
       target = {
         kind: 'collection',
         requestId: this.selectedRequestId,
       };
+      // Variables/OAuth for a saved request resolve against the chosen
+      // environment (empty string means "No Environment").
+      environmentId = this.selectedEnvironmentId ?? '';
     } else {
       // Use ad-hoc target from the editor
       target = this.targetEditor.getTarget();
@@ -540,6 +619,7 @@ export class LoadTestForm {
       rpm,
       durationSec,
       target,
+      environmentId,
       followRedirects: followRedirects.checked,
       insecureTLS: insecureTLS.checked,
       requestTimeoutMs: parseInt(timeout.value),
@@ -559,6 +639,20 @@ export class LoadTestForm {
       config.durationSec > 86400
     ) {
       errors.push('Duration must be between 1 second and 24 hours');
+    }
+
+    // A run sends floor(rpm * durationSec / 60) requests. Catch configs that
+    // round down to zero (e.g. 10 RPM for 1 second) here, with an actionable
+    // message, instead of letting the main process reject them generically.
+    if (
+      config.rpm >= 1 &&
+      config.durationSec >= 1 &&
+      Math.floor((config.rpm * config.durationSec) / 60) < 1
+    ) {
+      const minRpm = Math.ceil(60 / config.durationSec);
+      errors.push(
+        `At ${config.rpm} RPM, a ${config.durationSec}s test would send fewer than 1 request. Increase RPM to at least ${minRpm}, or extend the duration.`
+      );
     }
 
     if (this.container) {
@@ -652,6 +746,12 @@ export class LoadTestForm {
       collectionRadio.checked = true;
       this.toggleTargetSelector('collection');
 
+      // Restore the selected environment
+      if (config.environmentId !== undefined) {
+        this.selectedEnvironmentId = config.environmentId;
+        this.renderEnvironmentOptions();
+      }
+
       // Restore the selected request
       const requestId = config.target.requestId;
       if (requestId) {
@@ -668,6 +768,8 @@ export class LoadTestForm {
       this.toggleTargetSelector('adhoc');
       this.targetEditor.prefillTarget(config.target);
     }
+
+    this.updateEditorVariableContext();
   }
 
   private findRequestCollectionById(requestId: string): any {

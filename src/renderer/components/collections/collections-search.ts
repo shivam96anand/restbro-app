@@ -35,13 +35,23 @@ export class CollectionsSearch {
     searchContainer.className = 'search-container';
     searchContainer.innerHTML = `
       <div class="search-actions"></div>
+    `;
+
+    collectionsTree.parentNode?.insertBefore(searchContainer, collectionsTree);
+
+    // The search input lives at the base of the collections panel (keeps the
+    // action buttons at the top, search at the bottom for quick reach). No
+    // strip/pane behind it — just the input sitting in the panel's empty base.
+    const bottomBar = document.createElement('div');
+    bottomBar.className = 'collections-bottom-bar';
+    bottomBar.innerHTML = `
       <div class="search-input-wrapper">
         <input type="text" id="collections-search" class="search-input" placeholder="Search collections">
         ${iconHtml('search', 'search-icon')}
       </div>
     `;
-
-    collectionsTree.parentNode?.insertBefore(searchContainer, collectionsTree);
+    const collectionsPanel = collectionsTree.closest('.collections-panel');
+    collectionsPanel?.appendChild(bottomBar);
 
     // Move the toolbar buttons into the search container, in the new
     // Import / Export / New order, with text labels alongside icons.

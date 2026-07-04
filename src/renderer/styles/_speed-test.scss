@@ -220,8 +220,12 @@
   gap: 6px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--primary-color-rgb), 0.12) 0%,
+    rgba(var(--primary-color-rgb), 0.04) 100%
+  );
+  border: 1px solid rgba(var(--primary-color-rgb), 0.18);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -285,7 +289,7 @@
 
   &__bar {
     height: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--primary-color-rgb), 0.14);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -312,5 +316,83 @@
     .speed-test-stat__num {
       font-size: 16px;
     }
+  }
+}
+
+.speed-test-history {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--primary-color-rgb), 0.16);
+
+  &__title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 156px;
+    overflow-y: auto;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--primary-color-rgb), 0.09) 0%,
+      rgba(var(--primary-color-rgb), 0.03) 100%
+    );
+    border: 1px solid rgba(var(--primary-color-rgb), 0.14);
+  }
+
+  &__time {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  &__metric {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    min-width: 50px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__arrow {
+    color: var(--primary-color);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &__metric--ping {
+    min-width: 42px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  &__unit {
+    margin-left: 2px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
   }
 }

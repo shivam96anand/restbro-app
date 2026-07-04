@@ -78,7 +78,7 @@ describe('loadtest-engine.ts', () => {
       const config = createConfig({ rpm: 1, durationSec: 1 });
 
       await expect(engine.startLoadTest(config)).rejects.toThrow(
-        'Test duration too short or RPM too low'
+        'Test would send 0 requests'
       );
     });
 
