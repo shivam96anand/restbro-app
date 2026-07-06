@@ -176,8 +176,13 @@ export class VariableContextHandler {
   public refreshAllInputHighlighting(): void {
     // Refresh URL input (tooltips are added automatically in refreshInputHighlight)
     const urlInput = document.getElementById('request-url') as HTMLInputElement;
-    if (urlInput && urlInput.value) {
-      this.refreshInputHighlight(urlInput);
+    if (urlInput) {
+      if (urlInput.value) {
+        this.refreshInputHighlight(urlInput);
+      }
+      // Keep the resolved-URL preview in sync with the current context
+      // (environment / globals / folder), e.g. after switching environments.
+      this.updateResolvedUrlPreview(urlInput);
     }
 
     // Refresh auth inputs
@@ -263,20 +268,60 @@ export class VariableContextHandler {
       urlInput.addEventListener('input', () => {
         this.updateVariableIndicator(urlInput);
         this.refreshInputHighlight(urlInput);
-        this.updateResolvedUrlTitle(urlInput);
+        this.updateResolvedUrlPreview(urlInput);
       });
       urlInput.dataset.variableHighlightListenerAttached = 'true';
+      this.setupUrlPreviewWrapToggle();
       // Initial paint (in case URL was loaded before the listener attached).
-      this.updateResolvedUrlTitle(urlInput);
+      this.updateResolvedUrlPreview(urlInput);
     }
   }
 
-  private updateResolvedUrlTitle(urlInput: HTMLInputElement): void {
+  /**
+   * Wires the wrap / unwrap toggle on the resolved-URL preview row (one-time).
+   */
+  private setupUrlPreviewWrapToggle(): void {
+    const previewEl = document.getElementById('url-preview');
+    const wrapBtn = previewEl?.querySelector(
+      '.url-preview__wrap'
+    ) as HTMLButtonElement | null;
+    if (!previewEl || !wrapBtn || wrapBtn.dataset.wired) return;
+    wrapBtn.dataset.wired = 'true';
+    wrapBtn.addEventListener('click', () => {
+      const wrapped = previewEl.classList.toggle('is-wrapped');
+      wrapBtn.classList.toggle('active', wrapped);
+      wrapBtn.setAttribute('aria-pressed', String(wrapped));
+    });
+  }
+
+  /**
+   * Computes the resolved URL (expanding `{{vars}}` via the active
+   * environment / globals / folder values) and reflects it in:
+   *  - the URL input's native `title` (hover tooltip), and
+   *  - the visible `#url-preview` row below the URL bar (Insomnia-style).
+   * Cleared when the URL has no variables or nothing resolves.
+   */
+  private updateResolvedUrlPreview(urlInput: HTMLInputElement): void {
+    const previewEl = document.getElementById('url-preview');
+    const valueEl = previewEl?.querySelector(
+      '.url-preview__value'
+    ) as HTMLElement | null;
+
+    const clear = (): void => {
+      urlInput.removeAttribute('title');
+      previewEl?.classList.remove('is-visible');
+      if (valueEl) {
+        valueEl.textContent = '';
+        valueEl.removeAttribute('title');
+      }
+    };
+
     const raw = urlInput.value;
     if (!raw || !raw.includes('{{')) {
-      urlInput.removeAttribute('title');
+      clear();
       return;
     }
+
     try {
       const resolved = resolveTemplate(raw, {
         requestVars: {},
@@ -284,13 +329,19 @@ export class VariableContextHandler {
         envVars: this.activeEnvironment?.variables || {},
         globalVars: this.globals?.variables || {},
       });
-      if (resolved !== raw) {
+
+      if (resolved && resolved !== raw) {
         urlInput.title = `Resolved: ${resolved}`;
+        if (valueEl) {
+          valueEl.textContent = resolved;
+          valueEl.title = resolved;
+        }
+        previewEl?.classList.add('is-visible');
       } else {
-        urlInput.removeAttribute('title');
+        clear();
       }
     } catch {
-      // ignore — title is purely a UX nicety
+      // ignore — the preview is purely a UX nicety
     }
   }
 }

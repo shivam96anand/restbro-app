@@ -90,6 +90,9 @@
 
 // Previous-responses dropdown next to response timestamp
 @import 'response-history-dropdown';
+
+// Themed dropdown replacing native <select> popups (method + environment)
+@import 'themed-select';
 @import 'json-viewer-core';
 @import 'json-viewer-nodes';
 @import 'json-viewer-modal';

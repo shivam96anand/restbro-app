@@ -26,6 +26,9 @@
 
 #response-body {
   padding-top: 4px;
+  // Small left inset so the line-number gutter has a little breathing room,
+  // matching the request body editor (`.body-editor-container` padding-left).
+  padding-left: 12px;
 }
 
 .response-placeholder {

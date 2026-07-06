@@ -2,6 +2,7 @@ import { Environment } from '../../../shared/types';
 import { EnvironmentDialogs } from './environment-dialogs';
 
 import { iconHtml } from '../../utils/icons';
+import { attachThemedSelect } from '../../utils/themed-select';
 
 export class EnvironmentManager {
   private environments: Environment[] = [];
@@ -145,6 +146,9 @@ export class EnvironmentManager {
     container.appendChild(label);
     container.appendChild(select);
     container.appendChild(manageBtn);
+
+    // Replace the native (OS-themed) option popup with a themed dropdown.
+    attachThemedSelect(select);
 
     // Append to header-left section
     headerLeft.appendChild(container);

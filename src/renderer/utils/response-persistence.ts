@@ -51,6 +51,9 @@ export function sanitizeTabsForPersistence(tabs: RequestTab[]): RequestTab[] {
   return tabs.map((tab) => ({
     ...tab,
     response: sanitizeTabResponseForPersistence(tab.response),
+    // Per-mode stashes are subject to the same body cap as the active response.
+    restResponse: sanitizeTabResponseForPersistence(tab.restResponse),
+    soapResponse: sanitizeTabResponseForPersistence(tab.soapResponse),
   }));
 }
 

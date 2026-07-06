@@ -4,6 +4,7 @@
  */
 
 import * as monaco from 'monaco-editor';
+import { forceInitialViewportTokenization } from './monaco-tokenization';
 
 export interface MonacoXmlEditorOptions {
   container: HTMLElement;
@@ -48,6 +49,7 @@ export class MonacoXmlEditor {
       theme: 'restbro-json',
       automaticLayout: true,
       minimap: { enabled: false },
+      overviewRulerBorder: false,
       scrollBeyondLastLine: false,
       fontSize: 12,
       lineNumbers: 'on',
@@ -60,7 +62,7 @@ export class MonacoXmlEditor {
       letterSpacing: -0.3,
       glyphMargin: false,
       lineDecorationsWidth: 0,
-      lineNumbersMinChars: 3,
+      lineNumbersMinChars: 1,
       wordWrap: 'on',
       tabSize: 2,
       insertSpaces: true,
@@ -68,6 +70,10 @@ export class MonacoXmlEditor {
       bracketPairColorization: { enabled: false },
       padding: { top: 12, bottom: 12 },
     });
+
+    // Tokenize the initial viewport synchronously so the first paint is already
+    // themed (avoids Monaco's white-then-colored syntax-highlight flash).
+    forceInitialViewportTokenization(this.editor);
 
     this.editor.onDidChangeModelContent(() => {
       this.onChange(this.editor?.getValue() || '');

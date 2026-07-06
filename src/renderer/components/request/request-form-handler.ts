@@ -7,6 +7,7 @@ import {
 import { setupAutocomplete } from './variable-autocomplete';
 import { VariableContextHandler } from './variable-context-handler';
 import { FormUIHandler } from './form-ui-handler';
+import { attachThemedSelect } from '../../utils/themed-select';
 
 /**
  * Main handler for the request form - coordinates between variable context,
@@ -32,6 +33,9 @@ export class RequestFormHandler {
     if (methodSelect) {
       // Apply initial method color class
       this.uiHandler.updateMethodSelectColor(methodSelect);
+
+      // Replace the native (OS-themed) option popup with a themed dropdown.
+      attachThemedSelect(methodSelect);
 
       methodSelect.addEventListener('change', () => {
         this.onRequestUpdate({

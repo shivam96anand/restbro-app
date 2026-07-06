@@ -1,4 +1,8 @@
-import { ApiResponse, RequestMode } from '../../shared/types';
+import {
+  ApiResponse,
+  RequestMode,
+  ResponseViewState,
+} from '../../shared/types';
 import { ResponseState, ResponseManagerConfig } from '../types/response-types';
 import { ResponseViewer } from './response-viewer/ResponseViewer';
 import { ResponseTabs } from './response-viewer/ResponseTabs';
@@ -66,11 +70,11 @@ export class ResponseManager {
 
   private setupEventListeners(): void {
     this.tabs.onTabChange((tab) => this.handleTabChange(tab));
+    this.tabs.onSearch(() => this.toggleMonacoSearch());
     this.tabs.onCopy(() => this.copyJsonResponse());
     this.tabs.onExport(() => this.exportJsonResponse());
 
     this.actions.onFullscreen(() => this.toggleFullscreen());
-    this.actions.onSearch(() => this.triggerMonacoSearch());
     this.actions.onCollapse(() => this.collapseAll());
     this.actions.onExpand(() => this.expandAll());
     this.actions.onScrollTop(() => this.scrollToTop());
@@ -178,12 +182,41 @@ export class ResponseManager {
       }
     });
 
-    // When the user toggles REST <-> SOAP on the active request, the
-    // previously displayed response is no longer meaningful (different
-    // protocol/body shape). Clear it so the right-hand panel doesn't
-    // misleadingly show the old REST response next to a SOAP request.
-    document.addEventListener('request-mode-changed', () => {
-      this.clearResponse();
+    // When the user toggles REST <-> SOAP the previously displayed response is
+    // no longer meaningful for the new protocol. The tabs subsystem stashes it
+    // per-mode and emits `mode-response-restored` with whatever response was
+    // previously captured for the mode we're entering (or none). Show that
+    // response so switching back to a mode restores its earlier result instead
+    // of silently discarding it.
+    document.addEventListener('mode-response-restored', async (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      const requestId = detail.requestId as string | undefined;
+
+      // Ignore swaps for tabs other than the one currently on screen.
+      if (requestId && requestId !== this.activeTabRequestId) return;
+
+      this.activeTabRequestMode = (detail.requestMode as RequestMode) || 'rest';
+
+      const response = detail.response as ApiResponse | undefined;
+      const viewState = detail.responseViewState as
+        | ResponseViewState
+        | undefined;
+
+      if (response) {
+        this.hideLoadingState();
+        this.viewer.setLargeJsonPrettySelection(
+          this.currentRequestId,
+          viewState?.largeJsonPrettyResponseTimestamp
+        );
+        this.viewer.setMonacoViewStateSelection(
+          this.currentRequestId,
+          viewState?.monacoViewStateResponseTimestamp,
+          viewState?.monacoViewState
+        );
+        await this.displayResponse(response, this.activeTabRequestMode);
+      } else {
+        this.clearResponse();
+      }
     });
   }
 
@@ -540,6 +573,10 @@ export class ResponseManager {
 
   private triggerMonacoSearch(): void {
     this.viewer.triggerMonacoSearch();
+  }
+
+  private toggleMonacoSearch(): void {
+    this.viewer.toggleMonacoSearch();
   }
 
   private collapseAll(): void {

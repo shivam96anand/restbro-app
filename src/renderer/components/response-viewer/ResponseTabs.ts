@@ -5,9 +5,11 @@ import { PreviousResponsesDropdown } from './PreviousResponsesDropdown';
 export class ResponseTabs {
   private tabsContainer: HTMLElement | null = null;
   private actionsGroup: HTMLElement | null = null;
+  private searchButton: HTMLElement | null = null;
   private exportButton: HTMLElement | null = null;
   private activeTab: string = 'body';
   private onTabChangeCallback: ((tab: string) => void) | null = null;
+  private onSearchCallback: (() => void) | null = null;
   private onCopyCallback: (() => void) | null = null;
   private onExportCallback: (() => void) | null = null;
   private prevResponsesDropdown: PreviousResponsesDropdown =
@@ -79,12 +81,19 @@ export class ResponseTabs {
 
     tabRow.appendChild(tabGroup);
 
-    // ── Right side: quick copy / export icon actions ──
-    // Copy is available for any response body; Export only for JSON bodies.
+    // ── Right side: quick search / copy / export icon actions ──
+    // Search & Export apply to JSON bodies; Copy works for any response.
     // Hidden until a response is displayed (toggled via updateActionButtons).
     const actionsGroup = document.createElement('div');
     actionsGroup.className = 'response-toolbar__actions';
     actionsGroup.style.display = 'none';
+
+    const searchBtn = this.createActionIcon(
+      'response-search-icon',
+      'Search response',
+      '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'
+    );
+    searchBtn.addEventListener('click', () => this.onSearchCallback?.());
 
     const copyBtn = this.createActionIcon(
       'response-copy-icon',
@@ -100,10 +109,12 @@ export class ResponseTabs {
     );
     exportBtn.addEventListener('click', () => this.onExportCallback?.());
 
+    actionsGroup.appendChild(searchBtn);
     actionsGroup.appendChild(copyBtn);
     actionsGroup.appendChild(exportBtn);
     tabRow.appendChild(actionsGroup);
     this.actionsGroup = actionsGroup;
+    this.searchButton = searchBtn;
     this.exportButton = exportBtn;
 
     this.tabsContainer.appendChild(metaRow);
@@ -121,7 +132,7 @@ export class ResponseTabs {
     btn.className = 'response-toolbar__action';
     btn.title = label;
     btn.setAttribute('aria-label', label);
-    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
     return btn;
   }
 
@@ -212,6 +223,10 @@ export class ResponseTabs {
     this.onTabChangeCallback = callback;
   }
 
+  public onSearch(callback: () => void): void {
+    this.onSearchCallback = callback;
+  }
+
   public onCopy(callback: () => void): void {
     this.onCopyCallback = callback;
   }
@@ -227,6 +242,9 @@ export class ResponseTabs {
   public updateActionButtons(hasResponse: boolean, isJson: boolean): void {
     if (this.actionsGroup) {
       this.actionsGroup.style.display = hasResponse ? 'flex' : 'none';
+    }
+    if (this.searchButton) {
+      this.searchButton.style.display = hasResponse && isJson ? '' : 'none';
     }
     if (this.exportButton) {
       this.exportButton.style.display = hasResponse && isJson ? '' : 'none';
@@ -280,6 +298,7 @@ export class ResponseTabs {
   public destroy(): void {
     this.tabsContainer?.remove();
     this.onTabChangeCallback = null;
+    this.onSearchCallback = null;
     this.onCopyCallback = null;
     this.onExportCallback = null;
   }

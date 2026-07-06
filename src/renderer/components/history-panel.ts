@@ -156,7 +156,7 @@ export class HistoryPanel {
           <span class="history-row__method method-${item.request.method.toLowerCase()}">${item.request.method}</span>
           <span class="history-row__url" title="${this.escapeAttr(item.request.url)}">${this.escapeText(item.request.url || '\u2013')}</span>
           <span class="history-row__status ${statusClass}">${status}</span>
-          <span class="history-row__time">${ts.toLocaleTimeString()}</span>
+          <span class="history-row__time">${ts.toLocaleTimeString(undefined, { hourCycle: 'h12' })}</span>
         </div>
       `;
       })

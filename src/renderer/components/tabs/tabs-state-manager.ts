@@ -1,4 +1,10 @@
-import { RequestTab, ApiRequest, ApiResponse } from '../../../shared/types';
+import {
+  RequestTab,
+  ApiRequest,
+  ApiResponse,
+  RequestMode,
+  ResponseViewState,
+} from '../../../shared/types';
 import { cloneApiRequest } from '../../../shared/clone-request';
 import { showConfirmDialog } from '../../utils/confirm-dialog';
 
@@ -187,6 +193,42 @@ export class TabsStateManager {
     this.saveState();
   }
 
+  /**
+   * Toggling REST <-> SOAP must not throw away the response captured in the
+   * other protocol mode. We stash the currently-active response/view-state into
+   * the `fromMode` slot and restore the `toMode` slot into the active fields.
+   * Returns the restored response so the caller can re-display it.
+   */
+  swapModeResponses(
+    requestId: string,
+    fromMode: RequestMode,
+    toMode: RequestMode
+  ): { response?: ApiResponse; responseViewState?: ResponseViewState } {
+    const tab = this.tabs.find((t) => t.request.id === requestId);
+    if (!tab) return {};
+
+    // Stash the active response for the mode we are leaving.
+    if (fromMode === 'soap') {
+      tab.soapResponse = tab.response;
+      tab.soapResponseViewState = tab.responseViewState;
+    } else {
+      tab.restResponse = tab.response;
+      tab.restResponseViewState = tab.responseViewState;
+    }
+
+    // Restore whatever we previously stashed for the mode we are entering.
+    if (toMode === 'soap') {
+      tab.response = tab.soapResponse;
+      tab.responseViewState = tab.soapResponseViewState;
+    } else {
+      tab.response = tab.restResponse;
+      tab.responseViewState = tab.restResponseViewState;
+    }
+
+    this.saveState();
+    return { response: tab.response, responseViewState: tab.responseViewState };
+  }
+
   openRequestInTab(request: ApiRequest, collectionId?: string): void {
     const existingTab = this.tabs.find((tab) => tab.request.id === request.id);
 
@@ -253,6 +295,38 @@ export class TabsStateManager {
       this.onNotifyTabChange();
       this.saveState();
     }
+  }
+
+  /**
+   * Load a historical request + response snapshot into the currently active
+   * tab. Used by the response panel's "previous responses" dropdown so that
+   * opening a past response also restores the exact request that produced it
+   * (URL, params, headers, body, auth) — not just the response body.
+   *
+   * Notifies listeners (fires `tab-changed`) so both the request editor and
+   * the response viewer re-render from the updated tab.
+   */
+  loadHistorySnapshotIntoActiveTab(
+    request: ApiRequest,
+    response: ApiResponse
+  ): void {
+    if (!this.activeTabId) return;
+    const tab = this.tabs.find((t) => t.id === this.activeTabId);
+    if (!tab) return;
+
+    this.updateActiveTab(
+      {
+        // Deep-clone so the tab never shares nested references with the
+        // stored history item.
+        request: this.cloneRequest(request),
+        requestMode: request.soap ? 'soap' : 'rest',
+        restDraft: this.cloneRequest(request),
+        soapDraft: request.soap ? this.cloneRequest(request) : undefined,
+        response: { ...response },
+      },
+      true
+    );
+    this.onNotifyTabChange();
   }
 
   closeTabsByRequestId(requestId: string): void {

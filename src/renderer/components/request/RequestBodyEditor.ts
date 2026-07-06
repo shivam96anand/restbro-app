@@ -310,6 +310,16 @@ export class RequestBodyEditor {
       this.monacoEditor = null;
     }
 
+    // Dispose any lingering Monaco XML editor too. Switching SOAP (XML) -> REST
+    // (JSON) lands here; without this the old XML editor would stay mounted in
+    // the same container and stack on top of the new JSON editor, breaking
+    // layout and syntax colouring. Symmetric with switchToMonacoXmlEditor /
+    // switchToTextareaEditor, which already dispose both.
+    if (this.monacoXmlEditor) {
+      this.monacoXmlEditor.dispose();
+      this.monacoXmlEditor = null;
+    }
+
     // Get current value from textarea if no initial value provided
     const valueToSet = initialValue || textarea?.value || '';
 

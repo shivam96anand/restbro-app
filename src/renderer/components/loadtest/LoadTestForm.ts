@@ -234,25 +234,6 @@ export class LoadTestForm {
                   </div>
                   <small class="form-help">1 second to 24 hours maximum</small>
                 </div>
-              </div>
-            </div>
-
-            <div class="form-section compact compact-advanced">
-              <h3>Advanced Options</h3>
-              <div class="form-grid two-column">
-                <div class="form-field">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="follow-redirects" checked>
-                    <span class="checkbox-text">Follow Redirects</span>
-                  </label>
-                </div>
-
-                <div class="form-field">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="insecure-tls">
-                    <span class="checkbox-text">Allow Insecure TLS</span>
-                  </label>
-                </div>
 
                 <div class="form-field">
                   <label for="timeout-input">Request Timeout (ms)</label>
@@ -265,7 +246,10 @@ export class LoadTestForm {
 
           <div class="form-column">
             <div class="form-section compact">
-              <h3>Target Request</h3>
+              <div class="section-header">
+                <h3>Target Request</h3>
+                <button id="start-test-btn" class="btn btn-primary section-header-action" type="button">Start Load Test</button>
+              </div>
               <div class="target-selector">
                 <div class="radio-group">
                   <label class="radio-label">
@@ -299,10 +283,6 @@ export class LoadTestForm {
                   <!-- Target editor will be rendered here -->
                 </div>
               </div>
-            </div>
-
-            <div class="form-actions form-actions-inline">
-              <button id="start-test-btn" class="btn btn-primary" type="button">Start Load Test</button>
             </div>
           </div>
         </div>
@@ -584,12 +564,6 @@ export class LoadTestForm {
     const targetType = this.container.querySelector(
       'input[name="target-type"]:checked'
     ) as HTMLInputElement;
-    const followRedirects = this.container.querySelector(
-      '#follow-redirects'
-    ) as HTMLInputElement;
-    const insecureTLS = this.container.querySelector(
-      '#insecure-tls'
-    ) as HTMLInputElement;
     const timeout = this.container.querySelector(
       '#timeout-input'
     ) as HTMLInputElement;
@@ -620,8 +594,8 @@ export class LoadTestForm {
       durationSec,
       target,
       environmentId,
-      followRedirects: followRedirects.checked,
-      insecureTLS: insecureTLS.checked,
+      followRedirects: true,
+      insecureTLS: false,
       requestTimeoutMs: parseInt(timeout.value),
     };
   }
@@ -715,12 +689,6 @@ export class LoadTestForm {
     const durationUnit = this.container.querySelector(
       '#duration-unit'
     ) as HTMLSelectElement;
-    const followRedirects = this.container.querySelector(
-      '#follow-redirects'
-    ) as HTMLInputElement;
-    const insecureTLS = this.container.querySelector(
-      '#insecure-tls'
-    ) as HTMLInputElement;
     const timeout = this.container.querySelector(
       '#timeout-input'
     ) as HTMLInputElement;
@@ -735,8 +703,6 @@ export class LoadTestForm {
       durationUnit.value = 'seconds';
     }
 
-    followRedirects.checked = config.followRedirects !== false;
-    insecureTLS.checked = config.insecureTLS === true;
     timeout.value = (config.requestTimeoutMs || 30000).toString();
 
     if (config.target.kind === 'collection') {

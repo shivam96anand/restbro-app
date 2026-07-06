@@ -107,6 +107,12 @@ export interface ApiResponse {
   truncatedSize?: number;
 }
 
+export interface ResponseViewState {
+  largeJsonPrettyResponseTimestamp?: number;
+  monacoViewStateResponseTimestamp?: number;
+  monacoViewState?: Record<string, unknown>;
+}
+
 export interface RequestTab {
   id: string;
   name: string;
@@ -117,12 +123,15 @@ export interface RequestTab {
   requestMode?: RequestMode; // Tracks protocol mode for this tab
   restDraft?: ApiRequest; // Preserved REST draft for mode switching
   soapDraft?: ApiRequest; // Preserved SOAP draft for mode switching
+  // Per-mode response stashes so toggling REST <-> SOAP doesn't lose the
+  // response captured in the other mode. The active `response` mirrors the
+  // stash for the current `requestMode`.
+  restResponse?: ApiResponse;
+  soapResponse?: ApiResponse;
+  restResponseViewState?: ResponseViewState;
+  soapResponseViewState?: ResponseViewState;
   activeDetailsTab?: string; // Track active tab (params/body/auth/headers/curl) for this request tab
-  responseViewState?: {
-    largeJsonPrettyResponseTimestamp?: number;
-    monacoViewStateResponseTimestamp?: number;
-    monacoViewState?: Record<string, unknown>;
-  };
+  responseViewState?: ResponseViewState;
 }
 
 export interface HistoryItem {

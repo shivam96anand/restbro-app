@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TabsStateManager } from '../tabs-state-manager';
-import { ApiRequest, RequestTab } from '../../../../shared/types';
+import { ApiRequest, ApiResponse, RequestTab } from '../../../../shared/types';
 
 // Mock confirm-dialog — always confirm by default
 vi.mock('../../../utils/confirm-dialog', () => ({
@@ -19,6 +19,18 @@ function makeRequest(overrides: Partial<ApiRequest> = {}): ApiRequest {
     headers: { 'User-Agent': 'Restbro' },
     ...overrides,
   } as ApiRequest;
+}
+
+function makeResponse(body: string, status = 200): ApiResponse {
+  return {
+    status,
+    statusText: 'OK',
+    headers: {},
+    body,
+    time: 10,
+    size: body.length,
+    timestamp: Date.now(),
+  } as ApiResponse;
 }
 
 describe('TabsStateManager', () => {
@@ -203,6 +215,52 @@ describe('TabsStateManager', () => {
     });
   });
 
+  describe('swapModeResponses', () => {
+    it('stashes the REST response and restores it after a REST→SOAP→REST round-trip', () => {
+      tsm.openRequestInTab(makeRequest({ id: 'req-1' }), 'col-1');
+      const restResp = makeResponse('{"rest":true}');
+      tsm.updateTabByRequestId('req-1', { response: restResp }, false);
+
+      // REST -> SOAP: REST response is stashed, active cleared (no SOAP stash yet)
+      const toSoap = tsm.swapModeResponses('req-1', 'rest', 'soap');
+      expect(toSoap.response).toBeUndefined();
+      expect(tsm.getActiveTab()!.response).toBeUndefined();
+      expect(tsm.getActiveTab()!.restResponse).toEqual(restResp);
+
+      // SOAP -> REST: the stashed REST response comes back
+      const toRest = tsm.swapModeResponses('req-1', 'soap', 'rest');
+      expect(toRest.response).toEqual(restResp);
+      expect(tsm.getActiveTab()!.response).toEqual(restResp);
+    });
+
+    it('keeps REST and SOAP responses independent across toggles', () => {
+      tsm.openRequestInTab(makeRequest({ id: 'req-1' }), 'col-1');
+      tsm.updateTabByRequestId(
+        'req-1',
+        { response: makeResponse('{"rest":true}') },
+        false
+      );
+
+      tsm.swapModeResponses('req-1', 'rest', 'soap');
+      const soapResp = makeResponse('<soap/>');
+      tsm.updateTabByRequestId('req-1', { response: soapResp }, false);
+
+      // Back to REST restores the REST response while keeping the SOAP stash.
+      const toRest = tsm.swapModeResponses('req-1', 'soap', 'rest');
+      expect(toRest.response!.body).toBe('{"rest":true}');
+      expect(tsm.getActiveTab()!.soapResponse).toEqual(soapResp);
+
+      // Forward to SOAP again restores the SOAP response.
+      const toSoap = tsm.swapModeResponses('req-1', 'rest', 'soap');
+      expect(toSoap.response).toEqual(soapResp);
+    });
+
+    it('returns an empty object for an unknown requestId', () => {
+      tsm.openRequestInTab(makeRequest({ id: 'req-1' }), 'col-1');
+      expect(tsm.swapModeResponses('nope', 'rest', 'soap')).toEqual({});
+    });
+  });
+
   describe('openRequestInTab', () => {
     it('creates a new tab for a new request', () => {
       const req = makeRequest({ id: 'new-req' });
@@ -296,6 +354,56 @@ describe('TabsStateManager', () => {
       tsm.openRequestInTabWithResponse(req, res);
       expect(tsm.getActiveTab()!.response).toBeDefined();
       expect(tsm.getActiveTab()!.response!.status).toBe(200);
+    });
+  });
+
+  describe('loadHistorySnapshotIntoActiveTab', () => {
+    const makeResponse = (status: number): ApiResponse => ({
+      status,
+      statusText: 'OK',
+      headers: {},
+      body: '{"ok":true}',
+      time: 42,
+      size: 11,
+      timestamp: Date.now(),
+    });
+
+    it('replaces the active tab request + response and notifies', () => {
+      tsm.createNewTab();
+      const notifyBefore = notifyCalls;
+
+      const req = makeRequest({
+        id: 'req-1',
+        method: 'POST',
+        url: 'https://api.example.com/orders',
+      });
+
+      tsm.loadHistorySnapshotIntoActiveTab(req, makeResponse(201));
+
+      const active = tsm.getActiveTab()!;
+      expect(active.request.method).toBe('POST');
+      expect(active.request.url).toBe('https://api.example.com/orders');
+      expect(active.response!.status).toBe(201);
+      expect(active.isModified).toBe(true);
+      expect(notifyCalls).toBeGreaterThan(notifyBefore);
+    });
+
+    it('deep-clones the request so the tab never shares references', () => {
+      tsm.createNewTab();
+      const req = makeRequest({ id: 'req-1', headers: { 'X-Test': 'a' } });
+
+      tsm.loadHistorySnapshotIntoActiveTab(req, makeResponse(200));
+
+      const tabRequest = tsm.getActiveTab()!.request;
+      expect(tabRequest).not.toBe(req);
+      expect(tabRequest.headers).not.toBe(req.headers);
+    });
+
+    it('is a no-op when there is no active tab', () => {
+      const notifyBefore = notifyCalls;
+      tsm.loadHistorySnapshotIntoActiveTab(makeRequest(), makeResponse(200));
+      expect(tsm.getActiveTab()).toBeUndefined();
+      expect(notifyCalls).toBe(notifyBefore);
     });
   });
 

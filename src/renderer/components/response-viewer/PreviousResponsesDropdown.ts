@@ -165,7 +165,7 @@ export class PreviousResponsesDropdown {
         <div class="response-history-row__meta">
           <span class="response-history-row__status ${statusClass}">${status}</span>
           <span class="response-history-row__time">${time}</span>
-          <span class="response-history-row__ts">${ts.toLocaleString(undefined, { hour12: true })}</span>
+          <span class="response-history-row__ts">${ts.toLocaleString(undefined, { hourCycle: 'h12' })}</span>
         </div>
         <button type="button" class="response-history-row__open" data-idx="${idx}">Open</button>
         <button type="button" class="response-history-row__compare" data-idx="${idx}">Compare</button>
@@ -175,25 +175,37 @@ export class PreviousResponsesDropdown {
 
   private openPrevious(previous: HistoryItem): void {
     const body = previous.response?.body || '';
+
+    // Restore the full snapshot — the request that was sent *and* its
+    // response — into the active tab so the request editor reflects exactly
+    // what produced this response, not just the response body. Falls back to
+    // a response-only display for legacy items that lack a stored request.
+    if (previous.request) {
+      document.dispatchEvent(
+        new CustomEvent('open-previous-request-response', {
+          detail: { request: previous.request, response: previous.response },
+        })
+      );
+    } else {
+      document.dispatchEvent(
+        new CustomEvent('display-previous-response', {
+          detail: { response: previous.response },
+        })
+      );
+    }
+
     if (!body.trim()) {
       document.dispatchEvent(
         new CustomEvent('show-toast', {
           detail: {
             type: 'info',
             message:
-              'This previous response has no body. Re-send the request to capture a fresh snapshot.',
+              'This previous response has no saved body. Re-send the request to capture a fresh snapshot.',
           },
         })
       );
-      this.close();
-      return;
     }
 
-    document.dispatchEvent(
-      new CustomEvent('display-previous-response', {
-        detail: { response: previous.response },
-      })
-    );
     this.close();
   }
 
@@ -228,7 +240,7 @@ export class PreviousResponsesDropdown {
       left,
       right,
       leftLabel: 'Current response',
-      rightLabel: `Previous (${ts.toLocaleString()})`,
+      rightLabel: `Previous (${ts.toLocaleString(undefined, { hourCycle: 'h12' })})`,
     };
 
     // Buffer the payload globally so it survives the lazy React mount.

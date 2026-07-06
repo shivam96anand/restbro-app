@@ -946,6 +946,12 @@ export class ResponseViewer {
     }
   }
 
+  public toggleMonacoSearch(): void {
+    if (this.monacoEditor && this.currentFormatter === 'json') {
+      this.monacoEditor.toggleFind();
+    }
+  }
+
   public search(query: string): void {
     if (this.monacoEditor && this.currentFormatter === 'json') {
       this.monacoEditor.triggerFind();

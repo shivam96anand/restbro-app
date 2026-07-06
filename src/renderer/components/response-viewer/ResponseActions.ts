@@ -3,7 +3,6 @@ import { ApiResponse } from '../../../shared/types';
 export class ResponseActions {
   private actionsContainer: HTMLElement | null = null;
   private onFullscreenCallback: (() => void) | null = null;
-  private onSearchCallback: (() => void) | null = null;
   private onCollapseCallback: (() => void) | null = null;
   private onExpandCallback: (() => void) | null = null;
   private onScrollTopCallback: (() => void) | null = null;
@@ -28,7 +27,6 @@ export class ResponseActions {
 
       this.actionsContainer.innerHTML = `
         <button id="enlarge-btn" class="response-action-btn" title="Fullscreen" aria-label="Fullscreen">Enlarge</button>
-        <button id="search-btn" class="response-action-btn" title="Search (${navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+F)" aria-label="Search response">Search</button>
         <button id="open-notepad-btn" class="response-action-btn" title="Open in Notepad" aria-label="Open response in Notepad">Notepad</button>
         <button id="collapse-btn" class="response-action-btn" title="Collapse all" aria-label="Collapse all">Collapse</button>
         <button id="expand-btn" class="response-action-btn" title="Expand all" aria-label="Expand all">Expand</button>
@@ -56,7 +54,6 @@ export class ResponseActions {
     const enlargeBtn = this.actionsContainer.querySelector('#enlarge-btn');
     const openNotepadBtn =
       this.actionsContainer.querySelector('#open-notepad-btn');
-    const searchBtn = this.actionsContainer.querySelector('#search-btn');
     const collapseBtn = this.actionsContainer.querySelector('#collapse-btn');
     const expandBtn = this.actionsContainer.querySelector('#expand-btn');
     const topBtn = this.actionsContainer.querySelector('#top-btn');
@@ -67,7 +64,6 @@ export class ResponseActions {
     openNotepadBtn?.addEventListener('click', () =>
       this.onOpenInNotepadCallback?.()
     );
-    searchBtn?.addEventListener('click', () => this.onSearchCallback?.());
     collapseBtn?.addEventListener('click', () => this.onCollapseCallback?.());
     expandBtn?.addEventListener('click', () => this.onExpandCallback?.());
     topBtn?.addEventListener('click', () => this.onScrollTopCallback?.());
@@ -115,9 +111,6 @@ export class ResponseActions {
   public onFullscreen(callback: () => void): void {
     this.onFullscreenCallback = callback;
   }
-  public onSearch(callback: () => void): void {
-    this.onSearchCallback = callback;
-  }
   public onCollapse(callback: () => void): void {
     this.onCollapseCallback = callback;
   }
@@ -143,7 +136,6 @@ export class ResponseActions {
   public destroy(): void {
     this.actionsContainer?.remove();
     this.onFullscreenCallback = null;
-    this.onSearchCallback = null;
     this.onCollapseCallback = null;
     this.onExpandCallback = null;
     this.onScrollTopCallback = null;

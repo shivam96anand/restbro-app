@@ -151,25 +151,6 @@ export class TabsEventHandler {
       }
     });
 
-    // Mode toggle (REST <-> SOAP) invalidates the previous response on this
-    // tab. Drop it from the tab so it isn't restored on the next tab switch.
-    document.addEventListener('request-mode-changed', (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const requestId = customEvent.detail?.requestId as string | undefined;
-      if (requestId) {
-        this.onUpdateTabByRequestId(
-          requestId,
-          { response: undefined, responseViewState: undefined },
-          false
-        );
-      } else {
-        this.onUpdateActiveTab(
-          { response: undefined, responseViewState: undefined },
-          false
-        );
-      }
-    });
-
     document.addEventListener('active-details-tab-changed', (e: Event) => {
       const customEvent = e as CustomEvent;
       const activeDetailsTab = customEvent.detail.activeDetailsTab;

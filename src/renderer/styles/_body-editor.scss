@@ -10,19 +10,19 @@
 }
 
 .body-editor-container {
-  margin-top: -10px;
-  margin-left: 0;
-  margin-right: 0;
-  border: 1px solid var(--border-color);
-  border-top: none;
+  margin-top: 0;
+  // Full-bleed: cancel the 16px horizontal padding of `.request-form`, then add
+  // a small left inset (`padding-left`) so the line-number gutter has a little
+  // breathing room. Kept in sync with the response body (`#response-body`).
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 12px;
   background: var(--bg-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  width: 100%;
-  border-radius: 0 0 4px 4px;
   position: relative;
   padding-top: 0;
 }
@@ -34,8 +34,6 @@
 
   .body-editor-container {
     margin-top: 0;
-    border-top: 1px solid var(--border-color);
-    border-radius: 4px;
     min-height: 504px;
   }
 

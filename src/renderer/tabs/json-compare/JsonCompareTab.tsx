@@ -124,45 +124,96 @@ const JsonCompareTab: React.FC = () => {
   // `json-compare-load` CustomEvent with `{ left, right, leftLabel?, rightLabel? }`.
   // Also drains `window.__pendingJsonComparePayload` on mount so a payload
   // queued before this lazy-loaded tab mounted is not lost.
+  //
+  // Persisted UI state hydrates asynchronously (useComparePersistence) and
+  // would otherwise overwrite freshly-pushed JSON. To fix "Compare shows old
+  // data", incoming payloads are stashed and applied only once `loaded` is
+  // true — so the JSON we were asked to compare always wins over the restored
+  // session state (and any queued payload survives the async hydration).
+  const pendingComparePayloadRef = useRef<{
+    left: string;
+    right: string;
+    leftLabel?: string;
+    rightLabel?: string;
+  } | null>(null);
+  const loadedRef = useRef(false);
   useEffect(() => {
-    const apply = (detail: {
-      left?: unknown;
-      right?: unknown;
-      leftLabel?: unknown;
-      rightLabel?: unknown;
+    loadedRef.current = loaded;
+  }, [loaded]);
+
+  const applyComparePayload = useCallback(
+    (p: {
+      left: string;
+      right: string;
+      leftLabel?: string;
+      rightLabel?: string;
     }): void => {
-      const left = typeof detail.left === 'string' ? detail.left : '';
-      const right = typeof detail.right === 'string' ? detail.right : '';
-      const leftLabel =
-        typeof detail.leftLabel === 'string' ? detail.leftLabel : undefined;
-      const rightLabel =
-        typeof detail.rightLabel === 'string' ? detail.rightLabel : undefined;
       setState((s) => ({
         ...s,
-        leftJson: formatJson(left),
-        rightJson: formatJson(right),
+        leftJson: formatJson(p.left),
+        rightJson: formatJson(p.right),
         leftTruncated: false,
         rightTruncated: false,
-        leftLabel: leftLabel || s.leftLabel,
-        rightLabel: rightLabel || s.rightLabel,
+        leftLabel: p.leftLabel || s.leftLabel,
+        rightLabel: p.rightLabel || s.rightLabel,
       }));
-    };
+    },
+    []
+  );
+
+  useEffect(() => {
+    const normalizeDetail = (
+      detail: Record<string, unknown>
+    ): {
+      left: string;
+      right: string;
+      leftLabel?: string;
+      rightLabel?: string;
+    } => ({
+      left: typeof detail.left === 'string' ? detail.left : '',
+      right: typeof detail.right === 'string' ? detail.right : '',
+      leftLabel:
+        typeof detail.leftLabel === 'string' ? detail.leftLabel : undefined,
+      rightLabel:
+        typeof detail.rightLabel === 'string' ? detail.rightLabel : undefined,
+    });
 
     const handler = (e: Event): void => {
-      apply(((e as CustomEvent).detail || {}) as Record<string, unknown>);
+      const payload = normalizeDetail(
+        ((e as CustomEvent).detail || {}) as Record<string, unknown>
+      );
+      pendingComparePayloadRef.current = payload;
+      // Apply immediately if state is already hydrated; otherwise the effect
+      // below flushes the stashed payload once hydration completes.
+      if (loadedRef.current) {
+        applyComparePayload(payload);
+        pendingComparePayloadRef.current = null;
+      }
     };
     document.addEventListener('json-compare-load', handler);
 
-    // Drain any payload queued before mount.
+    // Drain any payload queued (via the window buffer) before this lazily
+    // mounted tab existed to receive the event.
     const w = window as unknown as Record<string, unknown>;
-    const pending = w.__pendingJsonComparePayload;
-    if (pending && typeof pending === 'object') {
-      apply(pending as Record<string, unknown>);
+    const queued = w.__pendingJsonComparePayload;
+    if (queued && typeof queued === 'object') {
+      pendingComparePayloadRef.current = normalizeDetail(
+        queued as Record<string, unknown>
+      );
       delete w.__pendingJsonComparePayload;
     }
 
     return () => document.removeEventListener('json-compare-load', handler);
-  }, []);
+  }, [applyComparePayload]);
+
+  // Flush a queued payload once persistence hydration finishes so the async
+  // load can't clobber the JSON we were asked to compare.
+  useEffect(() => {
+    if (loaded && pendingComparePayloadRef.current) {
+      applyComparePayload(pendingComparePayloadRef.current);
+      pendingComparePayloadRef.current = null;
+    }
+  }, [loaded, applyComparePayload]);
 
   const handleFormatBoth = () => {
     setState((s) => ({

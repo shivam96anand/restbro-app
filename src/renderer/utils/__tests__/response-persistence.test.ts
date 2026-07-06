@@ -99,6 +99,18 @@ describe('response-persistence.ts', () => {
       expect(result[0].response).toBeUndefined();
     });
 
+    it('sanitizes per-mode stashed REST/SOAP response bodies', () => {
+      const tabs = [
+        makeTab({
+          restResponse: makeResponse(6_000_000),
+          soapResponse: makeResponse(100),
+        }),
+      ];
+      const result = sanitizeTabsForPersistence(tabs);
+      expect(result[0].restResponse!.body).toBe('');
+      expect(result[0].soapResponse!.body.length).toBe(100);
+    });
+
     it('returns empty array for empty input', () => {
       expect(sanitizeTabsForPersistence([])).toEqual([]);
     });

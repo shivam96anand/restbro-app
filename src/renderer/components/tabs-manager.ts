@@ -1,4 +1,9 @@
-import { RequestTab, ApiRequest, ApiResponse } from '../../shared/types';
+import {
+  RequestTab,
+  ApiRequest,
+  ApiResponse,
+  RequestMode,
+} from '../../shared/types';
 import { TabsEventHandler } from './tabs/tabs-event-handler';
 import { TabsRenderer } from './tabs/tabs-renderer';
 import { TabsStateManager } from './tabs/tabs-state-manager';
@@ -37,6 +42,7 @@ export class TabsManager {
     this.setupKeyboardShortcuts();
     this.setupTabReorderListener();
     this.setupTabRenameListener();
+    this.setupModeChangeListener();
     this.renderer.renderTabs(
       this.stateManager.getTabs(),
       this.stateManager.getActiveTabId()
@@ -55,6 +61,49 @@ export class TabsManager {
       this.renderer.renderTabs(
         this.stateManager.getTabs(),
         this.stateManager.getActiveTabId()
+      );
+    }) as EventListener);
+  }
+
+  private setupModeChangeListener(): void {
+    // Toggling REST <-> SOAP swaps which protocol's response is shown. Stash the
+    // leaving mode's response on the tab and restore the entering mode's stash,
+    // then tell the response panel what to display. Owning this here (not in the
+    // event handler) keeps the tab as the single source of truth for responses.
+    document.addEventListener('request-mode-changed', ((e: CustomEvent) => {
+      const detail = e.detail || {};
+      const requestId = detail.requestId as string | undefined;
+      const fromMode = (detail.fromMode as RequestMode) || 'rest';
+      const toMode =
+        (detail.toMode as RequestMode) ||
+        (fromMode === 'rest' ? 'soap' : 'rest');
+
+      let restored: {
+        response?: ApiResponse;
+        responseViewState?: RequestTab['responseViewState'];
+      } = {};
+
+      if (requestId) {
+        restored = this.stateManager.swapModeResponses(
+          requestId,
+          fromMode,
+          toMode
+        );
+        this.renderer.renderTabs(
+          this.stateManager.getTabs(),
+          this.stateManager.getActiveTabId()
+        );
+      }
+
+      document.dispatchEvent(
+        new CustomEvent('mode-response-restored', {
+          detail: {
+            requestId,
+            requestMode: toMode,
+            response: restored.response,
+            responseViewState: restored.responseViewState,
+          },
+        })
       );
     }) as EventListener);
   }
@@ -315,6 +364,17 @@ export class TabsManager {
       response,
       collectionId
     );
+    this.renderer.renderTabs(
+      this.stateManager.getTabs(),
+      this.stateManager.getActiveTabId()
+    );
+  }
+
+  loadHistorySnapshotIntoActiveTab(
+    request: ApiRequest,
+    response: ApiResponse
+  ): void {
+    this.stateManager.loadHistorySnapshotIntoActiveTab(request, response);
     this.renderer.renderTabs(
       this.stateManager.getTabs(),
       this.stateManager.getActiveTabId()

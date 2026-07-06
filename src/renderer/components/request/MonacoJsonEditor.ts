@@ -4,6 +4,7 @@
  */
 
 import * as monaco from 'monaco-editor';
+import { forceInitialViewportTokenization } from './monaco-tokenization';
 
 export interface MonacoJsonEditorOptions {
   container: HTMLElement;
@@ -135,6 +136,7 @@ export class MonacoJsonEditor {
       theme: 'restbro-json',
       automaticLayout: true,
       minimap: { enabled: false },
+      overviewRulerBorder: false,
       scrollBeyondLastLine: false,
       fontSize: 12,
       lineNumbers: 'on',
@@ -146,9 +148,9 @@ export class MonacoJsonEditor {
       fontFamily:
         "'SF Mono', 'Cascadia Code', Monaco, Menlo, Consolas, 'Courier New', monospace",
       letterSpacing: -0.3,
-      glyphMargin: true,
+      glyphMargin: false,
       lineDecorationsWidth: 0,
-      lineNumbersMinChars: 3,
+      lineNumbersMinChars: 1,
       wordWrap: 'on',
       tabSize: 2,
       insertSpaces: true,
@@ -161,6 +163,10 @@ export class MonacoJsonEditor {
         bottom: 12,
       },
     });
+
+    // Tokenize the initial viewport synchronously so the first paint is already
+    // themed (avoids Monaco's white-then-colored syntax-highlight flash).
+    forceInitialViewportTokenization(this.editor);
 
     // Listen to content changes
     this.editor.onDidChangeModelContent(() => {
@@ -321,6 +327,29 @@ export class MonacoJsonEditor {
   /** Open Monaco's built-in find widget */
   public triggerFind(): void {
     if (!this.editor) return;
+    this.editor.focus();
+    this.editor.getAction('actions.find')?.run();
+  }
+
+  /**
+   * Toggle Monaco's built-in find widget: open + focus it when hidden, close
+   * it when it's already showing. Reads the find controller's live state so it
+   * stays in sync no matter how the widget was opened (icon, Cmd/Ctrl+F, Esc).
+   */
+  public toggleFind(): void {
+    if (!this.editor) return;
+    const findController = this.editor.getContribution(
+      'editor.contrib.findController'
+    ) as unknown as {
+      getState?: () => { isRevealed?: boolean } | undefined;
+      closeFindWidget?: () => void;
+    } | null;
+
+    if (findController?.getState?.()?.isRevealed) {
+      findController.closeFindWidget?.();
+      return;
+    }
+
     this.editor.focus();
     this.editor.getAction('actions.find')?.run();
   }

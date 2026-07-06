@@ -1,0 +1,87 @@
+// Themed dropdown that replaces the native `<select>` option popup (which
+// macOS renders with the OS appearance, ignoring the app theme). Rendered
+// into <body> by utils/themed-select.ts; positioned via inline top/left and
+// min-width. Colors come from theme CSS variables so it always matches the
+// currently selected theme.
+
+.themed-select-menu {
+  position: fixed;
+  z-index: 9600;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  animation: themedSelectIn 0.12s ease;
+
+  // Compact, theme-aware scrollbar to match the rest of the app chrome.
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+  }
+}
+
+@keyframes themedSelectIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.themed-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+
+  &__label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Keyboard / hover focus.
+  &.is-highlighted {
+    background: rgba(var(--primary-color-rgb), 0.14);
+  }
+
+  // Currently selected value.
+  &.is-selected {
+    color: var(--primary-light);
+    font-weight: 600;
+
+    &::after {
+      content: '\2713'; // check mark
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--primary-color);
+    }
+  }
+
+  &.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+
+    &.is-highlighted {
+      background: transparent;
+    }
+  }
+}

@@ -3,13 +3,102 @@
 
 .request-form {
   flex: 1;
-  padding: 12px 16px;
+  // No vertical padding: the URL bar sits flush under the request-tabs' bottom
+  // border (top) and the body editor reaches the panel bottom (bottom).
+  padding: 0 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
   background: var(--bg-primary);
   min-height: 0;
+}
+
+// Insomnia-style resolved-URL preview row: shows what the URL's `{{vars}}`
+// expand to (active environment / globals / folder). Sits just under the URL
+// bar and is hidden until the URL contains variables that resolve (JS toggles
+// `.is-visible`). The wrap button switches between a single truncated line and
+// a full multi-line view for long URLs. Theme-driven via CSS variables.
+.url-preview {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: -6px;
+  padding: 5px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+
+  &.is-visible {
+    display: flex;
+  }
+
+  .url-preview__value {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &.is-wrapped .url-preview__value {
+    white-space: normal;
+    overflow: visible;
+    word-break: break-all;
+  }
+
+  .url-preview__wrap {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    line-height: 1;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+      color 0.12s ease,
+      border-color 0.12s ease,
+      background 0.12s ease;
+
+    .url-preview__chevron {
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    &:hover {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+      background: rgba(var(--primary-color-rgb), 0.1);
+    }
+
+    &:focus-visible {
+      outline: none;
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+    }
+
+    // Flips the chevron to point up when the URL is expanded (wrapped).
+    &.active {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+      background: rgba(var(--primary-color-rgb), 0.12);
+
+      .url-preview__chevron {
+        transform: rotate(180deg);
+      }
+    }
+  }
 }
 
 // Unified request bar — method selector, URL input, and Send button are
@@ -23,21 +112,25 @@
   position: relative;
   height: 34px;
   background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  // Full-bleed URL bar: stretch across the request panel (cancel `.request-form`
+  // 16px horizontal padding) and sit flush under the request-tabs' bottom
+  // border, with a single full-width bottom border separating it from the tabs
+  // below. Resizes with the panel because `.url-input-wrapper` is `flex: 1`.
+  margin-left: -16px;
+  margin-right: -16px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
   overflow: hidden;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 
   &:hover {
-    border-color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
   }
 
   // Whole bar lights up when any child is focused.
   &:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+    border-bottom-color: var(--primary-color);
   }
 
   // Every direct child stretches to the full bar height and drops its own
@@ -54,9 +147,19 @@
     align-self: stretch;
   }
 
+  // Curve the verb box's inner (right) edge so its divider reads as a soft
+  // curve into the URL field instead of a hard straight line.
+  > .method-select {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
   > .send-btn {
     border: none;
     border-left: 1px solid var(--border-color);
+    // Curve the Send button's inner (left) edge to mirror the verb box.
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
     padding: 0 14px;
     font-size: 12px;
     display: inline-flex;
@@ -242,9 +345,9 @@
   flex-direction: column;
   min-height: 0;
   position: relative;
-  // Push the PARAMS / BODY / AUTH / HEADERS / CURL row down so it has
-  // breathing room from the request pill above.
-  margin-top: 10px;
+  // Small offset only — the tabs sit close under the URL bar / preview so the
+  // vertical space above them isn't wasted.
+  margin-top: 2px;
 
   &.mode-transition {
     animation: requestModeFadeSlide 200ms ease;
@@ -256,8 +359,10 @@
     justify-content: space-between;
     gap: 12px;
     background: transparent;
-    padding: 0;
-    margin-bottom: 8px;
+    // Full-bleed underline (matches the full-bleed body editor and the response
+    // toolbar); tab labels stay inset via horizontal padding.
+    padding: 0 16px;
+    margin: 0 -16px 8px -16px;
     border-bottom: 1px solid var(--border-color);
   }
 

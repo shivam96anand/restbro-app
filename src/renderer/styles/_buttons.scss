@@ -112,7 +112,7 @@
 .mode-segment {
   display: inline-flex;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   background: var(--bg-secondary);
 }
@@ -121,11 +121,11 @@
   background: transparent;
   color: var(--text-secondary);
   border: none;
-  padding: 5px 12px;
+  padding: 3px 9px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.4px;
+  font-size: 10px;
+  letter-spacing: 0.3px;
   transition: all 0.15s ease;
 
   & + & {
