@@ -12,6 +12,14 @@ type BodyFormat =
   | 'form-urlencoded'
   | 'form-data';
 
+// Font-size bounds for the request-body editor (px). The default matches the
+// Monaco editors and the fallback textarea. The line-height ratio keeps the
+// syntax-highlight overlay aligned with the textarea as the size changes.
+const MIN_BODY_FONT_SIZE = 8;
+const MAX_BODY_FONT_SIZE = 28;
+const DEFAULT_BODY_FONT_SIZE = 12;
+const BODY_LINE_HEIGHT_RATIO = 16 / 12;
+
 interface FormDataField {
   key: string;
   value: string;
@@ -49,6 +57,8 @@ export class RequestBodyEditor {
   private monacoXmlEditor: MonacoXmlEditor | null = null;
   private forcedContentType?: string;
   private formDataFields: FormDataField[] = [];
+  /** Current request-body editor font size in px (shared by all editors). */
+  private currentFontSize = DEFAULT_BODY_FONT_SIZE;
   /**
    * Depth counter for programmatic load operations (setBody / clear / clearEditors).
    * While > 0, all onBodyChange / onContentTypeChange callbacks are suppressed so
@@ -134,6 +144,30 @@ export class RequestBodyEditor {
           <div class="title">Payload</div>
         </div>
         <div class="body-type-selector">
+          <span
+            id="body-font-controls"
+            class="body-font-controls"
+            style="display: none;"
+          >
+            <button
+              id="body-font-dec"
+              class="body-font-btn"
+              type="button"
+              title="Decrease font size"
+              aria-label="Decrease font size"
+            >
+              A&minus;
+            </button>
+            <button
+              id="body-font-inc"
+              class="body-font-btn"
+              type="button"
+              title="Increase font size"
+              aria-label="Increase font size"
+            >
+              A+
+            </button>
+          </span>
           <button
             id="body-format-btn"
             class="body-format-btn"
@@ -228,11 +262,19 @@ export class RequestBodyEditor {
     // Watch for body section becoming visible to reset scroll position
     this.setupVisibilityWatcher();
 
-    // Format button
+    // Format button (JSON + XML)
     const formatBtn = this.container.querySelector('#body-format-btn');
     if (formatBtn) {
-      formatBtn.addEventListener('click', () => this.formatJson());
+      formatBtn.addEventListener('click', () => this.formatBody());
     }
+
+    // Font size controls (A- / A+)
+    this.container
+      .querySelector('#body-font-dec')
+      ?.addEventListener('click', () => this.adjustFontSize(-1));
+    this.container
+      .querySelector('#body-font-inc')
+      ?.addEventListener('click', () => this.adjustFontSize(1));
 
     // Form data add button
     const addBtn = this.container.querySelector('#form-data-add-btn');
@@ -356,6 +398,9 @@ export class RequestBodyEditor {
       },
     });
 
+    // Keep the user's chosen font size across editor switches.
+    this.applyFontSize();
+
     // Focus the Monaco editor
     setTimeout(() => {
       this.monacoEditor?.focus();
@@ -403,6 +448,8 @@ export class RequestBodyEditor {
       },
     });
 
+    this.applyFontSize();
+
     setTimeout(() => {
       this.monacoXmlEditor?.focus();
     }, 100);
@@ -438,6 +485,7 @@ export class RequestBodyEditor {
 
     // Update highlighting for non-JSON formats
     this.updateHighlighting();
+    this.applyFontSize();
   }
 
   private handleBodyTypeChange(bodyType: string): void {
@@ -465,6 +513,7 @@ export class RequestBodyEditor {
       this.currentBodyType = 'none';
       this.currentFormat = 'json';
       this.setFormatButtonVisible(false);
+      this.setFontControlsVisible(false);
       if (!this.isLoadingBody) {
         this.events.onBodyChange({
           type: this.currentBodyType,
@@ -481,6 +530,7 @@ export class RequestBodyEditor {
       this.currentBodyType = 'form-data';
       this.currentFormat = 'form-data';
       this.setFormatButtonVisible(false);
+      this.setFontControlsVisible(false);
 
       // Add a default empty row if no fields exist
       if (this.formDataFields.length === 0) {
@@ -511,8 +561,11 @@ export class RequestBodyEditor {
         this.currentFormat = selection;
       }
 
-      // Show/hide JSON-specific actions
-      this.setFormatButtonVisible(this.currentFormat === 'json');
+      // Format button supports JSON + XML; font controls apply to any editor.
+      this.setFormatButtonVisible(
+        this.currentFormat === 'json' || this.currentFormat === 'xml'
+      );
+      this.setFontControlsVisible(true);
       // Switch editor based on format
       if (this.currentFormat === 'json') {
         // Use Monaco editor for JSON
@@ -638,8 +691,87 @@ export class RequestBodyEditor {
     const formatBtn = this.container.querySelector(
       '#body-format-btn'
     ) as HTMLElement | null;
-    if (formatBtn) {
-      formatBtn.style.display = visible ? '' : 'none';
+    if (!formatBtn) return;
+    formatBtn.style.display = visible ? '' : 'none';
+    if (visible) {
+      const label = this.currentFormat === 'xml' ? 'Format XML' : 'Format JSON';
+      formatBtn.title = label;
+      formatBtn.setAttribute('aria-label', label);
+    }
+  }
+
+  private setFontControlsVisible(visible: boolean): void {
+    const controls = this.container.querySelector(
+      '#body-font-controls'
+    ) as HTMLElement | null;
+    if (controls) {
+      controls.style.display = visible ? '' : 'none';
+    }
+  }
+
+  /** Nudge the editor font size within [MIN, MAX] and re-apply it. */
+  private adjustFontSize(delta: number): void {
+    const next = Math.min(
+      MAX_BODY_FONT_SIZE,
+      Math.max(MIN_BODY_FONT_SIZE, this.currentFontSize + delta)
+    );
+    if (next === this.currentFontSize) return;
+    this.currentFontSize = next;
+    this.applyFontSize();
+  }
+
+  /**
+   * Push the current font size to whichever editor is active (Monaco JSON,
+   * Monaco XML, or the fallback textarea + its highlight overlay). Called after
+   * every editor switch so the chosen size persists across format changes.
+   */
+  private applyFontSize(): void {
+    this.monacoEditor?.setFontSize(this.currentFontSize);
+    this.monacoXmlEditor?.setFontSize(this.currentFontSize);
+
+    const textarea = this.container.querySelector(
+      '#request-body'
+    ) as HTMLTextAreaElement | null;
+    const overlay = this.container.querySelector(
+      '#syntax-highlight-overlay'
+    ) as HTMLElement | null;
+    const lineHeight = Math.round(
+      this.currentFontSize * BODY_LINE_HEIGHT_RATIO
+    );
+    if (textarea) {
+      textarea.style.fontSize = `${this.currentFontSize}px`;
+      textarea.style.lineHeight = `${lineHeight}px`;
+    }
+    if (overlay) {
+      overlay.style.fontSize = `${this.currentFontSize}px`;
+      overlay.style.lineHeight = `${lineHeight}px`;
+    }
+  }
+
+  /** Format the current body based on its format (JSON or XML). */
+  private formatBody(): void {
+    if (this.currentFormat === 'xml') {
+      this.formatXml();
+      return;
+    }
+    this.formatJson();
+  }
+
+  private formatXml(): void {
+    if (this.currentFormat !== 'xml' || !this.monacoXmlEditor) {
+      return;
+    }
+    if (!this.monacoXmlEditor.getValue().trim()) {
+      this.events.onStatusUpdate('warning', 'No XML to format');
+      return;
+    }
+    if (this.monacoXmlEditor.format()) {
+      this.events.onStatusUpdate('success', 'XML formatted successfully');
+    } else {
+      this.events.onStatusUpdate(
+        'error',
+        'Invalid XML: check tags, attributes, and namespaces'
+      );
     }
   }
 

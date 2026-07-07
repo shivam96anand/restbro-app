@@ -30,7 +30,7 @@
 .collection-item {
   position: relative;
   border-radius: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -142,8 +142,8 @@
 .collection-content {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  min-height: 38px;
+  padding: 5px 12px;
+  min-height: 30px;
   width: 100%;
   gap: 2px;
 }

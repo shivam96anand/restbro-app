@@ -27,6 +27,8 @@ vi.mock('../MonacoJsonEditor', () => ({
     getValue: vi.fn(() => ''),
     focus: vi.fn(),
     dispose: vi.fn(),
+    setFontSize: vi.fn(),
+    format: vi.fn(),
     saveViewState: vi.fn(() => null),
     restoreViewState: vi.fn(),
   })),
@@ -38,6 +40,8 @@ vi.mock('../MonacoXmlEditor', () => ({
     getValue: vi.fn(() => ''),
     focus: vi.fn(),
     dispose: vi.fn(),
+    setFontSize: vi.fn(),
+    format: vi.fn(() => true),
   })),
 }));
 

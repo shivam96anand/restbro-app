@@ -14,11 +14,13 @@
   min-height: 0;
 }
 
-// Insomnia-style resolved-URL preview row: shows what the URL's `{{vars}}`
-// expand to (active environment / globals / folder). Sits just under the URL
-// bar and is hidden until the URL contains variables that resolve (JS toggles
-// `.is-visible`). The wrap button switches between a single truncated line and
-// a full multi-line view for long URLs. Theme-driven via CSS variables.
+// Insomnia-style resolved-URL preview row: shows the full URL that will be
+// sent — `{{vars}}` expanded (active environment / globals / folder) plus the
+// enabled query params appended from the Params tab. Sits just under the URL
+// bar and is hidden until there is something to preview, i.e. variables
+// resolved and/or params were appended (JS toggles `.is-visible`). The URL is
+// always shown in full (wrapped across lines); the copy button copies the full
+// resolved URL to the clipboard. Theme-driven via CSS variables.
 .url-preview {
   display: none;
   align-items: flex-start;
@@ -40,18 +42,12 @@
   .url-preview__value {
     flex: 1 1 auto;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &.is-wrapped .url-preview__value {
     white-space: normal;
     overflow: visible;
     word-break: break-all;
   }
 
-  .url-preview__wrap {
+  .url-preview__copy {
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
@@ -70,9 +66,8 @@
       border-color 0.12s ease,
       background 0.12s ease;
 
-    .url-preview__chevron {
+    .url-preview__copy-icon {
       display: block;
-      transition: transform 0.2s ease;
     }
 
     &:hover {
@@ -86,17 +81,6 @@
       color: var(--primary-color);
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
-    }
-
-    // Flips the chevron to point up when the URL is expanded (wrapped).
-    &.active {
-      color: var(--primary-color);
-      border-color: var(--primary-color);
-      background: rgba(var(--primary-color-rgb), 0.12);
-
-      .url-preview__chevron {
-        transform: rotate(180deg);
-      }
     }
   }
 }

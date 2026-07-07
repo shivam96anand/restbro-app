@@ -1,4 +1,4 @@
-import { Environment, Globals } from '../../../shared/types';
+import { Environment, Globals, KeyValuePair } from '../../../shared/types';
 import {
   detectVariables,
   buildFolderVars,
@@ -6,6 +6,8 @@ import {
 } from './variable-helper';
 import { setupAutocomplete } from './variable-autocomplete';
 import { resolveTemplate } from './request-variable-resolver';
+import { buildUrlWithParams } from './request-builder-utils';
+import { UIHelpers } from './UIHelpers';
 
 /**
  * Handles variable context management, highlighting, and tooltips for request inputs.
@@ -19,6 +21,7 @@ export class VariableContextHandler {
   private storeCache: any = null;
   private storeCacheTime: number = 0;
   private readonly CACHE_TTL = 500; // Cache for 500ms
+  private readonly uiHelpers = new UIHelpers();
 
   /**
    * Get the current active environment
@@ -271,35 +274,117 @@ export class VariableContextHandler {
         this.updateResolvedUrlPreview(urlInput);
       });
       urlInput.dataset.variableHighlightListenerAttached = 'true';
-      this.setupUrlPreviewWrapToggle();
+      this.setupUrlPreviewCopy();
+      this.setupParamsPreviewSync(urlInput);
       // Initial paint (in case URL was loaded before the listener attached).
       this.updateResolvedUrlPreview(urlInput);
     }
   }
 
   /**
-   * Wires the wrap / unwrap toggle on the resolved-URL preview row (one-time).
+   * Wires the copy button on the resolved-URL preview row (one-time). Copies
+   * the full resolved URL (including appended query params) shown in the
+   * preview to the clipboard.
    */
-  private setupUrlPreviewWrapToggle(): void {
+  private setupUrlPreviewCopy(): void {
     const previewEl = document.getElementById('url-preview');
-    const wrapBtn = previewEl?.querySelector(
-      '.url-preview__wrap'
+    const copyBtn = previewEl?.querySelector(
+      '.url-preview__copy'
     ) as HTMLButtonElement | null;
-    if (!previewEl || !wrapBtn || wrapBtn.dataset.wired) return;
-    wrapBtn.dataset.wired = 'true';
-    wrapBtn.addEventListener('click', () => {
-      const wrapped = previewEl.classList.toggle('is-wrapped');
-      wrapBtn.classList.toggle('active', wrapped);
-      wrapBtn.setAttribute('aria-pressed', String(wrapped));
+    const valueEl = previewEl?.querySelector(
+      '.url-preview__value'
+    ) as HTMLElement | null;
+    if (!copyBtn || copyBtn.dataset.wired) return;
+    copyBtn.dataset.wired = 'true';
+    copyBtn.addEventListener('click', () => {
+      const url = valueEl?.textContent?.trim();
+      if (!url || !navigator.clipboard) return;
+      void navigator.clipboard
+        .writeText(url)
+        .then(() => this.uiHelpers.showToast('URL copied to clipboard'))
+        .catch(() => this.uiHelpers.showToast('Failed to copy URL'));
     });
   }
 
   /**
+   * Keeps the resolved-URL preview in sync with the Params editor in real time.
+   * The editor emits `input` / `change` as rows are edited, toggled or removed;
+   * we mirror those into a preview refresh so appended query params update live.
+   * Wired once via event delegation on the (stable) `#params-editor` element.
+   */
+  private setupParamsPreviewSync(urlInput: HTMLInputElement): void {
+    const paramsEditor = document.getElementById('params-editor');
+    if (!paramsEditor || paramsEditor.dataset.urlPreviewSyncAttached) return;
+    paramsEditor.dataset.urlPreviewSyncAttached = 'true';
+    const refresh = (): void => this.updateResolvedUrlPreview(urlInput);
+    paramsEditor.addEventListener('input', refresh);
+    paramsEditor.addEventListener('change', refresh);
+  }
+
+  /**
+   * Variable sources for the current context. Request-level variables are not
+   * tracked here, so only env / folder / globals participate. Shared by the URL
+   * and query-param resolution used to build the preview.
+   */
+  private buildVariableSources(): {
+    requestVars: Record<string, string>;
+    folderVars: Record<string, string>;
+    envVars: Record<string, string>;
+    globalVars: Record<string, string>;
+  } {
+    return {
+      requestVars: {},
+      folderVars: this.folderVars || {},
+      envVars: this.activeEnvironment?.variables || {},
+      globalVars: this.globals?.variables || {},
+    };
+  }
+
+  /**
+   * Collects the enabled query parameters currently in the Params editor,
+   * resolving `{{vars}}` in their keys/values so the preview mirrors exactly
+   * what will be sent. Reads straight from the DOM so it always reflects the
+   * live state (same approach as reading the URL from `#request-url`).
+   */
+  private collectResolvedParams(): KeyValuePair[] {
+    const editor = document.getElementById('params-editor');
+    if (!editor) return [];
+
+    const sources = this.buildVariableSources();
+    const params: KeyValuePair[] = [];
+
+    editor.querySelectorAll('.kv-row').forEach((row) => {
+      const checkbox = row.querySelector(
+        '.kv-checkbox'
+      ) as HTMLInputElement | null;
+      const keyInput = row.querySelector(
+        '.key-input'
+      ) as HTMLInputElement | null;
+      const valueInput = row.querySelector(
+        '.value-input'
+      ) as HTMLInputElement | null;
+
+      if (checkbox && !checkbox.checked) return;
+      const key = (keyInput?.value ?? '').trim();
+      if (!key) return;
+
+      params.push({
+        key: resolveTemplate(key, sources),
+        value: resolveTemplate((valueInput?.value ?? '').trim(), sources),
+        enabled: true,
+      });
+    });
+
+    return params;
+  }
+
+  /**
    * Computes the resolved URL (expanding `{{vars}}` via the active
-   * environment / globals / folder values) and reflects it in:
+   * environment / globals / folder values) plus the enabled query params from
+   * the Params editor, and reflects the full "what will be sent" URL in:
    *  - the URL input's native `title` (hover tooltip), and
    *  - the visible `#url-preview` row below the URL bar (Insomnia-style).
-   * Cleared when the URL has no variables or nothing resolves.
+   * Cleared when the result is identical to the raw URL (nothing to preview).
    */
   private updateResolvedUrlPreview(urlInput: HTMLInputElement): void {
     const previewEl = document.getElementById('url-preview');
@@ -317,24 +402,30 @@ export class VariableContextHandler {
     };
 
     const raw = urlInput.value;
-    if (!raw || !raw.includes('{{')) {
+    if (!raw) {
       clear();
       return;
     }
 
     try {
-      const resolved = resolveTemplate(raw, {
-        requestVars: {},
-        folderVars: this.folderVars || {},
-        envVars: this.activeEnvironment?.variables || {},
-        globalVars: this.globals?.variables || {},
-      });
+      const resolvedUrl = raw.includes('{{')
+        ? resolveTemplate(raw, this.buildVariableSources())
+        : raw;
 
-      if (resolved && resolved !== raw) {
-        urlInput.title = `Resolved: ${resolved}`;
+      // Append the enabled (resolved) query params so the preview reflects the
+      // full URL that will be sent — consistent with the cURL preview.
+      const finalUrl = buildUrlWithParams(
+        resolvedUrl,
+        this.collectResolvedParams()
+      );
+
+      // Only surface the preview when it adds information beyond the raw URL
+      // (variables were resolved and/or query params were appended).
+      if (finalUrl && finalUrl !== raw) {
+        urlInput.title = `Resolved: ${finalUrl}`;
         if (valueEl) {
-          valueEl.textContent = resolved;
-          valueEl.title = resolved;
+          valueEl.textContent = finalUrl;
+          valueEl.title = finalUrl;
         }
         previewEl?.classList.add('is-visible');
       } else {

@@ -165,6 +165,46 @@
   }
 }
 
+.body-font-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.body-font-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(var(--primary-color-rgb), 0.08);
+  }
+
+  &:focus-visible {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+    outline: none;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
 .body-type-select {
   background: var(--bg-secondary);
   color: var(--text-primary);

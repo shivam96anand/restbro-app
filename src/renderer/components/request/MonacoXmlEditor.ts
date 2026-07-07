@@ -5,6 +5,7 @@
 
 import * as monaco from 'monaco-editor';
 import { forceInitialViewportTokenization } from './monaco-tokenization';
+import { parseXml, prettyPrintXml } from './soap-xml-helpers';
 
 export interface MonacoXmlEditorOptions {
   container: HTMLElement;
@@ -115,8 +116,22 @@ export class MonacoXmlEditor {
     this.editor?.updateOptions({ fontSize: px });
   }
 
-  public format(): void {
-    this.editor?.getAction('editor.action.formatDocument')?.run();
+  /**
+   * Pretty-print the XML content. Monaco ships no built-in XML formatter, so we
+   * parse + re-serialize via the shared soap-xml helpers. Returns `true` on
+   * success, `false` when the body is empty or not well-formed (caller decides
+   * how to surface the outcome).
+   */
+  public format(): boolean {
+    if (!this.editor) return false;
+    const text = this.editor.getValue().trim();
+    if (!text) return false;
+
+    const parsed = parseXml(text);
+    if (!parsed.valid || !parsed.document) return false;
+
+    this.editor.setValue(prettyPrintXml(parsed.document));
+    return true;
   }
 
   public dispose(): void {
