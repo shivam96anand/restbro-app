@@ -337,21 +337,46 @@
                     </div>
 
                     <div id="params-section" class="section active">
-                      <div class="key-value-editor" id="params-editor">
-                        <div class="kv-row">
-                          <input type="checkbox" class="kv-checkbox" checked />
-                          <input
-                            type="text"
-                            placeholder="Key"
-                            class="key-input"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Value"
-                            class="value-input"
-                          />
-                          <button class="remove-btn">×</button>
+                      <div class="kv-table">
+                        <div class="kv-header">
+                          <span
+                            class="kv-header__cell kv-header__cell--check"
+                          ></span>
+                          <span class="kv-header__cell kv-header__cell--key"
+                            >Key</span
+                          >
+                          <span class="kv-header__cell kv-header__cell--value"
+                            >Value</span
+                          >
+                          <span
+                            class="kv-header__cell kv-header__cell--actions"
+                          ></span>
                         </div>
+                        <div class="key-value-editor" id="params-editor">
+                          <div class="kv-row">
+                            <input
+                              type="checkbox"
+                              class="kv-checkbox"
+                              checked
+                            />
+                            <input
+                              type="text"
+                              placeholder="Key"
+                              class="key-input"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Value"
+                              class="value-input"
+                            />
+                            <button class="remove-btn">×</button>
+                          </div>
+                        </div>
+                        <div
+                          class="kv-col-resizer"
+                          title="Drag to resize — double-click to reset"
+                          aria-hidden="true"
+                        ></div>
                       </div>
                       <button class="add-param-btn">Add Parameter</button>
                     </div>
@@ -380,21 +405,46 @@
                     </div>
 
                     <div id="headers-section" class="section">
-                      <div class="key-value-editor" id="headers-editor">
-                        <div class="kv-row">
-                          <input type="checkbox" class="kv-checkbox" checked />
-                          <input
-                            type="text"
-                            placeholder="Key"
-                            class="key-input"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Value"
-                            class="value-input"
-                          />
-                          <button class="remove-btn">×</button>
+                      <div class="kv-table">
+                        <div class="kv-header">
+                          <span
+                            class="kv-header__cell kv-header__cell--check"
+                          ></span>
+                          <span class="kv-header__cell kv-header__cell--key"
+                            >Key</span
+                          >
+                          <span class="kv-header__cell kv-header__cell--value"
+                            >Value</span
+                          >
+                          <span
+                            class="kv-header__cell kv-header__cell--actions"
+                          ></span>
                         </div>
+                        <div class="key-value-editor" id="headers-editor">
+                          <div class="kv-row">
+                            <input
+                              type="checkbox"
+                              class="kv-checkbox"
+                              checked
+                            />
+                            <input
+                              type="text"
+                              placeholder="Key"
+                              class="key-input"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Value"
+                              class="value-input"
+                            />
+                            <button class="remove-btn">×</button>
+                          </div>
+                        </div>
+                        <div
+                          class="kv-col-resizer"
+                          title="Drag to resize — double-click to reset"
+                          aria-hidden="true"
+                        ></div>
                       </div>
                       <button class="add-header-btn">Add Header</button>
                     </div>

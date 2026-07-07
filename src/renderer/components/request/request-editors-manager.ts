@@ -6,6 +6,7 @@ import { RequestEditorValidator } from './editors/RequestEditorValidator';
 import { RequestEditorSync } from './editors/RequestEditorSync';
 import { ParamsManager } from './editors/ParamsManager';
 import { HeadersManager } from './editors/HeadersManager';
+import { setupKvColumnResize } from './editors/kv-column-resizer';
 import { RequestBodyEditor } from './RequestBodyEditor';
 import { AuthConfigManager } from './AuthConfigManager';
 import { OAuth2Manager } from './OAuth2Manager';
@@ -102,6 +103,14 @@ export class RequestEditorsManager {
     this.sync = new RequestEditorSync(config.syncConfig);
     this.paramsManager = new ParamsManager(paramsContainer);
     this.headersManager = new HeadersManager(headersContainer);
+
+    // Enable drag-to-resize on the Key/Value column boundary of both tables.
+    paramsContainer
+      .querySelectorAll<HTMLElement>('.kv-table')
+      .forEach((table) => setupKvColumnResize(table));
+    headersContainer
+      .querySelectorAll<HTMLElement>('.kv-table')
+      .forEach((table) => setupKvColumnResize(table));
 
     // Initialize new modular components
     this.uiHelpers = new UIHelpers();
