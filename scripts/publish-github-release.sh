@@ -76,6 +76,26 @@ if [[ ${#ASSETS[@]} -eq 0 ]]; then
   die "No release artifacts found in $RELEASE_DIR. Run 'npm run release:mac' first."
 fi
 
+# ─── Notarization gate (macOS) ───────────────────────────────────
+# Last line of defense: never publish a DMG that is not notarized + stapled.
+# A signed-but-unnotarized DMG shows the Gatekeeper error
+# "Apple could not verify … is free of malware" the moment a user opens it.
+if [[ -n "${DMG:-}" && "$(uname)" == "Darwin" ]] && command -v xcrun &>/dev/null; then
+  step "Verifying macOS notarization before publish..."
+  if xcrun stapler validate "$DMG" >/dev/null 2>&1; then
+    ok "DMG is notarized + stapled: $(basename "$DMG")"
+  else
+    die "REFUSING TO PUBLISH: $(basename "$DMG") is NOT notarized/stapled.
+
+  This build would show \"Apple could not verify … is free of malware\" on download.
+  It usually means notarization was skipped or failed. Re-run:
+
+    npm run release:mac
+
+  make sure it completes Step 8 (staple + Gatekeeper: accepted), then publish again."
+  fi
+fi
+
 # ─── Create tag if needed ────────────────────────────────────────
 step "Ensuring git tag ${TAG}..."
 

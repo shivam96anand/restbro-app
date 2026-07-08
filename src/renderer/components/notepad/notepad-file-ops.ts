@@ -15,7 +15,7 @@ import {
   formatDocument,
   trimTrailingWhitespace,
 } from './notepad-editor';
-import { detectLanguageFromPath } from './notepad-language';
+import { defaultFileName, detectLanguageFromPath } from './notepad-language';
 import { formatJson } from './notepad-json';
 import { showNotepadToast } from './notepad-toast';
 import { getFileName } from './notepad-utils';
@@ -192,7 +192,7 @@ export async function saveTab(
       content: contentToSave,
       defaultName: tab.filePath
         ? getFileName(tab.filePath)
-        : `${tab.title}.txt`,
+        : defaultFileName(tab.title, tab.language),
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown save error';

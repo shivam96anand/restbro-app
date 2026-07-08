@@ -82,38 +82,10 @@ export function mapAuth(authConfig: any): {
     // Insomnia: direct token property
     if (authConfig.token) config.token = String(authConfig.token);
   } else if (type === 'oauth2') {
-    // Map OAuth2 fields - keep as strings with {{var}} preserved
-    const oauth2Fields = [
-      'grantType',
-      'accessTokenUrl',
-      'authUrl',
-      'clientId',
-      'clientSecret',
-      'scope',
-      'accessToken',
-      'refreshToken',
-      'tokenUrl',
-    ];
-
-    if (Array.isArray(authConfig.oauth2)) {
-      authConfig.oauth2.forEach((item: any) => {
-        if (oauth2Fields.includes(item.key)) {
-          config[item.key] = String(item.value || '');
-        }
-      });
-    }
-
-    // Direct properties
-    oauth2Fields.forEach((field) => {
-      if (authConfig[field]) {
-        config[field] = String(authConfig[field]);
-      }
-    });
-
-    // Map Insomnia's accessTokenUrl to tokenUrl (our app expects tokenUrl)
-    if (authConfig.accessTokenUrl && !config.tokenUrl) {
-      config.tokenUrl = String(authConfig.accessTokenUrl);
-    }
+    // Normalize OAuth2 across Postman (array form), Insomnia/Thunder (direct
+    // props) and Bruno (snake_case) into Restbro's canonical fields so the
+    // token URL and grant type populate regardless of the source tool.
+    mapOAuth2Config(authConfig, config);
   } else if (type === 'api-key') {
     // API Key auth
     if (authConfig.key) config.key = String(authConfig.key);
@@ -126,6 +98,96 @@ export function mapAuth(authConfig: any): {
   }
 
   return { type, config };
+}
+
+/**
+ * OAuth2 field aliases across tools mapped to Restbro's canonical field names
+ * (the `data-field` names the OAuth2 UI reads/writes):
+ * - Postman: OAuth2 is an array of {key, value}; the token URL is
+ *   `accessTokenUrl` and the grant type is `grant_type`.
+ * - Insomnia / Thunder Client: direct props (`accessTokenUrl`, `authorizationUrl`).
+ * - Bruno: snake_case (`access_token_url`, `authorization_url`).
+ */
+const OAUTH2_FIELD_ALIASES: Record<string, string[]> = {
+  grantType: ['grantType', 'grant_type'],
+  tokenUrl: ['tokenUrl', 'accessTokenUrl', 'access_token_url'],
+  authUrl: ['authUrl', 'authorizationUrl', 'authorization_url', 'authorizeUrl'],
+  clientId: ['clientId', 'client_id'],
+  clientSecret: ['clientSecret', 'client_secret'],
+  scope: ['scope'],
+  redirectUri: ['redirectUri', 'redirect_uri', 'callbackUrl'],
+  accessToken: ['accessToken', 'access_token'],
+  refreshToken: ['refreshToken', 'refresh_token'],
+  audience: ['audience'],
+  resource: ['resource'],
+};
+
+/**
+ * Normalizes a grant-type string to a value Restbro's OAuth2 UI supports.
+ * Unsupported grants (password, implicit, …) fall back to client_credentials,
+ * the UI default, so imported requests still render a valid selection.
+ */
+function normalizeGrantType(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (
+    normalized === 'authorization_code' ||
+    normalized === 'authorizationcode'
+  ) {
+    return 'authorization_code';
+  }
+  if (normalized === 'device_code' || normalized === 'devicecode') {
+    return 'device_code';
+  }
+  return 'client_credentials';
+}
+
+/**
+ * Maps an OAuth2 auth block (Postman array form and/or direct-property form)
+ * into Restbro's config record, preserving {{variables}}.
+ */
+function mapOAuth2Config(
+  authConfig: any,
+  config: Record<string, string>
+): void {
+  // Flatten Postman's [{key, value}] array plus any direct string properties
+  // into a single lookup table (array entries win over direct props).
+  const raw: Record<string, string> = {};
+
+  if (Array.isArray(authConfig.oauth2)) {
+    authConfig.oauth2.forEach((item: any) => {
+      if (item?.key != null && raw[item.key] === undefined) {
+        raw[item.key] = String(item.value ?? '');
+      }
+    });
+  }
+
+  Object.keys(authConfig).forEach((key) => {
+    const value = authConfig[key];
+    if (
+      key !== 'oauth2' &&
+      key !== 'type' &&
+      (typeof value === 'string' || typeof value === 'number') &&
+      raw[key] === undefined
+    ) {
+      raw[key] = String(value);
+    }
+  });
+
+  for (const [field, aliases] of Object.entries(OAUTH2_FIELD_ALIASES)) {
+    let picked: string | undefined;
+    for (const alias of aliases) {
+      const candidate = raw[alias];
+      if (candidate !== undefined && candidate !== '') {
+        picked = candidate;
+        break;
+      }
+    }
+    if (picked === undefined) continue;
+    config[field] = field === 'grantType' ? normalizeGrantType(picked) : picked;
+  }
 }
 
 /**
@@ -156,18 +218,39 @@ export function makeUniqueName(
 }
 
 /**
- * Converts Postman variable array to Record
+ * Postman variable / environment-value entry. `type: 'secret'` marks a value
+ * that Postman masks in its UI; Restbro mirrors this via `variableSecrets`.
  */
-export function mapVariablesArray(variables: any[]): Record<string, string> {
-  const result: Record<string, string> = {};
+interface PostmanVarEntry {
+  key?: string;
+  value?: string | number | boolean | null;
+  type?: string;
+  enabled?: boolean;
+}
 
-  if (!Array.isArray(variables)) return result;
+/**
+ * Converts a Postman variable/value array into a Restbro variables record plus
+ * a per-key secret map (keys whose Postman `type` is `secret`). Disabled
+ * entries and entries without a key are skipped.
+ */
+export function mapVariablesWithSecrets(entries?: PostmanVarEntry[]): {
+  variables: Record<string, string>;
+  variableSecrets: Record<string, boolean>;
+} {
+  const variables: Record<string, string> = {};
+  const variableSecrets: Record<string, boolean> = {};
 
-  variables.forEach((v) => {
-    if (v.key && (v.enabled === undefined || v.enabled === true)) {
-      result[v.key] = String(v.value || '');
+  if (!Array.isArray(entries)) {
+    return { variables, variableSecrets };
+  }
+
+  entries.forEach((entry) => {
+    if (!entry?.key || entry.enabled === false) return;
+    variables[entry.key] = String(entry.value ?? '');
+    if (entry.type === 'secret') {
+      variableSecrets[entry.key] = true;
     }
   });
 
-  return result;
+  return { variables, variableSecrets };
 }

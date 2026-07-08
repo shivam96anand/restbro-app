@@ -89,14 +89,16 @@ export function collectParams(
   if (params) {
     if (Array.isArray(params)) {
       params.forEach(({ key, value, enabled }) => {
-        if (enabled && key.trim()) {
-          merged.push({ key: key.trim(), value: value.trim() });
+        const cleanKey = (key ?? '').trim();
+        if (enabled && cleanKey) {
+          merged.push({ key: cleanKey, value: (value ?? '').trim() });
         }
       });
     } else {
       Object.entries(params).forEach(([key, value]) => {
-        if (key.trim()) {
-          merged.push({ key: key.trim(), value: value.trim() });
+        const cleanKey = (key ?? '').trim();
+        if (cleanKey) {
+          merged.push({ key: cleanKey, value: (value ?? '').trim() });
         }
       });
     }
@@ -104,8 +106,9 @@ export function collectParams(
 
   if (extraParams) {
     Object.entries(extraParams).forEach(([key, value]) => {
-      if (key.trim()) {
-        merged.push({ key: key.trim(), value: value.trim() });
+      const cleanKey = (key ?? '').trim();
+      if (cleanKey) {
+        merged.push({ key: cleanKey, value: (value ?? '').trim() });
       }
     });
   }
@@ -125,6 +128,44 @@ export function appendParamsWithoutEncoding(
   const query = params.map(({ key, value }) => `${key}=${value}`).join('&');
   const rebuilt = `${urlWithoutHash}${separator}${query}`;
   return hash ? `${rebuilt}#${hash}` : rebuilt;
+}
+
+// URLSearchParams serializes using application/x-www-form-urlencoded rules,
+// which percent-encode every reserved character — including the RFC 3986
+// sub-delimiters (",", ":", "/", "@", …) that are perfectly legal and expected
+// to stay literal in the query component (`query = *( pchar / "/" / "?" )`).
+// Some real-world APIs treat, e.g., "%2C" as a single literal token instead of
+// a list separator (`?ids=a,b` vs `?ids=a%2Cb`), returning wrong results.
+// We restore those characters AFTER serialization to match Postman/Insomnia,
+// and normalize spaces from "+" to "%20" (also matching Postman/Insomnia and
+// RFC 3986 — a literal "+" is already "%2B" at this point, so this is
+// unambiguous). Structural characters (& = # and a literal +) stay encoded.
+const QUERY_RESTORE_MAP: Record<string, string> = {
+  '%2C': ',',
+  '%2F': '/',
+  '%3A': ':',
+  '%3F': '?',
+  '%40': '@',
+  '%24': '$',
+  '%21': '!',
+  '%27': "'",
+  '%28': '(',
+  '%29': ')',
+  '%2A': '*',
+};
+
+/**
+ * Restores RFC 3986 query-safe characters that URLSearchParams over-encodes and
+ * normalizes spaces to "%20", so query strings match Postman/Insomnia (e.g.
+ * commas in a list stay literal and spaces become "%20" rather than "+").
+ */
+export function restoreQuerySafeChars(query: string): string {
+  return query
+    .replace(
+      /%(?:2C|2F|3A|3F|40|24|21|27|28|29|2A)/gi,
+      (match) => QUERY_RESTORE_MAP[match.toUpperCase()]
+    )
+    .replace(/\+/g, '%20');
 }
 
 /**
@@ -150,11 +191,17 @@ export function buildUrlWithParams(
     const [path, queryString = ''] = urlWithoutHash.split('?');
     const searchParams = new URLSearchParams(queryString);
 
+    // Params override matching keys already present in the URL's query, but
+    // multiple param rows that share a key are ALL kept (?id=1&id=2), matching
+    // Postman/Insomnia. So drop each overridden key once, then append all.
+    new Set(mergedParams.map((p) => p.key)).forEach((key) =>
+      searchParams.delete(key)
+    );
     mergedParams.forEach(({ key, value }) => {
-      searchParams.set(key, value);
+      searchParams.append(key, value);
     });
 
-    const query = searchParams.toString();
+    const query = restoreQuerySafeChars(searchParams.toString());
     const rebuilt = query ? `${path}?${query}` : path;
     return hash ? `${rebuilt}#${hash}` : rebuilt;
   } catch {

@@ -71,6 +71,56 @@ export const PICKABLE_LANGUAGES: Array<{ id: string; label: string }> = [
   { id: 'graphql', label: 'GraphQL' },
 ];
 
+/**
+ * Preferred file extension for each pickable language. Used to pick a sensible
+ * default file name in the Save dialog for a never-saved tab (e.g. a Markdown
+ * tab defaults to `.md` instead of `.txt`).
+ */
+const LANGUAGE_TO_EXT: Record<string, string> = {
+  plaintext: 'txt',
+  markdown: 'md',
+  swagger: 'yaml',
+  json: 'json',
+  yaml: 'yaml',
+  xml: 'xml',
+  html: 'html',
+  css: 'css',
+  scss: 'scss',
+  javascript: 'js',
+  typescript: 'ts',
+  python: 'py',
+  shell: 'sh',
+  sql: 'sql',
+  ini: 'ini',
+  graphql: 'graphql',
+};
+
+/**
+ * Map a Monaco language id to its preferred file extension (without the dot).
+ * Falls back to `txt` for unknown or missing languages.
+ */
+export function extensionForLanguage(languageId: string | undefined): string {
+  if (!languageId) return 'txt';
+  return LANGUAGE_TO_EXT[languageId] ?? 'txt';
+}
+
+/**
+ * Build a default Save-dialog file name from a tab title and its language.
+ * The extension is derived from the language (see {@link extensionForLanguage})
+ * so, e.g., a Markdown tab defaults to `Untitled.md` instead of `Untitled.txt`.
+ * If the title already ends with that extension it is kept as-is, avoiding
+ * duplicated suffixes like `response.json.json`.
+ */
+export function defaultFileName(
+  title: string | undefined,
+  language: string | undefined
+): string {
+  const ext = extensionForLanguage(language);
+  const base = title?.trim() || 'Untitled';
+  if (base.toLowerCase().endsWith(`.${ext}`)) return base;
+  return `${base}.${ext}`;
+}
+
 export function detectLanguageFromPath(
   filePath: string | undefined
 ): string | undefined {

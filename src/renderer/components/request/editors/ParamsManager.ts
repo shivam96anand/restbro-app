@@ -62,6 +62,12 @@ export class ParamsManager {
             if (paramsEditor.children.length === 0) {
               this.addParamRow();
             }
+            // A remove-button click doesn't fire a native input/change event,
+            // so DOM-driven consumers (e.g. the resolved-URL preview) wouldn't
+            // refresh. Announce the mutation explicitly so they stay real-time.
+            paramsEditor.dispatchEvent(
+              new CustomEvent('params-editor-mutated', { bubbles: true })
+            );
           }
         }
       });

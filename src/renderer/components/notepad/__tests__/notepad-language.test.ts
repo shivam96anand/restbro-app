@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+  defaultFileName,
   detectLanguageFromContent,
   detectLanguageFromPath,
+  extensionForLanguage,
   languageLabel,
   PICKABLE_LANGUAGES,
 } from '../notepad-language';
@@ -115,5 +117,52 @@ describe('languageLabel', () => {
 
   it('returns the id itself when not in PICKABLE_LANGUAGES', () => {
     expect(languageLabel('made-up')).toBe('made-up');
+  });
+});
+
+describe('extensionForLanguage', () => {
+  it('falls back to txt for undefined / unknown languages', () => {
+    expect(extensionForLanguage(undefined)).toBe('txt');
+    expect(extensionForLanguage('made-up')).toBe('txt');
+  });
+
+  it('maps common languages to their preferred extension', () => {
+    expect(extensionForLanguage('markdown')).toBe('md');
+    expect(extensionForLanguage('json')).toBe('json');
+    expect(extensionForLanguage('yaml')).toBe('yaml');
+    expect(extensionForLanguage('javascript')).toBe('js');
+    expect(extensionForLanguage('typescript')).toBe('ts');
+    expect(extensionForLanguage('python')).toBe('py');
+    expect(extensionForLanguage('plaintext')).toBe('txt');
+  });
+
+  it('returns a non-empty extension for every pickable language', () => {
+    for (const { id } of PICKABLE_LANGUAGES) {
+      expect(extensionForLanguage(id)).toMatch(/^[a-z0-9]+$/);
+    }
+  });
+});
+
+describe('defaultFileName', () => {
+  it('appends the language extension to an untitled tab', () => {
+    expect(defaultFileName('Untitled', 'markdown')).toBe('Untitled.md');
+    expect(defaultFileName('Untitled', 'json')).toBe('Untitled.json');
+    expect(defaultFileName('Untitled', 'yaml')).toBe('Untitled.yaml');
+  });
+
+  it('defaults to .txt for plaintext / unknown / missing language', () => {
+    expect(defaultFileName('Untitled', 'plaintext')).toBe('Untitled.txt');
+    expect(defaultFileName('Untitled', undefined)).toBe('Untitled.txt');
+    expect(defaultFileName('Untitled', 'made-up')).toBe('Untitled.txt');
+  });
+
+  it('does not duplicate an extension the title already has', () => {
+    expect(defaultFileName('response.json', 'json')).toBe('response.json');
+    expect(defaultFileName('README.MD', 'markdown')).toBe('README.MD');
+  });
+
+  it('falls back to Untitled for empty / whitespace titles', () => {
+    expect(defaultFileName('', 'markdown')).toBe('Untitled.md');
+    expect(defaultFileName('   ', undefined)).toBe('Untitled.txt');
   });
 });

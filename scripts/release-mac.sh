@@ -289,7 +289,11 @@ DMG_REBUILD_DIR="$PROJECT_DIR/.tmp-dmg-rebuild"
 
 rm -rf "$DMG_REBUILD_DIR"
 
-npx electron-builder \
+# CSC_IDENTITY_AUTO_DISCOVERY=false stops electron-builder from re-signing the
+# already-signed + stapled .app while wrapping it in the DMG. Re-signing would
+# change the app's cdHash and silently invalidate the notarization ticket we
+# just stapled — the classic "Apple could not verify ..." Gatekeeper failure.
+CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder \
   --prepackaged "$APP_PATH" \
   --mac dmg \
   --publish never \
@@ -309,6 +313,60 @@ echo ""
 echo "  Notarizing final DMG..."
 notarize_artifact "$DMG_PATH"
 
+# ── Staple the notarization ticket to the DMG ────────────────────
+# Gatekeeper assesses the DMG itself when the user opens the downloaded disk
+# image. Stapling embeds the ticket so it verifies OFFLINE; without it a
+# downloaded DMG shows "Apple could not verify ... is free of malware".
+echo ""
+echo "  Stapling notarization ticket to DMG..."
+staple_with_retry "$DMG_PATH" "DMG"
+
+# ── Refresh the auto-updater manifest for the stapled DMG ────────
+# Stapling rewrites the DMG bytes, so the sha512/size electron-builder recorded
+# in latest-mac.yml (and the .dmg.blockmap) are now stale. Recompute them so the
+# manifest stays honest. The ZIP is never modified after packaging, so its
+# entry — the one electron-updater actually uses for updates — remains valid.
+echo ""
+echo "  Refreshing auto-updater manifest for stapled DMG..."
+YML_PATH="$RELEASE_DIR/latest-mac.yml"
+DMG_NAME=$(basename "$DMG_PATH")
+
+if [[ "$(uname -m)" == "arm64" ]]; then
+  APP_BUILDER="$PROJECT_DIR/node_modules/app-builder-bin/mac/app-builder_arm64"
+else
+  APP_BUILDER="$PROJECT_DIR/node_modules/app-builder-bin/mac/app-builder_amd64"
+fi
+
+# Regenerate the DMG blockmap so it matches the stapled bytes (best-effort).
+if [[ -x "$APP_BUILDER" ]] && "$APP_BUILDER" blockmap --input "$DMG_PATH" --output "$DMG_PATH.blockmap" >/dev/null 2>&1; then
+  ok "DMG blockmap regenerated"
+else
+  warn "Could not regenerate DMG blockmap; removing stale blockmap"
+  rm -f "$DMG_PATH.blockmap"
+fi
+
+# Update the DMG's sha512 + size in latest-mac.yml (js-yaml is a project dep).
+if [[ -f "$YML_PATH" ]]; then
+  DMG_SHA512=$(openssl dgst -sha512 -binary "$DMG_PATH" | openssl base64 | tr -d '\n')
+  DMG_SIZE=$(stat -f %z "$DMG_PATH")
+  if node -e '
+    const fs = require("fs");
+    const yaml = require("js-yaml");
+    const [ymlPath, dmgName, sha, size] = process.argv.slice(1);
+    const doc = yaml.load(fs.readFileSync(ymlPath, "utf8"));
+    if (Array.isArray(doc.files)) {
+      for (const f of doc.files) {
+        if (f.url === dmgName) { f.sha512 = sha; f.size = parseInt(size, 10); }
+      }
+    }
+    fs.writeFileSync(ymlPath, yaml.dump(doc, { lineWidth: 8000 }));
+  ' "$YML_PATH" "$DMG_NAME" "$DMG_SHA512" "$DMG_SIZE"; then
+    ok "latest-mac.yml updated with stapled DMG hash"
+  else
+    warn "Could not update latest-mac.yml DMG entry (auto-update uses the ZIP, which is unaffected)"
+  fi
+fi
+
 # ─── Step 8: Final verification ──────────────────────────────────
 step "[8/8] Final verification (post-notarization)..."
 
@@ -317,18 +375,34 @@ xcrun stapler validate "$APP_PATH" 2>&1 || die "Staple validation failed on .app
 ok "App staple validated"
 
 echo ""
+echo "  Validating stapled DMG (the artifact users download)..."
+xcrun stapler validate "$DMG_PATH" 2>&1 || die "Staple validation failed on DMG — do NOT publish this build."
+ok "DMG staple validated"
+
+echo ""
 echo "  Verifying app signature..."
 codesign --verify --deep --strict --verbose=2 "$APP_PATH" 2>&1 || die "Post-notarization codesign check failed"
 ok "App signature valid"
 
 echo ""
-echo "  Final Gatekeeper assessment..."
+echo "  Final Gatekeeper assessment (app)..."
 FINAL_SPCTL=$(spctl -a -vv "$APP_PATH" 2>&1 || true)
 echo "  $FINAL_SPCTL" | head -5
 if echo "$FINAL_SPCTL" | grep -q "accepted"; then
-  ok "Gatekeeper: accepted (Notarized Developer ID)"
+  ok "Gatekeeper (app): accepted (Notarized Developer ID)"
 else
-  warn "spctl did not report 'accepted'. This may still work — check output above."
+  die "Gatekeeper REJECTED the app — it is not properly notarized. Do NOT publish this build.
+  spctl output: $FINAL_SPCTL"
+fi
+
+echo ""
+echo "  Final Gatekeeper assessment (DMG)..."
+DMG_SPCTL=$(spctl -a -vv -t open --context context:primary-signature "$DMG_PATH" 2>&1 || true)
+echo "  $DMG_SPCTL" | head -5
+if echo "$DMG_SPCTL" | grep -q "accepted"; then
+  ok "Gatekeeper (DMG): accepted"
+else
+  warn "spctl DMG assessment did not report 'accepted' — the stapled .app inside still governs launch. Verify manually if unsure."
 fi
 
 # ─── Summary ──────────────────────────────────────────────────────

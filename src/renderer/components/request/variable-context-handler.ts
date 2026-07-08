@@ -319,6 +319,9 @@ export class VariableContextHandler {
     const refresh = (): void => this.updateResolvedUrlPreview(urlInput);
     paramsEditor.addEventListener('input', refresh);
     paramsEditor.addEventListener('change', refresh);
+    // Removing a row fires only a click (no native input/change), so listen for
+    // the ParamsManager mutation event too, keeping the preview real-time.
+    paramsEditor.addEventListener('params-editor-mutated', refresh);
   }
 
   /**

@@ -8,7 +8,7 @@ import {
   mapHttpMethod,
   mapAuth,
   sanitizeName,
-  mapVariablesArray,
+  mapVariablesWithSecrets,
 } from './mappers';
 
 interface PostmanCollection {
@@ -26,6 +26,7 @@ interface PostmanItem {
   name: string;
   item?: PostmanItem[]; // if folder
   request?: PostmanRequest; // if request
+  auth?: any; // folder-level auth (inherited by descendants)
 }
 
 interface PostmanRequest {
@@ -58,13 +59,19 @@ interface PostmanBody {
 interface PostmanVariable {
   key: string;
   value: string;
+  type?: string;
   enabled?: boolean;
 }
 
 interface PostmanEnvironment {
   id?: string;
   name: string;
-  values: Array<{ key: string; value: string; enabled?: boolean }>;
+  values: Array<{
+    key: string;
+    value: string;
+    type?: string;
+    enabled?: boolean;
+  }>;
   _postman_variable_scope?: string;
 }
 
@@ -88,11 +95,17 @@ export function mapPostmanCollection(data: PostmanCollection): {
   // Map collection-level variables to a default environment
   const environments: Environment[] = [];
   if (data.variable && data.variable.length > 0) {
+    const { variables, variableSecrets } = mapVariablesWithSecrets(
+      data.variable
+    );
     const collectionEnv: Environment = {
       id: generateId(),
       name: `${rootFolder.name} Variables`,
-      variables: mapVariablesArray(data.variable),
+      variables,
     };
+    if (Object.keys(variableSecrets).length > 0) {
+      collectionEnv.variableSecrets = variableSecrets;
+    }
     environments.push(collectionEnv);
   }
 
@@ -118,14 +131,17 @@ function mapPostmanItem(
 
   // Check if it's a folder or request
   if (item.item) {
-    // It's a folder
+    // It's a folder. Folder-level auth (if defined) overrides the inherited
+    // auth for everything inside it — mirrors Postman's auth inheritance so
+    // requests that rely on folder-scoped OAuth2 still resolve their token URL.
+    const inheritedAuth = item.auth ?? collectionAuth;
     const folder: Collection = {
       id: itemId,
       name: sanitizeName(item.name),
       type: 'folder',
       parentId,
       children: item.item.map((child) =>
-        mapPostmanItem(child, itemId, collectionAuth)
+        mapPostmanItem(child, itemId, inheritedAuth)
       ),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -261,21 +277,17 @@ function mapPostmanRequest(
  * Maps a Postman environment to Restbro Environment
  */
 export function mapPostmanEnvironment(data: PostmanEnvironment): Environment {
-  const variables: Record<string, string> = {};
+  const { variables, variableSecrets } = mapVariablesWithSecrets(data.values);
 
-  if (data.values) {
-    data.values.forEach((v) => {
-      if (v.key && (v.enabled === undefined || v.enabled === true)) {
-        variables[v.key] = String(v.value || '');
-      }
-    });
-  }
-
-  return {
+  const environment: Environment = {
     id: generateId(),
     name: sanitizeName(data.name),
     variables,
   };
+  if (Object.keys(variableSecrets).length > 0) {
+    environment.variableSecrets = variableSecrets;
+  }
+  return environment;
 }
 
 /**

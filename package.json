@@ -1,6 +1,6 @@
 {
   "name": "restbro",
-  "version": "1.5.0",
+  "version": "1.7.0",
   "description": "A modern API testing tool similar to Postman and Insomnia",
   "main": "dist/main/main/index.js",
   "scripts": {
@@ -22,13 +22,14 @@
     "dist": "npm run build && electron-builder --mac",
     "dist:mac": "npm run dist",
     "dist:unsigned": "npm run build && electron-builder --mac --config.mac.identity=null",
-    "release": "npm run build && electron-builder --mac --publish always",
+    "release": "bash scripts/release-mac.sh",
     "release:mac": "bash scripts/release-mac.sh",
     "release:mac:universal": "bash scripts/release-mac.sh",
     "release:win": "bash scripts/release-win.sh",
     "publish:github": "bash scripts/publish-github-release.sh",
     "ship:mac": "bash scripts/release-mac.sh && bash scripts/publish-github-release.sh",
-    "ship:win": "bash scripts/release-win.sh && bash scripts/publish-github-release.sh"
+    "ship:win": "bash scripts/release-win.sh && bash scripts/publish-github-release.sh",
+    "ship:all": "bash scripts/release-mac.sh && bash scripts/release-win.sh && bash scripts/publish-github-release.sh"
   },
   "devDependencies": {
     "@electron/notarize": "^3.1.1",

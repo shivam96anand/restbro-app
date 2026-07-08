@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiRequest, FormDataField } from '../../../shared/types';
 import { RequestBuilder } from '../request-builder';
+import { composeFinalRequest } from '../variables';
 
 // Mock fs for file upload tests
 vi.mock('fs', () => ({
@@ -82,7 +83,7 @@ describe('request-builder.ts', () => {
       );
 
       expect(url).toBe(
-        'https://api.example.com/search?q=hello+world&category=a%26b&empty='
+        'https://api.example.com/search?q=hello%20world&category=a%26b&empty='
       );
     });
 
@@ -101,6 +102,43 @@ describe('request-builder.ts', () => {
           }
         )
       ).toBe('https://api.example.com/users?page=1#details');
+    });
+
+    it('keeps commas literal in list values instead of encoding to %2C', () => {
+      // Regression: URLSearchParams encodes "," to "%2C", which some APIs
+      // treat as a single literal token, returning only the first item.
+      // Postman/Insomnia leave commas literal (RFC 3986 sub-delimiter).
+      const url = RequestBuilder.buildUrlWithParams(
+        'https://api.example.com/product',
+        [
+          {
+            key: 'contractIdList',
+            value: 'GK10075387,GK10077247',
+            enabled: true,
+          },
+          { key: 'view', value: 'V', enabled: true },
+        ]
+      );
+
+      expect(url).toBe(
+        'https://api.example.com/product?contractIdList=GK10075387,GK10077247&view=V'
+      );
+    });
+
+    it('leaves other RFC 3986 query sub-delimiters literal but keeps separators encoded', () => {
+      const url = RequestBuilder.buildUrlWithParams(
+        'https://api.example.com/search',
+        {
+          path: 'a/b:c@d',
+          list: 'x,y,z',
+          keep: 'a&b=c',
+        }
+      );
+
+      // "/", ":", "@", "," stay literal; "&" and "=" inside a value stay encoded
+      expect(url).toBe(
+        'https://api.example.com/search?path=a/b:c@d&list=x,y,z&keep=a%26b%3Dc'
+      );
     });
   });
 
@@ -702,6 +740,378 @@ describe('request-builder.ts', () => {
       // Extract boundary from content type
       const boundary = result.contentType!.split('boundary=')[1];
       expect(bodyStr).toContain(`--${boundary}--`);
+    });
+  });
+
+  describe('buildUrlWithParams — encoding corner cases', () => {
+    it('percent-encodes unicode values as UTF-8', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://api.example.com/s', {
+          q: '你好',
+        })
+      ).toBe('https://api.example.com/s?q=%E4%BD%A0%E5%A5%BD');
+    });
+
+    it('keeps a literal plus sign encoded as %2B (distinct from space)', () => {
+      // A space becomes "%20"; a literal "+" becomes "%2B" so they never alias.
+      expect(
+        RequestBuilder.buildUrlWithParams('https://api.example.com/s', {
+          formula: '1+2 = 3',
+        })
+      ).toBe('https://api.example.com/s?formula=1%2B2%20%3D%203');
+    });
+
+    it('keeps structural characters (& = #) encoded inside values', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://api.example.com/s', {
+          raw: 'a&b=c#d',
+        })
+      ).toBe('https://api.example.com/s?raw=a%26b%3Dc%23d');
+    });
+
+    it('restores /, :, ?, @ but keeps = encoded in a redirect-uri style value', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://api.example.com/authorize', {
+          redirect_uri: 'https://app.example.com/cb?x=1',
+        })
+      ).toBe(
+        'https://api.example.com/authorize?redirect_uri=https://app.example.com/cb?x%3D1'
+      );
+    });
+
+    it('produces an empty value segment for empty-string params', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://api.example.com/s', {
+          flag: '',
+        })
+      ).toBe('https://api.example.com/s?flag=');
+    });
+  });
+
+  describe('buildHeaders — corner cases', () => {
+    it('uses the default Bearer prefix for oauth2 when headerPrefix is absent', () => {
+      expect(
+        RequestBuilder.buildHeaders(
+          createRequest({
+            auth: { type: 'oauth2', config: { accessToken: 'tok' } },
+          })
+        )
+      ).toEqual({ Authorization: 'Bearer tok' });
+    });
+
+    it('does not override an existing header for a custom api-key (case-insensitive)', () => {
+      expect(
+        RequestBuilder.buildHeaders(
+          createRequest({
+            headers: [{ key: 'x-custom', value: 'user', enabled: true }],
+            auth: {
+              type: 'api-key',
+              config: { location: 'header', key: 'X-Custom', value: 'secret' },
+            },
+          })
+        )
+      ).toEqual({ 'x-custom': 'user' });
+    });
+
+    it('base64-encodes basic auth credentials as UTF-8 (unicode round-trips)', () => {
+      const headers = RequestBuilder.buildHeaders(
+        createRequest({
+          auth: {
+            type: 'basic',
+            config: { username: 'usér', password: 'pä✓' },
+          },
+        })
+      );
+      const encoded = headers.Authorization.split(' ')[1];
+      expect(Buffer.from(encoded, 'base64').toString('utf8')).toBe('usér:pä✓');
+    });
+
+    it('normalizes SOAPAction header casing variants for SOAP requests', () => {
+      for (const variant of ['soapaction', 'Soap-Action', 'SoapAction']) {
+        const headers = RequestBuilder.buildHeaders(
+          createRequest({
+            soap: { version: '1.1' },
+            headers: [{ key: variant, value: 'urn:doStuff', enabled: true }],
+          })
+        );
+        expect(headers).toEqual({ SOAPAction: 'urn:doStuff' });
+      }
+    });
+
+    it('leaves SOAPAction casing untouched for non-SOAP requests', () => {
+      expect(
+        RequestBuilder.buildHeaders(
+          createRequest({
+            headers: [{ key: 'soapaction', value: 'urn:x', enabled: true }],
+          })
+        )
+      ).toEqual({ soapaction: 'urn:x' });
+    });
+
+    it('supports the object header format alongside auth headers', () => {
+      expect(
+        RequestBuilder.buildHeaders(
+          createRequest({
+            headers: { Accept: 'application/json' },
+            auth: { type: 'bearer', config: { token: 't' } },
+          })
+        )
+      ).toEqual({ Accept: 'application/json', Authorization: 'Bearer t' });
+    });
+  });
+
+  describe('addDefaultHeaders — byte length & content type', () => {
+    it('computes Content-Length as UTF-8 byte length for multibyte strings', () => {
+      // '你好' is 6 UTF-8 bytes, not 2 characters.
+      const result = RequestBuilder.addDefaultHeaders({}, '你好', 'text/plain');
+      expect(result['Content-Length']).toBe('6');
+    });
+
+    it('computes Content-Length for a Buffer body', () => {
+      const result = RequestBuilder.addDefaultHeaders(
+        {},
+        Buffer.from([1, 2, 3, 4, 5]),
+        'application/octet-stream'
+      );
+      expect(result['Content-Length']).toBe('5');
+    });
+
+    it('does not override a user Content-Type provided in lowercase', () => {
+      const result = RequestBuilder.addDefaultHeaders(
+        { 'content-type': 'text/plain' },
+        'body',
+        'application/json'
+      );
+      expect(result['content-type']).toBe('text/plain');
+      expect(result['Content-Type']).toBeUndefined();
+    });
+  });
+
+  describe('buildBody — legacy multipart parsing', () => {
+    it('splits each line on the first = and keeps later = in the value', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: { type: 'form-data', content: 'url=https://x/y?a=1' },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="url"');
+      expect(bodyStr).toContain('https://x/y?a=1');
+    });
+
+    it('skips lines without an = and lines with a blank key', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: { type: 'form-data', content: 'novalue\n=orphan\nkey=val' },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).not.toContain('novalue');
+      expect(bodyStr).not.toContain('orphan');
+      expect(bodyStr).toContain('name="key"');
+      expect(bodyStr).toContain('val');
+    });
+
+    it('resolves the file name from the path when fileName is omitted', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: {
+            type: 'form-data',
+            content: '',
+            formDataFields: [
+              {
+                key: 'upload',
+                value: '/tmp/data.bin',
+                type: 'file',
+                enabled: true,
+              },
+            ],
+          },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('filename="data.bin"');
+    });
+  });
+
+  describe('mergeParams — corner cases', () => {
+    it('overrides matching keys for the record format', () => {
+      expect(
+        RequestBuilder.mergeParams({ a: '1', b: '2' }, { b: '3', c: '4' })
+      ).toEqual({ a: '1', b: '3', c: '4' });
+    });
+
+    it('returns the original params reference when extraParams is empty', () => {
+      const params = [{ key: 'a', value: '1', enabled: true }];
+      expect(RequestBuilder.mergeParams(params, {})).toBe(params);
+    });
+  });
+
+  // ===========================================================================
+  // KNOWN ISSUES (characterization tests).
+  // These lock in the CURRENT behavior and are documented in the session
+  // report. Each marks a real discrepancy, not an endorsement.
+  // ===========================================================================
+  describe('duplicate keys, null-safety & variable encoding (fixed)', () => {
+    it('does not throw on an undefined param value (treated as empty)', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', [
+          { key: 'a', value: undefined as unknown as string, enabled: true },
+        ])
+      ).toBe('https://x/api?a=');
+    });
+
+    it('preserves duplicate query keys (?tag=a&tag=b), matching Postman/Insomnia', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', [
+          { key: 'tag', value: 'a', enabled: true },
+          { key: 'tag', value: 'b', enabled: true },
+        ])
+      ).toBe('https://x/api?tag=a&tag=b');
+    });
+
+    it('encodes variable-resolved param values exactly once (no double-encoding)', () => {
+      // composeFinalRequest resolves {{ids}} -> "a,b" WITHOUT pre-encoding, then
+      // buildUrlWithParams encodes once and restoreQuerySafeChars keeps the
+      // comma literal -> matches Insomnia.
+      const resolved = composeFinalRequest(
+        createRequest({
+          url: 'https://x/api',
+          params: [{ key: 'ids', value: '{{ids}}', enabled: true }],
+          variables: { ids: 'a,b' },
+        })
+      );
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', resolved.params)
+      ).toBe('https://x/api?ids=a,b');
+    });
+
+    it('single-encodes a space in a variable-resolved value', () => {
+      const resolved = composeFinalRequest(
+        createRequest({
+          url: 'https://x/api',
+          params: [{ key: 'q', value: '{{term}}', enabled: true }],
+          variables: { term: 'a b' },
+        })
+      );
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', resolved.params)
+      ).toBe('https://x/api?q=a%20b');
+    });
+
+    it('safely encodes an ampersand in a variable value (not a separator)', () => {
+      const resolved = composeFinalRequest(
+        createRequest({
+          url: 'https://x/api',
+          params: [{ key: 'q', value: '{{term}}', enabled: true }],
+          variables: { term: 'a&b' },
+        })
+      );
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', resolved.params)
+      ).toBe('https://x/api?q=a%26b');
+    });
+  });
+
+  describe('legacy form-data — CRLF handling (fixed)', () => {
+    it('does not leave a stray \\r in values from CRLF-delimited content', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: { type: 'form-data', content: 'a=1\r\nb=2' },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="a"\r\n\r\n1\r\n');
+      expect(bodyStr).toContain('name="b"\r\n\r\n2\r\n');
+      expect(bodyStr).not.toContain('1\r\r\n');
+    });
+
+    it('still parses plain \\n-delimited content', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: { type: 'form-data', content: 'a=1\nb=2' },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="a"\r\n\r\n1\r\n');
+      expect(bodyStr).toContain('name="b"\r\n\r\n2\r\n');
+    });
+  });
+
+  describe('space & multipart encoding (fixed)', () => {
+    it('encodes spaces as %20, matching Insomnia/Postman', () => {
+      expect(
+        RequestBuilder.buildUrlWithParams('https://x/api', { q: 'a b' })
+      ).toBe('https://x/api?q=a%20b');
+    });
+
+    it('escapes double-quotes in multipart field names (no injection)', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: {
+            type: 'form-data',
+            content: '',
+            formDataFields: [
+              {
+                key: 'evil"; name="injected',
+                value: 'x',
+                type: 'text',
+                enabled: true,
+              },
+            ],
+          },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="evil%22; name=%22injected"');
+      expect(bodyStr).not.toContain('name="evil"; name="injected"');
+    });
+
+    it('escapes CR/LF in multipart field names (no header injection)', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: {
+            type: 'form-data',
+            content: '',
+            formDataFields: [
+              {
+                key: 'a\r\nX-Injected: 1',
+                value: 'x',
+                type: 'text',
+                enabled: true,
+              },
+            ],
+          },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('name="a%0D%0AX-Injected: 1"');
+      expect(bodyStr).not.toContain('\r\nX-Injected: 1');
+    });
+
+    it('escapes a file filename and strips CR/LF from its Content-Type', () => {
+      const result = RequestBuilder.buildBody(
+        createRequest({
+          body: {
+            type: 'form-data',
+            content: '',
+            formDataFields: [
+              {
+                key: 'upload',
+                value: '/tmp/photo.png',
+                type: 'file',
+                enabled: true,
+                fileName: 'a".png',
+                contentType: 'image/png\r\nX-Evil: 1',
+              },
+            ],
+          },
+        })
+      );
+      const bodyStr = (result.bodyData as Buffer).toString();
+      expect(bodyStr).toContain('filename="a%22.png"');
+      expect(bodyStr).toContain('Content-Type: image/pngX-Evil: 1');
+      expect(bodyStr).not.toContain('image/png\r\nX-Evil: 1');
     });
   });
 });

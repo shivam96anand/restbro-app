@@ -3,6 +3,7 @@
  */
 
 import { ApiRequest, FormDataField, KeyValuePair } from '../../shared/types';
+import { restoreQuerySafeChars } from '../../shared/request-builder-shared';
 import { readFileSync } from 'fs';
 import * as path from 'path';
 
@@ -27,11 +28,17 @@ export class RequestBuilder {
       queryIndex >= 0 ? urlWithoutHash.slice(queryIndex + 1) : '';
     const searchParams = new URLSearchParams(queryString);
 
+    // Params override matching keys already present in the URL's query, but
+    // multiple param rows that share a key are ALL kept (?id=1&id=2), matching
+    // Postman/Insomnia. So drop each overridden key once, then append all.
+    new Set(paramEntries.map(([key]) => key)).forEach((key) =>
+      searchParams.delete(key)
+    );
     paramEntries.forEach(([key, value]) => {
-      searchParams.set(key, value);
+      searchParams.append(key, value);
     });
 
-    const query = searchParams.toString();
+    const query = restoreQuerySafeChars(searchParams.toString());
     return `${query ? `${path}?${query}` : path}${hash}`;
   }
 
@@ -191,6 +198,19 @@ export class RequestBuilder {
   }
 
   /**
+   * Escapes a multipart field name / filename for a Content-Disposition header,
+   * matching the WHATWG multipart/form-data algorithm browsers use for
+   * FormData. Prevents header/body injection via CR, LF, or a double-quote in a
+   * crafted name.
+   */
+  private static escapeMultipartName(name: string): string {
+    return name
+      .replace(/\r/g, '%0D')
+      .replace(/\n/g, '%0A')
+      .replace(/"/g, '%22');
+  }
+
+  /**
    * Builds multipart/form-data from structured FormDataField array
    * Supports both text fields and file uploads
    */
@@ -212,11 +232,13 @@ export class RequestBuilder {
         try {
           const fileData = readFileSync(field.value);
           const fileName = field.fileName || path.basename(field.value);
-          const mimeType = field.contentType || 'application/octet-stream';
+          const mimeType = (
+            field.contentType || 'application/octet-stream'
+          ).replace(/[\r\n]/g, '');
 
           const header = Buffer.from(
             `--${boundary}${CRLF}` +
-              `Content-Disposition: form-data; name="${key}"; filename="${fileName}"${CRLF}` +
+              `Content-Disposition: form-data; name="${this.escapeMultipartName(key)}"; filename="${this.escapeMultipartName(fileName)}"${CRLF}` +
               `Content-Type: ${mimeType}${CRLF}${CRLF}`
           );
           parts.push(header);
@@ -231,7 +253,7 @@ export class RequestBuilder {
         parts.push(
           Buffer.from(
             `--${boundary}${CRLF}` +
-              `Content-Disposition: form-data; name="${key}"${CRLF}${CRLF}` +
+              `Content-Disposition: form-data; name="${this.escapeMultipartName(key)}"${CRLF}${CRLF}` +
               `${field.value}${CRLF}`
           )
         );
@@ -258,7 +280,7 @@ export class RequestBuilder {
     const parts: Buffer[] = [];
     const CRLF = '\r\n';
 
-    const lines = content.split('\n').filter((line) => line.trim());
+    const lines = content.split(/\r\n|\r|\n/).filter((line) => line.trim());
     for (const line of lines) {
       const eqIndex = line.indexOf('=');
       if (eqIndex === -1) continue;
@@ -271,7 +293,7 @@ export class RequestBuilder {
       parts.push(
         Buffer.from(
           `--${boundary}${CRLF}` +
-            `Content-Disposition: form-data; name="${key}"${CRLF}${CRLF}` +
+            `Content-Disposition: form-data; name="${this.escapeMultipartName(key)}"${CRLF}${CRLF}` +
             `${value}${CRLF}`
         )
       );
@@ -350,14 +372,14 @@ export class RequestBuilder {
 
     if (Array.isArray(pairs)) {
       return pairs.flatMap(({ key, value, enabled }) => {
-        const cleanKey = key.trim();
-        return enabled && cleanKey ? [[cleanKey, value.trim()]] : [];
+        const cleanKey = (key ?? '').trim();
+        return enabled && cleanKey ? [[cleanKey, (value ?? '').trim()]] : [];
       });
     }
 
     return Object.entries(pairs).flatMap(([key, value]) => {
-      const cleanKey = key.trim();
-      return cleanKey ? [[cleanKey, value.trim()]] : [];
+      const cleanKey = (key ?? '').trim();
+      return cleanKey ? [[cleanKey, (value ?? '').trim()]] : [];
     });
   }
 

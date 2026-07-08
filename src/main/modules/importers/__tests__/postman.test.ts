@@ -97,6 +97,90 @@ describe('postman.ts', () => {
       });
     });
 
+    it('flags secret collection-level variables', () => {
+      const { environments } = mapPostmanCollection({
+        ...minimalCollection,
+        variable: [
+          { key: 'host', value: 'api.example.com', type: 'default' },
+          { key: 'apiKey', value: 'k-123', type: 'secret' },
+        ],
+      });
+
+      expect(environments[0].variableSecrets).toEqual({ apiKey: true });
+    });
+
+    it('maps request-level OAuth2 (Postman array) token URL and grant type', () => {
+      const { rootFolder } = mapPostmanCollection({
+        ...minimalCollection,
+        item: [
+          {
+            name: 'Qualify',
+            request: {
+              method: 'POST',
+              url: '{{poq_baseurl}}/checkQualification',
+              auth: {
+                type: 'oauth2',
+                oauth2: [
+                  { key: 'clientSecret', value: '{{poq_clientsecret}}' },
+                  { key: 'clientId', value: '{{poq_clientid}}' },
+                  { key: 'accessTokenUrl', value: '{{poq_tokenurl}}' },
+                  { key: 'grant_type', value: 'client_credentials' },
+                ],
+              },
+            },
+          },
+        ],
+      });
+
+      expect(rootFolder.children![0].request?.auth).toEqual({
+        type: 'oauth2',
+        config: {
+          grantType: 'client_credentials',
+          clientId: '{{poq_clientid}}',
+          clientSecret: '{{poq_clientsecret}}',
+          tokenUrl: '{{poq_tokenurl}}',
+        },
+      });
+    });
+
+    it('inherits folder-level auth for requests without their own auth', () => {
+      const { rootFolder } = mapPostmanCollection({
+        ...minimalCollection,
+        item: [
+          {
+            name: 'POQ',
+            auth: {
+              type: 'oauth2',
+              oauth2: [
+                { key: 'clientId', value: '{{cid}}' },
+                { key: 'accessTokenUrl', value: '{{tokenurl}}' },
+                { key: 'grant_type', value: 'client_credentials' },
+              ],
+            },
+            item: [
+              {
+                name: 'Child',
+                request: {
+                  method: 'GET',
+                  url: '{{base}}/thing',
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      const child = rootFolder.children![0].children![0];
+      expect(child.request?.auth).toEqual({
+        type: 'oauth2',
+        config: {
+          grantType: 'client_credentials',
+          clientId: '{{cid}}',
+          tokenUrl: '{{tokenurl}}',
+        },
+      });
+    });
+
     it('maps a request item with method, URL, headers, and body', () => {
       const { rootFolder } = mapPostmanCollection({
         ...minimalCollection,
@@ -323,6 +407,36 @@ describe('postman.ts', () => {
 
       expect(env.name).toBe('Empty');
       expect(env.variables).toEqual({});
+    });
+
+    it('flags variables whose Postman type is "secret"', () => {
+      const env = mapPostmanEnvironment({
+        name: 'Prod',
+        values: [
+          { key: 'baseUrl', value: 'https://api.example.com', type: 'default' },
+          { key: 'clientSecret', value: 's3cr3t', type: 'secret' },
+          { key: 'token', value: 'abc', type: 'secret' },
+        ],
+      });
+
+      expect(env.variables).toEqual({
+        baseUrl: 'https://api.example.com',
+        clientSecret: 's3cr3t',
+        token: 'abc',
+      });
+      expect(env.variableSecrets).toEqual({
+        clientSecret: true,
+        token: true,
+      });
+    });
+
+    it('omits variableSecrets when no secret variables exist', () => {
+      const env = mapPostmanEnvironment({
+        name: 'Dev',
+        values: [{ key: 'host', value: 'localhost', type: 'default' }],
+      });
+
+      expect(env.variableSecrets).toBeUndefined();
     });
   });
 });

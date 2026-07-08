@@ -253,11 +253,11 @@ export function composeFinalRequest(
   // Resolve URL (without URL encoding the template itself)
   const resolvedUrl = resolveTemplate(request.url, opts);
 
-  // Resolve params (with URL encoding for values that will go into query string)
-  const resolvedParams = resolveParamsOrHeaders(request.params, {
-    ...opts,
-    urlEncodeValues: true,
-  });
+  // Resolve params WITHOUT pre-encoding. The query string is assembled and
+  // percent-encoded exactly once by buildUrlWithParams (URLSearchParams);
+  // pre-encoding here would double-encode reserved characters (e.g. a comma
+  // would become "%2C" and then "%252C").
+  const resolvedParams = resolveParamsOrHeaders(request.params, opts);
 
   // Resolve headers
   const resolvedHeaders = resolveParamsOrHeaders(request.headers, opts);
